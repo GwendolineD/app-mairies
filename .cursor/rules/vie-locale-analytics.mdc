@@ -1,0 +1,45 @@
+---
+description: Analytics — closed event allowlist, no PII in properties
+globs: ["**/*.ts", "**/*.tsx"]
+alwaysApply: false
+---
+
+# Vie Locale Analytics
+
+## Closed event name allowlist
+Emit **only** the following `event` string values. **Do not invent new names** in code without updating this rule and the analytics schema/dashboards.
+
+```text
+app_opened
+screen_viewed
+tab_changed
+commune_switched
+cta_clicked
+search_submitted
+filter_applied
+listing_impression
+listing_opened
+listing_created
+listing_updated
+listing_archived
+listing_deleted
+message_thread_opened
+message_sent
+form_started
+form_submitted
+form_abandoned
+auth_login_success
+auth_logout
+error_shown
+```
+
+## Property rules — no PII
+**Forbidden in event props** (any layer: client SDK, server, middleware):
+- Email, phone, postal address, free-text message bodies, document contents
+- Full person name, government IDs, precise device fingerprint beyond coarse `user_agent` class if used
+
+**Allowed examples:** boolean flags, counts, coarse enums, **opaque UUIDs already used in URLs** (`listing_id`, `commune_id` as UUID), sanitized error codes (`VALIDATION_FAILED`).
+
+## Hygiene
+- Keep payloads minimal; aggregate high-cardinality dimensions server-side where possible.
+- If product adds consent/opt-out gates, honor them before emitting.

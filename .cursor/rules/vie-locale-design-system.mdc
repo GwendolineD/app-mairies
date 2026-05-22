@@ -1,0 +1,41 @@
+---
+description: Vie Locale visual language — palette, typography, gradients, placeholders
+globs: ["**/*.tsx", "**/*.css"]
+alwaysApply: false
+---
+
+# Vie Locale Design System
+
+## Brand palette (canonical)
+Expose as CSS variables or Tailwind theme tokens rather than scattering literals:
+| Token intent | Hex |
+|--|--|
+| Coral | `#FF6B6B` |
+| Orange | `#FF8A4C` |
+| Pink | `#FF4FCB` |
+
+Use semantic tokens (`bg-surface`, `text-primary`) where the stack supports them so marketing hues map to stable roles.
+
+## Typography
+- Primary UI font: **Manrope** (`font-family: 'Manrope', system-ui, sans-serif`).
+- Load via `next/font` when possible; subset weights actually used.
+
+## Gradients — category accents
+Reserve distinct gradients per content type **for badges, heroes, chips, empty states**, not arbitrary decoration:
+
+| Kind | Gradient direction / stops (example — tune in tokens) |
+|--|--|
+| **Demande** | `linear-gradient(135deg, #FF6B6B 0%, #FF8A4C 100%)` |
+| **Offre** | `linear-gradient(135deg, #FF8A4C 0%, #FF6B6B 100%)` |
+| **Initiative** | `linear-gradient(135deg, #FF4FCB 0%, #FF6B6B 100%)` |
+| **Events** | `linear-gradient(135deg, #FF8A4C 0%, #FF4FCB 100%)` |
+
+Store as named utility classes (`gradient-demande`, etc.) instead of repeating long `background` literals.
+
+## Shape & rhythm
+- **Rounded corners consistently**: cards and modals `rounded-2xl` / `16–24px`; buttons `rounded-full` or `rounded-xl` — pick one system and stick to it.
+- Maintain comfortable spacing scale (8px base) for civic, low-stress reading.
+
+## Placeholder assets
+- Use neutral **placeholder blocks** with fixed aspect ratio and a visible “placeholder” label or icon; do not imply real people, businesses, or venues with unlicensed photography.
+- Prefer vector or abstract patterns over realistic stock in unfinished flows.

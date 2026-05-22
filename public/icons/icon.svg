@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Vie Locale">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF8A4C"/>
+      <stop offset="35%" stop-color="#FF4FCB"/>
+      <stop offset="70%" stop-color="#9A52FF"/>
+      <stop offset="100%" stop-color="#35D4D4"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#g)"/>
+  <text x="256" y="280" text-anchor="middle" fill="white" font-family="system-ui,sans-serif" font-size="72" font-weight="700">VL</text>
+</svg>

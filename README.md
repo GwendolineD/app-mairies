@@ -1,36 +1,99 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vie Locale
 
-## Getting Started
+PWA mobile-first pour créer du lien social dans les communes françaises.
 
-First, run the development server:
+**Baseline :** Découvrir · Partager · S'entraider
+
+## Stack
+
+- Next.js 16 (App Router) + TypeScript + Tailwind CSS v4
+- Supabase (Auth, Postgres, RLS, Storage, Realtime)
+- API BAN ([api-adresse.data.gouv.fr](https://api-adresse.data.gouv.fr))
+- Leaflet + react-leaflet + tuiles OpenStreetMap
+
+## Démarrage
 
 ```bash
+cd vie-locale
+cp .env.example .env.local
+# Renseigner NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Supabase
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Créer un projet Supabase (région EU recommandée)
+2. Appliquer la migration :
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+supabase db push
+# ou exécuter supabase/migrations/20260522000000_initial_schema.sql dans le SQL Editor
+```
 
-## Learn More
+3. Importer les communes françaises :
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm install -D tsx
+npx tsx scripts/import-communes.ts
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+4. **Seed local (commune pilote + comptes dev)** — automatique sur `supabase db reset` :
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Compte | Email | Rôle | URL |
+|--------|-------|------|-----|
+| Vous (backoffice) | `dubois.gwendoline@hotmail.fr` | `platform_admin` | `/platform/admin` |
+| Mairie pilote | `mairie.les-authieux@vie-locale.dev` | `municipality_staff` | `/mairie` |
 
-## Deploy on Vercel
+Mot de passe seed local : **`VieLocaleDev2026!`** (voir [`supabase/seed.sql`](supabase/seed.sql))
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Commune pilote : **Les Authieux** (INSEE `27027`, `27220`)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+supabase db reset   # migration + seed
+```
+
+Sur un projet **cloud** distant : exécutez `supabase/seed.sql` dans le SQL Editor (dev uniquement).
+
+5. Import national optionnel : `npm run import-communes` (communes en `inactive`, Les Authieux reste `active` via seed)
+
+## Catégories d'annonces (11)
+
+Bricolage, Numérique, Covoiturage, Alimentaire, Garde pontuelle, Administratif, Animaux, Jardinage, Prêt d'objet, Don / troc, **Autres**
+
+Icônes et épingle carte : placeholders (`icon_url`, `map_pin_url` null) — à remplacer quand les assets seront fournis.
+
+## Espaces
+
+| Route | Rôle |
+|-------|------|
+| `/` | Landing |
+| `/inscription`, `/connexion` | Auth + choix commune (BAN) |
+| `/accueil`, `/annonces`, `/initiatives`, `/evenements`, `/messages`, `/profil` | Habitant |
+| `/mairie/*` | Dashboard mairie |
+| `/platform/*` | Backoffice éditeur |
+| `/suspendu` | Page réclamation (membership suspendue) |
+
+## Cron (cycle de vie annonces)
+
+Configurer Vercel Cron ou équivalent :
+
+```
+GET /api/cron/announcements-lifecycle
+Authorization: Bearer $CRON_SECRET
+```
+
+- Nudge 30 jours (sans date)
+- Alerte J-3 avant expiration
+- Passage en `expiree` à J+7 après `target_date`
+
+## Cursor rules
+
+Dans `.cursor/rules/` : engineering, multi-tenant, design system, analytics, copy FR, destructive actions, ethical nudge UX.
+
+## Assets à fournir
+
+- Logo horizontal / vertical → `public/brand/`
+- Icônes catégories → `announcement_categories.icon_url`
+- Épingles carte → `announcement_categories.map_pin_url`
+- Illustrations hero accueil → remplacer `AssetPlaceholder`

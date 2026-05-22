@@ -1,0 +1,145 @@
+---
+description: Ethical nudge UX — apply when generating UI components, copy, forms, onboarding flows
+globs: ["**/*.tsx", "**/*.jsx", "**/*.html", "**/components/**"]
+alwaysApply: false
+---
+
+# Ethical Nudge UX
+
+## Philosophy
+Guide users toward their goals with minimal friction, full transparency,
+and preserved autonomy. Optimize for user success, not short-term conversion.
+
+---
+
+## Choice Architecture
+- Present options in an order that reflects user benefit, not business priority
+- Default = the option most users would choose if fully informed
+- Limit options to avoid choice overload (max 3–4 alternatives per decision)
+- Group related options; separate destructive actions visually
+
+```tsx
+// ❌ Avoid: business-optimized default
+<Select defaultValue="annual_plan" /> // most expensive
+
+// ✅ Prefer: user-benefit default
+<Select defaultValue="monthly_plan" /> // lowest commitment
+```
+
+---
+
+## One Primary Action Per Screen
+- One dominant CTA per view; secondary actions visually de-emphasized
+- Use visual weight (size, color, contrast) to reflect action priority
+- The "escape" action (cancel, skip, back) must always be visible
+
+```tsx
+// ✅
+<Button variant="primary">Create project</Button>
+<Button variant="ghost">Cancel</Button>
+
+// ❌ Never hide or disable cancel
+```
+
+---
+
+## UX Copy — Action-Oriented Labels
+Buttons describe the outcome, not the mechanics.
+
+| ❌ Forbidden | ✅ Required |
+|---|---|
+| Submit | Send my application |
+| Continue | Go to payment |
+| Yes | Delete permanently |
+| No thanks | Keep my subscription |
+
+Never use confirmshaming: "No thanks, I don't want to save money"
+
+---
+
+## Honest Social Proof Only
+```tsx
+// ✅ Real data
+<p>Joined by 4,200 teams this month</p>
+
+// ❌ Fake/vague
+<p>Thousands of satisfied customers!</p>
+<p>🔥 12 people looking at this right now</p> // if not real-time
+```
+
+---
+
+## Forms — Reduce Friction
+- Minimum required fields only; justify each optional field
+- Inline validation (on blur), not on submit
+- Autofill-compatible field names (`name`, `email`, `tel`)
+- Never preselect marketing consent
+
+```tsx
+// ❌
+<input name="user_email" />
+
+// ✅
+<input name="email" autoComplete="email" />
+```
+
+---
+
+## Feedback & Progress
+- Show progress in multi-step flows (step X of Y)
+- Confirm successful actions with specific feedback ("Project saved")
+- On error: explain what happened + how to fix it
+- Never leave empty states without a suggested next action
+
+---
+
+## Defaults Are a UX Decision
+Every default is a nudge. Verify each one:
+- [ ] Does this default benefit the user?
+- [ ] Is it clearly visible?
+- [ ] Can it be changed in ≤ 2 clicks?
+
+If any answer is no → change the default.
+
+---
+
+## SLUDGE — Never Add Friction to Exits
+Unsubscribe, cancel, delete, opt-out must be as easy as the reverse action.
+
+```tsx
+// ❌ Forbidden patterns
+- Cancellation buried in Settings > Account > Billing > Advanced
+- Required phone call to cancel
+- "Are you sure? You'll lose everything" guilt modals
+- Countdown timers on "keep subscription" prompts
+```
+
+---
+
+## Timing of Nudges
+- Nudge at the moment of decision, not before or after
+- Onboarding: guide to first meaningful value in ≤ 3 steps
+- Notifications: contextual and actionable only; full user control
+
+---
+
+## Forbidden Patterns (Hard Rules)
+NEVER generate code or copy that includes:
+- Fake urgency: "Only 2 left!" (if not real inventory)
+- Fake activity: "Sarah from Austin just bought this"
+- Hidden costs revealed at final step
+- Pre-checked marketing consent
+- Confirmshaming copy
+- Misleading unsubscribe flows
+- Modal patterns that obscure the "No" option
+
+---
+
+## Pre-implementation Checklist
+Before any nudge, verify:
+- [ ] Transparent? User knows what's happening
+- [ ] Reversible? User can undo within the session
+- [ ] Beneficial? It helps the user's stated goal
+- [ ] Ethical? Would you defend it publicly?
+
+All 4 must be true. Otherwise → don't implement.

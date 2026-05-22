@@ -1,0 +1,26 @@
+---
+description: Multi-tenant safety — commune scope, memberships, RLS, active commune
+globs: ["**/*.ts", "**/*.tsx"]
+alwaysApply: true
+---
+
+# Vie Locale Multi-Tenant
+
+## Non-negotiables
+
+- **Every tenant-scoped read/write must constrain `commune_id`** (or the project’s equivalent tenant key). No “globally keyed” accidental queries inside user-facing flows.
+- **Never trust client-supplied `commune_id` alone.** Resolve the active commune against the authenticated user’s **memberships** (or authoritative role assignment) server-side before executing queries or mutations.
+
+## Authorization model
+
+- Treat **Row Level Security (RLS)** in Supabase as the last line of defense: application code still applies explicit `.eq('commune_id', activeCommuneId)` (and related filters). Do not document or add “disable RLS” shortcuts except tightly controlled ops tooling outside normal user paths.
+- If a membership is missing or revoked, return **403/404 consistent with product policy** — do not leak whether a resource exists in another commune.
+
+## Active commune UX & cache keys
+
+- Maintain a single **active commune** concept in UI/state. All keyed queries (`queryKey`, SWR keys, caches) include `commune_id` where data is scoped.
+- On commune switch: clear or invalidate commune-scoped client caches so stale tenant data cannot flash.
+
+## Server Actions / Route Handlers
+
+- Resolver order: **session user → memberships → authorized `commune_id` → perform operation**. Log authorization failures without sensitive payloads.

@@ -1,0 +1,30 @@
+---
+description: French UI copy — warm tone, naming, action-oriented CTAs
+globs: ["**/*.tsx"]
+alwaysApply: false
+---
+
+# Vie Locale Copy (FR)
+
+## Language & tone
+- All **user-visible** strings: **French (fr-FR)** — grammar, punctuation (including non-breaking thin spaces before `:!?;%»` where appropriate), civic-friendly vocabulary.
+- **Warm, approachable, respectful** tone: sound like a collaborative neighbor, not a cold admin tool.
+- Use **sentence case** for titles when the design system agrees; otherwise match existing headings.
+
+## People & names (display)
+- Default public attribution: **`Prénom L.`** (first name + last initial + trailing dot). Example: *Camille R.*
+- Expand to fuller display only where the product explicitly allows it **and** privacy rules permit.
+
+## Buttons & CTAs — action verbs
+Prefer **verbs + outcome** instead of vague defaults when space allows:
+
+| ❌ Vague | ✅ Action-oriented |
+|---|---|
+| Continuer | Voir les détails |
+| Envoyer | Publier l’initiative |
+| OK | Confirmer l’archive |
+
+Reuse established microcopy tokens for repeated actions (“Publier”, “Archiver”, “Signaler”). Keep labels short (< ~40 chars) for narrow layouts.
+
+## Microcopy checklist
+Errors: explain calmly + propose a fix (“Réessayez” / lien support). Empty states: one friendly line + concrete next step. Avoid dramatizing unless safety requires it — align with `ethical-nudge-ux`.

@@ -1,26 +1,107 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8f9fc;
+  --surface: #ffffff;
+  --warm: #fff9f4;
+  --text: #23263b;
+  --muted: #73788d;
+  --subtle: #a4a8b8;
+  --border: #ececf3;
+  --soft-pink: #fdf4f8;
+
+  --coral: #ff6b6b;
+  --orange: #ff8a4c;
+  --pink: #ff4fcb;
+  --magenta: #f42ddb;
+  --purple: #9a52ff;
+  --turquoise: #35d4d4;
+  --aqua: #18b9d8;
+  --mint: #74e3b2;
+  --sun: #ffc83d;
+
+  --gradient-hero: linear-gradient(
+    135deg,
+    #ff8a4c 0%,
+    #ff4fcb 35%,
+    #9a52ff 70%,
+    #35d4d4 100%
+  );
+  --gradient-demande: linear-gradient(
+    135deg,
+    #ffc83d 0%,
+    #ff6b6b 50%,
+    #ff4fcb 100%
+  );
+  --gradient-offre: linear-gradient(
+    135deg,
+    #74e3b2 0%,
+    #35d4d4 50%,
+    #18b9d8 100%
+  );
+  --gradient-initiative: linear-gradient(
+    135deg,
+    #f42ddb 0%,
+    #9a52ff 50%,
+    #35d4d4 100%
+  );
+  --gradient-events: linear-gradient(
+    135deg,
+    #ff8a4c 0%,
+    #ff4fcb 50%,
+    #ffc83d 100%
+  );
 }
 
 @theme inline {
   --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-surface: var(--surface);
+  --color-warm: var(--warm);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-border: var(--border);
+  --color-soft-pink: var(--soft-pink);
+  --color-coral: var(--coral);
+  --color-orange: var(--orange);
+  --color-pink: var(--pink);
+  --color-magenta: var(--magenta);
+  --color-purple: var(--purple);
+  --color-turquoise: var(--turquoise);
+  --color-aqua: var(--aqua);
+  --color-mint: var(--mint);
+  --color-sun: var(--sun);
+  --font-sans: var(--font-manrope);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-3xl: 32px;
 }
 
 body {
   background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--text);
+  font-family: var(--font-manrope), system-ui, sans-serif;
+}
+
+.gradient-hero {
+  background: var(--gradient-hero);
+}
+.gradient-demande {
+  background: var(--gradient-demande);
+}
+.gradient-offre {
+  background: var(--gradient-offre);
+}
+.gradient-initiative {
+  background: var(--gradient-initiative);
+}
+.gradient-events {
+  background: var(--gradient-events);
+}
+
+.shadow-card {
+  box-shadow: 0 8px 24px rgba(35, 38, 59, 0.05);
 }
