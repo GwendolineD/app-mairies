@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { AssetPlaceholder } from "@/components/ui/asset-placeholder";
 import { Card } from "@/components/ui/card";
+import { CategoryTag } from "@/components/ui/category-tag";
+import { GradientButton } from "@/components/ui/gradient-button";
 
 export default function ResidentAccueilPage() {
   return (
@@ -10,24 +12,15 @@ export default function ResidentAccueilPage() {
         className="rounded-3xl shadow-card"
       />
       <div className="grid grid-cols-1 gap-3">
-        <Link
-          href="/annonces/nouvelle?type=demande"
-          className="gradient-demande inline-flex items-center justify-center rounded-full px-6 py-3 text-center text-sm font-bold text-white shadow-md hover:opacity-95"
-        >
+        <GradientButton href="/annonces/nouvelle?type=demande" gradient="demande">
           Je demande une main
-        </Link>
-        <Link
-          href="/annonces/nouvelle?type=offre"
-          className="gradient-offre inline-flex items-center justify-center rounded-full px-6 py-3 text-center text-sm font-bold text-white shadow-md hover:opacity-95"
-        >
+        </GradientButton>
+        <GradientButton href="/annonces/nouvelle?type=offre" gradient="offre">
           Je propose mon aide
-        </Link>
-        <Link
-          href="/initiatives/nouvelle"
-          className="gradient-initiative inline-flex items-center justify-center rounded-full px-6 py-3 text-center text-sm font-bold text-white shadow-md hover:opacity-95"
-        >
+        </GradientButton>
+        <GradientButton href="/initiatives/nouvelle" gradient="initiative">
           Une initiative commune
-        </Link>
+        </GradientButton>
       </div>
       <FeedPreview />
     </div>
@@ -41,13 +34,13 @@ function FeedPreview() {
         <h3 className="text-xs font-semibold uppercase tracking-widest text-muted">
           Annonces récentes
         </h3>
-        <Card className="p-4 space-y-2">
-          <p className="text-sm font-semibold text-text">
+        <Card className="space-y-2 p-4">
+          <p className="text-base font-medium text-text">
             Flux personnalisé des voisin·es
           </p>
-          <p className="text-xs text-muted">
+          <p className="text-sm font-medium leading-5 text-muted">
             Retrouvez ici vos annonces communautaires et explorez{" "}
-            <Link href="/annonces" className="font-semibold text-purple">
+            <Link href="/annonces" className="font-semibold text-purple underline">
               la liste et la carte des annonces
             </Link>
             .
@@ -59,16 +52,21 @@ function FeedPreview() {
           Initiatives & événements
         </h3>
         <div className="grid gap-3">
-          <Card className="p-4 gradient-initiative bg-opacity-90 text-white">
+          <Card className="space-y-3 p-4">
+            <CategoryTag label="Initiative" className="bg-mint/10 text-mint" />
             <Link
               href="/initiatives"
-              className="font-semibold text-white drop-shadow-sm"
+              className="text-xl font-semibold leading-7 text-text hover:text-purple"
             >
               Projets civiques & coopérations
             </Link>
           </Card>
-          <Card className="p-4 gradient-events bg-opacity-95 text-white">
-            <Link href="/evenements" className="font-semibold text-white drop-shadow-sm">
+          <Card className="space-y-3 p-4">
+            <CategoryTag label="Événement" className="bg-orange/10 text-orange" />
+            <Link
+              href="/evenements"
+              className="text-xl font-semibold leading-7 text-text hover:text-purple"
+            >
               Agenda convivial
             </Link>
           </Card>

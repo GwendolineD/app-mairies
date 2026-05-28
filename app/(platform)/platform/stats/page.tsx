@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
+import { PageHeading } from "@/components/ui/page-heading";
 
 export default async function PlatformStatsPage() {
   const supabase = await createClient();
@@ -15,22 +16,22 @@ export default async function PlatformStatsPage() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold">Statistiques globales</h2>
+      <PageHeading title="Statistiques globales" />
       <div className="grid gap-3 sm:grid-cols-2">
-        <Card className="p-5 space-y-1">
+        <Card className="space-y-1 p-5">
           <p className="text-[10px] font-semibold uppercase text-muted">
             Communautés ouvertes
           </p>
-          <p className="text-3xl font-black text-purple">{communesActive ?? "—"}</p>
+          <p className="text-5xl font-bold text-purple">{communesActive ?? "—"}</p>
         </Card>
-        <Card className="p-5 space-y-1">
+        <Card className="space-y-1 p-5">
           <p className="text-[10px] font-semibold uppercase text-muted">
             Événements analytics (lifetime)
           </p>
-          <p className="text-3xl font-black text-aqua">{eventsCount ?? "—"}</p>
+          <p className="text-5xl font-bold text-aqua">{eventsCount ?? "—"}</p>
         </Card>
       </div>
-      <p className="text-xs text-muted">
+      <p className="text-sm font-medium text-muted">
         Les agrégats détaillés (parcours inscription, carte, signalements) seront reliés aux
         outils métier Vie Locale lors de la mise en ligne progressive.
       </p>

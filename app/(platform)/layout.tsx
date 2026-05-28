@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { NavLink } from "@/components/ui/nav-link";
 import { requireRole } from "@/lib/auth/session";
 
 const LINKS = [
@@ -21,17 +21,13 @@ export default async function PlatformLayout({
         <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-muted">
           Backoffice plateforme
         </p>
-        <h1 className="text-xl font-black text-text">Administration Vie Locale</h1>
+        <h1 className="text-[28px] font-bold leading-9 text-text">
+          Administration Vie Locale
+        </h1>
       </header>
       <nav className="flex flex-wrap gap-2 px-5 py-4">
         {LINKS.map((l) => (
-          <Link
-            key={l.href}
-            href={l.href}
-            className="rounded-full border border-border bg-surface px-4 py-2 text-xs font-semibold"
-          >
-            {l.label}
-          </Link>
+          <NavLink key={l.href} href={l.href} label={l.label} />
         ))}
       </nav>
       <main className="px-5 py-4">{children}</main>

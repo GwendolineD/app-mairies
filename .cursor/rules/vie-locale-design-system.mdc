@@ -1,41 +1,213 @@
 ---
-description: Vie Locale visual language — palette, typography, gradients, placeholders
-globs: ["**/*.tsx", "**/*.css"]
-alwaysApply: false
+description: Vie Locale — charte graphique complète (ADN, couleurs, typo, composants, motion, tokens)
+alwaysApply: true
 ---
 
 # Vie Locale Design System
 
-## Brand palette (canonical)
-Expose as CSS variables or Tailwind theme tokens rather than scattering literals:
-| Token intent | Hex |
-|--|--|
-| Coral | `#FF6B6B` |
-| Orange | `#FF8A4C` |
-| Pink | `#FF4FCB` |
+Référence officielle : charte graphique Vie Locale. **Ne jamais inventer de couleurs, dégradés ou styles hors de ce système.** Source de vérité code : `app/globals.css` + composants `components/ui/`.
 
-Use semantic tokens (`bg-surface`, `text-primary`) where the stack supports them so marketing hues map to stable roles.
+---
 
-## Typography
-- Primary UI font: **Manrope** (`font-family: 'Manrope', system-ui, sans-serif`).
-- Load via `next/font` when possible; subset weights actually used.
+## ADN de marque (à respecter dans chaque écran)
 
-## Gradients — category accents
-Reserve distinct gradients per content type **for badges, heroes, chips, empty states**, not arbitrary decoration:
+- **Mission** : créer du lien, encourager l'entraide et valoriser les initiatives locales pour une commune plus vivante et solidaire.
+- **Valeurs** : proximité, bienveillance, entraide, convivialité, engagement, optimisme.
+- **Ton** : chaleureux, positif, inclusif, motivant, humain — jamais froid, corporate ou agressif.
+- **Baseline logo** : « Découvrir · Partager · S'entraider ».
 
-| Kind | Gradient direction / stops (example — tune in tokens) |
-|--|--|
-| **Demande** | `linear-gradient(135deg, #FF6B6B 0%, #FF8A4C 100%)` |
-| **Offre** | `linear-gradient(135deg, #FF8A4C 0%, #FF6B6B 100%)` |
-| **Initiative** | `linear-gradient(135deg, #FF4FCB 0%, #FF6B6B 100%)` |
-| **Events** | `linear-gradient(135deg, #FF8A4C 0%, #FF4FCB 100%)` |
+L'UI doit transmettre convivialité et confiance, pas une esthétique SaaS B2B.
 
-Store as named utility classes (`gradient-demande`, etc.) instead of repeating long `background` literals.
+---
 
-## Shape & rhythm
-- **Rounded corners consistently**: cards and modals `rounded-2xl` / `16–24px`; buttons `rounded-full` or `rounded-xl` — pick one system and stick to it.
-- Maintain comfortable spacing scale (8px base) for civic, low-stress reading.
+## Couleurs — palette canonique
 
-## Placeholder assets
-- Use neutral **placeholder blocks** with fixed aspect ratio and a visible “placeholder” label or icon; do not imply real people, businesses, or venues with unlicensed photography.
-- Prefer vector or abstract patterns over realistic stock in unfinished flows.
+Utiliser **uniquement** les tokens Tailwind/CSS définis dans `globals.css`. Interdit : hex arbitraires (`#333`, `blue-500`, etc.).
+
+### Couleurs principales
+
+| Token Tailwind | Hex charte | Usage |
+|---|---|---|
+| `coral` | `#FF6B6B` | Alertes douces, demandes, accents chaleureux |
+| `orange` | `#FFB347` | Événements, badges « coup de main » |
+| `pink` | `#FF7FCB` | Accents féminins, tags don |
+| `magenta` | `#F120D2` | Accents vifs, dégradés initiative |
+| `purple` | `#9A52FF` | Navigation active, hero, CTA principal |
+| `turquoise` | `#35D1D1` | Offres, fraîcheur, liens secondaires |
+| `aqua` | `#1BB9D9` | Complément offre / eau |
+| `mint` | `#74E3B2` | Initiatives, succès, positif |
+| `sun` | `#FFC93D` | Highlights, événements, joie |
+
+> Le code mappe parfois des hex légèrement arrondis (ex. `#FF8A4C` pour orange) — **ne pas les modifier ad hoc dans les composants** ; utiliser le token (`bg-orange`, `text-coral`…).
+
+### Neutres
+
+| Token | Hex | Usage |
+|---|---|---|
+| `background` | `#FBFBFC` | Fond app |
+| `surface` | `#FFFFFF` | Cartes, modales, panneaux |
+| `warm` | `#F5F5F6` | Fond alternatif doux, hover secondaire |
+| `border` | `#ECECF3` | Séparateurs, contours |
+| `text` | `#252630` | Texte principal |
+| `muted` | `#7D7E8D` | Texte secondaire |
+| `subtle` | `#A4A5B8` | Labels, hints, meta |
+| `soft-pink` | `#FDF4F8` | État actif nav, fond tags |
+
+---
+
+## Dégradés — usage sémantique strict
+
+Classes utilitaires existantes : `gradient-hero`, `gradient-demande`, `gradient-offre`, `gradient-initiative`, `gradient-events`.
+
+| Type | Intention charte | Quand l'utiliser |
+|---|---|---|
+| **Hero / Principal** | Rose → Violet | CTA principal, headers, branding |
+| **Demande** | Rose → Orange | Annonces « je cherche de l'aide » |
+| **Offre** | Bleu → Turquoise | Annonces « je propose » |
+| **Initiative** | Vert → Menthe | Projets collectifs, initiatives |
+| **Événements** | Orange → Rouge/Coral | Agenda, événements communaux |
+
+**Règles :**
+- Réserver les dégradés aux badges, heroes, chips, barres de progression, empty states — **pas** comme fond de page entier sauf hero/marketing.
+- Préférer `<Button variant="primary">` ou `<GradientButton gradient="demande">` plutôt que recopier un `linear-gradient`.
+- Ne pas mélanger deux dégradés catégoriels sur le même bloc.
+
+---
+
+## Typographie — Manrope
+
+Chargée via `next/font` dans `app/layout.tsx`. Poids disponibles : Regular, Medium, SemiBold, Bold.
+
+| Niveau | Poids | Taille / Interligne | Classe Tailwind typique |
+|---|---|---|---|
+| H1 | Bold (700) | 48px / 56px | `text-5xl font-bold leading-[56px]` |
+| H2 | Bold (700) | 28px / 36px | `text-[28px] font-bold leading-9` |
+| H3 | SemiBold (600) | 20px / 28px | `text-xl font-semibold leading-7` |
+| Body | Medium (500) | 16px / 24px | `text-base font-medium leading-6` |
+| Caption | Medium (500) | 14px / 20px | `text-sm font-medium leading-5` |
+
+- Corps de texte par défaut : `text-base font-medium text-text`.
+- Meta / dates / compteurs : `text-sm text-muted`.
+- Hints discrets : `text-subtle`.
+
+---
+
+## Composants UI — patterns imposés
+
+### Boutons (`components/ui/button.tsx`, `gradient-button.tsx`)
+
+| Variante | Style | Usage |
+|---|---|---|
+| **Primary** | `gradient-hero`, texte blanc, `rounded-full` | Action principale (1 par écran) |
+| **Secondary** | `bg-surface border border-border`, texte `text-text` | Actions secondaires |
+| **Ghost / Tertiary** | Texte seul, hover `bg-warm` | Liens d'action discrets ; souligner si lien inline |
+| **Danger** | `bg-coral text-white` | Suppression, signalement |
+
+- Toujours `rounded-full` pour les boutons d'action.
+- Padding standard : `px-5 py-2.5` (Button) ou `px-6 py-3` (GradientButton).
+- État disabled : `opacity-50`, pas de couleur grise générique.
+
+### Cartes (`components/ui/card.tsx`)
+
+```tsx
+<Card className="p-6">…</Card>
+```
+
+- `rounded-3xl` (32px), `bg-surface`, `shadow-card`, `border border-border/60`.
+- Espacement interne : multiples de 8 (16, 24, 32).
+
+### Tags / badges (`components/ui/category-tag.tsx`)
+
+- Forme : `rounded-full`, fond pastel (`bg-soft-pink` ou teinte légère de la catégorie).
+- Texte : `text-xs font-semibold`, couleur sémantique (`text-orange` pour « COUP DE MAIN », `text-pink` pour « DON »…).
+- Ne pas utiliser de badges carrés ou à coins vifs.
+
+### Navigation
+
+- **État actif** : fond `bg-soft-pink`, icône/texte en couleur brand (`text-purple` ou couleur de section).
+- **Inactif** : `text-muted`, hover `text-text`.
+- Sidebar desktop : liste verticale ; mobile : bottom nav (`components/features/bottom-nav.tsx`).
+
+### Ombres
+
+| Token | Valeur | Usage |
+|---|---|---|
+| `shadow-card` | `0 8px 24px rgba(37,38,48,0.05)` | Cartes, list items |
+| Élévation | `0 12px 32px rgba(37,38,48,0.10)` | Modales, popovers, FAB |
+
+Ne pas empiler plusieurs ombres sur le même élément.
+
+---
+
+## Formes & espacement
+
+### Border radius (tokens `@theme`)
+
+| Token | px | Usage |
+|---|---|---|
+| `rounded-sm` | 8 | Chips compacts, inputs |
+| `rounded-md` | 12 | Inputs, petits blocs |
+| `rounded-lg` | 16 | Sous-cartes |
+| `rounded-xl` | 20 | Panneaux |
+| `rounded-2xl` | 24 | Images, placeholders |
+| `rounded-3xl` | 32 | Cartes principales |
+| `rounded-full` | — | Boutons, tags, avatars |
+
+### Grille 8px
+
+Espacements autorisés : `1, 2, 3, 4, 5, 6, 8, 10, 12, 16` (Tailwind) = 4, 8, 12, 16, 20, 24, 32, 40, 48, 64 px.
+
+---
+
+## Illustrations & assets
+
+- Style cible : **« 3D Warm Community »** — personnages expressifs, couleurs douces, formes arrondies.
+- Éviter : photos stock réalistes, gestes agressifs, esthétique corporate.
+- En attendant les assets finaux : utiliser `<AssetPlaceholder>` (`components/ui/asset-placeholder.tsx`) — bordure dashed, fond `warm`, label explicite.
+- Logo : icône pin + maisons + cœur, dégradé rose→violet→bleu. Taille min web 24px, favicon 16px. Ne pas déformer ni recoloriser.
+
+---
+
+## Motion & interactions
+
+- Durée : **100–300 ms**, easing doux (`transition`, `ease-out`).
+- Hover boutons : légère opacité (`hover:opacity-95`) ou scale subtil (`hover:scale-[1.02]`).
+- Icônes cœur / favoris : micro-bounce optionnel (keyframes courts).
+- Barres de progression : dégradé sémantique, animation fluide.
+- Pas d'animations longues, rebonds excessifs ou parallax.
+
+---
+
+## Anti-patterns — ne jamais faire
+
+```tsx
+// ❌ Couleur hors palette
+<div className="bg-blue-500 text-gray-700" />
+
+// ❌ Dégradé arbitraire
+<div style={{ background: "linear-gradient(to right, #000, #fff)" }} />
+
+// ❌ Bouton carré ou sans variante du design system
+<button className="bg-purple-600 rounded px-4">OK</button>
+
+// ❌ Ombre Tailwind générique non tokenisée sur une carte
+<div className="shadow-lg shadow-black/20" />
+
+// ✅ Correct
+<Card className="p-6">
+  <CategoryTag label="COUP DE MAIN" className="bg-orange/10 text-orange" />
+  <Button variant="primary">Publier</Button>
+</Card>
+```
+
+---
+
+## Checklist avant de livrer une UI
+
+1. Couleurs = tokens `globals.css` uniquement ?
+2. Typo = Manrope avec la bonne hiérarchie ?
+3. Boutons = composants `Button` / `GradientButton` ?
+4. Cartes = `Card` + `shadow-card` + `rounded-3xl` ?
+5. Dégradé = sémantique (demande/offre/initiative/events/hero) ?
+6. Ton visuel = chaleureux, inclusif, pas corporate ?
+7. Assets manquants = `AssetPlaceholder`, pas de stock photo ?

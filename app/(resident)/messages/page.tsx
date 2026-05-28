@@ -1,6 +1,8 @@
 import { requireActiveMembership } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
+import { AssetPlaceholder } from "@/components/ui/asset-placeholder";
 import { Card } from "@/components/ui/card";
+import { PageHeading } from "@/components/ui/page-heading";
 
 export default async function MessagesListePage() {
   const ctx = await requireActiveMembership();
@@ -16,25 +18,26 @@ export default async function MessagesListePage() {
 
   return (
     <div className="flex flex-col gap-4 px-4 py-6">
-      <h1 className="text-xl font-bold text-text">Messages</h1>
-      <p className="text-xs text-muted">
-        Liste des conversations de votre commune active — la messagerie complète arrive
-        bientôt, avec prévisualisations et pièces jointes douces lorsque vos contraintes
-        RGPD permettront l&apos;hébergement.
-      </p>
+      <PageHeading
+        title="Messages"
+        subtitle="Liste des conversations de votre commune active — la messagerie complète arrive bientôt."
+      />
       <section className="flex flex-col gap-3">
         {list.length === 0 ? (
-          <Card className="p-5 text-sm leading-relaxed text-muted">
-            Aucune conversation pour l&apos;instant : contactez un·e voisin·e depuis une
-            annonce ou une initiative dans les prochaines versions.
+          <Card className="space-y-4 p-5">
+            <AssetPlaceholder description="Aucune conversation — contactez un·e voisin·e depuis une annonce ou une initiative" />
+            <p className="text-sm font-medium leading-5 text-muted">
+              Aucune conversation pour l&apos;instant : contactez un·e voisin·e depuis une
+              annonce ou une initiative dans les prochaines versions.
+            </p>
           </Card>
         ) : (
           list.map((conv: { id: string; title: string | null }) => (
             <Card key={conv.id} className="p-4">
-              <p className="font-semibold text-text">
+              <p className="text-xl font-semibold leading-7 text-text">
                 {conv.title ?? "Conversation sans titre encore"}
               </p>
-              <p className="text-xs text-subtle mt-2">Réf&nbsp;: {conv.id}</p>
+              <p className="mt-2 text-xs font-medium text-subtle">Réf : {conv.id}</p>
             </Card>
           ))
         )}

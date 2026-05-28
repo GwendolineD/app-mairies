@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
+import { PageHeading } from "@/components/ui/page-heading";
 
 export default async function PlatformLeadsPage() {
   const supabase = await createClient();
@@ -13,23 +14,24 @@ export default async function PlatformLeadsPage() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold">Leads pré-inscription</h2>
-      <p className="text-xs text-muted">
-        Intérêt manifesté avant activation complète d&apos;une commune : contactez vos
-        partenaires locaux lorsque la charge le permet.
-      </p>
+      <PageHeading
+        title="Leads pré-inscription"
+        subtitle="Intérêt manifesté avant activation complète d'une commune : contactez vos partenaires locaux lorsque la charge le permet."
+      />
       <div className="space-y-2">
         {rows.length === 0 ? (
-          <Card className="p-6 text-sm text-muted">Aucune demande récente.</Card>
+          <Card className="p-6 text-sm font-medium text-muted">Aucune demande récente.</Card>
         ) : (
           rows.map((lead) => (
             <Card key={lead.id} className="space-y-2 p-4 text-sm">
               <p className="font-semibold text-text">{lead.email}</p>
-              <p className="text-xs text-muted">
+              <p className="text-xs font-medium text-muted">
                 INSEE {lead.insee_code ?? "—"} · commune #{lead.commune_id?.slice(0, 8) ?? "?"}
               </p>
               {lead.message ? (
-                <p className="rounded-2xl bg-warm p-3 text-xs text-muted">{lead.message}</p>
+                <p className="rounded-2xl bg-warm p-3 text-xs font-medium text-muted">
+                  {lead.message}
+                </p>
               ) : null}
             </Card>
           ))

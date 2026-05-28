@@ -8,6 +8,7 @@ import { searchAddresses, searchMunicipalities } from "@/lib/ban/client";
 import { signUp, submitCommuneInterest } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { PageHeading } from "@/components/ui/page-heading";
 import type { Commune } from "@/lib/types";
 
 type LookupResponse = { commune: Commune | null; error?: string };
@@ -76,11 +77,11 @@ export function InscriptionFlow() {
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-8 px-4">
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-text">Inscription</h1>
-        <p className="mt-2 text-sm text-muted">
-          Choisissez votre commune, puis complétez votre profil lorsque le service
-          est ouvert dans votre commune.
-        </p>
+        <PageHeading
+          centered
+          title="Inscription"
+          subtitle="Choisissez votre commune, puis complétez votre profil lorsque le service est ouvert dans votre commune."
+        />
       </div>
 
       {step === "commune" && (
@@ -258,13 +259,14 @@ function SignupWithAddressSection(props: {
         </Button>
       </form>
 
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        className="mt-4 w-full text-xs font-medium underline"
         onClick={() => props.onRestart()}
-        className="mt-4 w-full text-center text-xs font-medium text-muted underline"
       >
         Changer de commune
-      </button>
+      </Button>
     </Card>
   );
 }
@@ -328,12 +330,13 @@ function OptionalInterestLink() {
 
 function InterestBack(props: { onBack(): void }) {
   return (
-    <button
+    <Button
       type="button"
-      className="mt-4 text-center text-sm text-muted underline"
+      variant="ghost"
+      className="mt-4 w-full text-sm font-medium underline"
       onClick={props.onBack}
     >
       Choisir une autre commune
-    </button>
+    </Button>
   );
 }

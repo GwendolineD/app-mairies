@@ -5,6 +5,7 @@ import { BanAutocomplete } from "@/components/features/ban-autocomplete";
 import type { BanFeature } from "@/lib/ban/client";
 import { searchMunicipalities } from "@/lib/ban/client";
 import { submitCommuneInterest } from "@/lib/actions/auth";
+import { AssetPlaceholder } from "@/components/ui/asset-placeholder";
 import { Button } from "@/components/ui/button";
 
 export function InteretCommuneClient() {
@@ -45,22 +46,20 @@ export function InteretCommuneClient() {
               className="mt-1 w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm outline-none focus:border-purple"
             />
           </label>
-          <Button type="submit" className="w-full rounded-full py-3">
+          <Button type="submit" className="w-full py-3">
             Enregistrer mon intérêt
           </Button>
           {typeof state?.error === "string" ? (
-            <p className="text-xs text-coral">{state.error}</p>
+            <p className="text-xs font-medium text-coral">{state.error}</p>
           ) : null}
           {state && "success" in state && state.success ? (
             <p className="text-xs font-medium text-mint">
-              Merci&nbsp;! Nous transmettons aux équipes concernées.
+              Merci ! Nous transmettons aux équipes concernées.
             </p>
           ) : null}
         </form>
       ) : (
-        <p className="rounded-2xl bg-warm px-3 py-2 text-xs text-muted">
-          Choisissez une suggestion pour afficher la suite du formulaire.
-        </p>
+        <AssetPlaceholder description="Choisissez une suggestion pour afficher la suite du formulaire" />
       )}
     </div>
   );

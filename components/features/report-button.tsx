@@ -18,19 +18,19 @@ export function ReportButton({ contextType, contextId }: Props) {
       <Button
         type="button"
         variant="ghost"
-        className="rounded-full text-xs uppercase tracking-wide"
+        className="text-xs uppercase tracking-wide"
         onClick={() => setOpen((v) => !v)}
       >
         Signaler
       </Button>
       {open ? (
         <div className="fixed inset-0 z-40 flex items-end justify-center bg-text/35 p-4 sm:items-center">
-          <Card className="w-full max-w-md space-y-3 p-6">
+          <Card className="w-full max-w-md space-y-3 p-6 shadow-elevated">
             <div>
-              <h2 className="text-lg font-bold text-text">
+              <h2 className="text-[28px] font-bold leading-9 text-text">
                 Signalement bienveillant
               </h2>
-              <p className="text-xs leading-relaxed text-muted">
+              <p className="text-sm font-medium leading-5 text-muted">
                 Expliquez le problème de manière constructive. Une modératrice examine
                 chaque dossier lorsque la commune le permet.
               </p>
@@ -47,13 +47,13 @@ export function ReportButton({ contextType, contextId }: Props) {
                 placeholder="Détaillez précisément le motif (minimum 10 caractères)."
               />
               <div className="flex gap-2">
-                <Button type="submit" className="flex-1 rounded-full py-2 text-sm">
+                <Button type="submit" className="flex-1 py-2 text-sm">
                   Envoyer
                 </Button>
                 <Button
                   type="button"
                   variant="secondary"
-                  className="rounded-full py-2 text-sm"
+                  className="py-2 text-sm"
                   onClick={() => setOpen(false)}
                 >
                   Annuler

@@ -1,5 +1,6 @@
 import Image from "next/image";
-import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { PageHeading } from "@/components/ui/page-heading";
 
 export default function LandingPage() {
   return (
@@ -14,32 +15,24 @@ export default function LandingPage() {
             priority
             className="h-auto w-44 max-w-full object-contain sm:w-48"
           />
-          <h1 className="text-balance text-3xl font-extrabold leading-tight text-text">
-            La vie locale de votre quartier, bienveillante et utile au quotidien.
-          </h1>
-          <p className="max-w-md text-pretty text-sm leading-relaxed text-muted">
-            Rejoignez votre commune lorsqu&apos;elle est disponible : annonces
-            voisin·es, initiatives solidaires et évènements tout près de chez
-            vous.
-          </p>
+          <PageHeading
+            size="hero"
+            centered
+            title="La vie locale de votre quartier, bienveillante et utile au quotidien."
+            subtitle="Rejoignez votre commune lorsqu'elle est disponible : annonces voisin·es, initiatives solidaires et évènements tout près de chez vous."
+          />
         </div>
 
         <div className="flex flex-col gap-3 pt-4">
-          <Link
-            href="/inscription"
-            className="gradient-hero inline-flex h-12 w-full items-center justify-center rounded-full text-sm font-bold text-white shadow-md transition hover:opacity-95"
-          >
+          <Button href="/inscription" className="h-12 w-full">
             Créer un compte
-          </Link>
-          <Link
-            href="/connexion"
-            className="inline-flex h-12 w-full items-center justify-center rounded-full border border-border bg-surface text-sm font-semibold text-text shadow-card transition hover:bg-warm"
-          >
+          </Button>
+          <Button href="/connexion" variant="secondary" className="h-12 w-full shadow-card">
             J&apos;ai déjà un compte
-          </Link>
+          </Button>
         </div>
 
-        <p className="text-center text-xs text-subtle">
+        <p className="text-center text-xs font-medium text-subtle">
           Une expérience mobile d&apos;abord — chaleureuse, simple, locale.
         </p>
       </main>

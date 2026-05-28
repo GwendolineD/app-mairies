@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireActiveMembership } from "@/lib/auth/session";
 import { AssetPlaceholder } from "@/components/ui/asset-placeholder";
+import { PageHeading } from "@/components/ui/page-heading";
 import { CarteAnnoncesMap } from "@/components/features/carte-preview-map";
 
 export default async function AnnoncesCartePage() {
@@ -16,16 +17,13 @@ export default async function AnnoncesCartePage() {
 
   return (
     <div className="flex flex-col gap-4 px-4 py-6">
-      <Link href="/annonces" className="text-xs font-semibold text-purple">
+      <Link href="/annonces" className="text-xs font-semibold text-purple underline">
         ← Retour liste
       </Link>
-      <h1 className="text-xl font-bold text-text">Carte communautaire</h1>
-      <p className="text-xs leading-relaxed text-muted">
-        Implémentation provisoire : la vue détaillée utilisera ensuite le composant dédié
-        <strong className="text-text"> MapViewCommune </strong>pour géolocaliser chaque épingle
-        d&apos;annonce (clustering, filtres par catégories&nbsp;: à brancher lorsque vos assets
-        seront disponibles).
-      </p>
+      <PageHeading
+        title="Carte communautaire"
+        subtitle="Implémentation provisoire : la vue détaillée utilisera ensuite le composant dédié MapViewCommune pour géolocaliser chaque épingle d'annonce."
+      />
       <AssetPlaceholder
         aspectRatio="2/5"
         className="rounded-3xl"

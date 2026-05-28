@@ -1,24 +1,24 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8f9fc;
+  --background: #fbfbfc;
   --surface: #ffffff;
-  --warm: #fff9f4;
-  --text: #23263b;
-  --muted: #73788d;
-  --subtle: #a4a8b8;
+  --warm: #f5f5f6;
+  --text: #252630;
+  --muted: #7d7e8d;
+  --subtle: #a4a5b8;
   --border: #ececf3;
   --soft-pink: #fdf4f8;
 
   --coral: #ff6b6b;
-  --orange: #ff8a4c;
-  --pink: #ff4fcb;
-  --magenta: #f42ddb;
+  --orange: #ffb347;
+  --pink: #ff7fcb;
+  --magenta: #f120d2;
   --purple: #9a52ff;
-  --turquoise: #35d4d4;
-  --aqua: #18b9d8;
+  --turquoise: #35d1d1;
+  --aqua: #1bb9d9;
   --mint: #74e3b2;
-  --sun: #ffc83d;
+  --sun: #ffc93d;
 
   --gradient-hero: linear-gradient(
     135deg,
@@ -103,5 +103,9 @@ body {
 }
 
 .shadow-card {
-  box-shadow: 0 8px 24px rgba(35, 38, 59, 0.05);
+  box-shadow: 0 8px 24px rgba(37, 38, 48, 0.05);
+}
+
+.shadow-elevated {
+  box-shadow: 0 12px 32px rgba(37, 38, 48, 0.1);
 }

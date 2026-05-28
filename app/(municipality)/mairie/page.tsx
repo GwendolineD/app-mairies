@@ -11,7 +11,7 @@ export default async function MairieAccueilPage() {
 
   if (!communeId) {
     return (
-      <p className="text-sm text-muted">
+      <p className="text-base font-medium text-muted">
         Définissez une commune dans votre espace équipe Vie Locale avant de poursuivre.
       </p>
     );
@@ -37,30 +37,30 @@ export default async function MairieAccueilPage() {
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-3">
-        <Card className="p-4 space-y-1">
-          <p className="text-[10px] font-semibold text-muted uppercase">Annonces</p>
-          <p className="text-3xl font-black text-purple">{announces ?? 0}</p>
+        <Card className="space-y-1 p-4">
+          <p className="text-[10px] font-semibold uppercase text-muted">Annonces</p>
+          <p className="text-5xl font-bold text-purple">{announces ?? 0}</p>
         </Card>
-        <Card className="p-4 space-y-1">
-          <p className="text-[10px] font-semibold text-muted uppercase">Alertes ouvertes</p>
-          <p className="text-3xl font-black text-coral">{reportsPending ?? 0}</p>
+        <Card className="space-y-1 p-4">
+          <p className="text-[10px] font-semibold uppercase text-muted">Alertes ouvertes</p>
+          <p className="text-5xl font-bold text-coral">{reportsPending ?? 0}</p>
         </Card>
-        <Card className="p-4 space-y-1">
-          <p className="text-[10px] font-semibold text-muted uppercase">
+        <Card className="space-y-1 p-4">
+          <p className="text-[10px] font-semibold uppercase text-muted">
             Resident·es actifs
           </p>
-          <p className="text-3xl font-black text-text">{residents ?? 0}</p>
+          <p className="text-5xl font-bold text-text">{residents ?? 0}</p>
         </Card>
       </div>
       <Card className="space-y-2 p-6">
-        <h2 className="text-lg font-bold">Pilotage équipe</h2>
-        <p className="text-sm leading-relaxed text-muted">
+        <h2 className="text-[28px] font-bold leading-9 text-text">Pilotage équipe</h2>
+        <p className="text-base font-medium leading-6 text-muted">
           Gardez le sourire même dans vos modérations&nbsp;: vos voisin·es repèrent vite quand une
           collectivité se montre précise et empathique simultanément.
         </p>
         <Link
           href="/mairie/signalements"
-          className="inline-flex text-sm font-semibold text-purple"
+          className="inline-flex text-sm font-semibold text-purple underline"
         >
           Voir les signalements →
         </Link>

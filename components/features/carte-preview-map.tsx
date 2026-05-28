@@ -1,12 +1,13 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { AssetPlaceholder } from "@/components/ui/asset-placeholder";
 
 const DynamicMap = dynamic(
   () => import("@/components/features/map-view").then((m) => m.MapViewCommune),
   {
     loading: () => (
-      <p className="text-xs text-muted">Chargement de la carte...</p>
+      <AssetPlaceholder description="Chargement de la carte communautaire…" aspectRatio="4/3" />
     ),
     ssr: false,
   },

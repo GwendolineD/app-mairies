@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import { signIn } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { PageHeading } from "@/components/ui/page-heading";
 
 export function ConnexionForm() {
   const [state, formAction] = useActionState(
@@ -14,10 +15,12 @@ export function ConnexionForm() {
 
   return (
     <div className="mx-auto w-full max-w-md px-4">
-      <h1 className="mb-1 text-center text-2xl font-bold text-text">Connexion</h1>
-      <p className="mb-6 text-center text-sm text-muted">
-        Accédez à votre commune active.
-      </p>
+      <PageHeading
+        centered
+        className="mb-6"
+        title="Connexion"
+        subtitle="Accédez à votre commune active."
+      />
       <Card className="p-6">
         <form action={formAction} className="flex flex-col gap-4">
           <div>
@@ -47,18 +50,18 @@ export function ConnexionForm() {
             />
           </div>
           {state?.error ? (
-            <p className="rounded-xl bg-soft-pink px-3 py-2 text-xs text-text" role="alert">
+            <p className="rounded-xl bg-soft-pink px-3 py-2 text-xs font-medium text-text" role="alert">
               {state.error}
             </p>
           ) : null}
-          <Button type="submit" className="w-full rounded-full py-3">
+          <Button type="submit" className="w-full py-3">
             Se connecter
           </Button>
         </form>
       </Card>
-      <p className="mt-6 text-center text-sm text-muted">
+      <p className="mt-6 text-center text-sm font-medium text-muted">
         Pas encore inscrit·e ?{" "}
-        <Link href="/inscription" className="font-semibold text-purple">
+        <Link href="/inscription" className="font-semibold text-purple underline">
           Créer un compte
         </Link>
       </p>

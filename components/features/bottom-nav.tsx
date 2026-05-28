@@ -35,8 +35,10 @@ export function BottomNav() {
             key={href}
             href={href}
             className={cn(
-              "flex flex-col items-center gap-0.5 px-2 py-1 text-[10px] font-semibold",
-              active ? "text-purple" : "text-muted hover:text-text",
+              "flex flex-col items-center gap-0.5 rounded-xl px-2 py-1 text-[10px] font-semibold transition",
+              active
+                ? "bg-soft-pink text-purple"
+                : "text-muted hover:text-text",
             )}
           >
             <Icon className="size-6" aria-hidden />

@@ -17,7 +17,7 @@ export default async function ResidentRootLayout({
     "Vie locale";
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-background text-text pb-28">
+    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-background pb-28 text-text">
       <header className="sticky top-0 z-30 border-b border-border/80 bg-surface/90 px-4 py-4 backdrop-blur">
         <div className="flex flex-col gap-3">
           <div className="flex items-start justify-between gap-2">
@@ -25,17 +25,12 @@ export default async function ResidentRootLayout({
               <p className="text-[10px] font-semibold uppercase tracking-widest text-muted">
                 Espace résident·e
               </p>
-              <h2 className="text-lg font-extrabold leading-tight text-text">
-                {communeName}
-              </h2>
+              <h2 className="text-[28px] font-bold leading-9 text-text">{communeName}</h2>
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              <Link
-                href="/profil"
-                className="rounded-full bg-warm px-3 py-1.5 text-xs font-semibold text-text"
-              >
+              <Button href="/profil" variant="secondary" className="px-3 py-1.5 text-xs">
                 Profil
-              </Link>
+              </Button>
               <form action={signOut}>
                 <Button type="submit" variant="ghost" className="px-3 py-1.5 text-xs">
                   Sortir

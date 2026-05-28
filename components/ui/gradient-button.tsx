@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { cn } from "@/lib/utils/cn";
 import type { ButtonHTMLAttributes } from "react";
 
@@ -5,6 +6,7 @@ type Gradient = "hero" | "demande" | "offre" | "initiative" | "events";
 
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   gradient?: Gradient;
+  href?: string;
 };
 
 const gradientClass: Record<Gradient, string> = {
@@ -15,19 +17,24 @@ const gradientClass: Record<Gradient, string> = {
   events: "gradient-events",
 };
 
+const baseClass =
+  "inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-white shadow-md transition hover:opacity-95 disabled:opacity-50";
+
 export function GradientButton({
   gradient = "hero",
   className,
+  href,
   ...props
 }: Props) {
-  return (
-    <button
-      className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-white shadow-md transition hover:opacity-95 disabled:opacity-50",
-        gradientClass[gradient],
-        className,
-      )}
-      {...props}
-    />
-  );
+  const classes = cn(baseClass, gradientClass[gradient], className);
+
+  if (href) {
+    return (
+      <Link href={href} className={classes}>
+        {props.children}
+      </Link>
+    );
+  }
+
+  return <button className={classes} {...props} />;
 }

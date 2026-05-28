@@ -6,8 +6,10 @@ import {
 } from "@/lib/actions/initiatives";
 import { requireActiveMembership } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
+import { AssetPlaceholder } from "@/components/ui/asset-placeholder";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { CategoryTag } from "@/components/ui/category-tag";
 import { ReportButton } from "@/components/features/report-button";
 import type { InitiativeRecord } from "@/lib/types";
 
@@ -34,27 +36,32 @@ export default async function InitiativeDetailPage(props: {
 
   return (
     <div className="flex flex-col gap-5 px-4 py-6">
-      <Link href="/initiatives" className="text-xs font-semibold text-purple">
+      <Link href="/initiatives" className="text-xs font-semibold text-purple underline">
         ← Toutes les initiatives
       </Link>
 
       <Card className="space-y-5 p-6">
         <div className="flex flex-wrap justify-between gap-3">
           <div>
-            <p className="text-[10px] font-semibold uppercase text-muted">Initiative locale</p>
-            <h1 className="text-2xl font-bold">{initiative.title}</h1>
-            <p className="text-xs text-muted">Statut communautaire : {initiative.status}</p>
+            <CategoryTag label="Initiative" className="bg-mint/10 text-mint" />
+            <h1 className="mt-2 text-[28px] font-bold leading-9 text-text">
+              {initiative.title}
+            </h1>
+            <p className="text-sm font-medium text-muted">
+              Statut communautaire : {initiative.status}
+            </p>
           </div>
           <ReportButton contextType="initiative" contextId={initiative.id} />
         </div>
 
-        <p className="whitespace-pre-line text-sm text-muted">{initiative.description}</p>
+        <p className="whitespace-pre-line text-base font-medium leading-6 text-muted">
+          {initiative.description}
+        </p>
 
-        <div className="rounded-3xl bg-warm px-4 py-3 text-xs">
-          Temporalité décrite comme «&nbsp;<strong>{initiative.date_mode}</strong>&nbsp;» –
-          précisez le calendrier réel depuis les messages directs lorsque la messagerie
-          collaborative sera disponible.
-        </div>
+        <AssetPlaceholder
+          description={`Temporalité « ${initiative.date_mode} » — calendrier collaboratif à venir`}
+          className="rounded-3xl"
+        />
 
         {isAuthor ? (
           <AuthorActions initiativeId={initiative.id} />
@@ -69,13 +76,13 @@ function AuthorActions({ initiativeId }: { initiativeId: string }) {
     <div className="flex flex-wrap gap-2">
       <form action={submitArchiveInitiative}>
         <input type="hidden" name="id" value={initiativeId} />
-        <Button type="submit" variant="secondary" className="rounded-full text-xs">
+        <Button type="submit" variant="secondary" className="text-xs">
           Archiver
         </Button>
       </form>
       <form action={submitDeleteInitiative}>
         <input type="hidden" name="id" value={initiativeId} />
-        <Button type="submit" variant="danger" className="rounded-full text-xs">
+        <Button type="submit" variant="danger" className="text-xs">
           Supprimer
         </Button>
       </form>

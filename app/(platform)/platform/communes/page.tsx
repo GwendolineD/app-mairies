@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { applyCommuneSubscription } from "@/lib/actions/platform";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { PageHeading } from "@/components/ui/page-heading";
 import type { SubscriptionStatus } from "@/lib/types";
 
 export default async function PlatformCommunesPage() {
@@ -15,14 +16,14 @@ export default async function PlatformCommunesPage() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold">Communes</h2>
+      <PageHeading title="Communes" />
       <div className="space-y-3">
         {rows.map((c) => (
           <Card key={c.id} className="space-y-3 p-4">
             <div className="flex flex-wrap justify-between gap-4">
               <div>
-                <p className="font-bold">{c.name}</p>
-                <p className="text-xs text-muted">
+                <p className="text-xl font-semibold leading-7 text-text">{c.name}</p>
+                <p className="text-xs font-medium text-muted">
                   INSEE {c.insee_code} · {c.subscription_status}
                 </p>
               </div>
@@ -34,7 +35,7 @@ export default async function PlatformCommunesPage() {
                     <Button
                       type="submit"
                       variant={c.subscription_status === status ? "primary" : "secondary"}
-                      className="rounded-full px-3 py-1 text-[10px]"
+                      className="px-3 py-1 text-[10px]"
                     >
                       {status}
                     </Button>

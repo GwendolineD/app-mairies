@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { PageHeading } from "@/components/ui/page-heading";
 
 export default async function PlatformAdminHomePage() {
   const supabase = await createClient();
@@ -8,8 +9,8 @@ export default async function PlatformAdminHomePage() {
 
   return (
     <div className="space-y-3">
-      <h2 className="text-xl font-bold">Vue plateforme</h2>
-      <p className="text-sm text-muted">
+      <PageHeading title="Vue plateforme" />
+      <p className="text-base font-medium leading-6 text-muted">
         Aperçu rapide avant d&apos;ouvrir les écrans spécialisés : communes suivies ({communeCount}{" "}
         fiches en base), commune pilote Les Authieux et extensions futures.
       </p>

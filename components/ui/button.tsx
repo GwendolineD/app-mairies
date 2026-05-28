@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { cn } from "@/lib/utils/cn";
 import type { ButtonHTMLAttributes } from "react";
 
@@ -5,6 +6,7 @@ type Variant = "primary" | "secondary" | "ghost" | "danger";
 
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: Variant;
+  href?: string;
 };
 
 const variants: Record<Variant, string> = {
@@ -16,19 +18,24 @@ const variants: Record<Variant, string> = {
   danger: "bg-coral text-white hover:opacity-90 disabled:opacity-50",
 };
 
+const baseClass =
+  "inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition";
+
 export function Button({
   className,
   variant = "primary",
+  href,
   ...props
 }: Props) {
-  return (
-    <button
-      className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition",
-        variants[variant],
-        className,
-      )}
-      {...props}
-    />
-  );
+  const classes = cn(baseClass, variants[variant], className);
+
+  if (href) {
+    return (
+      <Link href={href} className={classes}>
+        {props.children}
+      </Link>
+    );
+  }
+
+  return <button className={classes} {...props} />;
 }
