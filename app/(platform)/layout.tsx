@@ -1,19 +1,14 @@
 import { NavLink } from "@/components/ui/nav-link";
 import { requireRole } from "@/lib/auth/session";
-
-const LINKS = [
-  { href: "/platform/admin", label: "Vue d'ensemble" },
-  { href: "/platform/communes", label: "Communes pilotées" },
-  { href: "/platform/leads", label: "Leads pré-inscription" },
-  { href: "/platform/stats", label: "Statistiques" },
-];
+import { PLATFORM_NAV } from "@/lib/constants/routes";
+import { USER_ROLES } from "@/lib/constants/roles";
 
 export default async function PlatformLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  await requireRole(["platform_admin"]);
+  await requireRole([USER_ROLES.platformAdmin]);
 
   return (
     <div className="min-h-dvh bg-background pb-12">
@@ -26,7 +21,7 @@ export default async function PlatformLayout({
         </h1>
       </header>
       <nav className="flex flex-wrap gap-2 px-5 py-4">
-        {LINKS.map((l) => (
+        {PLATFORM_NAV.map((l) => (
           <NavLink key={l.href} href={l.href} label={l.label} />
         ))}
       </nav>

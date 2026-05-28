@@ -2,9 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
+import { formatDisplayName } from "@/lib/utils/display-name";
 import { signupSchema } from "@/lib/validations/schemas";
-import { formatDisplayName } from "@/lib/types";
 
 export async function signUp(formData: FormData) {
   const raw = {
@@ -72,7 +73,7 @@ export async function signUp(formData: FormData) {
     status: "active",
   });
 
-  redirect("/accueil");
+  redirect(ROUTES.accueil);
 }
 
 export async function signIn(formData: FormData) {
@@ -83,13 +84,13 @@ export async function signIn(formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { error: error.message };
 
-  redirect("/accueil");
+  redirect(ROUTES.accueil);
 }
 
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect("/");
+  redirect(ROUTES.home);
 }
 
 export async function submitCommuneInterest(formData: FormData) {
@@ -127,7 +128,7 @@ export async function submitCommuneInterest(formData: FormData) {
 
   if (error) return { error: error.message };
 
-  revalidatePath("/inscription");
+  revalidatePath(ROUTES.inscription.root);
   return { success: true };
 }
 
@@ -136,7 +137,7 @@ export async function switchCommune(communeId: string): Promise<void> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/connexion");
+  if (!user) redirect(ROUTES.connexion);
 
   const { data: membership } = await supabase
     .from("memberships")
@@ -150,7 +151,7 @@ export async function switchCommune(communeId: string): Promise<void> {
       .from("profiles")
       .update({ active_commune_id: communeId })
       .eq("user_id", user.id);
-    redirect("/suspendu");
+    redirect(ROUTES.suspendu);
   }
 
   if (membership?.status !== "active") {
@@ -163,5 +164,5 @@ export async function switchCommune(communeId: string): Promise<void> {
     .eq("user_id", user.id);
 
   revalidatePath("/", "layout");
-  redirect("/accueil");
+  redirect(ROUTES.accueil);
 }

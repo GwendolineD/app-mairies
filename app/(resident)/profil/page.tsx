@@ -1,8 +1,10 @@
 import { requireActiveMembership } from "@/lib/auth/session";
 import { createNeighborInvite } from "@/lib/actions/messages";
 import { createClient } from "@/lib/supabase/server";
+import { ROUTES } from "@/lib/constants/routes";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/form-field";
 import { PageHeading } from "@/components/ui/page-heading";
 
 export default async function ProfilPage() {
@@ -51,11 +53,10 @@ export default async function ProfilPage() {
           Inviter un·e voisin·e proche par e-mail
         </h2>
         <form action={createNeighborInvite} className="space-y-2">
-          <input
+          <Input
             type="email"
             name="email"
             required
-            className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm outline-none focus:border-purple"
             placeholder="amie-du-quartier@mail.fr"
           />
           <Button type="submit" className="w-full">
@@ -71,7 +72,7 @@ export default async function ProfilPage() {
           active est disponible ; la page d&apos;inscription permet de compléter la
           démarche si besoin.
         </p>
-        <Button href="/inscription" variant="secondary" className="w-full">
+        <Button href={ROUTES.inscription.root} variant="secondary" className="w-full">
           Parcourir l&apos;inscription multi-commune
         </Button>
       </Card>

@@ -2,8 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { assertAuthorMembership } from "@/lib/auth/ownership";
 import { requireActiveMembership } from "@/lib/auth/session";
+import { ROUTES } from "@/lib/constants/routes";
+import { INITIATIVE_STATUS } from "@/lib/constants/statuses";
 import { createClient } from "@/lib/supabase/server";
+import { parseFormId } from "@/lib/utils/form-data";
 import { initiativeSchema } from "@/lib/validations/schemas";
 
 export async function createInitiative(formData: FormData): Promise<void> {
@@ -40,63 +44,65 @@ export async function createInitiative(formData: FormData): Promise<void> {
     date_mode: parsed.data.dateMode,
     single_starts_at: singleStartsAt,
     single_ends_at: singleEndsAt,
-    status: "active",
+    status: INITIATIVE_STATUS.active,
   });
 
   if (error) return;
-  revalidatePath("/initiatives");
-  redirect("/initiatives");
+  revalidatePath(ROUTES.initiatives.list);
+  redirect(ROUTES.initiatives.list);
 }
 
-export async function updateInitiativeStatus(id: string, status: "active" | "archived") {
+export async function updateInitiativeStatus(
+  id: string,
+  status: (typeof INITIATIVE_STATUS)[keyof typeof INITIATIVE_STATUS],
+) {
   const ctx = await requireActiveMembership();
   const supabase = await createClient();
 
-  const { data: row } = await supabase
+  const auth = await assertAuthorMembership(
+    supabase,
+    "initiatives",
+    id,
+    ctx.activeMembership!.id,
+  );
+  if (auth.error) return auth;
+
+  const { error } = await supabase
     .from("initiatives")
-    .select("author_membership_id")
-    .eq("id", id)
-    .single();
-
-  if (row?.author_membership_id !== ctx.activeMembership!.id) {
-    return { error: "Non autorisé" };
-  }
-
-  const { error } = await supabase.from("initiatives").update({ status }).eq("id", id);
+    .update({ status })
+    .eq("id", id);
   if (error) return { error: error.message };
-  revalidatePath("/initiatives");
-  revalidatePath(`/initiatives/${id}`);
+  revalidatePath(ROUTES.initiatives.list);
+  revalidatePath(ROUTES.initiatives.detail(id));
   return { success: true };
 }
 
 export async function submitDeleteInitiative(formData: FormData): Promise<void> {
-  const id = formData.get("id");
-  if (typeof id !== "string" || !id) return;
+  const id = parseFormId(formData);
+  if (!id) return;
   await deleteInitiative(id);
 }
 
 export async function submitArchiveInitiative(formData: FormData): Promise<void> {
-  const id = formData.get("id");
-  if (typeof id !== "string" || !id) return;
-  await updateInitiativeStatus(id, "archived");
+  const id = parseFormId(formData);
+  if (!id) return;
+  await updateInitiativeStatus(id, INITIATIVE_STATUS.archived);
 }
 
 export async function deleteInitiative(id: string) {
   const ctx = await requireActiveMembership();
   const supabase = await createClient();
 
-  const { data: row } = await supabase
-    .from("initiatives")
-    .select("author_membership_id")
-    .eq("id", id)
-    .single();
-
-  if (row?.author_membership_id !== ctx.activeMembership!.id) {
-    return { error: "Non autorisé" };
-  }
+  const auth = await assertAuthorMembership(
+    supabase,
+    "initiatives",
+    id,
+    ctx.activeMembership!.id,
+  );
+  if (auth.error) return auth;
 
   const { error } = await supabase.from("initiatives").delete().eq("id", id);
   if (error) return { error: error.message };
-  revalidatePath("/initiatives");
+  revalidatePath(ROUTES.initiatives.list);
   return { success: true };
 }

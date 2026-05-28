@@ -1,6 +1,7 @@
-import Link from "next/link";
 import { requireActiveMembership } from "@/lib/auth/session";
+import { ROUTES } from "@/lib/constants/routes";
 import { AssetPlaceholder } from "@/components/ui/asset-placeholder";
+import { BackLink } from "@/components/ui/back-link";
 import { PageHeading } from "@/components/ui/page-heading";
 import { CarteAnnoncesMap } from "@/components/features/carte-preview-map";
 
@@ -17,9 +18,7 @@ export default async function AnnoncesCartePage() {
 
   return (
     <div className="flex flex-col gap-4 px-4 py-6">
-      <Link href="/annonces" className="text-xs font-semibold text-purple underline">
-        ← Retour liste
-      </Link>
+      <BackLink href={ROUTES.annonces.list}>← Retour liste</BackLink>
       <PageHeading
         title="Carte communautaire"
         subtitle="Implémentation provisoire : la vue détaillée utilisera ensuite le composant dédié MapViewCommune pour géolocaliser chaque épingle d'annonce."

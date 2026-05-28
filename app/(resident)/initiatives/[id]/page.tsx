@@ -1,15 +1,16 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   submitArchiveInitiative,
   submitDeleteInitiative,
 } from "@/lib/actions/initiatives";
 import { requireActiveMembership } from "@/lib/auth/session";
+import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
 import { AssetPlaceholder } from "@/components/ui/asset-placeholder";
+import { BackLink } from "@/components/ui/back-link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { CategoryTag } from "@/components/ui/category-tag";
+import { ContentTypeTag } from "@/components/ui/content-type-tag";
 import { ReportButton } from "@/components/features/report-button";
 import type { InitiativeRecord } from "@/lib/types";
 
@@ -36,14 +37,12 @@ export default async function InitiativeDetailPage(props: {
 
   return (
     <div className="flex flex-col gap-5 px-4 py-6">
-      <Link href="/initiatives" className="text-xs font-semibold text-purple underline">
-        ← Toutes les initiatives
-      </Link>
+      <BackLink href={ROUTES.initiatives.list}>← Toutes les initiatives</BackLink>
 
       <Card className="space-y-5 p-6">
         <div className="flex flex-wrap justify-between gap-3">
           <div>
-            <CategoryTag label="Initiative" className="bg-mint/10 text-mint" />
+            <ContentTypeTag type="initiative" />
             <h1 className="mt-2 text-[28px] font-bold leading-9 text-text">
               {initiative.title}
             </h1>

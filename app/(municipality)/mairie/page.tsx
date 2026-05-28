@@ -1,10 +1,16 @@
 import Link from "next/link";
 import { requireRole } from "@/lib/auth/session";
+import { ROUTES } from "@/lib/constants/routes";
+import { USER_ROLES } from "@/lib/constants/roles";
+import {
+  MEMBERSHIP_STATUS,
+  REPORT_STATUS,
+} from "@/lib/constants/statuses";
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 
 export default async function MairieAccueilPage() {
-  const ctx = await requireRole(["municipality_staff"]);
+  const ctx = await requireRole([USER_ROLES.municipalityStaff]);
 
   const supabase = await createClient();
   const communeId = ctx.profile.active_commune_id;
@@ -26,13 +32,13 @@ export default async function MairieAccueilPage() {
     .from("reports")
     .select("id", { count: "exact", head: true })
     .eq("commune_id", communeId)
-    .eq("status", "pending");
+    .eq("status", REPORT_STATUS.pending);
 
   const { count: residents } = await supabase
     .from("memberships")
     .select("id", { count: "exact", head: true })
     .eq("commune_id", communeId)
-    .eq("status", "active");
+    .eq("status", MEMBERSHIP_STATUS.active);
 
   return (
     <div className="space-y-4">
@@ -59,7 +65,7 @@ export default async function MairieAccueilPage() {
           collectivité se montre précise et empathique simultanément.
         </p>
         <Link
-          href="/mairie/signalements"
+          href={ROUTES.mairie.signalements}
           className="inline-flex text-sm font-semibold text-purple underline"
         >
           Voir les signalements →

@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { signIn } from "@/lib/actions/auth";
+import { ROUTES } from "@/lib/constants/routes";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { FormField, Input } from "@/components/ui/form-field";
 import { PageHeading } from "@/components/ui/page-heading";
 
 export function ConnexionForm() {
@@ -23,32 +25,24 @@ export function ConnexionForm() {
       />
       <Card className="p-6">
         <form action={formAction} className="flex flex-col gap-4">
-          <div>
-            <label htmlFor="email" className="mb-1 block text-sm font-medium text-text">
-              E-mail
-            </label>
-            <input
+          <FormField label="E-mail">
+            <Input
               id="email"
               name="email"
               type="email"
               required
               autoComplete="email"
-              className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm outline-none focus:border-purple"
             />
-          </div>
-          <div>
-            <label htmlFor="password" className="mb-1 block text-sm font-medium text-text">
-              Mot de passe
-            </label>
-            <input
+          </FormField>
+          <FormField label="Mot de passe">
+            <Input
               id="password"
               name="password"
               type="password"
               required
               autoComplete="current-password"
-              className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm outline-none focus:border-purple"
             />
-          </div>
+          </FormField>
           {state?.error ? (
             <p className="rounded-xl bg-soft-pink px-3 py-2 text-xs font-medium text-text" role="alert">
               {state.error}
@@ -61,7 +55,7 @@ export function ConnexionForm() {
       </Card>
       <p className="mt-6 text-center text-sm font-medium text-muted">
         Pas encore inscrit·e ?{" "}
-        <Link href="/inscription" className="font-semibold text-purple underline">
+        <Link href={ROUTES.inscription.root} className="font-semibold text-purple underline">
           Créer un compte
         </Link>
       </p>

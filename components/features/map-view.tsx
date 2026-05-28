@@ -9,6 +9,10 @@ import {
   TileLayer,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import {
+  LEAFLET_MARKER_ICONS,
+  MAP_TILE_URL,
+} from "@/lib/constants/assets";
 
 type Props = {
   latitude: number;
@@ -19,7 +23,7 @@ type Props = {
   className?: string;
 };
 
-/** Dynamic import this component from server pages (`ssr: false`) — Leaflet requiert le navigateur. */
+/** Dynamic import this component from server pages (`ssr: false`) — Leaflet requires the browser. */
 export function MapViewCommune({
   latitude,
   longitude,
@@ -30,14 +34,7 @@ export function MapViewCommune({
   useEffect(() => {
     const proto = L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown };
     delete proto._getIconUrl;
-    L.Icon.Default.mergeOptions({
-      iconRetinaUrl:
-        "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-      iconUrl:
-        "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-      shadowUrl:
-        "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-    });
+    L.Icon.Default.mergeOptions(LEAFLET_MARKER_ICONS);
   }, []);
 
   const position: [number, number] = [latitude, longitude];
@@ -50,7 +47,7 @@ export function MapViewCommune({
       scrollWheelZoom
       style={{ minHeight: 280 }}
     >
-      <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
+      <TileLayer url={MAP_TILE_URL} />
       <Marker position={position}>
         <Popup>{communeName}</Popup>
       </Marker>

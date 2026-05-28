@@ -1,0 +1,34 @@
+---
+description: Performance, maintainability, scalability — cross-cutting engineering defaults
+alwaysApply: true
+---
+
+# Vie Locale Quality
+
+Cross-cutting defaults for a maintainable, scalable, performant app. Structure and naming → `architecture.mdc`. Data access and queries → `data-supabase.mdc`. Tenant scope → `vie-locale-multi-tenant.mdc`.
+
+## Performance
+
+- Identify **hot paths** (requests, loops, renders) before micro-optimizing elsewhere.
+- Prefer `next/image` for raster assets; declare dimensions or use stable aspect ratios for CLS.
+- Split heavy client bundles (maps, editors) with dynamic import when they are not needed for first paint.
+- Lists: pagination or infinite scroll with bounded page sizes — never fetch unbounded “all rows” for UI tables.
+- Debounce search; bound client and server memory.
+
+## Maintainability
+
+- Preserve strong typing (`Database` types, inferred query results); avoid `any` for domain models — see also `architecture.mdc`.
+- Centralize URL builders, validators, and feature flags rather than scattering magic strings. Shared constants and helpers → `architecture.mdc`; colors and asset paths → `vie-locale-design-system.mdc`.
+- Small, cohesive modules with explicit interfaces at boundaries.
+
+## Scalability
+
+- Mutations must be idempotent where the domain allows (safe retries).
+- After mutations: invalidate or revalidate caches (`revalidatePath`, `revalidateTag`, router refresh) so multi-user views converge.
+- Authoritative state: DB > cache > client — no inconsistent duplicates without a sync story.
+- Data growth: index and paginate; call out when a table or payload could grow large.
+- Multi-tenant cache keys and scope → `vie-locale-multi-tenant.mdc`.
+
+## Next.js caching
+
+- Choose `fetch` / `cache` / `revalidate` semantics intentionally; document when data must be dynamic (`no-store`, `dynamic = 'force-dynamic'`).

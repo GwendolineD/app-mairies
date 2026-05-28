@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAuth, requireActiveMembership } from "@/lib/auth/session";
+import { ROUTES } from "@/lib/constants/routes";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { appealSchema, reportSchema } from "@/lib/validations/schemas";
 
@@ -46,5 +47,5 @@ export async function submitSuspensionAppeal(formData: FormData): Promise<void> 
     properties: { message: parsed.data.message },
   });
 
-  revalidatePath("/suspendu");
+  revalidatePath(ROUTES.suspendu);
 }

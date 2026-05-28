@@ -1,6 +1,8 @@
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { PageHeading } from "@/components/ui/page-heading";
+import { ASSETS } from "@/lib/constants/assets";
+import { ROUTES } from "@/lib/constants/routes";
 
 export default function LandingPage() {
   return (
@@ -8,7 +10,7 @@ export default function LandingPage() {
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-8 px-5 py-10 sm:max-w-lg">
         <div className="flex flex-col items-center gap-4 text-center">
           <Image
-            src="/logo-vertical.png"
+            src={ASSETS.logoVertical}
             alt="Vie Locale — Découvrir, Partager, S'entraider"
             width={480}
             height={640}
@@ -24,10 +26,10 @@ export default function LandingPage() {
         </div>
 
         <div className="flex flex-col gap-3 pt-4">
-          <Button href="/inscription" className="h-12 w-full">
+          <Button href={ROUTES.inscription.root} className="h-12 w-full">
             Créer un compte
           </Button>
-          <Button href="/connexion" variant="secondary" className="h-12 w-full shadow-card">
+          <Button href={ROUTES.connexion} variant="secondary" className="h-12 w-full shadow-card">
             J&apos;ai déjà un compte
           </Button>
         </div>

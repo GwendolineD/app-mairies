@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/session";
+import { ROUTES } from "@/lib/constants/routes";
+import { USER_ROLES } from "@/lib/constants/roles";
 import { createClient } from "@/lib/supabase/server";
 import type { SubscriptionStatus } from "@/lib/types";
 
@@ -9,7 +11,7 @@ export async function setCommuneSubscription(
   communeId: string,
   status: SubscriptionStatus,
 ): Promise<void> {
-  await requireRole(["platform_admin"]);
+  await requireRole([USER_ROLES.platformAdmin]);
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -18,7 +20,7 @@ export async function setCommuneSubscription(
     .eq("id", communeId);
 
   if (error) return;
-  revalidatePath("/platform/communes");
+  revalidatePath(ROUTES.platform.communes);
 }
 
 export async function applyCommuneSubscription(formData: FormData): Promise<void> {
@@ -32,7 +34,7 @@ export async function applyCommuneSubscription(formData: FormData): Promise<void
 }
 
 export async function softDeleteAnnouncementByAdmin(id: string) {
-  await requireRole(["platform_admin"]);
+  await requireRole([USER_ROLES.platformAdmin]);
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -41,6 +43,6 @@ export async function softDeleteAnnouncementByAdmin(id: string) {
     .eq("id", id);
 
   if (error) return { error: error.message };
-  revalidatePath("/platform/admin");
+  revalidatePath(ROUTES.platform.admin);
   return { success: true };
 }

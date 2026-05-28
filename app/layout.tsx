@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Manrope } from "next/font/google";
+import { THEME_COLORS } from "@/lib/constants/theme";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#9A52FF",
+  themeColor: THEME_COLORS.purple,
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,

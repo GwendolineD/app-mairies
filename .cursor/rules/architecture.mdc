@@ -1,0 +1,62 @@
+---
+description: Next.js App Router — structure, RSC by default, logic in lib/, form draft persistence (localStorage)
+globs: "{app/**/*.{ts,tsx},lib/**/*.{ts,tsx},components/**/*.{ts,tsx}}"
+alwaysApply: false
+---
+
+# Architecture
+
+Performance, maintainability, and scalability defaults → `vie-locale-quality.mdc`. Destructive UI flows → `vie-locale-destructive-actions.mdc`.
+
+## Target stack
+
+- **Next.js** (App Router only — no Pages Router for new code).
+- **TypeScript** strict (`"strict": true`).
+- **Supabase** for PostgreSQL + Auth (clients in `lib/supabase/`).
+- **Tailwind CSS** + **shadcn/ui** for UI.
+- **One** date library only: **Dayjs** (no date-fns in parallel).
+
+## Deployment
+
+- Target: **VPS** (Coolify, Traefik, nginx, etc.). Environment variables and secrets on the server; HTTPS behind a reverse proxy per project infra.
+
+## Rules
+
+- **Server Components** by default. `'use client'` only when needed (interactivity, browser hooks, etc.).
+- Co-locate feature code with routes or feature folders; avoid cross-feature imports unless shared is explicitly stabilized.
+- Business logic, data orchestration, and integrations → **`lib/`** (or dedicated modules), not in component leaf files.
+- Reusable helpers → **`lib/[domain]/`** or **`lib/utils/`**; shared constants → **`lib/constants/`**. Do not copy-paste the same function or magic string across features — feature-only values may co-locate with the feature.
+- Colors and asset paths → `vie-locale-design-system.mdc` (tokens + `lib/constants/assets.ts`).
+- Imports via **`@/`** alias — no deep `../../` chains.
+- **Async/await**; no `.then()` chaining for new code.
+- No `any` — use `unknown` or type correctly.
+
+## Forms — local draft persistence
+
+- For **long** forms or forms in a **modal**: persist fields in **`localStorage`** with a **stable key** per form / context (project prefix + identifier).
+- **Rehydrate** on mount; **remove** the entry after successful save (or explicit “discard draft” action).
+- Do **not** store passwords, secrets, or highly sensitive data.
+
+## Naming conventions
+
+### Files
+
+- **Components**: `kebab-case.tsx` (`user-card.tsx`, `bottom-nav.tsx`)
+- **Pages**: `page.tsx` (Next.js convention)
+- **Server Actions**: `[feature].actions.ts` (`projects.actions.ts`)
+- **Types**: `[name].types.ts`
+- **Utils**: `[name].utils.ts`
+
+### Code
+
+- **React components**: PascalCase (`UserCard`, `BottomNav`)
+- **Functions**: camelCase (`getProjectById`, `createProject`)
+- **Constants**: SCREAMING_SNAKE_CASE (`MAX_FILE_SIZE`, `DEFAULT_PAGE_SIZE`)
+- **Types/Interfaces**: PascalCase (`Project`, `UserProfile`)
+
+## API & server logic
+
+- **Mutations**: prefer **Server Actions** for forms and internal operations; **route handlers** (`app/api/`) for webhooks, signed uploads, third-party integrations, or explicit REST contracts.
+- **Validate all inputs** on the server (e.g. **Zod**) — never trust client data for authorization or data scope.
+- Business logic and access rules in server functions / **`lib/`** modules, not in components.
+- **Supabase Edge Functions**: **off by default**. If the need is real, require **explicit approval** with justification (cost, latency, maintenance).

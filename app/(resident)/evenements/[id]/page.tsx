@@ -1,12 +1,14 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { submitArchiveEvent, submitDeleteEvent } from "@/lib/actions/events";
 import { requireActiveMembership } from "@/lib/auth/session";
+import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
+import { formatEventDetail } from "@/lib/utils/date";
 import { AssetPlaceholder } from "@/components/ui/asset-placeholder";
+import { BackLink } from "@/components/ui/back-link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { CategoryTag } from "@/components/ui/category-tag";
+import { ContentTypeTag } from "@/components/ui/content-type-tag";
 import { ReportButton } from "@/components/features/report-button";
 import type { AgendaEventRecord } from "@/lib/types";
 
@@ -30,13 +32,11 @@ export default async function EvenementDetailPage(props: {
 
   return (
     <div className="flex flex-col gap-5 px-4 py-6">
-      <Link href="/evenements" className="text-xs font-semibold text-purple underline">
-        ← Liste
-      </Link>
+      <BackLink href={ROUTES.evenements.list}>← Liste</BackLink>
       <Card className="space-y-4 p-6">
         <div className="flex flex-wrap justify-between gap-4">
           <div>
-            <CategoryTag label="Événement" className="bg-orange/10 text-orange" />
+            <ContentTypeTag type="event" />
             <h1 className="mt-2 text-[28px] font-bold leading-9 text-text">{event.title}</h1>
           </div>
           <ReportButton contextType="event" contextId={event.id} />
@@ -47,14 +47,7 @@ export default async function EvenementDetailPage(props: {
           className="rounded-2xl"
         />
         <p className="rounded-2xl bg-warm px-4 py-3 text-sm font-medium text-muted">
-          {new Intl.DateTimeFormat("fr-FR", {
-            dateStyle: "full",
-            timeStyle: "short",
-          }).format(new Date(event.starts_at))}
-          {" — "}
-          {new Intl.DateTimeFormat("fr-FR", { timeStyle: "short" }).format(
-            new Date(event.ends_at),
-          )}
+          {formatEventDetail(event.starts_at, event.ends_at)}
         </p>
         <p className="whitespace-pre-line text-base font-medium leading-6 text-muted">
           {event.description}

@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { AssetPlaceholder } from "@/components/ui/asset-placeholder";
 import { Card } from "@/components/ui/card";
-import { CategoryTag } from "@/components/ui/category-tag";
+import { ContentTypeTag } from "@/components/ui/content-type-tag";
 import { GradientButton } from "@/components/ui/gradient-button";
+import { ROUTES } from "@/lib/constants/routes";
 
 export default function ResidentAccueilPage() {
   return (
@@ -12,13 +13,13 @@ export default function ResidentAccueilPage() {
         className="rounded-3xl shadow-card"
       />
       <div className="grid grid-cols-1 gap-3">
-        <GradientButton href="/annonces/nouvelle?type=demande" gradient="demande">
+        <GradientButton href={ROUTES.annonces.new("demande")} gradient="demande">
           Je demande une main
         </GradientButton>
-        <GradientButton href="/annonces/nouvelle?type=offre" gradient="offre">
+        <GradientButton href={ROUTES.annonces.new("offre")} gradient="offre">
           Je propose mon aide
         </GradientButton>
-        <GradientButton href="/initiatives/nouvelle" gradient="initiative">
+        <GradientButton href={ROUTES.initiatives.new} gradient="initiative">
           Une initiative commune
         </GradientButton>
       </div>
@@ -40,7 +41,7 @@ function FeedPreview() {
           </p>
           <p className="text-sm font-medium leading-5 text-muted">
             Retrouvez ici vos annonces communautaires et explorez{" "}
-            <Link href="/annonces" className="font-semibold text-purple underline">
+            <Link href={ROUTES.annonces.list} className="font-semibold text-purple underline">
               la liste et la carte des annonces
             </Link>
             .
@@ -53,18 +54,18 @@ function FeedPreview() {
         </h3>
         <div className="grid gap-3">
           <Card className="space-y-3 p-4">
-            <CategoryTag label="Initiative" className="bg-mint/10 text-mint" />
+            <ContentTypeTag type="initiative" />
             <Link
-              href="/initiatives"
+              href={ROUTES.initiatives.list}
               className="text-xl font-semibold leading-7 text-text hover:text-purple"
             >
               Projets civiques & coopérations
             </Link>
           </Card>
           <Card className="space-y-3 p-4">
-            <CategoryTag label="Événement" className="bg-orange/10 text-orange" />
+            <ContentTypeTag type="event" />
             <Link
-              href="/evenements"
+              href={ROUTES.evenements.list}
               className="text-xl font-semibold leading-7 text-text hover:text-purple"
             >
               Agenda convivial

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ANNOUNCEMENT_CATEGORIES } from "@/lib/constants/announcement-categories";
+import { ANNOUNCEMENT_TYPE_SLUGS } from "@/lib/constants/announcement-types";
 
 const categorySlugs = ANNOUNCEMENT_CATEGORIES.map((c) => c.slug) as [
   string,
@@ -20,7 +21,7 @@ export const signupSchema = z.object({
 });
 
 export const announcementSchema = z.object({
-  type: z.enum(["demande", "offre"]),
+  type: z.enum(ANNOUNCEMENT_TYPE_SLUGS),
   categorySlug: z.enum(categorySlugs),
   title: z.string().min(3).max(120),
   description: z.string().max(2000).optional(),

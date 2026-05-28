@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { requireActiveMembership } from "@/lib/auth/session";
+import { ROUTES } from "@/lib/constants/routes";
+import { ANNOUNCEMENT_STATUS } from "@/lib/constants/statuses";
 import { createClient } from "@/lib/supabase/server";
 import { AnnouncementTypeTag } from "@/components/ui/announcement-type-tag";
 import { Button } from "@/components/ui/button";
@@ -17,7 +19,7 @@ export default async function AnnoncesListePage() {
     .from("announcements")
     .select("*")
     .eq("commune_id", ctx.activeMembership!.commune_id)
-    .in("status", ["ouverte", "pourvue"])
+    .in("status", [ANNOUNCEMENT_STATUS.ouverte, ANNOUNCEMENT_STATUS.pourvue])
     .order("created_at", { ascending: false });
 
   const announcements = (data ?? []) as Announcement[];
@@ -29,11 +31,11 @@ export default async function AnnoncesListePage() {
           title="Annonces"
           subtitle="Demandes et offres proches de votre adresse communautaire."
         />
-        <Button href="/annonces/nouvelle" className="px-4 py-2 text-xs whitespace-nowrap">
+        <Button href={ROUTES.annonces.new()} className="px-4 py-2 text-xs whitespace-nowrap">
           Ajouter une annonce
         </Button>
       </header>
-      <Button href="/annonces/carte" variant="secondary" className="w-full shadow-card">
+      <Button href={ROUTES.annonces.map} variant="secondary" className="w-full shadow-card">
         Voir la carte
       </Button>
       <section className="space-y-3">
@@ -43,7 +45,7 @@ export default async function AnnoncesListePage() {
           </Card>
         ) : (
           announcements.map((a) => (
-            <Link href={`/annonces/${a.id}`} key={a.id}>
+            <Link href={ROUTES.annonces.detail(a.id)} key={a.id}>
               <Card className="space-y-2 p-5 transition hover:border-purple/45">
                 <div className="flex flex-wrap items-center gap-2">
                   <AnnouncementTypeTag type={a.type} />

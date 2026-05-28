@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { formFieldClassName } from "@/components/ui/form-field";
 import { cn } from "@/lib/utils/cn";
 import type { BanFeature } from "@/lib/ban/client";
 
@@ -53,7 +54,7 @@ export function BanAutocomplete({
         onChange={(e) => handleChange(e.target.value)}
         onFocus={() => suggestions.length > 0 && setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
-        className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm outline-none focus:border-purple"
+        className={formFieldClassName}
       />
       {open && (
         <ul className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-xl border border-border bg-surface shadow-card">

@@ -7,6 +7,7 @@ import { searchMunicipalities } from "@/lib/ban/client";
 import { submitCommuneInterest } from "@/lib/actions/auth";
 import { AssetPlaceholder } from "@/components/ui/asset-placeholder";
 import { Button } from "@/components/ui/button";
+import { FormField, Input, Textarea } from "@/components/ui/form-field";
 
 export function InteretCommuneClient() {
   const [feature, setFeature] = useState<BanFeature | null>(null);
@@ -29,23 +30,12 @@ export function InteretCommuneClient() {
       {feature ? (
         <form action={action} className="space-y-3">
           <input type="hidden" name="inseeCode" value={feature.citycode} />
-          <label className="text-sm font-medium text-text">
-            E-mail pour être recontacté·e
-            <input
-              name="email"
-              type="email"
-              required
-              className="mt-1 w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm outline-none focus:border-purple"
-            />
-          </label>
-          <label className="text-sm font-medium text-text">
-            Message (optionnel)
-            <textarea
-              name="message"
-              rows={3}
-              className="mt-1 w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm outline-none focus:border-purple"
-            />
-          </label>
+          <FormField label="E-mail pour être recontacté·e">
+            <Input name="email" type="email" required />
+          </FormField>
+          <FormField label="Message (optionnel)">
+            <Textarea name="message" rows={3} />
+          </FormField>
           <Button type="submit" className="w-full py-3">
             Enregistrer mon intérêt
           </Button>

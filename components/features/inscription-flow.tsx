@@ -9,6 +9,9 @@ import { signUp, submitCommuneInterest } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
+import { formFieldClassName } from "@/components/ui/form-field";
+import { ROUTES } from "@/lib/constants/routes";
+import { cn } from "@/lib/utils/cn";
 import type { Commune } from "@/lib/types";
 
 type LookupResponse = { commune: Commune | null; error?: string };
@@ -133,7 +136,7 @@ export function InscriptionFlow() {
                 name="email"
                 type="email"
                 required
-                className="mt-1 w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm outline-none focus:border-purple"
+                className={cn("mt-1", formFieldClassName)}
                 placeholder="vous@domaine.fr"
               />
             </label>
@@ -142,7 +145,7 @@ export function InscriptionFlow() {
               <textarea
                 name="message"
                 rows={3}
-                className="mt-1 w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm outline-none focus:border-purple"
+                className={cn("mt-1", formFieldClassName)}
               />
             </label>
             {interestState?.error ? (
@@ -311,7 +314,7 @@ function FormField(props: {
         type={type}
         required={required}
         autoComplete={autoComplete}
-        className="mt-1 w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm outline-none focus:border-purple"
+        className={cn("mt-1", formFieldClassName)}
       />
     </label>
   );
@@ -321,7 +324,7 @@ function OptionalInterestLink() {
   return (
     <p className="mt-6 text-center text-xs text-muted">
       Vous ne voyez pas la bonne commune ? {""}
-      <Link href="/inscription/interet" className="font-semibold text-purple">
+      <Link href={ROUTES.inscription.interet} className="font-semibold text-purple">
         Déclarer un intérêt
       </Link>
     </p>

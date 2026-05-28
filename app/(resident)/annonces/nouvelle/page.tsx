@@ -1,23 +1,30 @@
-import Link from "next/link";
 import { createAnnouncement } from "@/lib/actions/announcements";
+import {
+  ANNOUNCEMENT_TYPES,
+  isAnnouncementType,
+  type AnnouncementType,
+} from "@/lib/constants/announcement-types";
+import { ANNOUNCEMENT_CATEGORIES } from "@/lib/constants/announcement-categories";
+import { ROUTES } from "@/lib/constants/routes";
 import { AssetPlaceholder } from "@/components/ui/asset-placeholder";
+import { BackLink } from "@/components/ui/back-link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { FormField, Input, Select, Textarea } from "@/components/ui/form-field";
 import { PageHeading } from "@/components/ui/page-heading";
-import { ANNOUNCEMENT_CATEGORIES } from "@/lib/constants/announcement-categories";
 
 export default async function NouvelleAnnoncePage(props: {
   searchParams?: Promise<{ type?: string }>;
 }) {
   const sp = (await props.searchParams) ?? {};
-  const presetType =
-    sp.type === "offre" || sp.type === "demande" ? sp.type : "demande";
+  const rawType = sp.type ?? "";
+  const presetType: AnnouncementType = isAnnouncementType(rawType)
+    ? rawType
+    : "demande";
 
   return (
     <div className="px-4 py-6">
-      <Link href="/annonces" className="text-xs font-semibold text-purple underline">
-        ← Retour liste
-      </Link>
+      <BackLink href={ROUTES.annonces.list}>← Retour liste</BackLink>
       <PageHeading
         className="mt-3"
         title="Nouvelle annonce"
@@ -30,71 +37,54 @@ export default async function NouvelleAnnoncePage(props: {
           className="rounded-2xl"
         />
         <form action={createAnnouncement} className="flex flex-col gap-3">
-          <label className="text-sm font-medium text-text">
-            Type
-            <select
-              name="type"
-              defaultValue={presetType}
-              className="mt-1 w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm outline-none focus:border-purple"
-            >
-              <option value="demande">Demande</option>
-              <option value="offre">Offre</option>
-            </select>
-          </label>
+          <FormField label="Type">
+            <Select name="type" defaultValue={presetType}>
+              {ANNOUNCEMENT_TYPES.map((type) => (
+                <option key={type.slug} value={type.slug}>
+                  {type.label}
+                </option>
+              ))}
+            </Select>
+          </FormField>
 
-          <label className="text-sm font-medium text-text">
-            Catégorie
-            <select
-              name="categorySlug"
-              className="mt-1 w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm outline-none focus:border-purple"
-            >
+          <FormField label="Catégorie">
+            <Select name="categorySlug">
               {ANNOUNCEMENT_CATEGORIES.map((cat) => (
                 <option key={cat.slug} value={cat.slug}>
                   {cat.label}
                 </option>
               ))}
-            </select>
-          </label>
+            </Select>
+          </FormField>
 
-          <label className="text-sm font-medium text-text">
-            Titre
-            <input
+          <FormField label="Titre">
+            <Input
               name="title"
               required
               minLength={3}
-              className="mt-1 w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm outline-none focus:border-purple"
               placeholder="Court et chaleureux"
             />
-          </label>
+          </FormField>
 
-          <label className="text-sm font-medium text-text">
-            Description (optionnel)
-            <textarea
+          <FormField label="Description (optionnel)">
+            <Textarea
               name="description"
               rows={5}
-              className="mt-1 w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm outline-none focus:border-purple"
               placeholder="Horaires, durée estimée…"
             />
-          </label>
+          </FormField>
 
-          <label className="text-sm font-medium text-text">
-            Date souhaitée (optionnel)
-            <input
-              name="targetDate"
-              type="date"
-              className="mt-1 w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm outline-none focus:border-purple"
-            />
-          </label>
+          <FormField label="Date souhaitée (optionnel)">
+            <Input name="targetDate" type="date" />
+          </FormField>
 
-          <label className="text-sm font-medium text-text">
-            Photo principale · URL accessible (optionnel)
-            <input
+          <FormField label="Photo principale · URL accessible (optionnel)">
+            <Input
               type="url"
               name="photoUrl"
-              className="mt-1 w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm outline-none focus:border-purple"
               placeholder="https://"
             />
-          </label>
+          </FormField>
 
           <Button type="submit" className="mt-2 w-full py-3">
             Publier mon annonce bienveillante

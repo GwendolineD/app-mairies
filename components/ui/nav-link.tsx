@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
+import { isActivePath } from "@/lib/utils/routes";
 
 type Props = {
   href: string;
@@ -12,9 +13,7 @@ type Props = {
 
 export function NavLink({ href, label, exact = false }: Props) {
   const pathname = usePathname();
-  const active = exact
-    ? pathname === href
-    : pathname === href || pathname.startsWith(`${href}/`);
+  const active = isActivePath(pathname, href, exact);
 
   return (
     <Link

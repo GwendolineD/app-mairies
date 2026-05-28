@@ -1,4 +1,6 @@
 import { redirect } from "next/navigation";
+import { ROUTES } from "@/lib/constants/routes";
+import { STAFF_ROLES, type StaffRole } from "@/lib/constants/roles";
 import { createClient } from "@/lib/supabase/server";
 import type { Membership, Profile } from "@/lib/types";
 
@@ -57,7 +59,7 @@ export async function getSessionContext(): Promise<SessionContext | null> {
   };
 }
 
-export async function requireAuth(redirectTo = "/connexion") {
+export async function requireAuth(redirectTo = ROUTES.connexion) {
   const ctx = await getSessionContext();
   if (!ctx) redirect(redirectTo);
   return ctx;
@@ -66,20 +68,20 @@ export async function requireAuth(redirectTo = "/connexion") {
 export async function requireActiveMembership() {
   const ctx = await requireAuth();
   if (ctx.isSuspendedForActiveCommune) {
-    redirect("/suspendu");
+    redirect(ROUTES.suspendu);
   }
   if (!ctx.activeMembership) {
-    redirect("/inscription/commune");
+    redirect(ROUTES.inscription.commune);
   }
   return ctx;
 }
 
-export async function requireRole(
-  roles: Array<"municipality_staff" | "platform_admin">,
-) {
+export async function requireRole(roles: StaffRole[]) {
   const ctx = await requireAuth();
-  if (!roles.includes(ctx.profile.role as "municipality_staff" | "platform_admin")) {
-    redirect("/");
+  if (!roles.includes(ctx.profile.role as StaffRole)) {
+    redirect(ROUTES.home);
   }
   return ctx;
 }
+
+export { STAFF_ROLES };

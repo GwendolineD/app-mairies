@@ -2,8 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { assertAuthorMembership } from "@/lib/auth/ownership";
 import { requireActiveMembership } from "@/lib/auth/session";
+import { ROUTES } from "@/lib/constants/routes";
+import { EVENT_STATUS } from "@/lib/constants/statuses";
 import { createClient } from "@/lib/supabase/server";
+import { parseFormId } from "@/lib/utils/form-data";
 import { eventSchema } from "@/lib/validations/schemas";
 
 export async function createEvent(formData: FormData): Promise<void> {
@@ -25,32 +29,33 @@ export async function createEvent(formData: FormData): Promise<void> {
     description: parsed.data.description ?? null,
     starts_at: new Date(parsed.data.startsAt).toISOString(),
     ends_at: new Date(parsed.data.endsAt).toISOString(),
-    status: "active",
+    status: EVENT_STATUS.active,
   });
 
   if (error) return;
-  revalidatePath("/evenements");
-  redirect("/evenements");
+  revalidatePath(ROUTES.evenements.list);
+  redirect(ROUTES.evenements.list);
 }
 
-export async function updateEventStatus(id: string, status: "active" | "archived") {
+export async function updateEventStatus(
+  id: string,
+  status: (typeof EVENT_STATUS)[keyof typeof EVENT_STATUS],
+) {
   const ctx = await requireActiveMembership();
   const supabase = await createClient();
 
-  const { data: row } = await supabase
-    .from("events")
-    .select("author_membership_id")
-    .eq("id", id)
-    .single();
-
-  if (row?.author_membership_id !== ctx.activeMembership!.id) {
-    return { error: "Non autorisé" };
-  }
+  const auth = await assertAuthorMembership(
+    supabase,
+    "events",
+    id,
+    ctx.activeMembership!.id,
+  );
+  if (auth.error) return auth;
 
   const { error } = await supabase.from("events").update({ status }).eq("id", id);
   if (error) return { error: error.message };
-  revalidatePath("/evenements");
-  revalidatePath(`/evenements/${id}`);
+  revalidatePath(ROUTES.evenements.list);
+  revalidatePath(ROUTES.evenements.detail(id));
   return { success: true };
 }
 
@@ -58,30 +63,28 @@ export async function deleteEvent(id: string) {
   const ctx = await requireActiveMembership();
   const supabase = await createClient();
 
-  const { data: row } = await supabase
-    .from("events")
-    .select("author_membership_id")
-    .eq("id", id)
-    .single();
-
-  if (row?.author_membership_id !== ctx.activeMembership!.id) {
-    return { error: "Non autorisé" };
-  }
+  const auth = await assertAuthorMembership(
+    supabase,
+    "events",
+    id,
+    ctx.activeMembership!.id,
+  );
+  if (auth.error) return auth;
 
   const { error } = await supabase.from("events").delete().eq("id", id);
   if (error) return { error: error.message };
-  revalidatePath("/evenements");
+  revalidatePath(ROUTES.evenements.list);
   return { success: true };
 }
 
 export async function submitDeleteEvent(formData: FormData): Promise<void> {
-  const id = formData.get("id");
-  if (typeof id !== "string" || !id) return;
+  const id = parseFormId(formData);
+  if (!id) return;
   await deleteEvent(id);
 }
 
 export async function submitArchiveEvent(formData: FormData): Promise<void> {
-  const id = formData.get("id");
-  if (typeof id !== "string" || !id) return;
-  await updateEventStatus(id, "archived");
+  const id = parseFormId(formData);
+  if (!id) return;
+  await updateEventStatus(id, EVENT_STATUS.archived);
 }

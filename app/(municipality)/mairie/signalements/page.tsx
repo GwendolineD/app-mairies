@@ -1,11 +1,13 @@
 import { requireRole } from "@/lib/auth/session";
+import { USER_ROLES } from "@/lib/constants/roles";
+import { REPORT_STATUS } from "@/lib/constants/statuses";
 import { createClient } from "@/lib/supabase/server";
 import { markReportHandledForm } from "@/lib/actions/municipality";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 export default async function MairieSignalementsPage() {
-  const ctx = await requireRole(["municipality_staff"]);
+  const ctx = await requireRole([USER_ROLES.municipalityStaff]);
   const communeId = ctx.profile.active_commune_id;
   if (!communeId) return null;
 
@@ -39,7 +41,7 @@ export default async function MairieSignalementsPage() {
               <Button
                 variant="secondary"
                 type="submit"
-                disabled={report.status !== "pending"}
+                disabled={report.status !== REPORT_STATUS.pending}
                 className="rounded-full px-5 text-xs"
               >
                 Marquer comme lu &amp; suivi équipe locale

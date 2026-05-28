@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { requireActiveMembership } from "@/lib/auth/session";
+import { ROUTES } from "@/lib/constants/routes";
+import { EVENT_STATUS } from "@/lib/constants/statuses";
 import { createClient } from "@/lib/supabase/server";
+import { formatEventRange } from "@/lib/utils/date";
 import { Card } from "@/components/ui/card";
-import { CategoryTag } from "@/components/ui/category-tag";
+import { ContentTypeTag } from "@/components/ui/content-type-tag";
 import { PageHeading } from "@/components/ui/page-heading";
 import type { AgendaEventRecord } from "@/lib/types";
 
@@ -13,7 +16,7 @@ export default async function EvenementsListePage() {
     .from("events")
     .select("*")
     .eq("commune_id", ctx.activeMembership!.commune_id)
-    .eq("status", "active")
+    .eq("status", EVENT_STATUS.active)
     .order("starts_at", { ascending: true });
 
   const rows = (data ?? []) as AgendaEventRecord[];
@@ -26,14 +29,14 @@ export default async function EvenementsListePage() {
       />
       <section className="flex flex-col gap-3">
         {rows.map((event) => (
-          <Link key={event.id} href={`/evenements/${event.id}`}>
+          <Link key={event.id} href={ROUTES.evenements.detail(event.id)}>
             <Card className="space-y-2 p-4 transition hover:border-purple/35">
               <div className="flex flex-wrap items-center gap-2">
-                <CategoryTag label="Événement" className="bg-orange/10 text-orange" />
+                <ContentTypeTag type="event" />
                 <h3 className="text-xl font-semibold leading-7 text-text">{event.title}</h3>
               </div>
               <p className="text-[10px] font-semibold text-subtle">
-                {formatRange(event.starts_at, event.ends_at)}
+                {formatEventRange(event.starts_at, event.ends_at)}
               </p>
               <p className="line-clamp-2 text-sm font-medium leading-5 text-muted">
                 {event.description}
@@ -49,12 +52,4 @@ export default async function EvenementsListePage() {
       </section>
     </div>
   );
-}
-
-function formatRange(start: string, end: string) {
-  try {
-    return `${new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(start))} → ${new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(end))}`;
-  } catch {
-    return "Planning à confirmer";
-  }
 }

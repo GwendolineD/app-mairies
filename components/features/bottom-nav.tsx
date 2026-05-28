@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { RESIDENT_BOTTOM_NAV } from "@/lib/constants/routes";
 import { cn } from "@/lib/utils/cn";
+import { isActivePath } from "@/lib/utils/routes";
 import {
   Calendar,
   Home,
@@ -11,13 +13,13 @@ import {
   MessageCircle,
 } from "lucide-react";
 
-const NAV = [
-  { href: "/accueil", label: "Accueil", Icon: Home },
-  { href: "/annonces", label: "Annonces", Icon: Megaphone },
-  { href: "/initiatives", label: "Initiatives", Icon: LayoutGrid },
-  { href: "/evenements", label: "Événements", Icon: Calendar },
-  { href: "/messages", label: "Messages", Icon: MessageCircle },
-] as const;
+const ICONS = {
+  Accueil: Home,
+  Annonces: Megaphone,
+  Initiatives: LayoutGrid,
+  "Événements": Calendar,
+  Messages: MessageCircle,
+} as const;
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -28,8 +30,9 @@ export function BottomNav() {
         "pb-[max(env(safe-area-inset-bottom),8px)] pt-2",
       )}
     >
-      {NAV.map(({ href, label, Icon }) => {
-        const active = pathname === href || pathname.startsWith(`${href}/`);
+      {RESIDENT_BOTTOM_NAV.map(({ href, label }) => {
+        const Icon = ICONS[label as keyof typeof ICONS];
+        const active = isActivePath(pathname, href);
         return (
           <Link
             key={href}

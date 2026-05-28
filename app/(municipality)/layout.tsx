@@ -1,20 +1,14 @@
 import { NavLink } from "@/components/ui/nav-link";
 import { requireRole } from "@/lib/auth/session";
-
-const LINKS = [
-  { href: "/mairie", label: "Tableau mairie" },
-  { href: "/mairie/habitants", label: "Habitant·es" },
-  { href: "/mairie/parametres", label: "Paramètres" },
-  { href: "/mairie/signalements", label: "Signalements" },
-  { href: "/mairie/evenements/nouveau", label: "+ Événement" },
-];
+import { MUNICIPALITY_NAV } from "@/lib/constants/routes";
+import { USER_ROLES } from "@/lib/constants/roles";
 
 export default async function MunicipalityDashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  await requireRole(["municipality_staff"]);
+  await requireRole([USER_ROLES.municipalityStaff]);
 
   return (
     <div className="min-h-dvh bg-warm pb-12">
@@ -27,7 +21,7 @@ export default async function MunicipalityDashboardLayout({
         </h1>
       </header>
       <nav className="flex flex-wrap gap-2 px-4 py-4">
-        {LINKS.map((l) => (
+        {MUNICIPALITY_NAV.map((l) => (
           <NavLink key={l.href} href={l.href} label={l.label} />
         ))}
       </nav>

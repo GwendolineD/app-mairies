@@ -3,6 +3,7 @@ import { BottomNav } from "@/components/features/bottom-nav";
 import { CommuneSwitcher } from "@/components/features/commune-switcher";
 import { requireActiveMembership } from "@/lib/auth/session";
 import { signOut } from "@/lib/actions/auth";
+import { ROUTES } from "@/lib/constants/routes";
 import { Button } from "@/components/ui/button";
 
 export default async function ResidentRootLayout({
@@ -28,7 +29,7 @@ export default async function ResidentRootLayout({
               <h2 className="text-[28px] font-bold leading-9 text-text">{communeName}</h2>
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              <Button href="/profil" variant="secondary" className="px-3 py-1.5 text-xs">
+              <Button href={ROUTES.profil} variant="secondary" className="px-3 py-1.5 text-xs">
                 Profil
               </Button>
               <form action={signOut}>

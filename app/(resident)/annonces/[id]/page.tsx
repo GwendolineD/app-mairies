@@ -1,9 +1,10 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireActiveMembership } from "@/lib/auth/session";
+import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
 import { AnnouncementTypeTag } from "@/components/ui/announcement-type-tag";
 import { AssetPlaceholder } from "@/components/ui/asset-placeholder";
+import { BackLink } from "@/components/ui/back-link";
 import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";
 import { ReportButton } from "@/components/features/report-button";
@@ -31,9 +32,7 @@ export default async function AnnonceDetailPage(props: {
 
   return (
     <div className="flex flex-col gap-5 px-4 py-6">
-      <Link href="/annonces" className="text-xs font-semibold text-purple underline">
-        ← Toutes les annonces
-      </Link>
+      <BackLink href={ROUTES.annonces.list}>← Toutes les annonces</BackLink>
       <Card className="space-y-4 p-6">
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-2">

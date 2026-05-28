@@ -1,0 +1,48 @@
+---
+description: Supabase — migrations, RLS, absolute ban on destructive commands without explicit user request
+globs: "{lib/supabase/**/*.{ts,tsx},supabase/**/*.{sql,ts},types/**/*.{ts,tsx}}"
+alwaysApply: true
+---
+
+# Data & Supabase
+
+App-level cache revalidation after mutations → `vie-locale-quality.mdc`. Tenant scope and RLS defense-in-depth → `vie-locale-multi-tenant.mdc`.
+
+## Absolute ban (local or remote database)
+
+**Never run** (terminal, script, or MCP) the operations below **unless the user explicitly requested it**, by quoting the command or clearly asking to erase / reset / destroy data:
+
+- `supabase db reset` (wipes and recreates the local DB + reruns migrations + seed)
+- `supabase db reset --no-seed`
+- `supabase migration repair` (can corrupt history if misused)
+- Any `DROP DATABASE`, `DROP SCHEMA`, `TRUNCATE` on business tables
+- `docker volume rm` / Postgres volume deletion without approval
+- `rm -rf` on project data folders without approval
+
+**Expected behavior:** propose the command in a block for the **user** to run themselves, or wait for an explicit “yes, run `db reset`”.
+
+**Verify migrations:** prefer `supabase migration list --local`, reading SQL files, or `supabase db query "..."` in **read-only** mode — not a reset to “test”.
+
+## Migrations
+
+- Schema change → **new** migration (`supabase migration new ...`). **Do not** edit a migration that has already been applied.
+- After schema change: regenerate types (`supabase gen types typescript --local` or project equivalent) — **without** `db reset` unless explicitly requested.
+
+## RLS
+
+- **RLS enabled** on tables exposed to `anon` / `authenticated` roles. Policies in migrations, not dashboard-only in production.
+
+## Clients
+
+- Use **`@supabase/ssr`** (or the project’s documented stack) for **server** vs **browser** — no cross-imports.
+- Never expose **`service_role`** or server secrets in the client bundle.
+
+## Queries
+
+- Always handle `{ data, error }`; do not silently ignore `error` in production.
+
+## Query performance
+
+- Use the Supabase **server client** for reads/writes in Server Components, Server Actions, and Route Handlers.
+- Keep queries parameterized; never interpolate untrusted strings into raw SQL fragments.
+- Batch work to avoid N+1 patterns; use `.in()`, joins via views/RPC where appropriate, and paginate (`range`, `limit`).

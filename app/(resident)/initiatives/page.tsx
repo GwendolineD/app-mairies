@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { requireActiveMembership } from "@/lib/auth/session";
+import { ROUTES } from "@/lib/constants/routes";
+import { INITIATIVE_STATUS } from "@/lib/constants/statuses";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -13,7 +15,7 @@ export default async function InitiativesListePage() {
     .from("initiatives")
     .select("*")
     .eq("commune_id", ctx.activeMembership!.commune_id)
-    .eq("status", "active")
+    .eq("status", INITIATIVE_STATUS.active)
     .order("created_at", { ascending: false });
 
   const rows = (data ?? []) as InitiativeRecord[];
@@ -25,13 +27,13 @@ export default async function InitiativesListePage() {
           title="Initiatives"
           subtitle="Coopération douce : vos idées vivent mieux lorsqu'elles invitent clairement à participer ou simplement soutenir."
         />
-        <Button href="/initiatives/nouvelle" className="px-4 py-2 text-xs whitespace-nowrap">
+        <Button href={ROUTES.initiatives.new} className="px-4 py-2 text-xs whitespace-nowrap">
           Nouvelle
         </Button>
       </header>
       <section className="flex flex-col gap-3">
         {rows.map((init) => (
-          <Link key={init.id} href={`/initiatives/${init.id}`}>
+          <Link key={init.id} href={ROUTES.initiatives.detail(init.id)}>
             <Card className="space-y-2 p-4 transition hover:border-purple/35">
               <h3 className="text-xl font-semibold leading-7 text-text">{init.title}</h3>
               {init.description ? (

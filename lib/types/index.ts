@@ -1,3 +1,5 @@
+import type { AnnouncementType } from "@/lib/constants/announcement-types";
+
 export type UserRole = "resident" | "municipality_staff" | "platform_admin";
 export type SubscriptionStatus = "inactive" | "trial" | "active";
 export type MembershipStatus = "active" | "suspended" | "left";
@@ -53,7 +55,7 @@ export type Announcement = {
   id: string;
   commune_id: string;
   author_membership_id: string;
-  type: "demande" | "offre";
+  type: AnnouncementType;
   category_slug: string;
   title: string;
   description: string | null;
@@ -113,11 +115,3 @@ export type ConversationPreview = {
   title: string | null;
   updated_at: string;
 };
-
-export function formatDisplayName(
-  firstName: string,
-  lastName: string,
-): string {
-  const initial = lastName.trim().charAt(0).toUpperCase();
-  return `${firstName.trim()} ${initial}.`;
-}
