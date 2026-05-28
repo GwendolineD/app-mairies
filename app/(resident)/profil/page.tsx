@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/form-field";
 import { PageHeading } from "@/components/ui/page-heading";
+import { PageStack } from "@/components/ui/page-stack";
 
 export default async function ProfilPage() {
   const ctx = await requireActiveMembership();
@@ -25,10 +26,11 @@ export default async function ProfilPage() {
     .join(", ");
 
   return (
-    <div className="flex flex-col gap-5 px-4 py-6">
+    <PageStack gap="5">
       <PageHeading title="Profil communautaire" />
 
-      <Card className="space-y-4 p-5">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <Card className="space-y-4 p-5 lg:col-span-2">
         <div>
           <p className="text-[10px] font-semibold uppercase text-muted">Pseudo affiché</p>
           <p className="text-xl font-semibold leading-7 text-text">
@@ -76,6 +78,7 @@ export default async function ProfilPage() {
           Parcourir l&apos;inscription multi-commune
         </Button>
       </Card>
-    </div>
+      </div>
+    </PageStack>
   );
 }

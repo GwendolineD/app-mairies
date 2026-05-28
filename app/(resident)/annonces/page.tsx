@@ -7,6 +7,7 @@ import { AnnouncementTypeTag } from "@/components/ui/announcement-type-tag";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";
+import { ListGrid, PageStack } from "@/components/ui/page-stack";
 import { PageHeading } from "@/components/ui/page-heading";
 import type { Announcement } from "@/lib/types";
 import { getCategoryLabel } from "@/lib/constants/announcement-categories";
@@ -25,28 +26,30 @@ export default async function AnnoncesListePage() {
   const announcements = (data ?? []) as Announcement[];
 
   return (
-    <div className="flex flex-col gap-6 px-4 py-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
+    <PageStack>
+      <header className="flex flex-wrap items-start justify-between gap-3 md:items-center">
         <PageHeading
           title="Annonces"
           subtitle="Demandes et offres proches de votre adresse communautaire."
         />
-        <Button href={ROUTES.annonces.new()} className="px-4 py-2 text-xs whitespace-nowrap">
-          Ajouter une annonce
-        </Button>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <Button href={ROUTES.annonces.map} variant="secondary" className="shadow-card">
+            Voir la carte
+          </Button>
+          <Button href={ROUTES.annonces.new()} className="whitespace-nowrap px-4 py-2 text-xs">
+            Ajouter une annonce
+          </Button>
+        </div>
       </header>
-      <Button href={ROUTES.annonces.map} variant="secondary" className="w-full shadow-card">
-        Voir la carte
-      </Button>
-      <section className="space-y-3">
-        {announcements.length === 0 ? (
-          <Card className="p-5 text-center text-sm font-medium text-muted">
-            Soyez les premiers voisin·es à publier un besoin ou une petite aide.
-          </Card>
-        ) : (
-          announcements.map((a) => (
-            <Link href={ROUTES.annonces.detail(a.id)} key={a.id}>
-              <Card className="space-y-2 p-5 transition hover:border-purple/45">
+      {announcements.length === 0 ? (
+        <Card className="p-5 text-center text-sm font-medium text-muted">
+          Soyez les premiers voisin·es à publier un besoin ou une petite aide.
+        </Card>
+      ) : (
+        <ListGrid>
+          {announcements.map((a) => (
+            <Link href={ROUTES.annonces.detail(a.id)} key={a.id} className="h-full">
+              <Card className="flex h-full flex-col space-y-2 p-5 transition hover:border-purple/45">
                 <div className="flex flex-wrap items-center gap-2">
                   <AnnouncementTypeTag type={a.type} />
                   <CategoryTag label={getCategoryLabel(a.category_slug)} />
@@ -57,14 +60,14 @@ export default async function AnnoncesListePage() {
                     {a.description}
                   </p>
                 ) : null}
-                <span className="text-[10px] font-semibold text-subtle">
+                <span className="mt-auto text-[10px] font-semibold text-subtle">
                   Statut : {a.status}
                 </span>
               </Card>
             </Link>
-          ))
-        )}
-      </section>
-    </div>
+          ))}
+        </ListGrid>
+      )}
+    </PageStack>
   );
 }

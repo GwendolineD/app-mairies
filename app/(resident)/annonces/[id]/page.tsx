@@ -10,6 +10,7 @@ import { CategoryTag } from "@/components/ui/category-tag";
 import { ReportButton } from "@/components/features/report-button";
 import { getCategoryLabel } from "@/lib/constants/announcement-categories";
 import type { Announcement } from "@/lib/types";
+import { PageStack } from "@/components/ui/page-stack";
 
 export default async function AnnonceDetailPage(props: {
   params: Promise<{ id: string }>;
@@ -31,9 +32,9 @@ export default async function AnnonceDetailPage(props: {
   const ann = data as Announcement;
 
   return (
-    <div className="flex flex-col gap-5 px-4 py-6">
+    <PageStack gap="5">
       <BackLink href={ROUTES.annonces.list}>← Toutes les annonces</BackLink>
-      <Card className="space-y-4 p-6">
+      <Card className="space-y-4 p-6 lg:max-w-4xl">
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
@@ -70,7 +71,7 @@ export default async function AnnonceDetailPage(props: {
         )}
         <ContactPlaceholder />
       </Card>
-    </div>
+    </PageStack>
   );
 }
 

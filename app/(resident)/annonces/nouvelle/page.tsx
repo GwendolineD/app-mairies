@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FormField, Input, Select, Textarea } from "@/components/ui/form-field";
 import { PageHeading } from "@/components/ui/page-heading";
+import { PageStack } from "@/components/ui/page-stack";
 
 export default async function NouvelleAnnoncePage(props: {
   searchParams?: Promise<{ type?: string }>;
@@ -23,14 +24,14 @@ export default async function NouvelleAnnoncePage(props: {
     : "demande";
 
   return (
-    <div className="px-4 py-6">
+    <PageStack>
       <BackLink href={ROUTES.annonces.list}>← Retour liste</BackLink>
       <PageHeading
         className="mt-3"
         title="Nouvelle annonce"
         subtitle="Racontez clairement ce dont vous avez besoin ou ce que vous proposez : vos voisin·es se réjouissent d'aider lorsque tout est précis et respectueux."
       />
-      <Card className="mt-6 space-y-4 p-5">
+      <Card className="mt-2 space-y-4 p-5 lg:max-w-3xl">
         <AssetPlaceholder
           description="Aperçu photo — saisissez une URL ci-dessous"
           aspectRatio="16/9"
@@ -91,6 +92,6 @@ export default async function NouvelleAnnoncePage(props: {
           </Button>
         </form>
       </Card>
-    </div>
+    </PageStack>
   );
 }

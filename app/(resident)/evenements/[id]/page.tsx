@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { ContentTypeTag } from "@/components/ui/content-type-tag";
 import { ReportButton } from "@/components/features/report-button";
 import type { AgendaEventRecord } from "@/lib/types";
+import { PageStack } from "@/components/ui/page-stack";
 
 export default async function EvenementDetailPage(props: {
   params: Promise<{ id: string }>;
@@ -31,9 +32,9 @@ export default async function EvenementDetailPage(props: {
   const isAuthor = event.author_membership_id === ctx.activeMembership?.id;
 
   return (
-    <div className="flex flex-col gap-5 px-4 py-6">
+    <PageStack gap="5">
       <BackLink href={ROUTES.evenements.list}>← Liste</BackLink>
-      <Card className="space-y-4 p-6">
+      <Card className="space-y-4 p-6 lg:max-w-4xl">
         <div className="flex flex-wrap justify-between gap-4">
           <div>
             <ContentTypeTag type="event" />
@@ -69,6 +70,6 @@ export default async function EvenementDetailPage(props: {
           </div>
         ) : null}
       </Card>
-    </div>
+    </PageStack>
   );
 }

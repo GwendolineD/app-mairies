@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/card";
 import { ContentTypeTag } from "@/components/ui/content-type-tag";
 import { ReportButton } from "@/components/features/report-button";
 import type { InitiativeRecord } from "@/lib/types";
+import { PageStack } from "@/components/ui/page-stack";
 
 export default async function InitiativeDetailPage(props: {
   params: Promise<{ id: string }>;
@@ -36,10 +37,10 @@ export default async function InitiativeDetailPage(props: {
   const isAuthor = initiative.author_membership_id === ctx.activeMembership?.id;
 
   return (
-    <div className="flex flex-col gap-5 px-4 py-6">
+    <PageStack gap="5">
       <BackLink href={ROUTES.initiatives.list}>← Toutes les initiatives</BackLink>
 
-      <Card className="space-y-5 p-6">
+      <Card className="space-y-5 p-6 lg:max-w-4xl">
         <div className="flex flex-wrap justify-between gap-3">
           <div>
             <ContentTypeTag type="initiative" />
@@ -66,7 +67,7 @@ export default async function InitiativeDetailPage(props: {
           <AuthorActions initiativeId={initiative.id} />
         ) : null}
       </Card>
-    </div>
+    </PageStack>
   );
 }
 

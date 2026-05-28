@@ -3,16 +3,17 @@ import { AssetPlaceholder } from "@/components/ui/asset-placeholder";
 import { Card } from "@/components/ui/card";
 import { ContentTypeTag } from "@/components/ui/content-type-tag";
 import { GradientButton } from "@/components/ui/gradient-button";
+import { ListGrid, PageStack } from "@/components/ui/page-stack";
 import { ROUTES } from "@/lib/constants/routes";
 
 export default function ResidentAccueilPage() {
   return (
-    <div className="flex flex-col gap-6 px-4 py-6">
+    <PageStack>
       <AssetPlaceholder
         description="Bloc nudge empathique bienveillant — à concevoir ensemble"
-        className="rounded-3xl shadow-card"
+        className="rounded-3xl shadow-card lg:max-h-48"
       />
-      <div className="grid grid-cols-1 gap-3">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <GradientButton href={ROUTES.annonces.new("demande")} gradient="demande">
           Je demande une main
         </GradientButton>
@@ -24,13 +25,13 @@ export default function ResidentAccueilPage() {
         </GradientButton>
       </div>
       <FeedPreview />
-    </div>
+    </PageStack>
   );
 }
 
 function FeedPreview() {
   return (
-    <>
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       <section className="space-y-3">
         <h3 className="text-xs font-semibold uppercase tracking-widest text-muted">
           Annonces récentes
@@ -52,7 +53,7 @@ function FeedPreview() {
         <h3 className="text-xs font-semibold uppercase tracking-widest text-muted">
           Initiatives & événements
         </h3>
-        <div className="grid gap-3">
+        <ListGrid className="lg:grid-cols-1">
           <Card className="space-y-3 p-4">
             <ContentTypeTag type="initiative" />
             <Link
@@ -71,8 +72,8 @@ function FeedPreview() {
               Agenda convivial
             </Link>
           </Card>
-        </div>
+        </ListGrid>
       </section>
-    </>
+    </div>
   );
 }

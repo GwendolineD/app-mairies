@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Architecture
 
-Performance, maintainability, and scalability defaults → `vie-locale-quality.mdc`. Destructive UI flows → `vie-locale-destructive-actions.mdc`.
+Performance, maintainability, and scalability defaults → `vie-locale-quality.mdc`. Destructive UI flows → `vie-locale-destructive-actions.mdc`. Responsive layout shells → `vie-locale-design-system.mdc`.
 
 ## Target stack
 

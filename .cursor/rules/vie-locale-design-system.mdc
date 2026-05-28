@@ -126,7 +126,54 @@ Chargée via `next/font` dans `app/layout.tsx`. Poids disponibles : Regular, Med
 
 - **État actif** : fond `bg-soft-pink`, icône/texte en couleur brand (`text-purple` ou couleur de section).
 - **Inactif** : `text-muted`, hover `text-text`.
-- Sidebar desktop : liste verticale ; mobile : bottom nav (`components/features/bottom-nav.tsx`).
+- Items résident·e → `lib/constants/routes.ts` (`RESIDENT_BOTTOM_NAV`) ; composants `components/features/resident-nav.tsx` (bottom + sidebar).
+- **Mobile** (`< md`) : bottom nav fixe. **Desktop** (`≥ md`) : sidebar verticale — **pas** de bottom nav visible.
+
+---
+
+## Layout responsive (mobile-first, desktop natif)
+
+**Principe :** mobile = app mobile (touch, colonne unique, nav basse) ; desktop = app desktop (espace utile, nav latérale ou top, grilles) — **jamais** un téléphone élargi au centre d’un grand écran.
+
+### Breakpoints (Tailwind par défaut)
+
+| Seuil | Usage |
+|---|---|
+| `< md` (< 768px) | Mobile — bottom nav, pleine largeur, safe areas |
+| `≥ md` | Desktop — sidebar ou nav horizontale persistante, bottom nav **masquée** |
+| `≥ lg` | Grand desktop — colonnes supplémentaires, padding plus généreux |
+
+### Espace résident·e (`app/(resident)/`)
+
+- **Mobile** : colonne unique, `BottomNav`, header compact, `pb` pour la barre fixe.
+- **Desktop** : shell `max-w-6xl`, **`ResidentSidebarNav`** à gauche, contenu principal fluide (`md:px-6 lg:px-8`).
+- **Interdit** : `max-w-md` (ou équivalent phone) comme conteneur global de toute l’app sur desktop.
+- Listes + détail : envisager master-detail ou grilles `md:grid-cols-2` quand ça améliore la lecture (pas une seule colonne étroite centrée).
+
+### Pages publiques (landing, connexion, inscription)
+
+- Colonne centrée (`max-w-md` / `max-w-lg`) **acceptable** — formulaires et onboarding, pas l’app connectée.
+
+### Backoffice (mairie, platform)
+
+- **Desktop-first** : grilles (`sm:grid-cols-*`), nav horizontale ou future sidebar, contenu large.
+- Tableaux et pilotage prioritaires sur grand écran ; mobile = dégradé gracieux, pas l’inverse.
+
+### Anti-patterns layout
+
+```tsx
+// ❌ App connectée entière en bande mobile centrée sur 1440px
+<div className="mx-auto max-w-md min-h-dvh">
+  <BottomNav /> {/* visible aussi sur desktop */}
+</div>
+
+// ✅ Shell adaptatif
+<div className="mx-auto flex max-w-6xl min-h-dvh">
+  <ResidentSidebarNav /> {/* md+ */}
+  <main className="flex-1">…</main>
+  <BottomNav /> {/* md:hidden */}
+</div>
+```
 
 ### Ombres
 
@@ -213,3 +260,4 @@ Espacements autorisés : `1, 2, 3, 4, 5, 6, 8, 10, 12, 16` (Tailwind) = 4, 8, 12
 6. Ton visuel = chaleureux, inclusif, pas corporate ?
 7. Assets manquants = `AssetPlaceholder`, pas de stock photo ?
 8. Chemins d’assets = catalogue central (`lib/constants/assets.ts`), pas d’URL en dur ?
+9. Mobile = bottom nav ; desktop = sidebar / layout large (pas de shell `max-w-md` global sur l’app connectée) ?

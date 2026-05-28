@@ -5,13 +5,14 @@ import { Card } from "@/components/ui/card";
 import { FormField, Input, Select, Textarea } from "@/components/ui/form-field";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { PageHeading } from "@/components/ui/page-heading";
+import { PageStack } from "@/components/ui/page-stack";
 
 export default function NouvelleInitiativePage() {
   return (
-    <div className="flex flex-col gap-4 px-4 py-6">
+    <PageStack gap="4">
       <BackLink href={ROUTES.initiatives.list}>← Liste</BackLink>
       <PageHeading title="Nouvelle initiative" />
-      <Card className="space-y-3 p-5">
+      <Card className="space-y-3 p-5 lg:max-w-2xl">
         <form action={createInitiative} className="flex flex-col gap-3">
           <FormField label="Titre">
             <Input name="title" required />
@@ -42,6 +43,6 @@ export default function NouvelleInitiativePage() {
           </GradientButton>
         </form>
       </Card>
-    </div>
+    </PageStack>
   );
 }

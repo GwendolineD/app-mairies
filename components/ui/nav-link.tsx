@@ -9,11 +9,28 @@ type Props = {
   href: string;
   label: string;
   exact?: boolean;
+  variant?: "pill" | "sidebar";
 };
 
-export function NavLink({ href, label, exact = false }: Props) {
+export function NavLink({ href, label, exact = false, variant = "pill" }: Props) {
   const pathname = usePathname();
   const active = isActivePath(pathname, href, exact);
+
+  if (variant === "sidebar") {
+    return (
+      <Link
+        href={href}
+        className={cn(
+          "flex w-full items-center rounded-xl px-3 py-2.5 text-sm font-semibold transition",
+          active
+            ? "bg-soft-pink text-purple"
+            : "text-muted hover:bg-warm hover:text-text",
+        )}
+      >
+        {label}
+      </Link>
+    );
+  }
 
   return (
     <Link

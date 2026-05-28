@@ -3,6 +3,7 @@ import { ROUTES } from "@/lib/constants/routes";
 import { AssetPlaceholder } from "@/components/ui/asset-placeholder";
 import { BackLink } from "@/components/ui/back-link";
 import { PageHeading } from "@/components/ui/page-heading";
+import { PageStack } from "@/components/ui/page-stack";
 import { CarteAnnoncesMap } from "@/components/features/carte-preview-map";
 
 export default async function AnnoncesCartePage() {
@@ -17,26 +18,28 @@ export default async function AnnoncesCartePage() {
     2.3;
 
   return (
-    <div className="flex flex-col gap-4 px-4 py-6">
+    <PageStack gap="4">
       <BackLink href={ROUTES.annonces.list}>← Retour liste</BackLink>
       <PageHeading
         title="Carte communautaire"
         subtitle="Implémentation provisoire : la vue détaillée utilisera ensuite le composant dédié MapViewCommune pour géolocaliser chaque épingle d'annonce."
       />
-      <AssetPlaceholder
-        aspectRatio="2/5"
-        className="rounded-3xl"
-        description="Légende & filtres carte — placeholders design"
-      />
-      <CarteAnnoncesMap
-        communeName={
-          ctx.activeMembership?.commune?.name ??
-          ctx.activeMembership?.commune?.insee_code ??
-          "Centre"
-        }
-        latitude={lat}
-        longitude={lng}
-      />
-    </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,18rem)_1fr]">
+        <AssetPlaceholder
+          aspectRatio="2/5"
+          className="rounded-3xl lg:aspect-auto lg:min-h-80"
+          description="Légende & filtres carte — placeholders design"
+        />
+        <CarteAnnoncesMap
+          communeName={
+            ctx.activeMembership?.commune?.name ??
+            ctx.activeMembership?.commune?.insee_code ??
+            "Centre"
+          }
+          latitude={lat}
+          longitude={lng}
+        />
+      </div>
+    </PageStack>
   );
 }
