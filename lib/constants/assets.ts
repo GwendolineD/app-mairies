@@ -1,6 +1,6 @@
 /**
- * Shared asset paths and external URLs.
- * Must match files under public/ or documented CDN endpoints.
+ * Local asset paths and fixed third-party URLs (logos, map tiles, etc.).
+ * UI illustrations → lib/constants/illustrations.ts
  */
 
 export const ASSETS = {

@@ -26,7 +26,7 @@ Performance, maintainability, and scalability defaults → `vie-locale-quality.m
 - Co-locate feature code with routes or feature folders; avoid cross-feature imports unless shared is explicitly stabilized.
 - Business logic, data orchestration, and integrations → **`lib/`** (or dedicated modules), not in component leaf files.
 - Reusable helpers → **`lib/[domain]/`** or **`lib/utils/`**; shared constants → **`lib/constants/`**. Do not copy-paste the same function or magic string across features — feature-only values may co-locate with the feature.
-- Colors and asset paths → `vie-locale-design-system.mdc` (tokens + `lib/constants/assets.ts`).
+- Colors and asset paths → `vie-locale-design-system.mdc` (tokens + `lib/constants/assets.ts` + `lib/constants/illustrations.ts`).
 - Imports via **`@/`** alias — no deep `../../` chains.
 - **Async/await**; no `.then()` chaining for new code.
 - No `any` — use `unknown` or type correctly.

@@ -210,7 +210,7 @@ Espacements autorisés : `1, 2, 3, 4, 5, 6, 8, 10, 12, 16` (Tailwind) = 4, 8, 12
 
 - Style cible : **« 3D Warm Community »** — personnages expressifs, couleurs douces, formes arrondies.
 - Éviter : photos stock réalistes, gestes agressifs, esthétique corporate.
-- **Chemins partagés** (illustrations, icônes, logos) → `lib/constants/assets.ts` ou bucket Supabase public documenté. **Interdit** : URLs ou chemins `/public/...` en dur dans les composants.
+- **Illustrations UI** (URLs externes) → `lib/constants/illustrations.ts`, une entrée par slot d’écran (clé = emplacement, valeur = URL). **Logos et icônes locales** → `lib/constants/assets.ts`. **Interdit** : URLs ou chemins `/public/...` en dur dans les composants.
 - En attendant les assets finaux : utiliser `<AssetPlaceholder>` (`components/ui/asset-placeholder.tsx`) — bordure dashed, fond `warm`, label explicite.
 - Logo : icône pin + maisons + cœur, dégradé rose→violet→bleu. Taille min web 24px, favicon 16px. Ne pas déformer ni recoloriser.
 
@@ -259,5 +259,5 @@ Espacements autorisés : `1, 2, 3, 4, 5, 6, 8, 10, 12, 16` (Tailwind) = 4, 8, 12
 5. Dégradé = sémantique (demande/offre/initiative/events/hero) ?
 6. Ton visuel = chaleureux, inclusif, pas corporate ?
 7. Assets manquants = `AssetPlaceholder`, pas de stock photo ?
-8. Chemins d’assets = catalogue central (`lib/constants/assets.ts`), pas d’URL en dur ?
+8. Illustrations = `lib/constants/illustrations.ts` ; logos locaux = `lib/constants/assets.ts` ; pas d’URL en dur ?
 9. Mobile = bottom nav ; desktop = sidebar / layout large (pas de shell `max-w-md` global sur l’app connectée) ?
