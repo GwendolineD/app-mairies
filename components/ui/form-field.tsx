@@ -6,7 +6,7 @@ import type {
 } from "react";
 
 export const formFieldClassName =
-  "w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm outline-none focus:border-purple";
+  "w-full rounded-sm border border-border bg-surface px-4 py-3.5 text-sm outline-none focus:border-purple md:py-2.5";
 
 type FieldProps = {
   className?: string;

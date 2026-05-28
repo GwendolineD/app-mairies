@@ -18,7 +18,7 @@ const gradientClass: Record<Gradient, string> = {
 };
 
 const baseClass =
-  "inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-white shadow-card transition hover:opacity-95 disabled:opacity-50";
+  "inline-flex items-center justify-center gap-2 rounded-md px-6 py-3 text-sm font-bold text-white shadow-card transition hover:opacity-95 disabled:opacity-50";
 
 export function GradientButton({
   gradient = "hero",

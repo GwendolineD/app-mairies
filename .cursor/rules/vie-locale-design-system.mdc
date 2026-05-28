@@ -98,14 +98,22 @@ Chargée via `next/font` dans `app/layout.tsx`. Poids disponibles : Regular, Med
 
 | Variante | Style | Usage |
 |---|---|---|
-| **Primary** | `gradient-hero`, texte blanc, `rounded-full` | Action principale (1 par écran) |
-| **Secondary** | `bg-surface border border-border`, texte `text-text` | Actions secondaires |
+| **Primary** | `gradient-hero`, texte blanc, `rounded-sm` | Action principale (1 par écran) |
+| **Secondary** | `bg-surface border border-border`, texte `text-text`, `rounded-sm` | Actions secondaires |
 | **Ghost / Tertiary** | Texte seul, hover `bg-warm` | Liens d'action discrets ; souligner si lien inline |
-| **Danger** | `bg-coral text-white` | Suppression, signalement |
+| **Danger** | `bg-coral text-white`, `rounded-sm` | Suppression, signalement |
 
-- Toujours `rounded-full` pour les boutons d'action.
+- Toujours `rounded-sm` (8px) pour les boutons d'action — coins discrets, alignés sur les champs de formulaire.
 - Padding standard : `px-5 py-2.5` (Button) ou `px-6 py-3` (GradientButton).
 - État disabled : `opacity-50`, pas de couleur grise générique.
+
+### Champs de formulaire (`components/ui/form-field.tsx`, `icon-field.tsx`, `password-field.tsx`, `ban-autocomplete.tsx`)
+
+- Contour : `rounded-sm` (8px), `border border-border`, fond `bg-surface`.
+- Focus : `focus:border-purple` — pas de ring coloré générique.
+- Classe de référence : `formFieldClassName` dans `form-field.tsx`.
+- Autocomplete / listes déroulantes : panneau en `rounded-sm`, items sans radius propre.
+- Hauteur auth (inscription, connexion) : `py-3.5` mobile, `md:py-2.5` desktop.
 
 ### Cartes (`components/ui/card.tsx`)
 
@@ -152,7 +160,8 @@ Chargée via `next/font` dans `app/layout.tsx`. Poids disponibles : Regular, Med
 
 ### Pages publiques (landing, connexion, inscription)
 
-- Colonne centrée (`max-w-md` / `max-w-lg`) **acceptable** — formulaires et onboarding, pas l’app connectée.
+- **Inscription desktop / tablette (`≥ md`)** : split 50/50 — hero illustration à gauche (sans overlay lourd), formulaire sur fond `bg-warm` à droite. Breakpoint mobile strict : `< md` uniquement.
+- Colonne centrée (`max-w-md` / `max-w-lg`) **acceptable** pour connexion et onboarding simples.
 
 ### Backoffice (mairie, platform)
 
@@ -192,13 +201,13 @@ Ne pas empiler plusieurs ombres sur le même élément.
 
 | Token | px | Usage |
 |---|---|---|
-| `rounded-sm` | 8 | Chips compacts, inputs |
-| `rounded-md` | 12 | Inputs, petits blocs |
+| `rounded-sm` | 8 | Boutons d'action, inputs, autocomplete, chips compacts |
+| `rounded-md` | 12 | Petits blocs intermédiaires, alertes inline |
 | `rounded-lg` | 16 | Sous-cartes |
-| `rounded-xl` | 20 | Panneaux |
+| `rounded-xl` | 20 | Panneaux auth, blocs features |
 | `rounded-2xl` | 24 | Images, placeholders |
 | `rounded-3xl` | 32 | Cartes principales |
-| `rounded-full` | — | Boutons, tags, avatars |
+| `rounded-full` | — | Tags, avatars, puces compactes |
 
 ### Grille 8px
 
@@ -236,7 +245,7 @@ Espacements autorisés : `1, 2, 3, 4, 5, 6, 8, 10, 12, 16` (Tailwind) = 4, 8, 12
 <div style={{ background: "linear-gradient(to right, #000, #fff)" }} />
 
 // ❌ Bouton carré ou sans variante du design system
-<button className="bg-purple-600 rounded px-4">OK</button>
+<button className="bg-purple rounded px-4">OK</button>
 
 // ❌ Ombre Tailwind générique non tokenisée sur une carte
 <div className="shadow-lg shadow-black/20" />

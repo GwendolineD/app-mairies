@@ -19,6 +19,7 @@ export async function signUp(formData: FormData) {
     addressPostcode: formData.get("addressPostcode") as string,
     addressLat: Number(formData.get("addressLat")),
     addressLng: Number(formData.get("addressLng")),
+    acceptedTerms: formData.get("acceptedTerms") as string,
   };
 
   const parsed = signupSchema.safeParse(raw);
@@ -97,6 +98,8 @@ export async function submitCommuneInterest(formData: FormData) {
   const rawInsee = (formData.get("inseeCode") as string)?.trim();
   const emailRaw = (formData.get("email") as string)?.trim();
   const message = (formData.get("message") as string)?.trim() || null;
+  const city = (formData.get("city") as string)?.trim() || null;
+  const label = (formData.get("label") as string)?.trim() || null;
 
   if (!rawInsee) return { error: "Code commune manquant" };
 
@@ -114,16 +117,19 @@ export async function submitCommuneInterest(formData: FormData) {
     .from("communes")
     .select("id")
     .eq("insee_code", rawInsee)
-    .single();
+    .maybeSingle();
 
-  if (!commune) return { error: "Commune introuvable" };
+  const metadata: Record<string, string> = { source: "inscription" };
+  if (city) metadata.city = city;
+  if (label) metadata.label = label;
+  if (user) metadata.user_id = user.id;
 
   const { error } = await supabase.from("commune_interest_leads").insert({
-    commune_id: commune.id,
+    commune_id: commune?.id ?? null,
     insee_code: rawInsee,
     email,
     message,
-    metadata: user ? { user_id: user.id } : {},
+    metadata,
   });
 
   if (error) return { error: error.message };

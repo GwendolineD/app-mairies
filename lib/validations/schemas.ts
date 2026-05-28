@@ -9,7 +9,10 @@ const categorySlugs = ANNOUNCEMENT_CATEGORIES.map((c) => c.slug) as [
 
 export const signupSchema = z.object({
   email: z.string().email("Email invalide"),
-  password: z.string().min(8, "8 caractères minimum"),
+  password: z
+    .string()
+    .min(8, "8 caractères minimum")
+    .regex(/(?=.*[A-Za-z])(?=.*\d)/, "Lettres et chiffres requis"),
   firstName: z.string().min(1, "Prénom requis"),
   lastName: z.string().min(1, "Nom requis"),
   inseeCode: z.string().min(1),
@@ -18,6 +21,9 @@ export const signupSchema = z.object({
   addressPostcode: z.string().min(4),
   addressLat: z.number(),
   addressLng: z.number(),
+  acceptedTerms: z.literal("true", {
+    message: "Acceptation des conditions requise",
+  }),
 });
 
 export const announcementSchema = z.object({

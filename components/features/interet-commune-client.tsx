@@ -30,6 +30,8 @@ export function InteretCommuneClient() {
       {feature ? (
         <form action={action} className="space-y-3">
           <input type="hidden" name="inseeCode" value={feature.citycode} />
+          <input type="hidden" name="city" value={feature.city} />
+          <input type="hidden" name="label" value={feature.label} />
           <FormField label="E-mail pour être recontacté·e">
             <Input name="email" type="email" required />
           </FormField>

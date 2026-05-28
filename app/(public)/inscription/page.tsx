@@ -1,5 +1,10 @@
-import { InscriptionFlow } from "@/components/features/inscription-flow";
+import { InscriptionLayoutShell } from "@/components/features/auth/inscription-layout-shell";
+import { InscriptionSignupForm } from "@/components/features/auth/inscription-signup-form";
 
 export default function InscriptionPage() {
-  return <InscriptionFlow />;
+  return (
+    <InscriptionLayoutShell>
+      <InscriptionSignupForm />
+    </InscriptionLayoutShell>
+  );
 }

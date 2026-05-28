@@ -26,7 +26,16 @@ export default async function PlatformLeadsPage() {
             <Card key={lead.id} className="space-y-2 p-4 text-sm">
               <p className="font-semibold text-text">{lead.email}</p>
               <p className="text-xs font-medium text-muted">
-                INSEE {lead.insee_code ?? "—"} · commune #{lead.commune_id?.slice(0, 8) ?? "?"}
+                INSEE {lead.insee_code ?? "—"}
+                {typeof lead.metadata === "object" &&
+                lead.metadata !== null &&
+                "city" in lead.metadata &&
+                typeof (lead.metadata as { city?: string }).city === "string"
+                  ? ` · ${(lead.metadata as { city: string }).city}`
+                  : null}
+                {lead.commune_id
+                  ? ` · commune #${lead.commune_id.slice(0, 8)}`
+                  : null}
               </p>
               {lead.message ? (
                 <p className="rounded-2xl bg-warm p-3 text-xs font-medium text-muted">

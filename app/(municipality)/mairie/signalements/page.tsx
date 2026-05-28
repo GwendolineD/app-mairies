@@ -42,7 +42,7 @@ export default async function MairieSignalementsPage() {
                 variant="secondary"
                 type="submit"
                 disabled={report.status !== REPORT_STATUS.pending}
-                className="rounded-full px-5 text-xs"
+                className="px-5 text-xs"
               >
                 Marquer comme lu &amp; suivi équipe locale
               </Button>
