@@ -28,3 +28,10 @@ Reuse established microcopy tokens for repeated actions (“Publier”, “Archi
 
 ## Microcopy checklist
 Errors: explain calmly + propose a fix (“Réessayez” / lien support). Empty states: one friendly line + concrete next step. Avoid dramatizing unless safety requires it — align with `ethical-nudge-ux`.
+
+## Error messages (UI)
+- **Tous les messages d’erreur visibles par l’utilisateur·rice doivent être en français (fr-FR)** — jamais de texte brut renvoyé par Supabase, une API ou une lib tierce en anglais.
+- **Ne jamais afficher** `error.message` d’un SDK directement dans l’UI : passer par un mapper ou un message métier rédigé en français.
+- **Auth Supabase** : utiliser `formatAuthError()` (`lib/utils/auth-errors.ts`) dans les server actions (`signUp`, `signIn`, etc.) avec un fallback français générique si le code/message n’est pas reconnu.
+- **Validation (Zod, formulaires)** : messages d’erreur en français dans les schémas (`lib/validations/schemas.ts`), pas les defaults anglais de la lib.
+- Ton des erreurs : calme, utile, orienté action (« Vérifiez… », « Réessayez… », lien connexion si compte existant).

@@ -36,6 +36,7 @@ Performance, maintainability, and scalability defaults → `vie-locale-quality.m
 - For **long** forms or forms in a **modal**: persist fields in **`localStorage`** with a **stable key** per form / context (project prefix + identifier).
 - **Rehydrate** on mount; **remove** the entry after successful save (or explicit “discard draft” action).
 - Do **not** store passwords, secrets, or highly sensitive data.
+- **Exception auth** : email and password shared between `/inscription` and `/connexion` via an in-memory React context (`AuthCredentialsProvider` on `(public)/layout`) — not disk storage; values are lost on full page reload or when leaving the public auth layout.
 
 ## Naming conventions
 

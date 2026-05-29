@@ -233,6 +233,22 @@ Espacements autorisés : `1, 2, 3, 4, 5, 6, 8, 10, 12, 16` (Tailwind) = 4, 8, 12
 - Barres de progression : dégradé sémantique, animation fluide.
 - Pas d'animations longues, rebonds excessifs ou parallax.
 
+### Curseur (cursor)
+
+Tout élément cliquable doit afficher un curseur **pointer** pour signaler l'interactivité.
+
+| Élément | Classe / règle |
+|---|---|
+| Boutons (`Button`, `GradientButton`) | `cursor-pointer` + `disabled:cursor-not-allowed` dans la classe de base |
+| Liens (`<a>`, `<Link>`) | `cursor-pointer` (base globale `@layer base` dans `globals.css`) |
+| Labels checkbox / radio | `cursor-pointer` sur le `<label>` |
+| Items de liste cliquables (autocomplete, menus) | `cursor-pointer` sur le bouton / item |
+| Boutons icône (ex. afficher mot de passe) | `cursor-pointer` |
+| Overlay modal (fermeture) | `cursor-pointer` |
+| Champs texte, textarea | curseur par défaut — **ne pas** mettre `cursor-pointer` |
+
+Règle globale dans `globals.css` : liens, boutons actifs, checkbox/radio et labels associés. Pour les zones custom (`onClick` sur un `div`), ajouter explicitement `cursor-pointer`.
+
 ---
 
 ## Anti-patterns — ne jamais faire
@@ -270,3 +286,4 @@ Espacements autorisés : `1, 2, 3, 4, 5, 6, 8, 10, 12, 16` (Tailwind) = 4, 8, 12
 7. Assets manquants = `AssetPlaceholder`, pas de stock photo ?
 8. Illustrations = `lib/constants/illustrations.ts` ; logos locaux = `lib/constants/assets.ts` ; pas d’URL en dur ?
 9. Mobile = bottom nav ; desktop = sidebar / layout large (pas de shell `max-w-md` global sur l’app connectée) ?
+10. Curseur = `cursor-pointer` sur tout élément cliquable ; `cursor-not-allowed` si disabled ?

@@ -3,6 +3,9 @@ import type { AnnouncementType } from "@/lib/constants/announcement-types";
 export const ROUTES = {
   home: "/",
   connexion: "/connexion",
+  connexionForgotPassword: "/connexion/mot-de-passe-oublie",
+  connexionNewPassword: "/connexion/nouveau-mot-de-passe",
+  authCallback: "/auth/callback",
   inscription: {
     root: "/inscription",
     commune: "/inscription/commune",

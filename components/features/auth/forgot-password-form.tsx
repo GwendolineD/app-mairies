@@ -2,44 +2,65 @@
 
 import Link from "next/link";
 import { startTransition, useActionState } from "react";
-import { ArrowRight, Lock, Mail } from "lucide-react";
+import { ArrowRight, Mail } from "lucide-react";
 import { useAuthCredentials } from "@/components/features/auth/auth-credentials-provider";
-import { signIn } from "@/lib/actions/auth";
+import { requestPasswordReset } from "@/lib/actions/auth";
 import { ROUTES } from "@/lib/constants/routes";
 import { Button } from "@/components/ui/button";
 import { IconField, IconInput } from "@/components/ui/icon-field";
-import { PasswordField } from "@/components/ui/password-field";
 
-export function ConnexionForm({
-  callbackError,
-}: {
-  callbackError?: boolean;
-}) {
-  const { email, password, setCredentials } = useAuthCredentials();
+type FormState =
+  | { error?: string; success?: boolean }
+  | undefined;
+
+export function ForgotPasswordForm() {
+  const { email, setCredentials } = useAuthCredentials();
   const [state, formAction, isPending] = useActionState(
-    async (_: { error?: string } | undefined, fd: FormData) => signIn(fd),
-    undefined as { error?: string } | undefined,
+    async (_: FormState, fd: FormData) => requestPasswordReset(fd),
+    undefined as FormState,
   );
 
-  const displayError =
-    state?.error ??
-    (callbackError
-      ? "Lien invalide ou expiré. Demandez un nouveau mot de passe."
-      : undefined);
+  if (state?.success) {
+    return (
+      <div className="flex flex-1 flex-col rounded-3xl bg-surface px-8 py-14 shadow-elevated md:min-h-0 md:px-12 md:py-16">
+        <div className="flex flex-1 flex-col justify-center gap-4 text-center">
+          <h1 className="text-xl font-bold text-text md:text-[1.35rem]">
+            E-mail envoyé
+          </h1>
+          <p className="text-sm font-medium text-muted">
+            Si un compte existe avec cette adresse, vous recevrez un lien pour
+            choisir un nouveau mot de passe. Pensez à vérifier vos spams.
+          </p>
+        </div>
+        <div className="pt-8">
+          <Link
+            href={ROUTES.connexion}
+            className="block text-center text-xs font-semibold text-purple underline"
+          >
+            Retour à la connexion
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-1 flex-col rounded-3xl bg-surface px-8 py-14 shadow-elevated md:min-h-0 md:px-12 md:py-16">
       <div className="flex shrink-0 flex-col items-center text-center">
         <div className="mb-3 flex size-11 items-center justify-center rounded-full bg-purple/15 md:size-12">
-          <Lock
+          <Mail
             className="size-5 text-purple md:size-6"
             strokeWidth={2.25}
             aria-hidden
           />
         </div>
         <h1 className="text-xl font-bold text-text md:text-[1.35rem]">
-          Se connecter
+          Mot de passe oublié
         </h1>
+        <p className="mt-2 max-w-xs text-sm font-medium text-muted">
+          Pas de panique, on vous envoie un lien pour choisir un nouveau mot de
+          passe.
+        </p>
       </div>
 
       <form
@@ -66,27 +87,12 @@ export function ConnexionForm({
             />
           </IconField>
 
-          <PasswordField
-            autoComplete="current-password"
-            placeholder="Votre mot de passe"
-            showValidation={false}
-            value={password}
-            onValueChange={(value) => setCredentials({ password: value })}
-          />
-
-          <Link
-            href={ROUTES.connexionForgotPassword}
-            className="self-end text-xs font-semibold text-purple underline"
-          >
-            Mot de passe oublié ?
-          </Link>
-
-          {displayError ? (
+          {state?.error ? (
             <p
               className="rounded-md bg-soft-pink px-3 py-2 text-xs font-medium text-coral"
               role="alert"
             >
-              {displayError}
+              {state.error}
             </p>
           ) : null}
         </div>
@@ -98,16 +104,15 @@ export function ConnexionForm({
             className="w-full py-3 text-[15px] font-bold md:py-2.5"
           >
             <ArrowRight className="size-[18px]" strokeWidth={2.5} aria-hidden />
-            Se connecter
+            Envoyer le lien
           </Button>
 
           <p className="text-center text-xs font-medium text-muted">
-            Pas encore de compte ?{" "}
             <Link
-              href={ROUTES.inscription.root}
+              href={ROUTES.connexion}
               className="cursor-pointer font-semibold text-purple underline"
             >
-              Créer un compte
+              Retour à la connexion
             </Link>
           </p>
         </div>

@@ -53,7 +53,7 @@ export function AuthHeroContent({ className }: Props) {
           width={320}
           height={96}
           priority
-          className="h-20 w-auto max-w-[min(100%,20rem)] shrink-0 object-contain object-left md:h-24 md:max-w-[22rem]"
+          className="h-20 w-auto max-w-[min(100%,20rem)] shrink-0 object-contain object-left md:ml-12 md:h-24 md:max-w-[22rem]"
         />
       ) : null}
 
@@ -66,7 +66,7 @@ export function AuthHeroContent({ className }: Props) {
 
       <div className="mt-auto pt-8 md:pt-6">
         <div className="mx-auto w-full max-w-xl rounded-xl bg-surface/90 p-3 shadow-card backdrop-blur-sm md:p-4">
-          <ul className="grid grid-cols-3 gap-2 md:gap-3">
+          <ul className="grid grid-cols-3 gap-4 md:gap-6">
             {FEATURES.map((feature) => (
               <li
                 key={feature.title}

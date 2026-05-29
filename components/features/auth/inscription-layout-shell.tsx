@@ -5,5 +5,5 @@ export function InscriptionLayoutShell({
 }: {
   children: React.ReactNode;
 }) {
-  return <AuthPageShell mode="inscription">{children}</AuthPageShell>;
+  return <AuthPageShell>{children}</AuthPageShell>;
 }

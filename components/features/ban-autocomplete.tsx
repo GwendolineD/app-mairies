@@ -2,7 +2,7 @@
 
 import type { LucideIcon } from "lucide-react";
 import { ChevronDown } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/utils/cn";
 import type { BanFeature } from "@/lib/ban/client";
 
@@ -20,6 +20,13 @@ type Props = {
   formatSuggestion?: (feature: BanFeature) => string;
 };
 
+function suggestionLabel(
+  feature: BanFeature,
+  formatSuggestion?: (feature: BanFeature) => string,
+) {
+  return formatSuggestion?.(feature) ?? feature.label;
+}
+
 export function BanAutocomplete({
   label,
   placeholder,
@@ -33,22 +40,44 @@ export function BanAutocomplete({
   showChevron,
   formatSuggestion,
 }: Props) {
+  const listboxId = useId();
   const [query, setQuery] = useState(value ?? "");
   const [suggestions, setSuggestions] = useState<BanFeature[]>([]);
   const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const listRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
     if (value !== undefined) setQuery(value);
   }, [value]);
 
+  useEffect(() => {
+    if (activeIndex < 0 || !listRef.current) return;
+    const item = listRef.current.children[activeIndex] as HTMLElement | undefined;
+    item?.querySelector("button")?.scrollIntoView({ block: "nearest" });
+  }, [activeIndex]);
+
+  function closeList() {
+    setOpen(false);
+    setActiveIndex(-1);
+  }
+
+  function selectSuggestion(feature: BanFeature) {
+    setQuery(suggestionLabel(feature, formatSuggestion));
+    onSelect(feature);
+    closeList();
+  }
+
   function handleChange(text: string) {
     setQuery(text);
+    setActiveIndex(-1);
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
       const results = await fetchSuggestions(text);
       setSuggestions(results);
       setOpen(results.length > 0);
+      setActiveIndex(-1);
     }, 300);
   }
 
@@ -57,10 +86,66 @@ export function BanAutocomplete({
       const results = await fetchSuggestions(query);
       setSuggestions(results);
       setOpen(results.length > 0);
+      setActiveIndex(-1);
       return;
     }
-    if (suggestions.length > 0) setOpen(true);
+    if (suggestions.length > 0) {
+      setOpen(true);
+      setActiveIndex(-1);
+    }
   }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Escape") {
+      if (open) {
+        e.preventDefault();
+        closeList();
+      }
+      return;
+    }
+
+    if (e.key === "Tab") {
+      closeList();
+      return;
+    }
+
+    if (suggestions.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (!open) {
+        setOpen(true);
+        setActiveIndex(0);
+        return;
+      }
+      setActiveIndex((index) =>
+        index < suggestions.length - 1 ? index + 1 : 0,
+      );
+      return;
+    }
+
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (!open) {
+        setOpen(true);
+        setActiveIndex(suggestions.length - 1);
+        return;
+      }
+      setActiveIndex((index) =>
+        index > 0 ? index - 1 : suggestions.length - 1,
+      );
+      return;
+    }
+
+    if (e.key === "Enter" && open && activeIndex >= 0) {
+      e.preventDefault();
+      const feature = suggestions[activeIndex];
+      if (feature) selectSuggestion(feature);
+    }
+  }
+
+  const activeOptionId =
+    activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined;
 
   return (
     <div className="relative w-full">
@@ -80,14 +165,20 @@ export function BanAutocomplete({
           type="text"
           name="autocomplete"
           autoComplete="off"
+          role="combobox"
+          aria-expanded={open}
+          aria-controls={listboxId}
+          aria-autocomplete="list"
+          aria-activedescendant={activeOptionId}
           disabled={disabled}
           placeholder={placeholder}
           value={query}
           onChange={(e) => handleChange(e.target.value)}
           onFocus={() => void handleFocus()}
-          onBlur={() => setTimeout(() => setOpen(false), 150)}
+          onBlur={() => setTimeout(() => closeList(), 150)}
+          onKeyDown={handleKeyDown}
           className={cn(
-            "w-full rounded-sm border border-border bg-surface py-3.5 text-sm text-text outline-none placeholder:text-subtle focus:border-purple disabled:cursor-not-allowed disabled:opacity-50 md:py-2.5",
+            "w-full rounded-sm border border-border bg-surface py-2.5 text-sm text-text outline-none placeholder:text-subtle focus:border-purple disabled:cursor-not-allowed disabled:opacity-50 md:py-2",
             LeadingIcon ? "pl-10" : "px-4",
             showChevron ? "pr-10" : LeadingIcon ? "pr-4" : "px-4",
             inputClassName,
@@ -100,28 +191,37 @@ export function BanAutocomplete({
           />
         ) : null}
       </div>
-      {open && (
-        <ul className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-sm border border-border bg-surface shadow-elevated">
-          {suggestions.map((s) => {
-            const label = formatSuggestion?.(s) ?? s.label;
+      {open ? (
+        <ul
+          ref={listRef}
+          id={listboxId}
+          role="listbox"
+          className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-sm border border-border bg-surface shadow-elevated"
+        >
+          {suggestions.map((feature, index) => {
+            const text = suggestionLabel(feature, formatSuggestion);
+            const isActive = index === activeIndex;
             return (
-            <li key={`${s.citycode}-${s.label}`}>
-              <button
-                type="button"
-                className="w-full px-4 py-2.5 text-left text-sm hover:bg-warm"
-                onMouseDown={() => {
-                  setQuery(label);
-                  onSelect(s);
-                  setOpen(false);
-                }}
-              >
-                {label}
-              </button>
-            </li>
+              <li key={`${feature.citycode}-${feature.label}`} role="presentation">
+                <button
+                  type="button"
+                  id={`${listboxId}-option-${index}`}
+                  role="option"
+                  aria-selected={isActive}
+                  className={cn(
+                    "w-full cursor-pointer px-4 py-2.5 text-left text-sm hover:bg-warm",
+                    isActive && "bg-warm",
+                  )}
+                  onMouseDown={() => selectSuggestion(feature)}
+                  onMouseEnter={() => setActiveIndex(index)}
+                >
+                  {text}
+                </button>
+              </li>
             );
           })}
         </ul>
-      )}
+      ) : null}
     </div>
   );
 }

@@ -7,12 +7,28 @@ const categorySlugs = ANNOUNCEMENT_CATEGORIES.map((c) => c.slug) as [
   ...string[],
 ];
 
+export const passwordSchema = z
+  .string()
+  .min(8, "8 caractères minimum")
+  .regex(/(?=.*[A-Za-z])(?=.*\d)/, "Lettres et chiffres requis");
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Email invalide"),
+});
+
+export const resetPasswordSchema = z
+  .object({
+    password: passwordSchema,
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Les mots de passe ne correspondent pas",
+    path: ["confirmPassword"],
+  });
+
 export const signupSchema = z.object({
   email: z.string().email("Email invalide"),
-  password: z
-    .string()
-    .min(8, "8 caractères minimum")
-    .regex(/(?=.*[A-Za-z])(?=.*\d)/, "Lettres et chiffres requis"),
+  password: passwordSchema,
   firstName: z.string().min(1, "Prénom requis"),
   lastName: z.string().min(1, "Nom requis"),
   inseeCode: z.string().min(1),

@@ -86,6 +86,29 @@ body {
   font-family: var(--font-manrope), system-ui, sans-serif;
 }
 
+@layer base {
+  a[href] {
+    cursor: pointer;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"],
+  label:has(> input[type="checkbox"]),
+  label:has(> input[type="radio"]) {
+    cursor: pointer;
+  }
+}
+
 .gradient-hero {
   background: var(--gradient-hero);
 }

@@ -1,11 +1,27 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { RECOVERY_COOKIE_NAME } from "@/lib/constants/auth";
 import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
+import { getAppUrl } from "@/lib/utils/app-url";
+import { formatAuthError } from "@/lib/utils/auth-errors";
 import { formatDisplayName } from "@/lib/utils/display-name";
-import { signupSchema } from "@/lib/validations/schemas";
+import {
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  signupSchema,
+} from "@/lib/validations/schemas";
+
+function isRateLimitError(error: { code?: string; message?: string }): boolean {
+  return (
+    error.code === "over_email_send_rate_limit" ||
+    error.code === "over_request_rate_limit" ||
+    /rate limit|too many requests/i.test(error.message ?? "")
+  );
+}
 
 export async function signUp(formData: FormData) {
   const raw = {
@@ -44,7 +60,16 @@ export async function signUp(formData: FormData) {
   });
 
   if (authError || !authData.user) {
-    return { error: { form: [authError?.message ?? "Inscription impossible"] } };
+    return {
+      error: {
+        form: [
+          formatAuthError(
+            authError,
+            "Inscription impossible pour le moment. Réessayez dans un instant.",
+          ),
+        ],
+      },
+    };
   }
 
   const displayName = formatDisplayName(
@@ -83,8 +108,96 @@ export async function signIn(formData: FormData) {
   const supabase = await createClient();
 
   const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return { error: error.message };
+  if (error) {
+    return {
+      error: formatAuthError(
+        error,
+        "Connexion impossible. Vérifiez vos identifiants et réessayez.",
+      ),
+    };
+  }
 
+  redirect(ROUTES.accueil);
+}
+
+export async function requestPasswordReset(formData: FormData) {
+  const parsed = forgotPasswordSchema.safeParse({
+    email: formData.get("email"),
+  });
+
+  if (!parsed.success) {
+    return {
+      error:
+        parsed.error.flatten().fieldErrors.email?.[0] ?? "Email invalide",
+    };
+  }
+
+  const supabase = await createClient();
+  const redirectTo = `${getAppUrl()}${ROUTES.authCallback}`;
+
+  const { error } = await supabase.auth.resetPasswordForEmail(
+    parsed.data.email,
+    { redirectTo },
+  );
+
+  if (error && isRateLimitError(error)) {
+    return {
+      error: formatAuthError(
+        error,
+        "Trop de demandes envoyées. Patientez quelques instants et réessayez.",
+      ),
+    };
+  }
+
+  return { success: true as const };
+}
+
+export async function updatePassword(formData: FormData) {
+  const cookieStore = await cookies();
+  if (!cookieStore.get(RECOVERY_COOKIE_NAME)) {
+    return {
+      error: "Lien expiré ou invalide. Demandez un nouveau mot de passe.",
+    };
+  }
+
+  const parsed = resetPasswordSchema.safeParse({
+    password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
+  });
+
+  if (!parsed.success) {
+    const fieldErrors = parsed.error.flatten().fieldErrors;
+    return {
+      error:
+        fieldErrors.password?.[0] ??
+        fieldErrors.confirmPassword?.[0] ??
+        "Les informations saisies sont invalides.",
+    };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Session expirée. Demandez un nouveau lien." };
+  }
+
+  const { error } = await supabase.auth.updateUser({
+    password: parsed.data.password,
+  });
+
+  if (error) {
+    return {
+      error: formatAuthError(
+        error,
+        "Impossible de mettre à jour le mot de passe.",
+      ),
+    };
+  }
+
+  cookieStore.delete(RECOVERY_COOKIE_NAME);
   redirect(ROUTES.accueil);
 }
 
@@ -132,7 +245,12 @@ export async function submitCommuneInterest(formData: FormData) {
     metadata,
   });
 
-  if (error) return { error: error.message };
+  if (error) {
+    return {
+      error:
+        "Enregistrement impossible pour le moment. Réessayez dans un instant.",
+    };
+  }
 
   revalidatePath(ROUTES.inscription.root);
   return { success: true };

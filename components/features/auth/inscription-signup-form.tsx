@@ -1,13 +1,14 @@
 "use client";
 
-import { useActionState, useCallback, useState } from "react";
+import { startTransition, useActionState, useCallback, useState } from "react";
 import Link from "next/link";
 import { Mail, MapPin, User, UserPlus, Users } from "lucide-react";
 import { BanAutocomplete } from "@/components/features/ban-autocomplete";
+import { useAuthCredentials } from "@/components/features/auth/auth-credentials-provider";
 import { CommuneUnavailableModal } from "@/components/features/auth/commune-unavailable-modal";
 import { Button } from "@/components/ui/button";
 import { IconField, IconInput } from "@/components/ui/icon-field";
-import { PasswordField } from "@/components/ui/password-field";
+import { PasswordField, PASSWORD_RULE } from "@/components/ui/password-field";
 import type { BanFeature } from "@/lib/ban/client";
 import { searchMunicipalities } from "@/lib/ban/client";
 import { formatMunicipalityDisplay } from "@/lib/ban/display";
@@ -29,6 +30,7 @@ type AddressDraft = {
 };
 
 export function InscriptionSignupForm() {
+  const { email, password, setCredentials } = useAuthCredentials();
   const [communeFeature, setCommuneFeature] = useState<BanFeature | null>(null);
   const [communeActive, setCommuneActive] = useState(false);
   const [communeLoading, setCommuneLoading] = useState(false);
@@ -41,7 +43,9 @@ export function InscriptionSignupForm() {
     lng: 0,
   });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [passwordValid, setPasswordValid] = useState(false);
+  const [passwordValid, setPasswordValid] = useState(() =>
+    PASSWORD_RULE.test(password),
+  );
 
   const [signupState, signupAction, signupPending] = useActionState(
     async (_prev: SignUpState | undefined, formData: FormData) =>
@@ -91,8 +95,8 @@ export function InscriptionSignupForm() {
 
   return (
     <>
-      <div className="flex flex-1 flex-col max-md:contents md:rounded-3xl md:bg-surface md:px-8 md:py-5 md:shadow-elevated">
-        <div className="mb-6 flex flex-col items-center text-center md:mb-7">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-3xl bg-surface px-8 py-7 shadow-elevated md:px-12 md:py-8">
+        <div className="flex shrink-0 flex-col items-center text-center">
           <div className="mb-3 flex size-11 items-center justify-center rounded-full bg-purple/15 md:size-12">
             <Users
               className="size-5 text-purple md:size-6"
@@ -105,7 +109,17 @@ export function InscriptionSignupForm() {
           </h2>
         </div>
 
-        <form action={signupAction} className="flex flex-1 flex-col gap-4 md:gap-3">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            startTransition(() => {
+              signupAction(formData);
+            });
+          }}
+          className="flex flex-1 flex-col justify-between gap-6 pt-8 md:gap-8 md:pt-10"
+        >
+          <div className="flex flex-col gap-4 md:gap-3">
           {communeFeature ? (
             <input type="hidden" name="inseeCode" value={communeFeature.citycode} />
           ) : null}
@@ -126,7 +140,7 @@ export function InscriptionSignupForm() {
 
           <BanAutocomplete
             label="Ma commune"
-            placeholder="Saint-Florent"
+            placeholder="Les Authieux"
             fetchSuggestions={(q) => searchMunicipalities(q)}
             onSelect={(f) => void onPickCommune(f)}
             value={
@@ -178,10 +192,16 @@ export function InscriptionSignupForm() {
               required
               autoComplete="email"
               placeholder="votre.email@exemple.com"
+              value={email}
+              onChange={(e) => setCredentials({ email: e.target.value })}
             />
           </IconField>
 
-          <PasswordField onValidityChange={setPasswordValid} />
+          <PasswordField
+            value={password}
+            onValueChange={(value) => setCredentials({ password: value })}
+            onValidityChange={setPasswordValid}
+          />
 
           <label className="my-1.5 flex cursor-pointer items-center gap-2 py-1 text-xs leading-snug text-muted">
             <input
@@ -197,7 +217,7 @@ export function InscriptionSignupForm() {
                   href={TERMS_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-semibold text-pink hover:underline"
+                  className="cursor-pointer font-semibold text-pink hover:underline"
                 >
                   Conditions d&apos;utilisation
                 </a>
@@ -212,7 +232,7 @@ export function InscriptionSignupForm() {
                   href={PRIVACY_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[9px] font-semibold text-pink hover:underline md:text-[10px]"
+                  className="cursor-pointer text-[9px] font-semibold text-pink hover:underline md:text-[10px]"
                 >
                   Politique de confidentialité
                 </a>
@@ -248,28 +268,30 @@ export function InscriptionSignupForm() {
                   )),
                 )
             : null}
+          </div>
 
-          <Button
-            type="submit"
-            disabled={!canSubmit}
-            className="mt-1 w-full py-3 text-[15px] font-bold md:py-2.5"
-          >
-            <UserPlus className="size-[18px]" strokeWidth={2.5} aria-hidden />
-            Créer mon compte
-          </Button>
+          <div className="flex flex-col gap-4">
+            <Button
+              type="submit"
+              disabled={!canSubmit}
+              className="w-full py-3 text-[15px] font-bold md:py-2.5"
+            >
+              <UserPlus className="size-[18px]" strokeWidth={2.5} aria-hidden />
+              Créer mon compte
+            </Button>
 
-          <p className="mt-auto pt-3 text-center text-[10px] font-medium text-muted md:text-[11px]">
-            En créant un compte, vous rejoignez votre communauté locale. 🌿
-          </p>
+            <p className="text-center text-xs font-medium text-muted">
+              Vous avez déjà un compte ?{" "}
+              <Link
+                href={ROUTES.connexion}
+                className="cursor-pointer font-semibold text-purple underline"
+              >
+                Se connecter
+              </Link>
+            </p>
+          </div>
         </form>
       </div>
-
-      <p className="mt-4 text-center text-sm font-medium text-muted md:hidden">
-        Vous avez déjà un compte ?{" "}
-        <Link href={ROUTES.connexion} className="font-semibold text-purple underline">
-          Se connecter
-        </Link>
-      </p>
 
       <CommuneUnavailableModal
         open={modalOpen}

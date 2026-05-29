@@ -5,5 +5,5 @@ export function ConnexionLayoutShell({
 }: {
   children: React.ReactNode;
 }) {
-  return <AuthPageShell mode="connexion">{children}</AuthPageShell>;
+  return <AuthPageShell>{children}</AuthPageShell>;
 }
