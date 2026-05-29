@@ -58,8 +58,7 @@ export function ForgotPasswordForm() {
           Mot de passe oublié
         </h1>
         <p className="mt-2 max-w-xs text-sm font-medium text-muted">
-          Pas de panique, on vous envoie un lien pour choisir un nouveau mot de
-          passe.
+          On vous envoie un lien pour choisir un nouveau mot de passe.
         </p>
       </div>
 
