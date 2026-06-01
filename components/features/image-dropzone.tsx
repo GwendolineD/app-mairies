@@ -134,7 +134,7 @@ export function ImageDropzone({ value, onChange, communeId, className }: Props) 
   }
 
   return (
-    <div className={className}>
+    <div className={cn("flex flex-col", className)}>
       <div
         role="button"
         tabIndex={0}
@@ -156,7 +156,7 @@ export function ImageDropzone({ value, onChange, communeId, className }: Props) 
         }}
         onClick={() => inputRef.current?.click()}
         className={cn(
-          "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-8 text-center transition",
+          "flex flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-8 text-center transition",
           dragOver
             ? "border-purple bg-soft-pink/50"
             : "border-border bg-warm/30 hover:border-purple/40 hover:bg-warm/60",

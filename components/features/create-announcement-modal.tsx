@@ -83,16 +83,19 @@ export function CreateAnnouncementModal({
     if (!open) return;
     const saved = readFormDraft<Draft>(draftKey);
     if (saved) {
-      setType(saved.type);
       setCategorySlug(saved.categorySlug);
       setTitle(saved.title);
       setDescription(saved.description);
       setTargetDate(saved.targetDate);
       setPhotoUrl(saved.photoUrl || null);
     } else {
-      setType(presetType);
       setCategorySlug(ANNOUNCEMENT_CATEGORIES[0].slug);
+      setTitle("");
+      setDescription("");
+      setTargetDate("");
+      setPhotoUrl(null);
     }
+    setType(presetType);
   }, [open, presetType, draftKey]);
 
   useEffect(() => {
@@ -185,7 +188,7 @@ export function CreateAnnouncementModal({
                   type="button"
                   onClick={() => setCategorySlug(cat.slug)}
                   className={cn(
-                    "flex cursor-pointer flex-col items-center gap-1.5 rounded-xl border-2 px-2 py-3 text-center transition",
+                    "relative flex cursor-pointer flex-row items-center gap-2 rounded-xl border-2 px-2.5 py-2.5 text-left transition",
                     selected
                       ? "border-purple bg-soft-pink shadow-sm"
                       : "border-border bg-surface hover:border-purple/25",
@@ -196,13 +199,18 @@ export function CreateAnnouncementModal({
                       : undefined
                   }
                 >
+                  {selected ? (
+                    <span className="absolute top-1.5 right-1.5 flex size-5 items-center justify-center rounded-full bg-purple text-white">
+                      <Check className="size-3" strokeWidth={3} aria-hidden />
+                    </span>
+                  ) : null}
                   <span
-                    className="flex size-10 items-center justify-center rounded-lg"
+                    className="flex size-9 shrink-0 items-center justify-center rounded-lg"
                     style={{ backgroundColor: `${cat.colorHex}22`, color: cat.colorHex }}
                   >
-                    <Icon className="size-5" strokeWidth={2} aria-hidden />
+                    <Icon className="size-4" strokeWidth={2} aria-hidden />
                   </span>
-                  <span className="text-[11px] leading-tight font-semibold text-text">
+                  <span className="min-w-0 flex-1 text-xs leading-tight font-semibold text-text">
                     {cat.label}
                   </span>
                 </button>
@@ -253,27 +261,30 @@ export function CreateAnnouncementModal({
             />
           </FormField>
 
-          <ImageDropzone
-            value={photoUrl}
-            onChange={setPhotoUrl}
-            communeId={communeId}
-          />
+          <div className="grid gap-4 md:grid-cols-2 md:items-stretch">
+            <ImageDropzone
+              value={photoUrl}
+              onChange={setPhotoUrl}
+              communeId={communeId}
+              className="h-full min-h-0"
+            />
 
-          <div className="rounded-xl border border-sun/30 bg-sun/10 px-4 py-3">
-            <p className="text-sm font-bold text-text">
-              Conseils pour une annonce réussie ✨
-            </p>
-            <ul className="mt-2 space-y-1.5">
-              {ANNOUNCEMENT_TIPS.map((tip) => (
-                <li
-                  key={tip}
-                  className="flex items-start gap-2 text-sm font-medium text-muted"
-                >
-                  <Check className="mt-0.5 size-4 shrink-0 text-mint" aria-hidden />
-                  {tip}
-                </li>
-              ))}
-            </ul>
+            <div className="rounded-xl border border-sun/30 bg-sun/10 px-4 py-3">
+              <p className="text-sm font-bold text-text">
+                Conseils pour une annonce réussie ✨
+              </p>
+              <ul className="mt-2 space-y-1.5">
+                {ANNOUNCEMENT_TIPS.map((tip) => (
+                  <li
+                    key={tip}
+                    className="flex items-start gap-2 text-sm font-medium text-muted"
+                  >
+                    <Check className="mt-0.5 size-4 shrink-0 text-mint" aria-hidden />
+                    {tip}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </section>
 
@@ -286,7 +297,7 @@ export function CreateAnnouncementModal({
         <div className="flex flex-col-reverse gap-2 border-t border-border/60 pt-4 sm:flex-row sm:justify-end">
           <Button
             type="button"
-            variant="secondary"
+            variant="ghost"
             onClick={onClose}
             className="sm:min-w-[120px]"
           >
