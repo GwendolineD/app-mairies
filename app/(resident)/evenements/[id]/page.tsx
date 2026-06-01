@@ -1,3 +1,4 @@
+import dynamic from "next/dynamic";
 import { notFound } from "next/navigation";
 import { submitArchiveEvent, submitDeleteEvent } from "@/lib/actions/events";
 import { requireActiveMembership } from "@/lib/auth/session";
@@ -12,6 +13,11 @@ import { ContentTypeTag } from "@/components/ui/content-type-tag";
 import { ReportButton } from "@/components/features/report-button";
 import type { AgendaEventRecord } from "@/lib/types";
 import { PageStack } from "@/components/ui/page-stack";
+
+const MapViewCommune = dynamic(
+  () => import("@/components/features/map-view").then((m) => m.MapViewCommune),
+  { loading: () => <div className="h-48 animate-pulse rounded-3xl bg-warm" /> },
+);
 
 export default async function EvenementDetailPage(props: {
   params: Promise<{ id: string }>;
@@ -33,43 +39,65 @@ export default async function EvenementDetailPage(props: {
 
   return (
     <PageStack gap="5">
-      <BackLink href={ROUTES.evenements.list}>← Liste</BackLink>
-      <Card className="space-y-4 p-6 lg:max-w-4xl">
-        <div className="flex flex-wrap justify-between gap-4">
-          <div>
-            <ContentTypeTag type="event" />
-            <h1 className="mt-2 text-[28px] font-bold leading-9 text-text">{event.title}</h1>
+      <BackLink href={ROUTES.evenements.list}>← Événements</BackLink>
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <Card className="space-y-4 p-6 lg:col-span-2">
+          <div className="flex flex-wrap justify-between gap-4">
+            <div>
+              <ContentTypeTag type="event" />
+              <h1 className="mt-2 text-[28px] font-bold leading-9 text-text">{event.title}</h1>
+            </div>
+            <ReportButton contextType="event" contextId={event.id} />
           </div>
-          <ReportButton contextType="event" contextId={event.id} />
-        </div>
-        <AssetPlaceholder
-          description="Illustration événement — style 3D Warm Community à venir"
-          aspectRatio="16/9"
-          className="rounded-2xl"
-        />
-        <p className="rounded-2xl bg-warm px-4 py-3 text-sm font-medium text-muted">
-          {formatEventDetail(event.starts_at, event.ends_at)}
-        </p>
-        <p className="whitespace-pre-line text-base font-medium leading-6 text-muted">
-          {event.description}
-        </p>
-        {isAuthor ? (
-          <div className="flex gap-2">
-            <form action={submitArchiveEvent}>
-              <input type="hidden" name="id" value={event.id} />
-              <Button type="submit" variant="secondary" className="text-xs">
-                Archiver
-              </Button>
-            </form>
-            <form action={submitDeleteEvent}>
-              <input type="hidden" name="id" value={event.id} />
-              <Button type="submit" variant="danger" className="text-xs">
-                Supprimer
-              </Button>
-            </form>
-          </div>
+          {event.photo_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={event.photo_url} alt="" className="rounded-2xl border border-border" />
+          ) : (
+            <AssetPlaceholder
+              description="Illustration événement"
+              aspectRatio="16/9"
+              className="rounded-2xl"
+            />
+          )}
+          <p className="rounded-2xl bg-warm px-4 py-3 text-sm font-medium text-muted">
+            {formatEventDetail(event.starts_at, event.ends_at)}
+          </p>
+          {event.address_label ? (
+            <p className="text-sm text-muted">Lieu : {event.address_label}</p>
+          ) : null}
+          <p className="whitespace-pre-line text-base font-medium leading-6 text-muted">
+            {event.description}
+          </p>
+          {isAuthor ? (
+            <div className="flex gap-2">
+              <form action={submitArchiveEvent}>
+                <input type="hidden" name="id" value={event.id} />
+                <Button type="submit" variant="secondary" className="text-xs">
+                  Archiver
+                </Button>
+              </form>
+              <form action={submitDeleteEvent}>
+                <input type="hidden" name="id" value={event.id} />
+                <Button type="submit" variant="danger" className="text-xs">
+                  Supprimer
+                </Button>
+              </form>
+            </div>
+          ) : null}
+        </Card>
+        {event.address_lat != null && event.address_lng != null ? (
+          <Card className="p-4">
+            <h2 className="mb-2 text-lg font-semibold text-text">Carte</h2>
+            <MapViewCommune
+              latitude={event.address_lat}
+              longitude={event.address_lng}
+              communeName={event.title}
+              zoom={15}
+              className="h-48 rounded-2xl overflow-hidden border border-border/70"
+            />
+          </Card>
         ) : null}
-      </Card>
+      </div>
     </PageStack>
   );
 }

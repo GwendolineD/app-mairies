@@ -30,6 +30,7 @@ export type Profile = {
   first_name: string | null;
   last_name: string | null;
   display_name: string | null;
+  bio: string | null;
   avatar_url: string | null;
   active_commune_id: string | null;
   role: UserRole;
@@ -72,6 +73,7 @@ export type InitiativeRecord = {
   id: string;
   commune_id: string;
   author_membership_id: string;
+  category_slug: string | null;
   title: string;
   description: string | null;
   date_mode: "none" | "once" | "recurring";
@@ -79,6 +81,7 @@ export type InitiativeRecord = {
   single_ends_at: string | null;
   recurrence_rule: unknown;
   status: "active" | "archived";
+  address_label: string | null;
   address_lat: number | null;
   address_lng: number | null;
   created_at: string;
@@ -95,6 +98,7 @@ export type AgendaEventRecord = {
   ends_at: string;
   status: "active" | "archived";
   photo_url: string | null;
+  address_label: string | null;
   address_lat: number | null;
   address_lng: number | null;
   created_at: string;

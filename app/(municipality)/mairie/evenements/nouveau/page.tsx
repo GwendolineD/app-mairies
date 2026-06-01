@@ -25,6 +25,9 @@ export default function MairieNouveauEvenementPage() {
           <FormField label="Fin">
             <Input type="datetime-local" name="endsAt" required />
           </FormField>
+          <FormField label="Lieu">
+            <Input name="addressLabel" placeholder="Place de la Mairie" />
+          </FormField>
           <GradientButton type="submit" gradient="events" className="w-full">
             Programmer l&apos;événement
           </GradientButton>

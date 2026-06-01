@@ -9,8 +9,13 @@ import {
   ANNOUNCEMENT_STATUS,
   type AnnouncementStatusValue,
 } from "@/lib/constants/statuses";
+import {
+  listAnnouncementsPage,
+  type AnnouncementListFilters,
+} from "@/lib/queries/announcements";
 import { createClient } from "@/lib/supabase/server";
 import { announcementSchema } from "@/lib/validations/schemas";
+import { isAnnouncementType, type AnnouncementType } from "@/lib/constants/announcement-types";
 
 type AnnouncementStatusUpdate = Extract<
   AnnouncementStatusValue,
@@ -31,10 +36,11 @@ export async function createAnnouncement(formData: FormData): Promise<void> {
   const parsed = announcementSchema.safeParse(raw);
   if (!parsed.success) return;
 
+  const membership = ctx.activeMembership!;
   const supabase = await createClient();
   const { error } = await supabase.from("announcements").insert({
-    commune_id: ctx.activeMembership!.commune_id,
-    author_membership_id: ctx.activeMembership!.id,
+    commune_id: membership.commune_id,
+    author_membership_id: membership.id,
     type: parsed.data.type,
     category_slug: parsed.data.categorySlug,
     title: parsed.data.title,
@@ -42,6 +48,8 @@ export async function createAnnouncement(formData: FormData): Promise<void> {
     target_date: parsed.data.targetDate || null,
     photo_url: parsed.data.photoUrl || null,
     status: ANNOUNCEMENT_STATUS.ouverte,
+    address_lat: membership.address_lat,
+    address_lng: membership.address_lng,
   });
 
   if (error) return;
@@ -91,4 +99,19 @@ export async function deleteAnnouncement(id: string) {
   if (error) return { error: error.message };
   revalidatePath(ROUTES.annonces.list);
   return { success: true };
+}
+
+export async function fetchAnnouncementsPage(
+  cursor: string | null,
+  filters: { type?: string; categorie?: string },
+) {
+  const ctx = await requireActiveMembership();
+  const listFilters: AnnouncementListFilters = {
+    communeId: ctx.activeMembership!.commune_id,
+    type: isAnnouncementType(filters.type ?? "") ? filters.type as AnnouncementType : undefined,
+    categorie: filters.categorie || undefined,
+  };
+
+  const supabase = await createClient();
+  return listAnnouncementsPage(supabase, listFilters, { cursor });
 }

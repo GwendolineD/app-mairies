@@ -1,79 +1,88 @@
-import Link from "next/link";
-import { AssetPlaceholder } from "@/components/ui/asset-placeholder";
+import { requireActiveMembership } from "@/lib/auth/session";
+import { EVENT_STATUS, INITIATIVE_STATUS } from "@/lib/constants/statuses";
+import {
+  countOpenDemandsToday,
+  listAnnouncementsPage,
+} from "@/lib/queries/announcements";
+import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
-import { ContentTypeTag } from "@/components/ui/content-type-tag";
-import { GradientButton } from "@/components/ui/gradient-button";
-import { ListGrid, PageStack } from "@/components/ui/page-stack";
-import { ROUTES } from "@/lib/constants/routes";
+import { PageStack } from "@/components/ui/page-stack";
+import {
+  AccueilHero,
+  AccueilQuickActions,
+} from "@/components/features/accueil-sections";
+import {
+  AccueilRecentAnnouncements,
+  AccueilTrendingInitiative,
+  AccueilUpcomingEvents,
+} from "@/components/features/accueil-feed-sections";
+import { resolveFirstName } from "@/lib/utils/display-name";
+import type { AgendaEventRecord, InitiativeRecord } from "@/lib/types";
 
-export default function ResidentAccueilPage() {
+export default async function ResidentAccueilPage() {
+  const ctx = await requireActiveMembership();
+  const communeId = ctx.activeMembership!.commune_id;
+  const communeName = ctx.activeMembership!.commune?.name ?? "Votre commune";
+  const supabase = await createClient();
+
+  const [demandCountToday, recentAnnouncements, initiativesRes, eventsRes] =
+    await Promise.all([
+      countOpenDemandsToday(supabase, communeId),
+      listAnnouncementsPage(supabase, { communeId }, { limit: 3 }),
+      supabase
+        .from("initiatives")
+        .select("*")
+        .eq("commune_id", communeId)
+        .eq("status", INITIATIVE_STATUS.active)
+        .order("created_at", { ascending: false })
+        .limit(1),
+      supabase
+        .from("events")
+        .select("*")
+        .eq("commune_id", communeId)
+        .eq("status", EVENT_STATUS.active)
+        .gte("starts_at", new Date().toISOString())
+        .order("starts_at", { ascending: true })
+        .limit(3),
+    ]);
+
+  const trendingInitiative = (initiativesRes.data?.[0] ?? null) as InitiativeRecord | null;
+  const upcomingEvents = (eventsRes.data ?? []) as AgendaEventRecord[];
+
+  let participantCount = 0;
+  if (trendingInitiative) {
+    const { count } = await supabase
+      .from("initiative_responses")
+      .select("id", { count: "exact", head: true })
+      .eq("initiative_id", trendingInitiative.id);
+    participantCount = count ?? 0;
+  }
+
   return (
-    <PageStack>
-      <AssetPlaceholder
-        description="Bloc nudge empathique bienveillant — à concevoir ensemble"
-        className="rounded-3xl shadow-card lg:max-h-48"
+    <PageStack gap="6">
+      <AccueilHero
+        userFirstName={resolveFirstName(ctx.profile)}
+        demandCountToday={demandCountToday}
       />
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        <GradientButton href={ROUTES.annonces.new("demande")} gradient="demande">
-          Je demande une main
-        </GradientButton>
-        <GradientButton href={ROUTES.annonces.new("offre")} gradient="offre">
-          Je propose mon aide
-        </GradientButton>
-        <GradientButton href={ROUTES.initiatives.new} gradient="initiative">
-          Une initiative commune
-        </GradientButton>
-      </div>
-      <FeedPreview />
-    </PageStack>
-  );
-}
+      <AccueilQuickActions />
 
-function FeedPreview() {
-  return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      <section className="space-y-3">
-        <h3 className="text-xs font-semibold uppercase tracking-widest text-muted">
-          Annonces récentes
-        </h3>
-        <Card className="space-y-2 p-4">
-          <p className="text-base font-medium text-text">
-            Flux personnalisé des voisin·es
-          </p>
-          <p className="text-sm font-medium leading-5 text-muted">
-            Retrouvez ici vos annonces communautaires et explorez{" "}
-            <Link href={ROUTES.annonces.list} className="font-semibold text-purple underline">
-              la liste et la carte des annonces
-            </Link>
-            .
-          </p>
-        </Card>
-      </section>
-      <section className="space-y-3">
-        <h3 className="text-xs font-semibold uppercase tracking-widest text-muted">
-          Initiatives & événements
-        </h3>
-        <ListGrid className="lg:grid-cols-1">
-          <Card className="space-y-3 p-4">
-            <ContentTypeTag type="initiative" />
-            <Link
-              href={ROUTES.initiatives.list}
-              className="text-xl font-semibold leading-7 text-text hover:text-purple"
-            >
-              Projets civiques & coopérations
-            </Link>
-          </Card>
-          <Card className="space-y-3 p-4">
-            <ContentTypeTag type="event" />
-            <Link
-              href={ROUTES.evenements.list}
-              className="text-xl font-semibold leading-7 text-text hover:text-purple"
-            >
-              Agenda convivial
-            </Link>
-          </Card>
-        </ListGrid>
-      </section>
-    </div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
+        <div className="flex flex-col gap-6">
+          <AccueilTrendingInitiative
+            initiative={trendingInitiative}
+            participantCount={participantCount}
+          />
+          <AccueilRecentAnnouncements items={recentAnnouncements.items} />
+        </div>
+        <AccueilUpcomingEvents events={upcomingEvents} />
+      </div>
+
+      <Card className="rounded-2xl border border-border/60 bg-soft-pink p-6 text-center shadow-none">
+        <p className="text-base font-semibold text-text">
+          Saviez-vous ? Cette semaine, vos voisins de {communeName} s&apos;entraident.
+          À vous de jouer !
+        </p>
+      </Card>
+    </PageStack>
   );
 }

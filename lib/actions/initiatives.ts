@@ -12,12 +12,15 @@ import { initiativeSchema } from "@/lib/validations/schemas";
 
 export async function createInitiative(formData: FormData): Promise<void> {
   const ctx = await requireActiveMembership();
+  const membership = ctx.activeMembership!;
   const raw = {
+    categorySlug: formData.get("categorySlug") as string,
     title: formData.get("title") as string,
     description: (formData.get("description") as string) || undefined,
     dateMode: formData.get("dateMode") as string,
     singleStartsAt: (formData.get("singleStartsAt") as string) || undefined,
     singleEndsAt: (formData.get("singleEndsAt") as string) || undefined,
+    addressLabel: (formData.get("addressLabel") as string) || undefined,
   };
   const parsed = initiativeSchema.safeParse(raw);
   if (!parsed.success) return;
@@ -36,14 +39,25 @@ export async function createInitiative(formData: FormData): Promise<void> {
       : null;
   }
 
+  const hasCustomAddress = !!parsed.data.addressLabel?.trim();
+  const addressLabel = hasCustomAddress
+    ? parsed.data.addressLabel!.trim()
+    : membership.address_label;
+  const addressLat = hasCustomAddress ? null : membership.address_lat;
+  const addressLng = hasCustomAddress ? null : membership.address_lng;
+
   const { error } = await supabase.from("initiatives").insert({
-    commune_id: ctx.activeMembership!.commune_id,
-    author_membership_id: ctx.activeMembership!.id,
+    commune_id: membership.commune_id,
+    author_membership_id: membership.id,
+    category_slug: parsed.data.categorySlug,
     title: parsed.data.title,
     description: parsed.data.description ?? null,
     date_mode: parsed.data.dateMode,
     single_starts_at: singleStartsAt,
     single_ends_at: singleEndsAt,
+    address_label: addressLabel,
+    address_lat: addressLat,
+    address_lng: addressLng,
     status: INITIATIVE_STATUS.active,
   });
 
@@ -74,6 +88,27 @@ export async function updateInitiativeStatus(
   if (error) return { error: error.message };
   revalidatePath(ROUTES.initiatives.list);
   revalidatePath(ROUTES.initiatives.detail(id));
+  return { success: true };
+}
+
+export async function submitInitiativeResponse(
+  initiativeId: string,
+  responseType: "support" | "volunteer",
+) {
+  const ctx = await requireActiveMembership();
+  const supabase = await createClient();
+
+  const { error } = await supabase.from("initiative_responses").upsert(
+    {
+      initiative_id: initiativeId,
+      membership_id: ctx.activeMembership!.id,
+      response_type: responseType,
+    },
+    { onConflict: "initiative_id,membership_id,response_type" },
+  );
+
+  if (error) return { error: error.message };
+  revalidatePath(ROUTES.initiatives.detail(initiativeId));
   return { success: true };
 }
 

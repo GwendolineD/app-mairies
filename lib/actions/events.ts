@@ -17,18 +17,23 @@ export async function createEvent(formData: FormData): Promise<void> {
     description: (formData.get("description") as string) || undefined,
     startsAt: formData.get("startsAt") as string,
     endsAt: formData.get("endsAt") as string,
+    addressLabel: (formData.get("addressLabel") as string) || undefined,
   };
   const parsed = eventSchema.safeParse(raw);
   if (!parsed.success) return;
 
+  const membership = ctx.activeMembership!;
   const supabase = await createClient();
   const { error } = await supabase.from("events").insert({
-    commune_id: ctx.activeMembership!.commune_id,
-    author_membership_id: ctx.activeMembership!.id,
+    commune_id: membership.commune_id,
+    author_membership_id: membership.id,
     title: parsed.data.title,
     description: parsed.data.description ?? null,
     starts_at: new Date(parsed.data.startsAt).toISOString(),
     ends_at: new Date(parsed.data.endsAt).toISOString(),
+    address_label: parsed.data.addressLabel ?? membership.address_label,
+    address_lat: membership.address_lat,
+    address_lng: membership.address_lng,
     status: EVENT_STATUS.active,
   });
 

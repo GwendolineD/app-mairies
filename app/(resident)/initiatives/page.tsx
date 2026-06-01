@@ -1,64 +1,58 @@
-import Link from "next/link";
 import { requireActiveMembership } from "@/lib/auth/session";
-import { ROUTES } from "@/lib/constants/routes";
-import { INITIATIVE_STATUS } from "@/lib/constants/statuses";
+import {
+  listInitiativeMarkers,
+  listInitiativesPage,
+  INITIATIVES_PAGE_SIZE,
+} from "@/lib/queries/initiatives";
 import { createClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { ListGrid, PageStack } from "@/components/ui/page-stack";
-import { PageHeading } from "@/components/ui/page-heading";
-import type { InitiativeRecord } from "@/lib/types";
+import { parseInitiativeListParams } from "@/lib/utils/search-params";
+import { InitiativesPageClient } from "@/components/features/initiatives-page-client";
+import { getInitiativePinHex } from "@/lib/constants/map-pins";
 
-export default async function InitiativesListePage() {
+export default async function InitiativesListePage(props: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = (await props.searchParams) ?? {};
+  const params = parseInitiativeListParams(sp);
   const ctx = await requireActiveMembership();
+  const communeId = ctx.activeMembership!.commune_id;
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("initiatives")
-    .select("*")
-    .eq("commune_id", ctx.activeMembership!.commune_id)
-    .eq("status", INITIATIVE_STATUS.active)
-    .order("created_at", { ascending: false });
 
-  const rows = (data ?? []) as InitiativeRecord[];
+  const filters = { communeId, categorie: params.categorie };
+  const offset = (params.page - 1) * INITIATIVES_PAGE_SIZE;
+  const { items, totalCount } = await listInitiativesPage(supabase, filters, {
+    offset,
+    limit: INITIATIVES_PAGE_SIZE,
+  });
+
+  const rawMarkers = await listInitiativeMarkers(supabase, filters);
+  const mapMarkers = rawMarkers
+    .filter((m) => m.address_lat != null && m.address_lng != null)
+    .map((m) => ({
+      id: m.id,
+      title: m.title,
+      categorySlug: m.category_slug ?? "solidarite",
+      lat: m.address_lat,
+      lng: m.address_lng,
+      pinColor: getInitiativePinHex(m.category_slug ?? "solidarite"),
+    }));
+
+  const lat =
+    ctx.activeMembership!.address_lat ??
+    ctx.activeMembership!.commune?.centroid_lat ??
+    48.8566;
+  const lng =
+    ctx.activeMembership!.address_lng ??
+    ctx.activeMembership!.commune?.centroid_lng ??
+    2.3522;
 
   return (
-    <PageStack>
-      <header className="flex items-start justify-between gap-4 md:items-center">
-        <PageHeading
-          title="Initiatives"
-          subtitle="Coopération douce : vos idées vivent mieux lorsqu'elles invitent clairement à participer ou simplement soutenir."
-        />
-        <Button href={ROUTES.initiatives.new} className="shrink-0 px-4 py-2 text-xs whitespace-nowrap">
-          Nouvelle
-        </Button>
-      </header>
-      {rows.length === 0 ? (
-        <Card className="p-5 text-center text-sm font-medium text-muted">
-          Une première initiative pourrait faire un grand bien collectif !
-        </Card>
-      ) : (
-        <ListGrid>
-          {rows.map((init) => (
-            <Link href={ROUTES.initiatives.detail(init.id)} key={init.id} className="h-full">
-              <Card className="flex h-full flex-col space-y-2 p-4 transition hover:border-purple/35">
-                <h3 className="text-xl font-semibold leading-7 text-text">{init.title}</h3>
-                {init.description ? (
-                  <p className="line-clamp-3 text-sm font-medium leading-5 text-muted">
-                    {init.description}
-                  </p>
-                ) : (
-                  <p className="text-sm font-medium italic text-subtle">
-                    Invitation ouverte : voyez les détails.
-                  </p>
-                )}
-                <span className="mt-auto text-[10px] font-semibold text-subtle">
-                  Mode temporalité : {init.date_mode}
-                </span>
-              </Card>
-            </Link>
-          ))}
-        </ListGrid>
-      )}
-    </PageStack>
+    <InitiativesPageClient
+      params={params}
+      items={items}
+      totalCount={totalCount}
+      mapCenter={[lat, lng]}
+      mapMarkers={mapMarkers}
+    />
   );
 }

@@ -1,12 +1,16 @@
-import { cn } from "@/lib/utils/cn";
 import type {
   InputHTMLAttributes,
   SelectHTMLAttributes,
   TextareaHTMLAttributes,
 } from "react";
 
+import { Input as ShadcnInput } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea as ShadcnTextarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+
 export const formFieldClassName =
-  "w-full rounded-sm border border-border bg-surface px-4 py-2.5 text-sm outline-none focus:border-purple md:py-2";
+  "h-auto w-full rounded-sm border-border bg-surface px-4 py-2.5 text-sm text-text outline-none placeholder:text-subtle focus-visible:border-purple focus-visible:ring-2 focus-visible:ring-purple/20 md:py-2";
 
 type FieldProps = {
   className?: string;
@@ -16,7 +20,9 @@ export function Input({
   className,
   ...props
 }: InputHTMLAttributes<HTMLInputElement> & FieldProps) {
-  return <input className={cn(formFieldClassName, className)} {...props} />;
+  return (
+    <ShadcnInput className={cn(formFieldClassName, className)} {...props} />
+  );
 }
 
 export function Select({
@@ -36,7 +42,10 @@ export function Textarea({
   ...props
 }: TextareaHTMLAttributes<HTMLTextAreaElement> & FieldProps) {
   return (
-    <textarea className={cn(formFieldClassName, className)} {...props} />
+    <ShadcnTextarea
+      className={cn(formFieldClassName, "min-h-24 field-sizing-content", className)}
+      {...props}
+    />
   );
 }
 
@@ -50,9 +59,9 @@ export function FormField({
   className?: string;
 }) {
   return (
-    <label className={cn("text-sm font-medium text-text", className)}>
-      {label}
-      <div className="mt-1">{children}</div>
-    </label>
+    <div className={cn("space-y-1", className)}>
+      <Label className="font-medium text-text">{label}</Label>
+      {children}
+    </div>
   );
 }

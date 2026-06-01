@@ -1,7 +1,21 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { cn } from "@/lib/utils/cn";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
+
+type ModalSize = "sm" | "md" | "lg" | "xl";
+
+const SIZE_CLASS: Record<ModalSize, string> = {
+  sm: "sm:max-w-sm",
+  md: "sm:max-w-md",
+  lg: "sm:max-w-2xl",
+  xl: "sm:max-w-4xl",
+};
 
 type Props = {
   open: boolean;
@@ -9,54 +23,37 @@ type Props = {
   title: string;
   children: React.ReactNode;
   className?: string;
+  size?: ModalSize;
 };
 
-export function Modal({ open, onClose, title, children, className }: Props) {
-  const dialogRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-
-    document.addEventListener("keydown", onKeyDown);
-    document.body.style.overflow = "hidden";
-    dialogRef.current?.focus();
-
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = "";
-    };
-  }, [open, onClose]);
-
-  if (!open) return null;
-
+export function Modal({
+  open,
+  onClose,
+  title,
+  children,
+  className,
+  size = "md",
+}: Props) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <button
-        type="button"
-        className="absolute inset-0 cursor-pointer bg-text/40"
-        aria-label="Fermer"
-        onClick={onClose}
-      />
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="modal-title"
-        tabIndex={-1}
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) onClose();
+      }}
+    >
+      <DialogContent
+        showCloseButton={false}
         className={cn(
-          "relative z-10 w-full max-w-md rounded-2xl bg-surface p-6 shadow-card",
+          "top-auto bottom-0 flex max-h-[90dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-3xl border-border/60 bg-surface p-0 shadow-elevated sm:top-1/2 sm:bottom-auto sm:max-h-[90dvh] sm:-translate-y-1/2",
+          SIZE_CLASS[size],
           className,
         )}
       >
-        <h2 id="modal-title" className="text-lg font-bold text-text">
-          {title}
-        </h2>
-        <div className="mt-4">{children}</div>
-      </div>
-    </div>
+        <DialogHeader className="shrink-0 border-b border-border/60 px-6 py-4 text-left">
+          <DialogTitle className="text-lg font-bold text-text">{title}</DialogTitle>
+        </DialogHeader>
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">{children}</div>
+      </DialogContent>
+    </Dialog>
   );
 }

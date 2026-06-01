@@ -2,8 +2,9 @@
 
 import { Check, Eye, EyeOff, Lock, X } from "lucide-react";
 import { useEffect, useId, useState } from "react";
-import { cn } from "@/lib/utils/cn";
-import { formFieldClassName } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/form-field";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 export const PASSWORD_RULE = /(?=.*[A-Za-z])(?=.*\d).{8,}/;
 
@@ -48,15 +49,15 @@ export function PasswordField({
 
   return (
     <div className={showValidation ? "space-y-2" : undefined}>
-      <label htmlFor={id} className="mb-1.5 block text-xs font-semibold text-text">
+      <Label htmlFor={id} className="mb-1.5 block text-xs font-semibold text-text">
         Mot de passe
-      </label>
+      </Label>
       <div className="relative">
         <Lock
           className="pointer-events-none absolute left-3.5 top-1/2 size-[18px] -translate-y-1/2 text-subtle"
           aria-hidden
         />
-        <input
+        <Input
           id={id}
           name={name}
           type={visible ? "text" : "password"}
@@ -65,7 +66,7 @@ export function PasswordField({
           placeholder={placeholder}
           value={inputValue}
           onChange={(e) => handleChange(e.target.value)}
-          className={cn(formFieldClassName, "pl-10 pr-10 placeholder:text-subtle")}
+          className={cn("pl-10 pr-10 placeholder:text-subtle")}
         />
         <button
           type="button"

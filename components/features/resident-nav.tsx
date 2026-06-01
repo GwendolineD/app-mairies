@@ -2,15 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { RESIDENT_BOTTOM_NAV } from "@/lib/constants/routes";
 import { cn } from "@/lib/utils/cn";
 import { isActivePath } from "@/lib/utils/routes";
 import {
-  Calendar,
+  CalendarDays,
   Home,
-  LayoutGrid,
+  Mail,
   Megaphone,
-  MessageCircle,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 
@@ -20,9 +25,9 @@ export const RESIDENT_NAV_ICONS: Record<
 > = {
   Accueil: Home,
   Annonces: Megaphone,
-  Initiatives: LayoutGrid,
-  "Événements": Calendar,
-  Messages: MessageCircle,
+  Initiatives: Sparkles,
+  "Événements": CalendarDays,
+  Messages: Mail,
 };
 
 type NavLinkProps = {
@@ -30,23 +35,76 @@ type NavLinkProps = {
   label: string;
   active: boolean;
   variant: "bottom" | "sidebar";
+  collapsed?: boolean;
 };
 
-function ResidentNavLink({ href, label, active, variant }: NavLinkProps) {
+const SIDEBAR_LINK_CLASS = (active: boolean, collapsed: boolean) =>
+  cn(
+    "flex items-center rounded-sm text-sm font-semibold transition",
+    collapsed
+      ? "w-full max-w-full justify-center overflow-hidden px-2 py-3"
+      : "gap-3 px-4 py-3",
+    active ? "bg-soft-pink text-coral" : "text-text hover:bg-soft-pink/70",
+  );
+
+function ResidentNavLink({ href, label, active, variant, collapsed }: NavLinkProps) {
   const Icon = RESIDENT_NAV_ICONS[label as keyof typeof RESIDENT_NAV_ICONS];
 
   if (variant === "sidebar") {
+    const linkClass = SIDEBAR_LINK_CLASS(active, !!collapsed);
+
+    if (collapsed) {
+      return (
+        <Popover>
+          <PopoverTrigger
+            openOnHover
+            delay={200}
+            closeDelay={100}
+            nativeButton={false}
+            render={
+              <Link
+                href={href}
+                aria-label={label}
+                className={linkClass}
+              />
+            }
+          >
+            <Icon
+              className={cn(
+                "size-5 shrink-0",
+                active ? "text-coral" : "text-coral/85",
+              )}
+              aria-hidden
+            />
+          </PopoverTrigger>
+          <PopoverContent
+            side="right"
+            align="center"
+            sideOffset={8}
+            className={cn(
+              "w-auto min-w-0 gap-0 border-0 p-0 shadow-md ring-1 ring-foreground/10",
+              active && "bg-soft-pink",
+            )}
+          >
+            <span
+              className={cn(
+                "whitespace-nowrap px-2.5 py-1.5 text-sm font-semibold",
+                active ? "text-coral" : "text-text",
+              )}
+            >
+              {label}
+            </span>
+          </PopoverContent>
+        </Popover>
+      );
+    }
+
     return (
-      <Link
-        href={href}
-        className={cn(
-          "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition",
-          active
-            ? "bg-soft-pink text-purple"
-            : "text-muted hover:bg-warm hover:text-text",
-        )}
-      >
-        <Icon className="size-5 shrink-0" aria-hidden />
+      <Link href={href} className={linkClass}>
+        <Icon
+          className={cn("size-5 shrink-0", active ? "text-coral" : "text-coral/85")}
+          aria-hidden
+        />
         {label}
       </Link>
     );
@@ -103,13 +161,20 @@ export function BottomNav() {
   );
 }
 
+type ResidentSidebarNavProps = {
+  collapsed?: boolean;
+};
+
 /** Desktop only — vertical sidebar (≥ md). */
-export function ResidentSidebarNav() {
+export function ResidentSidebarNav({ collapsed = false }: ResidentSidebarNavProps) {
   const links = useResidentNavLinks();
 
   return (
     <nav
-      className="hidden flex-col gap-1 md:flex"
+      className={cn(
+        "flex flex-col gap-2",
+        collapsed && "overflow-hidden",
+      )}
       aria-label="Navigation principale"
     >
       {links.map(({ href, label, active }) => (
@@ -119,6 +184,7 @@ export function ResidentSidebarNav() {
           label={label}
           active={active}
           variant="sidebar"
+          collapsed={collapsed}
         />
       ))}
     </nav>

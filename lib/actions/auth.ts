@@ -11,6 +11,7 @@ import { formatAuthError } from "@/lib/utils/auth-errors";
 import { formatDisplayName } from "@/lib/utils/display-name";
 import {
   forgotPasswordSchema,
+  joinCommuneSchema,
   resetPasswordSchema,
   signupSchema,
 } from "@/lib/validations/schemas";
@@ -285,6 +286,93 @@ export async function switchCommune(communeId: string): Promise<void> {
   await supabase
     .from("profiles")
     .update({ active_commune_id: communeId })
+    .eq("user_id", user.id);
+
+  revalidatePath("/", "layout");
+  redirect(ROUTES.accueil);
+}
+
+export async function joinCommune(formData: FormData) {
+  const raw = {
+    inseeCode: formData.get("inseeCode") as string,
+    addressLabel: formData.get("addressLabel") as string,
+    addressCitycode: formData.get("addressCitycode") as string,
+    addressPostcode: formData.get("addressPostcode") as string,
+    addressLat: Number(formData.get("addressLat")),
+    addressLng: Number(formData.get("addressLng")),
+  };
+
+  const parsed = joinCommuneSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { error: parsed.error.flatten().fieldErrors };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect(ROUTES.connexion);
+
+  const { data: commune } = await supabase
+    .from("communes")
+    .select("id, subscription_status")
+    .eq("insee_code", parsed.data.inseeCode)
+    .single();
+
+  if (!commune || commune.subscription_status !== "active") {
+    return { error: { form: ["Cette commune n'est pas encore active."] } };
+  }
+
+  const { data: existing } = await supabase
+    .from("memberships")
+    .select("id, status")
+    .eq("user_id", user.id)
+    .eq("commune_id", commune.id)
+    .maybeSingle();
+
+  if (existing?.status === "suspended") {
+    await supabase
+      .from("profiles")
+      .update({ active_commune_id: commune.id })
+      .eq("user_id", user.id);
+    redirect(ROUTES.suspendu);
+  }
+
+  if (existing?.status === "active") {
+    await supabase
+      .from("profiles")
+      .update({ active_commune_id: commune.id })
+      .eq("user_id", user.id);
+    revalidatePath("/", "layout");
+    redirect(ROUTES.accueil);
+  }
+
+  const membershipPayload = {
+    address_label: parsed.data.addressLabel,
+    address_citycode: parsed.data.addressCitycode,
+    address_postcode: parsed.data.addressPostcode,
+    address_lat: parsed.data.addressLat,
+    address_lng: parsed.data.addressLng,
+    status: "active" as const,
+  };
+
+  if (existing) {
+    await supabase
+      .from("memberships")
+      .update(membershipPayload)
+      .eq("id", existing.id);
+  } else {
+    await supabase.from("memberships").insert({
+      user_id: user.id,
+      commune_id: commune.id,
+      is_primary: false,
+      ...membershipPayload,
+    });
+  }
+
+  await supabase
+    .from("profiles")
+    .update({ active_commune_id: commune.id })
     .eq("user_id", user.id);
 
   revalidatePath("/", "layout");

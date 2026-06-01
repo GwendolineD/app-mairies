@@ -3,7 +3,8 @@
 import type { LucideIcon } from "lucide-react";
 import { ChevronDown } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
-import { cn } from "@/lib/utils/cn";
+import { Input } from "@/components/ui/form-field";
+import { cn } from "@/lib/utils";
 import type { BanFeature } from "@/lib/ban/client";
 
 type Props = {
@@ -161,7 +162,7 @@ export function BanAutocomplete({
             aria-hidden
           />
         ) : null}
-        <input
+        <Input
           type="text"
           name="autocomplete"
           autoComplete="off"
@@ -178,9 +179,8 @@ export function BanAutocomplete({
           onBlur={() => setTimeout(() => closeList(), 150)}
           onKeyDown={handleKeyDown}
           className={cn(
-            "w-full rounded-sm border border-border bg-surface py-2.5 text-sm text-text outline-none placeholder:text-subtle focus:border-purple disabled:cursor-not-allowed disabled:opacity-50 md:py-2",
-            LeadingIcon ? "pl-10" : "px-4",
-            showChevron ? "pr-10" : LeadingIcon ? "pr-4" : "px-4",
+            LeadingIcon ? "pl-10" : undefined,
+            showChevron ? "pr-10" : undefined,
             inputClassName,
           )}
         />

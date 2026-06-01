@@ -1,46 +1,91 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireAuth, requireActiveMembership } from "@/lib/auth/session";
+import { requireActiveMembership } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
 import { messageSchema } from "@/lib/validations/schemas";
 
-export async function ensureDirectConversation(participantUserId?: string) {
+function normalizePair(userIdA: string, userIdB: string): [string, string] {
+  return userIdA < userIdB ? [userIdA, userIdB] : [userIdB, userIdA];
+}
+
+export async function ensureAnnouncementConversation(announcementId: string) {
   const ctx = await requireActiveMembership();
   const supabase = await createClient();
+  const communeId = ctx.activeMembership!.commune_id;
 
-  if (!participantUserId) {
-    return { error: "Destinataire manquant", conversationId: null as string | null };
+  const { data: announcement, error: annError } = await supabase
+    .from("announcements")
+    .select("id, title, author_membership_id")
+    .eq("id", announcementId)
+    .eq("commune_id", communeId)
+    .single();
+
+  if (annError || !announcement) {
+    return { error: "Annonce introuvable", conversationId: null as string | null };
   }
 
-  const communeId = ctx.activeMembership!.commune_id;
+  const { data: authorMembership } = await supabase
+    .from("memberships")
+    .select("user_id")
+    .eq("id", announcement.author_membership_id)
+    .single();
+
+  const authorUserId = authorMembership?.user_id;
+  if (!authorUserId) {
+    return { error: "Auteur introuvable", conversationId: null };
+  }
+
+  if (authorUserId === ctx.userId) {
+    return { error: "Vous ne pouvez pas vous contacter vous-même", conversationId: null };
+  }
+
+  const [participantA, participantB] = normalizePair(ctx.userId, authorUserId);
+
+  const { data: existing } = await supabase
+    .from("conversations")
+    .select("id")
+    .eq("commune_id", communeId)
+    .eq("context_type", "announcement")
+    .eq("context_id", announcementId)
+    .eq("participant_a", participantA)
+    .eq("participant_b", participantB)
+    .maybeSingle();
+
+  if (existing) {
+    return { conversationId: existing.id, error: null as string | null };
+  }
 
   const { data: conv, error } = await supabase
     .from("conversations")
     .insert({
       commune_id: communeId,
       created_by_user_id: ctx.userId,
-      title: "Conversation locale",
-      context_type: null,
-      context_id: null,
+      context_type: "announcement",
+      context_id: announcementId,
+      title: announcement.title,
+      participant_a: participantA,
+      participant_b: participantB,
     })
     .select("id")
     .single();
 
-  if (error || !conv) return { error: error?.message ?? "Erreur", conversationId: null };
+  if (error || !conv) {
+    return { error: error?.message ?? "Erreur", conversationId: null };
+  }
 
   await supabase.from("conversation_participants").insert([
-    { conversation_id: conv.id, user_id: ctx.userId },
-    { conversation_id: conv.id, user_id: participantUserId },
+    { conversation_id: conv.id, user_id: participantA },
+    { conversation_id: conv.id, user_id: participantB },
   ]);
 
-  revalidatePath(ROUTES.messages);
-  return { conversationId: conv.id, error: null as string | null };
+  revalidatePath(ROUTES.messages.list);
+  return { conversationId: conv.id, error: null };
 }
 
 export async function sendConversationMessage(formData: FormData) {
-  await requireAuth();
+  const ctx = await requireActiveMembership();
   const conversationId = formData.get("conversationId") as string;
   const body = formData.get("body") as string;
 
@@ -48,19 +93,31 @@ export async function sendConversationMessage(formData: FormData) {
   if (!parsed.success) return { error: "Message invalide" };
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "Non connecté·e" };
+
+  const { data: participant } = await supabase
+    .from("conversation_participants")
+    .select("conversation_id")
+    .eq("conversation_id", conversationId)
+    .eq("user_id", ctx.userId)
+    .maybeSingle();
+
+  if (!participant) return { error: "Conversation inaccessible" };
 
   const { error } = await supabase.from("messages").insert({
     conversation_id: conversationId,
-    sender_id: user.id,
+    sender_id: ctx.userId,
     body: parsed.data.body,
   });
 
   if (error) return { error: error.message };
-  revalidatePath(ROUTES.messages);
+
+  await supabase
+    .from("conversations")
+    .update({ updated_at: new Date().toISOString() })
+    .eq("id", conversationId);
+
+  revalidatePath(ROUTES.messages.list);
+  revalidatePath(ROUTES.messages.detail(conversationId));
   return { success: true };
 }
 

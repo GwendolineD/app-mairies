@@ -42,6 +42,15 @@ export const signupSchema = z.object({
   }),
 });
 
+export const joinCommuneSchema = z.object({
+  inseeCode: z.string().min(1),
+  addressLabel: z.string().min(5, "Adresse requise"),
+  addressCitycode: z.string().min(1),
+  addressPostcode: z.string().min(4),
+  addressLat: z.number(),
+  addressLng: z.number(),
+});
+
 export const announcementSchema = z.object({
   type: z.enum(ANNOUNCEMENT_TYPE_SLUGS),
   categorySlug: z.enum(categorySlugs),
@@ -51,12 +60,16 @@ export const announcementSchema = z.object({
   photoUrl: z.string().url().optional().or(z.literal("")),
 });
 
+import { INITIATIVE_CATEGORY_SLUGS } from "@/lib/constants/initiative-categories";
+
 export const initiativeSchema = z.object({
+  categorySlug: z.enum(INITIATIVE_CATEGORY_SLUGS),
   title: z.string().min(3).max(120),
   description: z.string().max(3000).optional(),
   dateMode: z.enum(["none", "once", "recurring"]),
   singleStartsAt: z.string().optional(),
   singleEndsAt: z.string().optional(),
+  addressLabel: z.string().max(500).optional(),
 });
 
 export const eventSchema = z.object({
@@ -64,6 +77,20 @@ export const eventSchema = z.object({
   description: z.string().max(3000).optional(),
   startsAt: z.string(),
   endsAt: z.string(),
+  addressLabel: z.string().max(500).optional(),
+  addressLat: z.number().optional(),
+  addressLng: z.number().optional(),
+});
+
+export const userReportSchema = z.object({
+  reportedUserId: z.string().uuid(),
+  reason: z.string().min(10).max(1000),
+});
+
+export const profileUpdateSchema = z.object({
+  displayName: z.string().min(1).max(80),
+  bio: z.string().max(500).optional(),
+  avatarUrl: z.string().url().optional().or(z.literal("")),
 });
 
 export const messageSchema = z.object({

@@ -14,7 +14,10 @@ export const ROUTES = {
   accueil: "/accueil",
   suspendu: "/suspendu",
   profil: "/profil",
-  messages: "/messages",
+  messages: {
+    list: "/messages",
+    detail: (id: string) => `/messages/${id}`,
+  },
   annonces: {
     list: "/annonces",
     map: "/annonces/carte",
@@ -53,7 +56,7 @@ export const RESIDENT_BOTTOM_NAV = [
   { href: ROUTES.annonces.list, label: "Annonces" },
   { href: ROUTES.initiatives.list, label: "Initiatives" },
   { href: ROUTES.evenements.list, label: "Événements" },
-  { href: ROUTES.messages, label: "Messages" },
+  { href: ROUTES.messages.list, label: "Messages" },
 ] as const;
 
 export const MUNICIPALITY_NAV = [
