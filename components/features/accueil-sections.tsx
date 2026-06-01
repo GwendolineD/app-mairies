@@ -25,7 +25,7 @@ function heroHeading(count: number): string {
 }
 
 const heroCtaClass =
-  "inline-flex w-fit cursor-pointer items-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-bold text-text shadow-card transition hover:bg-white/95";
+  "inline-flex w-fit cursor-pointer items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-bold text-text shadow-card transition hover:bg-white/95 md:gap-3 md:px-6 md:py-3 md:text-sm";
 
 export function AccueilHero({ userFirstName, demandCountToday }: Props) {
   const { openAnnouncementModal } = useCreationModals();
@@ -35,46 +35,46 @@ export function AccueilHero({ userFirstName, demandCountToday }: Props) {
   return (
     <section className="relative min-h-[200px] overflow-hidden rounded-2xl gradient-hero shadow-card md:min-h-[220px]">
       {heroUrl ? (
-        <div className="pointer-events-none absolute -top-16 right-0 h-[150%] w-[min(76%,34rem)] overflow-hidden md:-top-20 lg:-top-24">
-          <div className="relative h-full w-full origin-top-right scale-[1.08] md:scale-[1.12]">
+        <div className="pointer-events-none absolute -bottom-6 right-0 h-[85%] w-[min(72%,20rem)] overflow-hidden md:-top-20 md:bottom-auto md:h-[150%] md:w-[min(76%,34rem)] lg:-top-24">
+          <div className="relative h-full w-full origin-bottom-right scale-[1.05] md:origin-top-right md:scale-[1.12]">
             <Image
               src={heroUrl}
               alt=""
               fill
-              className="object-contain object-top-right"
+              className="object-contain object-bottom-right md:object-top-right"
               sizes="(max-width: 768px) 76vw, 34rem"
               unoptimized
             />
           </div>
         </div>
       ) : null}
-      <div className="relative z-10 p-5 lg:p-8">
-        <div className="max-w-[min(100%,28rem)] space-y-3 md:max-w-[min(100%,32rem)] lg:max-w-[min(55%,36rem)]">
-          <p className="text-sm font-semibold text-white/90">
+      <div className="relative z-10 flex min-h-[200px] flex-col justify-between p-5 md:min-h-0 md:block lg:p-8">
+        <div className="max-w-[min(70%,11rem)] space-y-2 md:max-w-[min(100%,32rem)] md:space-y-3 lg:max-w-[min(55%,36rem)]">
+          <p className="text-xs font-semibold text-white/90 md:text-sm">
             Bonjour {userFirstName}
           </p>
-          <h2 className="text-2xl font-bold leading-8 text-white md:text-[28px] md:leading-9">
+          <h2 className="text-base font-bold leading-6 text-white md:text-[28px] md:leading-9">
             {heroHeading(demandCountToday)}
           </h2>
-          {hasDemandsToday ? (
-            <Link
-              href={`${ROUTES.annonces.list}${buildAnnouncementListQuery({ type: "demande", tri: "recent" })}`}
-              className={heroCtaClass}
-            >
-              <span>Je regarde</span>
-              <span aria-hidden>→</span>
-            </Link>
-          ) : (
-            <button
-              type="button"
-              onClick={() => openAnnouncementModal({ presetType: "offre" })}
-              className={heroCtaClass}
-            >
-              <span>Je publie une annonce</span>
-              <span aria-hidden>→</span>
-            </button>
-          )}
         </div>
+        {hasDemandsToday ? (
+          <Link
+            href={`${ROUTES.annonces.list}${buildAnnouncementListQuery({ type: "demande", tri: "recent" })}`}
+            className={cn(heroCtaClass, "shrink-0 md:mt-3")}
+          >
+            <span>Je regarde</span>
+            <span aria-hidden>→</span>
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={() => openAnnouncementModal({ presetType: "offre" })}
+            className={cn(heroCtaClass, "shrink-0 md:mt-3")}
+          >
+            <span>Je publie une annonce</span>
+            <span aria-hidden>→</span>
+          </button>
+        )}
       </div>
     </section>
   );
@@ -92,17 +92,19 @@ function QuickActionCard({ label, gradient, icon, onClick }: QuickActionProps) {
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center justify-center gap-3 rounded-xl border border-border/60 bg-surface p-4 shadow-card transition hover:border-purple/40"
+      className="flex w-full flex-col items-center justify-center gap-1.5 rounded-xl border border-border/60 bg-surface p-3 shadow-card transition hover:border-purple/40 md:flex-row md:gap-3 md:p-4"
     >
       <span
         className={cn(
-          "flex size-11 shrink-0 items-center justify-center rounded-full",
+          "flex size-8 shrink-0 items-center justify-center rounded-full md:size-11",
           gradient,
         )}
       >
         {icon}
       </span>
-      <span className="font-bold text-text">{label}</span>
+      <span className="text-center text-[10px] font-bold leading-tight text-text md:text-base">
+        {label}
+      </span>
     </button>
   );
 }
@@ -115,23 +117,23 @@ export function AccueilQuickActions() {
       <p className="text-xs font-bold uppercase tracking-widest text-muted">
         Participer en 1 clic
       </p>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+      <div className="grid grid-cols-3 gap-2 md:gap-3">
         <QuickActionCard
           label="Je demande"
           gradient="gradient-demande"
-          icon={<HandHeart className="size-5 text-white" strokeWidth={2.25} aria-hidden />}
+          icon={<HandHeart className="size-4 text-white md:size-5" strokeWidth={2.25} aria-hidden />}
           onClick={() => openAnnouncementModal({ presetType: "demande" })}
         />
         <QuickActionCard
           label="J'offre"
           gradient="gradient-offre"
-          icon={<Plus className="size-5 text-white" strokeWidth={2.5} aria-hidden />}
+          icon={<Plus className="size-4 text-white md:size-5" strokeWidth={2.5} aria-hidden />}
           onClick={() => openAnnouncementModal({ presetType: "offre" })}
         />
         <QuickActionCard
           label="Initiative"
           gradient="gradient-initiative"
-          icon={<Sparkles className="size-5 text-white" strokeWidth={2.25} aria-hidden />}
+          icon={<Sparkles className="size-4 text-white md:size-5" strokeWidth={2.25} aria-hidden />}
           onClick={openInitiativeModal}
         />
       </div>
@@ -153,7 +155,7 @@ export function AccueilSectionLink({
       href={href}
       className={cn(
         "font-bold text-coral hover:underline",
-        size === "sm" ? "text-xs" : "text-sm",
+        size === "sm" ? "text-[10px] md:text-xs" : "text-sm",
       )}
     >
       {label} →

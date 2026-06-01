@@ -1,11 +1,6 @@
 import { z } from "zod";
-import { ANNOUNCEMENT_CATEGORIES } from "@/lib/constants/announcement-categories";
+import { ANNOUNCEMENT_CATEGORY_SLUGS } from "@/lib/constants/announcement-categories";
 import { ANNOUNCEMENT_TYPE_SLUGS } from "@/lib/constants/announcement-types";
-
-const categorySlugs = ANNOUNCEMENT_CATEGORIES.map((c) => c.slug) as [
-  string,
-  ...string[],
-];
 
 export const passwordSchema = z
   .string()
@@ -53,10 +48,13 @@ export const joinCommuneSchema = z.object({
 
 export const announcementSchema = z.object({
   type: z.enum(ANNOUNCEMENT_TYPE_SLUGS),
-  categorySlug: z.enum(categorySlugs),
+  categorySlug: z.enum(ANNOUNCEMENT_CATEGORY_SLUGS),
   title: z.string().min(3).max(120),
-  description: z.string().max(2000).optional(),
-  targetDate: z.string().optional(),
+  description: z.string().min(10).max(1000),
+  targetDate: z
+    .string()
+    .optional()
+    .transform((v) => (v?.trim() ? v : undefined)),
   photoUrl: z.string().url().optional().or(z.literal("")),
 });
 

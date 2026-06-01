@@ -1,7 +1,7 @@
-import type { AnnouncementCategorySlug } from "@/lib/constants/announcement-categories";
+import { getCategoryColorHex } from "@/lib/constants/announcement-categories";
 import type { InitiativeCategorySlug } from "@/lib/constants/initiative-categories";
 
-/** Design-system color tokens for map pin backgrounds. */
+/** Design-system color tokens for initiative / event map pins. */
 export type MapPinColorToken =
   | "coral"
   | "orange"
@@ -25,23 +25,6 @@ export const MAP_PIN_HEX: Record<MapPinColorToken, string> = {
   sun: "#ffc93d",
 };
 
-export const ANNOUNCEMENT_CATEGORY_PIN_COLORS: Record<
-  AnnouncementCategorySlug,
-  MapPinColorToken
-> = {
-  bricolage: "orange",
-  numerique: "purple",
-  covoiturage: "aqua",
-  alimentaire: "sun",
-  "garde-pontuelle": "pink",
-  administratif: "purple",
-  animaux: "mint",
-  jardinage: "mint",
-  "pret-objet": "turquoise",
-  "don-troc": "pink",
-  autres: "coral",
-};
-
 export const INITIATIVE_CATEGORY_PIN_COLORS: Record<
   InitiativeCategorySlug,
   MapPinColorToken
@@ -57,11 +40,7 @@ export const INITIATIVE_CATEGORY_PIN_COLORS: Record<
 export const EVENT_PIN_COLOR: MapPinColorToken = "orange";
 
 export function getAnnouncementPinHex(categorySlug: string): string {
-  const token =
-    ANNOUNCEMENT_CATEGORY_PIN_COLORS[
-      categorySlug as AnnouncementCategorySlug
-    ] ?? "coral";
-  return MAP_PIN_HEX[token];
+  return getCategoryColorHex(categorySlug);
 }
 
 export function getInitiativePinHex(categorySlug: string): string {

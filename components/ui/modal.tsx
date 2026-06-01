@@ -24,6 +24,7 @@ type Props = {
   children: React.ReactNode;
   className?: string;
   size?: ModalSize;
+  showCloseButton?: boolean;
 };
 
 export function Modal({
@@ -33,6 +34,7 @@ export function Modal({
   children,
   className,
   size = "md",
+  showCloseButton = false,
 }: Props) {
   return (
     <Dialog
@@ -42,9 +44,9 @@ export function Modal({
       }}
     >
       <DialogContent
-        showCloseButton={false}
+        showCloseButton={showCloseButton}
         className={cn(
-          "top-auto bottom-0 flex max-h-[90dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-3xl border-border/60 bg-surface p-0 shadow-elevated sm:top-1/2 sm:bottom-auto sm:max-h-[90dvh] sm:-translate-y-1/2",
+          "top-auto right-0 bottom-0 left-0 flex max-h-[90dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-3xl border-border/60 bg-surface p-0 shadow-elevated sm:top-1/2 sm:right-auto sm:bottom-auto sm:left-1/2 sm:max-h-[min(90dvh,calc(100%-2rem))] sm:w-full sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl",
           SIZE_CLASS[size],
           className,
         )}

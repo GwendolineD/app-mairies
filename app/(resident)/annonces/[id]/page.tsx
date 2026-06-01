@@ -8,7 +8,10 @@ import {
   listSimilarAnnouncements,
 } from "@/lib/queries/announcements";
 import { createClient } from "@/lib/supabase/server";
-import { getCategoryLabel } from "@/lib/constants/announcement-categories";
+import {
+  getCategoryColorHex,
+  getCategoryLabel,
+} from "@/lib/constants/announcement-categories";
 import { AnnouncementTypeTag } from "@/components/ui/announcement-type-tag";
 import { AssetPlaceholder } from "@/components/ui/asset-placeholder";
 import { BackLink } from "@/components/ui/back-link";
@@ -79,7 +82,10 @@ export default async function AnnonceDetailPage(props: {
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
                 <AnnouncementTypeTag type={ann.type} />
-                <CategoryTag label={getCategoryLabel(ann.category_slug)} />
+                <CategoryTag
+                  label={getCategoryLabel(ann.category_slug)}
+                  colorHex={getCategoryColorHex(ann.category_slug)}
+                />
               </div>
               <h1 className="text-[28px] font-bold leading-9 text-text">{ann.title}</h1>
               <p className="text-sm text-muted">

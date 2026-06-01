@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { formatStreetDisplay } from "@/lib/ban/display";
 import { ROUTES } from "@/lib/constants/routes";
-import { getCategoryLabel } from "@/lib/constants/announcement-categories";
+import {
+  getCategoryColorHex,
+  getCategoryLabel,
+} from "@/lib/constants/announcement-categories";
 import type { AnnouncementWithAuthor } from "@/lib/queries/announcements";
 import { AnnouncementTypeTag } from "@/components/ui/announcement-type-tag";
 import { Card } from "@/components/ui/card";
@@ -36,7 +39,10 @@ export function AnnouncementCard({ announcement: a, layout = "vertical" }: Props
           <div className="min-w-0 flex-1 space-y-1">
             <div className="flex flex-wrap gap-1">
               <AnnouncementTypeTag type={a.type} />
-              <CategoryTag label={getCategoryLabel(a.category_slug)} />
+              <CategoryTag
+                label={getCategoryLabel(a.category_slug)}
+                colorHex={getCategoryColorHex(a.category_slug)}
+              />
             </div>
             <h3 className="line-clamp-2 text-base font-semibold text-text">{a.title}</h3>
             <p className="text-xs text-muted">
@@ -65,7 +71,10 @@ export function AnnouncementCard({ announcement: a, layout = "vertical" }: Props
         ) : null}
         <div className="flex flex-wrap items-center gap-2">
           <AnnouncementTypeTag type={a.type} />
-          <CategoryTag label={getCategoryLabel(a.category_slug)} />
+          <CategoryTag
+            label={getCategoryLabel(a.category_slug)}
+            colorHex={getCategoryColorHex(a.category_slug)}
+          />
         </div>
         <h3 className="text-xl font-semibold leading-7 text-text">{a.title}</h3>
         {a.description ? (

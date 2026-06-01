@@ -3,7 +3,10 @@ import type { ReactNode } from "react";
 import { Clock, Heart, MapPin, MessageCircle } from "lucide-react";
 import { formatStreetDisplay } from "@/lib/ban/display";
 import { ROUTES } from "@/lib/constants/routes";
-import { getCategoryLabel } from "@/lib/constants/announcement-categories";
+import {
+  getCategoryColorHex,
+  getCategoryLabel,
+} from "@/lib/constants/announcement-categories";
 import type { AnnouncementWithAuthor } from "@/lib/queries/announcements";
 import type { AgendaEventRecord, InitiativeRecord } from "@/lib/types";
 import { resolveFirstName } from "@/lib/utils/display-name";
@@ -29,7 +32,7 @@ function AccueilSectionHeader({
 }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <h3 className="text-base font-bold text-text">
+      <h3 className="text-xs font-bold leading-snug text-text md:text-base">
         <span aria-hidden className="mr-1.5">
           {emoji}
         </span>
@@ -64,18 +67,13 @@ function AccueilFeedCard({
 }
 
 function getAccueilCategoryBadge(type: string, categorySlug: string) {
-  if (categorySlug === "pret-objet") {
-    return { label: "PRÊT D'OUTIL", className: "text-turquoise" };
-  }
-  if (categorySlug === "don-troc") {
-    return { label: "DON", className: "text-purple" };
-  }
-  if (type === "demande") {
-    return { label: "COUP DE MAIN", className: "text-orange" };
+  const hex = getCategoryColorHex(categorySlug);
+  if (type === "demande" && categorySlug !== "don-troc" && categorySlug !== "pret-objet") {
+    return { label: "COUP DE MAIN", colorHex: hex };
   }
   return {
     label: getCategoryLabel(categorySlug).toUpperCase(),
-    className: "text-aqua",
+    colorHex: hex,
   };
 }
 
@@ -205,10 +203,8 @@ export function AccueilRecentAnnouncements({ items }: RecentAnnouncementsProps) 
                   )}
                   <div className="min-w-0 flex-1">
                     <p
-                      className={cn(
-                        "text-[11px] font-bold uppercase tracking-wide",
-                        category.className,
-                      )}
+                      className="text-[11px] font-bold uppercase tracking-wide"
+                      style={{ color: category.colorHex }}
                     >
                       {category.label}
                     </p>

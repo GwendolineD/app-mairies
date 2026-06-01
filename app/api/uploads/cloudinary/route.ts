@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { requireActiveMembership } from "@/lib/auth/session";
+import {
+  AntivirusServiceError,
+  scanFile,
+} from "@/lib/services/antivirus-scanner";
 
 const MAX_BYTES = 5 * 1024 * 1024;
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const ALLOWED_TYPES = ["image/jpeg", "image/png"];
 
 export async function POST(request: Request) {
   try {
@@ -17,19 +21,38 @@ export async function POST(request: Request) {
 
     const formData = await request.formData();
     const file = formData.get("file");
-    const contentType = formData.get("contentType") as string;
-    const contentId = formData.get("contentId") as string;
+    const contentType = (formData.get("contentType") as string) || "announcement";
+    const contentId = (formData.get("contentId") as string) || "draft";
 
     if (!(file instanceof File)) {
       return NextResponse.json({ error: "Fichier manquant" }, { status: 400 });
     }
 
     if (!ALLOWED_TYPES.includes(file.type)) {
-      return NextResponse.json({ error: "Type non autorisé" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Format non autorisé (JPG ou PNG uniquement)", errorType: "invalid_type" },
+        { status: 400 },
+      );
     }
 
     if (file.size > MAX_BYTES) {
-      return NextResponse.json({ error: "Fichier trop volumineux (5 Mo max)" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Fichier trop volumineux (5 Mo max)", errorType: "file_too_large" },
+        { status: 400 },
+      );
+    }
+
+    const buffer = await file.arrayBuffer();
+    const scan = await scanFile(buffer, file.name);
+
+    if (!scan.isClean) {
+      return NextResponse.json(
+        {
+          error: `Virus détecté : ${scan.virus}. Fichier rejeté.`,
+          errorType: "virus_detected",
+        },
+        { status: 400 },
+      );
     }
 
     const communeId = ctx.activeMembership!.commune_id;
@@ -44,7 +67,7 @@ export async function POST(request: Request) {
       .join("");
 
     const uploadForm = new FormData();
-    uploadForm.append("file", file);
+    uploadForm.append("file", new Blob([buffer], { type: file.type }), file.name);
     uploadForm.append("api_key", apiKey);
     uploadForm.append("timestamp", String(timestamp));
     uploadForm.append("signature", signature);
@@ -61,7 +84,16 @@ export async function POST(request: Request) {
 
     const payload = (await uploadRes.json()) as { secure_url?: string };
     return NextResponse.json({ url: payload.secure_url ?? null });
-  } catch {
+  } catch (error) {
+    if (error instanceof AntivirusServiceError) {
+      return NextResponse.json(
+        {
+          error: error.message,
+          errorType: "service_unavailable",
+        },
+        { status: 503 },
+      );
+    }
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 }
