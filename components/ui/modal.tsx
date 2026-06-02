@@ -25,6 +25,7 @@ type Props = {
   className?: string;
   size?: ModalSize;
   showCloseButton?: boolean;
+  closeDisabled?: boolean;
 };
 
 export function Modal({
@@ -35,12 +36,13 @@ export function Modal({
   className,
   size = "md",
   showCloseButton = false,
+  closeDisabled = false,
 }: Props) {
   return (
     <Dialog
       open={open}
       onOpenChange={(nextOpen) => {
-        if (!nextOpen) onClose();
+        if (!nextOpen && !closeDisabled) onClose();
       }}
     >
       <DialogContent

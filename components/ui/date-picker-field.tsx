@@ -47,7 +47,7 @@ export function DatePickerField({
           <button
             type="button"
             className={cn(
-              "flex w-full cursor-pointer items-center justify-between gap-2 rounded-sm border border-border bg-surface px-4 py-2.5 text-left text-sm font-medium outline-none transition hover:border-purple/30 focus-visible:border-purple focus-visible:ring-2 focus-visible:ring-purple/20",
+              "flex w-fit min-w-0 cursor-pointer items-center justify-between gap-2 rounded-sm border border-border bg-surface px-4 py-2.5 text-left text-sm font-medium whitespace-nowrap outline-none transition hover:border-purple/30 focus-visible:border-purple focus-visible:ring-2 focus-visible:ring-purple/20",
               !value && "text-subtle",
               value && "text-text",
               className,

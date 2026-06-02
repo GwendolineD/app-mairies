@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Check, HandHeart, Plus } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Check, HandHeart, Loader2, Plus } from "lucide-react";
 import { createAnnouncement } from "@/lib/actions/announcements";
 import {
   ANNOUNCEMENT_CATEGORIES,
@@ -9,10 +9,10 @@ import {
 } from "@/lib/constants/announcement-categories";
 import type { AnnouncementType } from "@/lib/constants/announcement-types";
 import {
-  clearFormDraft,
-  readFormDraft,
-  writeFormDraft,
-} from "@/lib/utils/form-draft";
+  CloudinaryUploadError,
+  uploadImageToCloudinary,
+} from "@/lib/services/cloudinary-client";
+import { clearFormDraft } from "@/lib/utils/form-draft";
 import { Button } from "@/components/ui/button";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { FormField, Input, Textarea } from "@/components/ui/form-field";
@@ -21,6 +21,7 @@ import { Modal } from "@/components/ui/modal";
 import { ImageDropzone } from "@/components/features/image-dropzone";
 import { cn } from "@/lib/utils/cn";
 
+const TITLE_MAX = 70;
 const DESCRIPTION_MAX = 1000;
 
 const ANNOUNCEMENT_TIPS = [
@@ -30,14 +31,7 @@ const ANNOUNCEMENT_TIPS = [
   "Restez bienveillant·e dans vos échanges",
 ] as const;
 
-type Draft = {
-  type: AnnouncementType;
-  categorySlug: AnnouncementCategorySlug;
-  title: string;
-  description: string;
-  targetDate: string;
-  photoUrl: string;
-};
+type SubmitPhase = "idle" | "uploading" | "publishing";
 
 type Props = {
   open: boolean;
@@ -55,10 +49,20 @@ function SectionHeading({
 }) {
   return (
     <h3 className="text-base font-bold text-text">
-      <span className="text-purple">{number}. </span>
-      {title}
+      {number}. {title}
     </h3>
   );
+}
+
+function getInitialFormState(presetType: AnnouncementType) {
+  return {
+    type: presetType,
+    categorySlug: ANNOUNCEMENT_CATEGORIES[0].slug,
+    title: "",
+    description: "",
+    targetDate: "",
+    pendingFile: null as File | null,
+  };
 }
 
 export function CreateAnnouncementModal({
@@ -75,83 +79,97 @@ export function CreateAnnouncementModal({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [targetDate, setTargetDate] = useState("");
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [submitPhase, setSubmitPhase] = useState<SubmitPhase>("idle");
   const [formError, setFormError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    const saved = readFormDraft<Draft>(draftKey);
-    if (saved) {
-      setCategorySlug(saved.categorySlug);
-      setTitle(saved.title);
-      setDescription(saved.description);
-      setTargetDate(saved.targetDate);
-      setPhotoUrl(saved.photoUrl || null);
-    } else {
-      setCategorySlug(ANNOUNCEMENT_CATEGORIES[0].slug);
-      setTitle("");
-      setDescription("");
-      setTargetDate("");
-      setPhotoUrl(null);
-    }
-    setType(presetType);
-  }, [open, presetType, draftKey]);
+  const resetForm = useCallback(() => {
+    const initial = getInitialFormState(presetType);
+    setType(initial.type);
+    setCategorySlug(initial.categorySlug);
+    setTitle(initial.title);
+    setDescription(initial.description);
+    setTargetDate(initial.targetDate);
+    setPendingFile(initial.pendingFile);
+    setFormError(null);
+    setSubmitting(false);
+    setSubmitPhase("idle");
+  }, [presetType]);
 
   useEffect(() => {
     if (!open) return;
-    writeFormDraft(draftKey, {
-      type,
-      categorySlug,
-      title,
-      description,
-      targetDate,
-      photoUrl: photoUrl ?? "",
-    });
-  }, [
-    open,
-    draftKey,
-    type,
-    categorySlug,
-    title,
-    description,
-    targetDate,
-    photoUrl,
-  ]);
+    resetForm();
+  }, [open, presetType, resetForm]);
+
+  const handleAbandon = useCallback(() => {
+    if (submitting) return;
+    resetForm();
+    clearFormDraft(draftKey);
+    onClose();
+  }, [submitting, resetForm, draftKey, onClose]);
+
+  const canSubmit = title.trim().length > 0 && description.trim().length > 0;
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setFormError(null);
 
-    if (description.trim().length < 10) {
-      setFormError("La description doit contenir au moins 10 caractères.");
-      return;
-    }
-
     setSubmitting(true);
-    const fd = new FormData();
-    fd.set("type", type);
-    fd.set("categorySlug", categorySlug);
-    fd.set("title", title);
-    fd.set("description", description);
-    fd.set("targetDate", targetDate);
-    fd.set("photoUrl", photoUrl ?? "");
-    await createAnnouncement(fd);
-    clearFormDraft(draftKey);
-    setSubmitting(false);
-    onClose();
+
+    try {
+      let photoUrl = "";
+
+      if (pendingFile) {
+        setSubmitPhase("uploading");
+        photoUrl = await uploadImageToCloudinary(pendingFile, "announcement");
+      }
+
+      setSubmitPhase("publishing");
+      const fd = new FormData();
+      fd.set("type", type);
+      fd.set("categorySlug", categorySlug);
+      fd.set("title", title);
+      fd.set("description", description);
+      fd.set("targetDate", targetDate);
+      fd.set("photoUrl", photoUrl);
+      await createAnnouncement(fd);
+      clearFormDraft(draftKey);
+      onClose();
+    } catch (error) {
+      if (error instanceof CloudinaryUploadError) {
+        if (error.errorType === "virus_detected") {
+          setFormError("Ce fichier a été rejeté pour des raisons de sécurité.");
+        } else if (error.errorType === "service_unavailable") {
+          setFormError("Service de sécurité indisponible. Réessayez plus tard.");
+        } else {
+          setFormError(error.message);
+        }
+      } else {
+        setFormError("Une erreur est survenue lors de la publication.");
+      }
+      setSubmitting(false);
+      setSubmitPhase("idle");
+    }
   }
 
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={handleAbandon}
+      closeDisabled={submitting}
       title="Créer une nouvelle annonce"
       size="xl"
       showCloseButton
       className="sm:max-w-3xl"
     >
-      <form onSubmit={handleSubmit} className="flex flex-col gap-8 pb-2">
+      <form
+        onSubmit={handleSubmit}
+        className={cn(
+          "flex flex-col gap-8 pb-2",
+          submitting && "pointer-events-none opacity-70",
+        )}
+      >
         <section className="space-y-3">
           <SectionHeading number={1} title="Que souhaitez-vous faire ?" />
           <div className="grid grid-cols-2 gap-3">
@@ -160,18 +178,18 @@ export function CreateAnnouncementModal({
               onClick={() => setType("demande")}
               title="Je demande"
               subtitle="J'ai besoin d'aide"
-              borderClass="border-orange"
-              bgClass="bg-orange/5"
-              icon={<HandHeart className="size-8 text-orange" strokeWidth={1.75} />}
+              gradient="gradient-demande"
+              icon={
+                <HandHeart className="size-4 text-white md:size-5" strokeWidth={2.25} aria-hidden />
+              }
             />
             <TypeCard
               selected={type === "offre"}
               onClick={() => setType("offre")}
               title="J'offre"
               subtitle="Je propose mon aide"
-              borderClass="border-mint"
-              bgClass="bg-mint/10"
-              icon={<Plus className="size-8 text-mint" strokeWidth={2.5} />}
+              gradient="gradient-offre"
+              icon={<Plus className="size-4 text-white md:size-5" strokeWidth={2.5} aria-hidden />}
             />
           </div>
         </section>
@@ -188,7 +206,7 @@ export function CreateAnnouncementModal({
                   type="button"
                   onClick={() => setCategorySlug(cat.slug)}
                   className={cn(
-                    "relative flex cursor-pointer flex-row items-center gap-2 rounded-xl border-2 px-2.5 py-2.5 text-left transition",
+                    "relative flex cursor-pointer flex-row items-center gap-2 rounded-lg border-2 px-2.5 py-2.5 text-left transition",
                     selected
                       ? "border-purple bg-soft-pink shadow-sm"
                       : "border-border bg-surface hover:border-purple/25",
@@ -200,8 +218,8 @@ export function CreateAnnouncementModal({
                   }
                 >
                   {selected ? (
-                    <span className="absolute top-1.5 right-1.5 flex size-5 items-center justify-center rounded-full bg-purple text-white">
-                      <Check className="size-3" strokeWidth={3} aria-hidden />
+                    <span className="absolute top-1 right-1 flex size-4 items-center justify-center rounded-full bg-purple text-white">
+                      <Check className="size-2.5" strokeWidth={3} aria-hidden />
                     </span>
                   ) : null}
                   <span
@@ -221,28 +239,43 @@ export function CreateAnnouncementModal({
 
         <section className="space-y-4">
           <SectionHeading number={3} title="Décrivez votre annonce" />
-          <FormField label="Titre de votre annonce *">
-            <Input
-              name="title"
-              required
-              minLength={3}
-              maxLength={120}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ex : Besoin d'aide pour déménager ce samedi"
-            />
-          </FormField>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-3">
+            <FormField label="Titre de votre annonce *" className="min-w-0 flex-1">
+              <div className="relative">
+                <Input
+                  name="title"
+                  required
+                  maxLength={TITLE_MAX}
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Ex : Besoin d'aide pour déménager ce samedi"
+                  className="pr-14"
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-subtle">
+                  {title.length}/{TITLE_MAX}
+                </span>
+              </div>
+            </FormField>
+            <FormField label="Quand ? (optionnel)" className="w-fit shrink-0">
+              <DatePickerField
+                value={targetDate}
+                onChange={setTargetDate}
+                placeholder="Choisir une date"
+                className="w-fit min-w-[11.5rem]"
+              />
+            </FormField>
+          </div>
           <FormField label="Description détaillée *">
             <div className="relative">
               <Textarea
                 name="description"
                 required
-                rows={5}
+                rows={7}
                 maxLength={DESCRIPTION_MAX}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Décrivez votre besoin, le contexte, ce que vous recherchez…"
-                className="pb-8"
+                className="max-h-96 overflow-y-auto pb-8 field-sizing-fixed resize-none"
               />
               <span className="pointer-events-none absolute right-3 bottom-2 text-xs font-medium text-subtle">
                 {description.length}/{DESCRIPTION_MAX}
@@ -252,20 +285,11 @@ export function CreateAnnouncementModal({
         </section>
 
         <section className="space-y-4">
-          <SectionHeading number={4} title="Informations pratiques" />
-          <FormField label="Quand ? (optionnel)">
-            <DatePickerField
-              value={targetDate}
-              onChange={setTargetDate}
-              placeholder="Choisir une date"
-            />
-          </FormField>
-
           <div className="grid gap-4 md:grid-cols-2 md:items-stretch">
             <ImageDropzone
-              value={photoUrl}
-              onChange={setPhotoUrl}
-              communeId={communeId}
+              file={pendingFile}
+              onFileChange={setPendingFile}
+              isUploading={submitPhase === "uploading"}
               className="h-full min-h-0"
             />
 
@@ -294,11 +318,12 @@ export function CreateAnnouncementModal({
           </p>
         ) : null}
 
-        <div className="flex flex-col-reverse gap-2 border-t border-border/60 pt-4 sm:flex-row sm:justify-end">
+        <div className="pointer-events-auto flex flex-col-reverse gap-2 border-t border-border/60 pt-4 sm:flex-row sm:justify-end">
           <Button
             type="button"
             variant="ghost"
-            onClick={onClose}
+            onClick={handleAbandon}
+            disabled={submitting}
             className="sm:min-w-[120px]"
           >
             Annuler
@@ -307,9 +332,16 @@ export function CreateAnnouncementModal({
             type="submit"
             gradient="hero"
             className="sm:min-w-[200px]"
-            disabled={submitting}
+            disabled={submitting || !canSubmit}
           >
-            {submitting ? "Publication…" : "Publier mon annonce"}
+            {submitting ? (
+              <>
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+                {submitPhase === "uploading" ? "Envoi de la photo…" : "Publication…"}
+              </>
+            ) : (
+              "Publier mon annonce"
+            )}
           </GradientButton>
         </div>
       </form>
@@ -322,16 +354,14 @@ function TypeCard({
   onClick,
   title,
   subtitle,
-  borderClass,
-  bgClass,
+  gradient,
   icon,
 }: {
   selected: boolean;
   onClick: () => void;
   title: string;
   subtitle: string;
-  borderClass: string;
-  bgClass: string;
+  gradient: "gradient-demande" | "gradient-offre";
   icon: React.ReactNode;
 }) {
   return (
@@ -339,17 +369,26 @@ function TypeCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "relative flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 px-3 py-5 text-center transition",
-        selected ? cn(borderClass, bgClass) : "border-border bg-surface hover:border-purple/20",
+        "relative flex cursor-pointer flex-row items-center gap-3 rounded-lg border-2 px-3 py-4 text-left transition",
+        selected
+          ? "border-purple bg-soft-pink shadow-sm"
+          : "border-border bg-surface hover:border-purple/20",
       )}
     >
       {selected ? (
-        <span className="absolute top-2 right-2 flex size-5 items-center justify-center rounded-full bg-purple text-white">
-          <Check className="size-3" strokeWidth={3} aria-hidden />
+        <span className="absolute top-2 right-2 flex size-4 items-center justify-center rounded-full bg-purple text-white">
+          <Check className="size-2.5" strokeWidth={3} aria-hidden />
         </span>
       ) : null}
-      {icon}
-      <div>
+      <span
+        className={cn(
+          "flex size-8 shrink-0 items-center justify-center rounded-full md:size-10",
+          gradient,
+        )}
+      >
+        {icon}
+      </span>
+      <div className="min-w-0 flex-1">
         <p className="text-sm font-bold text-text">{title}</p>
         <p className="mt-0.5 text-xs font-medium text-muted">{subtitle}</p>
       </div>

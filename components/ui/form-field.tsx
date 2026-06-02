@@ -59,7 +59,7 @@ export function FormField({
   className?: string;
 }) {
   return (
-    <div className={cn("space-y-1", className)}>
+    <div className={cn("space-y-1.5", className)}>
       <Label className="font-medium text-text">{label}</Label>
       {children}
     </div>

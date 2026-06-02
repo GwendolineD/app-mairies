@@ -9,9 +9,9 @@ const MAX_BYTES = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png"];
 
 type Props = {
-  value: string | null;
-  onChange: (url: string | null) => void;
-  communeId: string;
+  file: File | null;
+  onFileChange: (file: File | null) => void;
+  isUploading?: boolean;
   className?: string;
 };
 
@@ -25,88 +25,73 @@ function validateFile(file: File): string | null {
   return null;
 }
 
-export function ImageDropzone({ value, onChange, communeId, className }: Props) {
+export function ImageDropzone({ file, onFileChange, isUploading = false, className }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const previewUrlRef = useRef<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [preview, setPreview] = useState<string | null>(value);
+  const [preview, setPreview] = useState<string | null>(null);
+
+  const revokePreviewUrl = useCallback(() => {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
+    }
+  }, []);
+
+  const setPreviewFromFile = useCallback(
+    (nextFile: File | null) => {
+      revokePreviewUrl();
+      if (!nextFile) {
+        setPreview(null);
+        return;
+      }
+      const url = URL.createObjectURL(nextFile);
+      previewUrlRef.current = url;
+      setPreview(url);
+    },
+    [revokePreviewUrl],
+  );
 
   useEffect(() => {
-    setPreview(value);
-  }, [value]);
+    if (!file) {
+      revokePreviewUrl();
+      setPreview(null);
+    }
+  }, [file, revokePreviewUrl]);
 
-  const uploadFile = useCallback(
-    async (file: File) => {
-      const validationError = validateFile(file);
+  useEffect(() => {
+    return () => revokePreviewUrl();
+  }, [revokePreviewUrl]);
+
+  const selectFile = useCallback(
+    (nextFile: File) => {
+      const validationError = validateFile(nextFile);
       if (validationError) {
         setError(validationError);
         return;
       }
 
       setError(null);
-      setUploading(true);
-
-      const localPreview = URL.createObjectURL(file);
-      setPreview(localPreview);
-
-      try {
-        const fd = new FormData();
-        fd.append("file", file);
-        fd.append("contentType", "announcement");
-        fd.append("contentId", communeId);
-
-        const res = await fetch("/api/uploads/cloudinary", {
-          method: "POST",
-          body: fd,
-        });
-
-        const payload = (await res.json()) as {
-          url?: string;
-          error?: string;
-          errorType?: string;
-        };
-
-        if (!res.ok) {
-          setPreview(value);
-          URL.revokeObjectURL(localPreview);
-          if (payload.errorType === "virus_detected") {
-            setError("Ce fichier a été rejeté pour des raisons de sécurité.");
-          } else if (payload.errorType === "service_unavailable") {
-            setError("Service de sécurité indisponible. Réessayez plus tard.");
-          } else {
-            setError(payload.error ?? "Échec de l'envoi de la photo.");
-          }
-          return;
-        }
-
-        URL.revokeObjectURL(localPreview);
-        const url = payload.url ?? null;
-        setPreview(url);
-        onChange(url);
-      } catch {
-        setPreview(value);
-        URL.revokeObjectURL(localPreview);
-        setError("Échec de l'envoi de la photo.");
-      } finally {
-        setUploading(false);
-      }
+      setPreviewFromFile(nextFile);
+      onFileChange(nextFile);
     },
-    [communeId, onChange, value],
+    [onFileChange, setPreviewFromFile],
   );
 
   const handleFiles = useCallback(
     (files: FileList | null) => {
-      const file = files?.[0];
-      if (file) void uploadFile(file);
+      const nextFile = files?.[0];
+      if (nextFile) selectFile(nextFile);
     },
-    [uploadFile],
+    [selectFile],
   );
 
   const clearPhoto = () => {
+    revokePreviewUrl();
     setPreview(null);
     setError(null);
-    onChange(null);
+    onFileChange(null);
     if (inputRef.current) inputRef.current.value = "";
   };
 
@@ -115,7 +100,7 @@ export function ImageDropzone({ value, onChange, communeId, className }: Props) 
       <div className={cn("relative overflow-hidden rounded-xl border border-border", className)}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={preview} alt="" className="aspect-video w-full object-cover" />
-        {uploading ? (
+        {isUploading ? (
           <div className="absolute inset-0 flex items-center justify-center bg-text/40">
             <Loader2 className="size-8 animate-spin text-white" aria-hidden />
           </div>
@@ -160,14 +145,9 @@ export function ImageDropzone({ value, onChange, communeId, className }: Props) 
           dragOver
             ? "border-purple bg-soft-pink/50"
             : "border-border bg-warm/30 hover:border-purple/40 hover:bg-warm/60",
-          uploading && "pointer-events-none opacity-70",
         )}
       >
-        {uploading ? (
-          <Loader2 className="size-10 animate-spin text-purple" aria-hidden />
-        ) : (
-          <CloudUpload className="size-10 text-muted" aria-hidden />
-        )}
+        <CloudUpload className="size-10 text-muted" aria-hidden />
         <div>
           <p className="text-sm font-semibold text-text">
             Ajouter une photo (optionnel)

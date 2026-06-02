@@ -49,8 +49,8 @@ export const joinCommuneSchema = z.object({
 export const announcementSchema = z.object({
   type: z.enum(ANNOUNCEMENT_TYPE_SLUGS),
   categorySlug: z.enum(ANNOUNCEMENT_CATEGORY_SLUGS),
-  title: z.string().min(3).max(120),
-  description: z.string().min(10).max(1000),
+  title: z.string().max(70),
+  description: z.string().max(1000),
   targetDate: z
     .string()
     .optional()
