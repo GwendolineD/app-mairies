@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { assertAuthorMembership } from "@/lib/auth/ownership";
 import { requireActiveMembership } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
@@ -22,7 +21,7 @@ type AnnouncementStatusUpdate = Extract<
   "pourvue" | "archivee" | "ouverte"
 >;
 
-export async function createAnnouncement(formData: FormData): Promise<void> {
+export async function createAnnouncement(formData: FormData): Promise<{ id: string }> {
   const ctx = await requireActiveMembership();
   const raw = {
     type: formData.get("type") as string,
@@ -34,11 +33,13 @@ export async function createAnnouncement(formData: FormData): Promise<void> {
   };
 
   const parsed = announcementSchema.safeParse(raw);
-  if (!parsed.success) return;
+  if (!parsed.success) {
+    throw new Error("Les données du formulaire sont invalides.");
+  }
 
   const membership = ctx.activeMembership!;
   const supabase = await createClient();
-  const { error } = await supabase.from("announcements").insert({
+  const { data: created, error } = await supabase.from("announcements").insert({
     commune_id: membership.commune_id,
     author_membership_id: membership.id,
     type: parsed.data.type,
@@ -50,11 +51,18 @@ export async function createAnnouncement(formData: FormData): Promise<void> {
     status: ANNOUNCEMENT_STATUS.ouverte,
     address_lat: membership.address_lat,
     address_lng: membership.address_lng,
-  });
+  }).select("id").single();
 
-  if (error) return;
+  if (error) {
+    if (error.code === "23503") {
+      throw new Error("Catégorie non reconnue. Réessayez ou choisissez une autre catégorie.");
+    }
+    throw new Error("Impossible de publier l'annonce.");
+  }
   revalidatePath(ROUTES.annonces.list);
-  redirect(ROUTES.annonces.list);
+  revalidatePath(ROUTES.accueil);
+  revalidatePath(ROUTES.annonces.detail(created.id));
+  return { id: created.id };
 }
 
 export async function updateAnnouncementStatus(

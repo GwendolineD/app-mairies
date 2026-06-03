@@ -12,7 +12,6 @@ import {
   SelectGroup,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 
 import "react-day-picker/style.css";
@@ -32,10 +31,14 @@ function CalendarSelectDropdown({
     } as React.ChangeEvent<HTMLSelectElement>);
   };
 
+  const selectedLabel =
+    options?.find((option) => option.value.toString() === value?.toString())?.label ??
+    value?.toString();
+
   return (
     <Select value={value?.toString()} onValueChange={handleValueChange}>
       <SelectTrigger aria-label={ariaLabel} size="sm" className="min-w-0">
-        <SelectValue />
+        <span className="truncate">{selectedLabel}</span>
       </SelectTrigger>
       <SelectContent align="start">
         <SelectGroup>
@@ -69,20 +72,22 @@ export function Calendar({
       className={cn("p-3", className)}
       classNames={{
         months: "flex flex-col gap-2",
-        month: "flex flex-col gap-3",
-        month_caption: "flex items-center justify-center gap-2",
+        month:
+          "grid grid-cols-[auto_1fr_auto] grid-rows-[auto_auto] items-center gap-x-1 gap-y-5",
+        month_caption: "col-start-2 row-start-1 flex items-center justify-center gap-2",
         caption_label: "text-sm font-semibold text-text hidden",
         nav: "flex items-center gap-1",
         button_previous: cn(
           buttonVariants({ variant: "ghost", size: "icon-sm" }),
-          "size-7",
+          "col-start-1 row-start-1 size-7 self-center",
         ),
         button_next: cn(
           buttonVariants({ variant: "ghost", size: "icon-sm" }),
-          "size-7",
+          "col-start-3 row-start-1 size-7 self-center",
         ),
-        dropdowns: "flex items-center justify-center gap-2 text-sm font-medium",
-        month_grid: "w-full border-collapse",
+        dropdowns:
+          "flex items-center justify-center gap-2 text-sm font-medium [&_span[role=status]]:hidden",
+        month_grid: "col-span-3 row-start-2 w-full border-collapse",
         weekdays: "flex",
         weekday:
           "w-9 text-center text-[0.7rem] font-semibold uppercase text-muted",

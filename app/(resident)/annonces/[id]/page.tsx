@@ -38,7 +38,7 @@ export default async function AnnonceDetailPage(props: {
   const { data } = await supabase
     .from("announcements")
     .select(
-      "*, author_membership:memberships!announcements_author_membership_id_fkey(address_label, user_id, profiles:profiles!memberships_user_id_fkey(display_name, first_name, last_name))",
+      "*, author_membership:memberships!announcements_author_membership_id_fkey(address_label, user_id, profiles:profiles!memberships_profiles_user_id_fkey(display_name, first_name, last_name))",
     )
     .eq("id", id)
     .eq("commune_id", ctx.activeMembership!.commune_id)

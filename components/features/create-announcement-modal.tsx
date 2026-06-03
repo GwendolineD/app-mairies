@@ -1,13 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Check, HandHeart, Loader2, Plus } from "lucide-react";
 import { createAnnouncement } from "@/lib/actions/announcements";
 import {
   ANNOUNCEMENT_CATEGORIES,
+  getCategoryBySlug,
+  type AnnouncementCategory,
   type AnnouncementCategorySlug,
 } from "@/lib/constants/announcement-categories";
 import type { AnnouncementType } from "@/lib/constants/announcement-types";
+import { ROUTES } from "@/lib/constants/routes";
 import {
   CloudinaryUploadError,
   uploadImageToCloudinary,
@@ -15,7 +19,14 @@ import {
 import { clearFormDraft } from "@/lib/utils/form-draft";
 import { Button } from "@/components/ui/button";
 import { DatePickerField } from "@/components/ui/date-picker-field";
-import { FormField, Input, Textarea } from "@/components/ui/form-field";
+import { FormField, formFieldClassName, Input, Textarea } from "@/components/ui/form-field";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { Modal } from "@/components/ui/modal";
 import { ImageDropzone } from "@/components/features/image-dropzone";
@@ -71,6 +82,7 @@ export function CreateAnnouncementModal({
   communeId,
   presetType = "demande",
 }: Props) {
+  const router = useRouter();
   const draftKey = `announcement:${communeId}`;
   const [type, setType] = useState<AnnouncementType>(presetType);
   const [categorySlug, setCategorySlug] = useState<AnnouncementCategorySlug>(
@@ -133,9 +145,12 @@ export function CreateAnnouncementModal({
       fd.set("description", description);
       fd.set("targetDate", targetDate);
       fd.set("photoUrl", photoUrl);
-      await createAnnouncement(fd);
+      const { id } = await createAnnouncement(fd);
       clearFormDraft(draftKey);
+      setSubmitting(false);
+      setSubmitPhase("idle");
       onClose();
+      router.push(ROUTES.annonces.detail(id));
     } catch (error) {
       if (error instanceof CloudinaryUploadError) {
         if (error.errorType === "virus_detected") {
@@ -145,6 +160,8 @@ export function CreateAnnouncementModal({
         } else {
           setFormError(error.message);
         }
+      } else if (error instanceof Error && error.message) {
+        setFormError(error.message);
       } else {
         setFormError("Une erreur est survenue lors de la publication.");
       }
@@ -196,9 +213,12 @@ export function CreateAnnouncementModal({
 
         <section className="space-y-3">
           <SectionHeading number={2} title="Choisissez une catégorie" />
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+          <CategorySelectMobile
+            value={categorySlug}
+            onChange={setCategorySlug}
+          />
+          <div className="hidden grid-cols-3 gap-2 sm:grid sm:grid-cols-4">
             {ANNOUNCEMENT_CATEGORIES.map((cat) => {
-              const Icon = cat.Icon;
               const selected = categorySlug === cat.slug;
               return (
                 <button
@@ -206,7 +226,7 @@ export function CreateAnnouncementModal({
                   type="button"
                   onClick={() => setCategorySlug(cat.slug)}
                   className={cn(
-                    "relative flex cursor-pointer flex-row items-center gap-2 rounded-lg border-2 px-2.5 py-2.5 text-left transition",
+                    "relative flex cursor-pointer flex-row items-center gap-2 rounded-md border-2 px-2.5 py-1.5 text-left transition",
                     selected
                       ? "border-purple bg-soft-pink shadow-sm"
                       : "border-border bg-surface hover:border-purple/25",
@@ -222,12 +242,7 @@ export function CreateAnnouncementModal({
                       <Check className="size-2.5" strokeWidth={3} aria-hidden />
                     </span>
                   ) : null}
-                  <span
-                    className="flex size-9 shrink-0 items-center justify-center rounded-lg"
-                    style={{ backgroundColor: `${cat.colorHex}22`, color: cat.colorHex }}
-                  >
-                    <Icon className="size-4" strokeWidth={2} aria-hidden />
-                  </span>
+                  <CategoryIconBadge category={cat} />
                   <span className="min-w-0 flex-1 text-xs leading-tight font-semibold text-text">
                     {cat.label}
                   </span>
@@ -349,6 +364,79 @@ export function CreateAnnouncementModal({
   );
 }
 
+function CategoryIconBadge({
+  category,
+  className,
+  iconClassName,
+}: {
+  category: AnnouncementCategory;
+  className?: string;
+  iconClassName?: string;
+}) {
+  const Icon = category.Icon;
+  return (
+    <span
+      className={cn(
+        "flex size-7 shrink-0 items-center justify-center rounded-md",
+        className,
+      )}
+      style={{ backgroundColor: `${category.colorHex}22`, color: category.colorHex }}
+    >
+      <Icon className={cn("size-3.5", iconClassName)} strokeWidth={2} aria-hidden />
+    </span>
+  );
+}
+
+function CategorySelectMobile({
+  value,
+  onChange,
+}: {
+  value: AnnouncementCategorySlug;
+  onChange: (slug: AnnouncementCategorySlug) => void;
+}) {
+  const selected = getCategoryBySlug(value);
+
+  return (
+    <div className="sm:hidden">
+      <Select
+        value={value}
+        onValueChange={(next) => onChange(next as AnnouncementCategorySlug)}
+      >
+      <SelectTrigger
+        aria-label="Catégorie"
+        className={cn(
+          formFieldClassName,
+          "w-full justify-between data-[size=default]:h-auto",
+        )}
+      >
+        {selected ? (
+          <span className="flex min-w-0 items-center gap-2">
+            <CategoryIconBadge category={selected} />
+            <span className="truncate font-medium text-text">{selected.label}</span>
+          </span>
+        ) : (
+          <span className="text-subtle">Choisir une catégorie</span>
+        )}
+      </SelectTrigger>
+      <SelectContent align="start" className="max-h-64">
+        <SelectGroup>
+          {ANNOUNCEMENT_CATEGORIES.map((cat) => (
+            <SelectItem
+              key={cat.slug}
+              value={cat.slug}
+              className="min-h-12 gap-2.5 py-3"
+            >
+              <CategoryIconBadge category={cat} />
+              {cat.label}
+            </SelectItem>
+          ))}
+        </SelectGroup>
+      </SelectContent>
+    </Select>
+    </div>
+  );
+}
+
 function TypeCard({
   selected,
   onClick,
@@ -369,7 +457,7 @@ function TypeCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "relative flex cursor-pointer flex-row items-center gap-3 rounded-lg border-2 px-3 py-4 text-left transition",
+        "relative flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 px-3 py-4 text-center transition sm:flex-row sm:items-center sm:gap-3 sm:pl-5 sm:pr-3 sm:text-left",
         selected
           ? "border-purple bg-soft-pink shadow-sm"
           : "border-border bg-surface hover:border-purple/20",
@@ -388,7 +476,7 @@ function TypeCard({
       >
         {icon}
       </span>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 sm:flex-1">
         <p className="text-sm font-bold text-text">{title}</p>
         <p className="mt-0.5 text-xs font-medium text-muted">{subtitle}</p>
       </div>

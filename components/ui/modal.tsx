@@ -48,7 +48,7 @@ export function Modal({
       <DialogContent
         showCloseButton={showCloseButton}
         className={cn(
-          "top-auto right-0 bottom-0 left-0 flex max-h-[90dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-3xl border-border/60 bg-surface p-0 shadow-elevated sm:top-1/2 sm:right-auto sm:bottom-auto sm:left-1/2 sm:max-h-[min(90dvh,calc(100%-2rem))] sm:w-full sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl",
+          "top-auto inset-x-0 bottom-0 flex max-h-[90dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none rounded-t-3xl border-0 border-t border-border/60 bg-surface p-0 shadow-elevated ring-0 sm:top-1/2 sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:max-h-[min(90dvh,calc(100%-2rem))] sm:w-full sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:ring-1 sm:ring-foreground/10",
           SIZE_CLASS[size],
           className,
         )}
@@ -56,7 +56,9 @@ export function Modal({
         <DialogHeader className="shrink-0 border-b border-border/60 px-6 py-4 text-left">
           <DialogTitle className="text-lg font-bold text-text">{title}</DialogTitle>
         </DialogHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-4">
+          {children}
+        </div>
       </DialogContent>
     </Dialog>
   );
