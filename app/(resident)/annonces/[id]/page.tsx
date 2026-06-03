@@ -1,6 +1,7 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { requireActiveMembership } from "@/lib/auth/session";
 import { formatStreetDisplay } from "@/lib/ban/display";
 import { ROUTES } from "@/lib/constants/routes";
@@ -17,6 +18,7 @@ import { AssetPlaceholder } from "@/components/ui/asset-placeholder";
 import { BackLink } from "@/components/ui/back-link";
 import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ContactAnnouncementButton } from "@/components/features/contact-announcement-button";
 import { ReportButton } from "@/components/features/report-button";
 import { formatRelativeTime } from "@/lib/utils/date";
@@ -53,13 +55,6 @@ export default async function AnnonceDetailPage(props: {
       profiles: { display_name: string | null; first_name: string | null; last_name: string | null } | null;
     } | null;
   };
-
-  const similar = await listSimilarAnnouncements(
-    supabase,
-    ctx.activeMembership!.commune_id,
-    ann.category_slug,
-    ann.id,
-  );
 
   const authorName =
     (ann.author_membership?.profiles?.display_name ??
@@ -143,25 +138,66 @@ export default async function AnnonceDetailPage(props: {
             ) : null}
           </Card>
 
-          {similar.length > 0 ? (
-            <Card className="space-y-3 p-5">
-              <h2 className="text-lg font-semibold text-text">Annonces similaires</h2>
-              <ul className="space-y-2">
-                {similar.map((s) => (
-                  <li key={s.id}>
-                    <Link
-                      href={ROUTES.annonces.detail(s.id)}
-                      className="text-sm font-semibold text-purple hover:underline"
-                    >
-                      {s.title}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          ) : null}
+          <Suspense fallback={<SimilarAnnouncementsSkeleton />}>
+            <SimilarAnnouncements
+              communeId={ctx.activeMembership!.commune_id}
+              categorySlug={ann.category_slug}
+              excludeId={ann.id}
+            />
+          </Suspense>
         </aside>
       </div>
     </PageStack>
+  );
+}
+
+async function SimilarAnnouncements({
+  communeId,
+  categorySlug,
+  excludeId,
+}: {
+  communeId: string;
+  categorySlug: string;
+  excludeId: string;
+}) {
+  const supabase = await createClient();
+  const similar = await listSimilarAnnouncements(
+    supabase,
+    communeId,
+    categorySlug,
+    excludeId,
+  );
+
+  if (similar.length === 0) return null;
+
+  return (
+    <Card className="space-y-3 p-5">
+      <h2 className="text-lg font-semibold text-text">Annonces similaires</h2>
+      <ul className="space-y-2">
+        {similar.map((s) => (
+          <li key={s.id}>
+            <Link
+              href={ROUTES.annonces.detail(s.id)}
+              className="text-sm font-semibold text-purple hover:underline"
+            >
+              {s.title}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
+function SimilarAnnouncementsSkeleton() {
+  return (
+    <Card className="space-y-3 p-5">
+      <Skeleton className="h-6 w-40" />
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-5/6" />
+        <Skeleton className="h-4 w-2/3" />
+      </div>
+    </Card>
   );
 }
