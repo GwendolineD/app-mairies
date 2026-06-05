@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/session";
+import { NEIGHBOR_INVITE_TEMPLATE_KEY } from "@/lib/constants/email-templates";
 import { ROUTES } from "@/lib/constants/routes";
 import { USER_ROLES } from "@/lib/constants/roles";
 import { createClient } from "@/lib/supabase/server";
@@ -22,11 +23,16 @@ export async function updateCommuneWelcomeMessage(formData: FormData): Promise<v
 
   const supabase = await createClient();
 
-  const { data: commune } = await supabase
+  const { data: commune, error: communeError } = await supabase
     .from("communes")
     .select("settings")
     .eq("id", communeId)
     .single();
+
+  if (communeError) {
+    console.error("Unable to load commune settings", communeError.message);
+    return;
+  }
 
   const nextSettings = {
     ...(commune?.settings as Record<string, unknown>),
@@ -43,8 +49,32 @@ export async function updateCommuneWelcomeMessage(formData: FormData): Promise<v
     .update({ settings: nextSettings })
     .eq("id", communeId);
 
-  if (error) return;
+  if (error) {
+    console.error("Unable to update commune settings", error.message);
+    return;
+  }
+  const { error: templateError } = await supabase
+    .from("commune_email_templates")
+    .upsert(
+      {
+        commune_id: communeId,
+        template_key: NEIGHBOR_INVITE_TEMPLATE_KEY,
+        subject: parsed.data.neighborInviteSubject,
+        preheader: parsed.data.neighborInvitePreheader || null,
+        body_markdown: parsed.data.neighborInviteBodyMarkdown,
+        cta_label: parsed.data.neighborInviteCtaLabel,
+      },
+      { onConflict: "commune_id,template_key" },
+    );
+
+  if (templateError) {
+    console.error("Unable to update neighbor invite template", templateError.message);
+    return;
+  }
+
   revalidatePath(ROUTES.mairie.dashboard);
+  revalidatePath(ROUTES.mairie.parametres);
+  revalidatePath(ROUTES.profil);
 }
 
 export async function setReportReviewed(reportId: string): Promise<void> {

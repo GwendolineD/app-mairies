@@ -53,6 +53,37 @@ BEGIN
     subscription_status = excluded.subscription_status,
     settings = excluded.settings;
 
+  INSERT INTO public.commune_email_templates (
+    commune_id,
+    template_key,
+    subject,
+    preheader,
+    body_markdown,
+    cta_label
+  )
+  VALUES (
+    v_commune_id,
+    'neighbor_invite',
+    '{{sender_name}} vous invite sur Vie Locale {{commune_name}}',
+    'Un espace local pour découvrir les initiatives, partager des annonces et s''entraider entre voisins.',
+    'Bonjour,
+
+{{sender_name}} vous invite à rejoindre Vie Locale {{commune_name}}, l''espace convivial pour découvrir ce qui se passe près de chez vous, proposer un coup de main et rencontrer des voisins bienveillants.
+
+En quelques minutes, vous pourrez voir les annonces utiles, les initiatives locales et les événements de la commune.
+
+{{invite_link}}
+
+À très vite sur Vie Locale !',
+    'Rejoindre Vie Locale'
+  )
+  ON CONFLICT (commune_id, template_key) DO UPDATE SET
+    subject = excluded.subject,
+    preheader = excluded.preheader,
+    body_markdown = excluded.body_markdown,
+    cta_label = excluded.cta_label,
+    updated_at = now();
+
   -- Platform admin (backoffice éditeur)
   INSERT INTO auth.users (
     id,
