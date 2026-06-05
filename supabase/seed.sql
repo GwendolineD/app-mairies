@@ -266,3 +266,91 @@ BEGIN
     updated_at = now();
 
 END $$;
+
+-- =============================================================================
+-- Sample initiatives (local dev)
+-- =============================================================================
+
+DO $$
+DECLARE
+  v_commune_id uuid := '27027000-0000-4000-8000-000000000001';
+  v_admin_id uuid := '27027000-0000-4000-8000-000000000010';
+  v_membership_id uuid;
+BEGIN
+  SELECT id INTO v_membership_id
+  FROM public.memberships
+  WHERE user_id = v_admin_id AND commune_id = v_commune_id
+  LIMIT 1;
+
+  IF v_membership_id IS NULL THEN
+    RETURN;
+  END IF;
+
+  INSERT INTO public.initiatives (
+    id,
+    commune_id,
+    author_membership_id,
+    category_slug,
+    title,
+    description,
+    date_mode,
+    single_starts_at,
+    single_ends_at,
+    location_label,
+    photo_url,
+    status
+  )
+  VALUES
+    (
+      '27027000-0000-4000-8000-000000000101',
+      v_commune_id,
+      v_membership_id,
+      'nature',
+      'Nettoyons les bords de rivière',
+      E'La rivière est un trésor de notre commune, mais elle a besoin de nous !\nRejoignez-nous pour une matinée de nettoyage des berges.\n\nTout le matériel sera fourni (gants, sacs, pinces). Pensez à vous munir de bottes ou de chaussures adaptées et d''une gourde.\n\nEnsemble, faisons la différence pour notre environnement !\n\nObjectifs\n- Préserver la biodiversité locale\n- Réduire la pollution des rivières\n- Créer du lien entre habitants\n- Sensibiliser à l''importance de notre environnement',
+      'once',
+      '2026-06-15 09:00:00+02',
+      '2026-06-15 12:00:00+02',
+      'Parking du Pont Neuf, Les Authieux',
+      'https://images.unsplash.com/photo-1571687949921-1306bfb24b72?w=1200&q=80',
+      'active'
+    ),
+    (
+      '27027000-0000-4000-8000-000000000102',
+      v_commune_id,
+      v_membership_id,
+      'convivialite',
+      'Café des voisins du dimanche',
+      E'Un moment chaleureux pour faire connaissance autour d''un café et de viennoiseries.\nTous les âges sont les bienvenus.',
+      'recurring',
+      null,
+      null,
+      'Salle des fêtes',
+      null,
+      'active'
+    ),
+    (
+      '27027000-0000-4000-8000-000000000103',
+      v_commune_id,
+      v_membership_id,
+      'jeunesse',
+      'Atelier jardin partagé',
+      E'Création d''un potager collectif géré par les habitant·es.\nVenez planter, arroser et récolter ensemble au fil des saisons.',
+      'none',
+      null,
+      null,
+      'Terrain communal, rue des Écoles',
+      null,
+      'active'
+    )
+  ON CONFLICT (id) DO UPDATE SET
+    category_slug = excluded.category_slug,
+    title = excluded.title,
+    description = excluded.description,
+    date_mode = excluded.date_mode,
+    single_starts_at = excluded.single_starts_at,
+    single_ends_at = excluded.single_ends_at,
+    location_label = excluded.location_label,
+    photo_url = excluded.photo_url,
+    status = excluded.status;
+END $$;

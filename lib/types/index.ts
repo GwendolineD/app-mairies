@@ -72,6 +72,7 @@ export type InitiativeRecord = {
   id: string;
   commune_id: string;
   author_membership_id: string;
+  category_slug: string;
   title: string;
   description: string | null;
   date_mode: "none" | "once" | "recurring";
@@ -79,10 +80,25 @@ export type InitiativeRecord = {
   single_ends_at: string | null;
   recurrence_rule: unknown;
   status: "active" | "archived";
+  photo_url: string | null;
+  location_label: string | null;
   address_lat: number | null;
   address_lng: number | null;
   created_at: string;
   updated_at: string;
+};
+
+/** Author identity resolved for an initiative detail view. */
+export type InitiativeAuthor = {
+  membershipId: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+};
+
+/** Participation snapshot for the current viewer on an initiative. */
+export type InitiativeParticipation = {
+  count: number;
+  isParticipating: boolean;
 };
 
 export type AgendaEventRecord = {
