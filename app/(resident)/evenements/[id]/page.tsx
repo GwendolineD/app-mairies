@@ -78,6 +78,7 @@ export default async function EvenementDetailPage(props: {
             <ContactButton
               contextType="event"
               contextId={event.id}
+              contextTitle={event.title}
               gradient="events"
             />
           </div>

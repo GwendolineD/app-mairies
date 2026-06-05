@@ -84,6 +84,7 @@ export default async function AnnonceDetailPage(props: {
             <ContactButton
               contextType="announcement"
               contextId={ann.id}
+              contextTitle={ann.title}
               gradient={ann.type === "offre" ? "offre" : "demande"}
             />
           </div>

@@ -74,6 +74,7 @@ export default async function InitiativeDetailPage(props: {
             <ContactButton
               contextType="initiative"
               contextId={initiative.id}
+              contextTitle={initiative.title}
               gradient="initiative"
             />
           </div>
