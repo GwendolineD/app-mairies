@@ -101,6 +101,8 @@ export type AgendaEventRecord = {
   updated_at: string;
 };
 
+export type ContextType = "announcement" | "initiative" | "event";
+
 export type MessageRow = {
   id: string;
   conversation_id: string;
@@ -114,4 +116,45 @@ export type ConversationPreview = {
   id: string;
   title: string | null;
   updated_at: string;
+};
+
+/** Lightweight profile slice used to render participants in the messaging UI. */
+export type ParticipantProfile = {
+  user_id: string;
+  display_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  avatar_url: string | null;
+};
+
+/** A conversation row enriched for the inbox list view. */
+export type ConversationListEntry = {
+  id: string;
+  title: string | null;
+  context_type: ContextType | null;
+  context_id: string | null;
+  updated_at: string;
+  /** The other participant (1:1 threads); null if not resolvable. */
+  otherParticipant: ParticipantProfile | null;
+  lastMessage: {
+    body: string;
+    created_at: string;
+    sender_id: string;
+  } | null;
+  unreadCount: number;
+};
+
+/** A message enriched with its sender profile for the thread view. */
+export type ThreadMessage = MessageRow & {
+  sender: ParticipantProfile | null;
+};
+
+export type NotificationRow = {
+  id: string;
+  user_id: string;
+  title: string | null;
+  body: string | null;
+  payload: Record<string, unknown>;
+  read_at: string | null;
+  created_at: string;
 };

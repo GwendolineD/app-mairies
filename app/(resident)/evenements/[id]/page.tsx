@@ -9,6 +9,7 @@ import { BackLink } from "@/components/ui/back-link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ContentTypeTag } from "@/components/ui/content-type-tag";
+import { ContactButton } from "@/components/features/messaging/contact-button";
 import { ReportButton } from "@/components/features/report-button";
 import type { AgendaEventRecord } from "@/lib/types";
 import { PageStack } from "@/components/ui/page-stack";
@@ -68,7 +69,19 @@ export default async function EvenementDetailPage(props: {
               </Button>
             </form>
           </div>
-        ) : null}
+        ) : (
+          <div className="space-y-3 rounded-2xl bg-warm/60 p-4">
+            <p className="text-sm font-semibold leading-5 text-text">
+              Une question sur l&apos;événement ? Écrivez à
+              l&apos;organisateur·rice.
+            </p>
+            <ContactButton
+              contextType="event"
+              contextId={event.id}
+              gradient="events"
+            />
+          </div>
+        )}
       </Card>
     </PageStack>
   );

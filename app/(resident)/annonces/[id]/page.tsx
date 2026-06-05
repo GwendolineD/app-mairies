@@ -7,6 +7,7 @@ import { AssetPlaceholder } from "@/components/ui/asset-placeholder";
 import { BackLink } from "@/components/ui/back-link";
 import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";
+import { ContactButton } from "@/components/features/messaging/contact-button";
 import { ReportButton } from "@/components/features/report-button";
 import { getCategoryLabel } from "@/lib/constants/announcement-categories";
 import type { Announcement } from "@/lib/types";
@@ -30,6 +31,7 @@ export default async function AnnonceDetailPage(props: {
   if (!data) notFound();
 
   const ann = data as Announcement;
+  const isAuthor = ann.author_membership_id === ctx.activeMembership?.id;
 
   return (
     <PageStack gap="5">
@@ -69,17 +71,24 @@ export default async function AnnonceDetailPage(props: {
             Pas de détail complémentaire.
           </p>
         )}
-        <ContactPlaceholder />
+        {isAuthor ? (
+          <p className="rounded-2xl bg-warm px-4 py-3 text-sm font-medium text-muted">
+            C&apos;est votre annonce : les messages reçus apparaîtront dans
+            l&apos;onglet Messages.
+          </p>
+        ) : (
+          <div className="space-y-3 rounded-2xl bg-warm/60 p-4">
+            <p className="text-sm font-semibold leading-5 text-text">
+              Intéressé·e ? Écrivez à l&apos;auteur·e de l&apos;annonce.
+            </p>
+            <ContactButton
+              contextType="announcement"
+              contextId={ann.id}
+              gradient={ann.type === "offre" ? "offre" : "demande"}
+            />
+          </div>
+        )}
       </Card>
     </PageStack>
-  );
-}
-
-function ContactPlaceholder() {
-  return (
-    <AssetPlaceholder
-      description="Messagerie chaleureuse — création automatique de conversation à venir"
-      className="min-h-24 flex-col gap-2 rounded-3xl"
-    />
   );
 }

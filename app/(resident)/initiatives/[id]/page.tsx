@@ -11,6 +11,7 @@ import { BackLink } from "@/components/ui/back-link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ContentTypeTag } from "@/components/ui/content-type-tag";
+import { ContactButton } from "@/components/features/messaging/contact-button";
 import { ReportButton } from "@/components/features/report-button";
 import type { InitiativeRecord } from "@/lib/types";
 import { PageStack } from "@/components/ui/page-stack";
@@ -65,7 +66,18 @@ export default async function InitiativeDetailPage(props: {
 
         {isAuthor ? (
           <AuthorActions initiativeId={initiative.id} />
-        ) : null}
+        ) : (
+          <div className="space-y-3 rounded-2xl bg-warm/60 p-4">
+            <p className="text-sm font-semibold leading-5 text-text">
+              Envie de participer ? Écrivez à l&apos;organisateur·rice.
+            </p>
+            <ContactButton
+              contextType="initiative"
+              contextId={initiative.id}
+              gradient="initiative"
+            />
+          </div>
+        )}
       </Card>
     </PageStack>
   );
