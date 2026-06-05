@@ -32,11 +32,16 @@ export function formatEventDetail(start: string, end: string): string {
   }
 }
 
+// Community content is scheduled and displayed in French local time,
+// regardless of the server timezone (which is UTC in production/CI).
+const PARIS_TZ = "Europe/Paris";
+
 const WEEKDAY_DATE: Intl.DateTimeFormatOptions = {
   weekday: "long",
   day: "numeric",
   month: "long",
   year: "numeric",
+  timeZone: PARIS_TZ,
 };
 
 function capitalize(value: string): string {
@@ -55,10 +60,16 @@ export function formatLongDateFr(value: string): string | null {
 /** "9h00" */
 export function formatTimeFr(value: string): string | null {
   try {
-    const date = new Date(value);
-    const hours = date.getHours();
-    const minutes = date.getMinutes().toString().padStart(2, "0");
-    return `${hours}h${minutes}`;
+    const parts = new Intl.DateTimeFormat("fr-FR", {
+      hour: "numeric",
+      minute: "2-digit",
+      hourCycle: "h23",
+      timeZone: PARIS_TZ,
+    }).formatToParts(new Date(value));
+    const hour = parts.find((p) => p.type === "hour")?.value ?? "";
+    const minute = parts.find((p) => p.type === "minute")?.value ?? "00";
+    if (!hour) return null;
+    return `${parseInt(hour, 10)}h${minute}`;
   } catch {
     return null;
   }
