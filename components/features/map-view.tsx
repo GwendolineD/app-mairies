@@ -7,12 +7,38 @@ import {
   Marker,
   Popup,
   TileLayer,
+  useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import {
   LEAFLET_MARKER_ICONS,
   MAP_TILE_URL,
 } from "@/lib/constants/assets";
+
+/**
+ * Recomputes the map size after mount and whenever the container resizes.
+ * Prevents missing tiles when the map mounts inside an element whose size
+ * settles late (eg a modal that animates open).
+ */
+function MapResizeHandler() {
+  const map = useMap();
+
+  useEffect(() => {
+    const container = map.getContainer();
+    const invalidate = () => map.invalidateSize();
+
+    const raf = requestAnimationFrame(invalidate);
+    const observer = new ResizeObserver(invalidate);
+    observer.observe(container);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      observer.disconnect();
+    };
+  }, [map]);
+
+  return null;
+}
 
 type Props = {
   latitude: number;
@@ -51,6 +77,7 @@ export function MapViewCommune({
       <Marker position={position}>
         <Popup>{communeName}</Popup>
       </Marker>
+      <MapResizeHandler />
     </MapContainer>
   );
 }
