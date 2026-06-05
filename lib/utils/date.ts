@@ -31,3 +31,47 @@ export function formatEventDetail(start: string, end: string): string {
     return "Planning à confirmer";
   }
 }
+
+const WEEKDAY_DATE: Intl.DateTimeFormatOptions = {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+};
+
+function capitalize(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+/** "Samedi 15 juin 2025" */
+export function formatLongDateFr(value: string): string | null {
+  try {
+    return capitalize(formatFr(new Date(value), WEEKDAY_DATE));
+  } catch {
+    return null;
+  }
+}
+
+/** "9h00" */
+export function formatTimeFr(value: string): string | null {
+  try {
+    const date = new Date(value);
+    const hours = date.getHours();
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    return `${hours}h${minutes}`;
+  } catch {
+    return null;
+  }
+}
+
+/** Short, human temporality label for an initiative card. */
+export function formatInitiativeWhen(
+  dateMode: string,
+  startsAt: string | null,
+): string {
+  if (dateMode === "once" && startsAt) {
+    return formatLongDateFr(startsAt) ?? "Date à confirmer";
+  }
+  if (dateMode === "recurring") return "Rendez-vous récurrent";
+  return "À tout moment";
+}
