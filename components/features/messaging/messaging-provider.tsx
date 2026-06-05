@@ -101,7 +101,7 @@ export function MessagingProvider({
             setToasts((prev) => [...prev.slice(-2), toast]);
             window.setTimeout(() => {
               if (active) dismissToast(toast.id);
-            }, 6000);
+            }, 9000);
           },
         )
         .subscribe();
