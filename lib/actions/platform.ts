@@ -1,11 +1,145 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import { USER_ROLES } from "@/lib/constants/roles";
-import { createClient } from "@/lib/supabase/server";
+import {
+  COMMUNE_PLAN_DEFAULT_CENTS,
+  MEMBERSHIP_STATUS,
+  SUBSCRIPTION_STATUS,
+} from "@/lib/constants/statuses";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { parseEurosToCents } from "@/lib/utils/money";
+import {
+  communeAdminSchema,
+  paymentAdminSchema,
+} from "@/lib/validations/schemas";
 import type { SubscriptionStatus } from "@/lib/types";
+
+type ActionResult = { error?: string; success?: boolean };
+
+function revalidateClients(communeId?: string) {
+  revalidatePath(ROUTES.platform.clients);
+  revalidatePath(ROUTES.platform.admin);
+  revalidatePath(ROUTES.platform.stats);
+  if (communeId) revalidatePath(ROUTES.platform.clientDetail(communeId));
+}
+
+function readCommuneForm(formData: FormData) {
+  const raw = {
+    name: String(formData.get("name") ?? "").trim(),
+    inseeCode: String(formData.get("inseeCode") ?? "").trim(),
+    postcode: String(formData.get("postcode") ?? "").trim(),
+    department: String(formData.get("department") ?? "").trim(),
+    plan: String(formData.get("plan") ?? "free").trim(),
+    subscriptionStatus: String(
+      formData.get("subscriptionStatus") ?? "trial",
+    ).trim(),
+    billingEmail: String(formData.get("billingEmail") ?? "").trim(),
+  };
+  const monthlyAmountRaw = String(formData.get("monthlyAmount") ?? "").trim();
+  return { raw, monthlyAmountRaw };
+}
+
+// =============================================================================
+// Communes (clients)
+// =============================================================================
+
+export async function createCommune(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  await requireRole([USER_ROLES.platformAdmin]);
+
+  const { raw, monthlyAmountRaw } = readCommuneForm(formData);
+  const parsed = communeAdminSchema.safeParse(raw);
+  if (!parsed.success) {
+    const first = Object.values(parsed.error.flatten().fieldErrors)
+      .flat()
+      .filter(Boolean)[0];
+    return { error: first ?? "Formulaire invalide." };
+  }
+
+  const monthlyAmountCents =
+    monthlyAmountRaw === ""
+      ? COMMUNE_PLAN_DEFAULT_CENTS[parsed.data.plan] ?? 0
+      : parseEurosToCents(monthlyAmountRaw) ?? 0;
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("communes")
+    .insert({
+      name: parsed.data.name,
+      insee_code: parsed.data.inseeCode,
+      postcode: parsed.data.postcode || null,
+      department: parsed.data.department || null,
+      plan: parsed.data.plan,
+      subscription_status: parsed.data.subscriptionStatus,
+      monthly_amount_cents: monthlyAmountCents,
+      billing_email: parsed.data.billingEmail || null,
+    })
+    .select("id")
+    .single();
+
+  if (error) {
+    if (error.code === "23505") {
+      return { error: "Une commune avec ce code INSEE existe déjà." };
+    }
+    return { error: "Création impossible. Réessayez dans un instant." };
+  }
+
+  revalidateClients(data.id);
+  redirect(ROUTES.platform.clientDetail(data.id));
+}
+
+export async function updateCommune(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  await requireRole([USER_ROLES.platformAdmin]);
+
+  const communeId = String(formData.get("communeId") ?? "").trim();
+  if (!communeId) return { error: "Commune introuvable." };
+
+  const { raw, monthlyAmountRaw } = readCommuneForm(formData);
+  const parsed = communeAdminSchema.safeParse(raw);
+  if (!parsed.success) {
+    const first = Object.values(parsed.error.flatten().fieldErrors)
+      .flat()
+      .filter(Boolean)[0];
+    return { error: first ?? "Formulaire invalide." };
+  }
+
+  const monthlyAmountCents =
+    monthlyAmountRaw === "" ? 0 : parseEurosToCents(monthlyAmountRaw) ?? 0;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("communes")
+    .update({
+      name: parsed.data.name,
+      insee_code: parsed.data.inseeCode,
+      postcode: parsed.data.postcode || null,
+      department: parsed.data.department || null,
+      plan: parsed.data.plan,
+      subscription_status: parsed.data.subscriptionStatus,
+      monthly_amount_cents: monthlyAmountCents,
+      billing_email: parsed.data.billingEmail || null,
+    })
+    .eq("id", communeId);
+
+  if (error) {
+    if (error.code === "23505") {
+      return { error: "Une commune avec ce code INSEE existe déjà." };
+    }
+    return { error: "Mise à jour impossible. Réessayez dans un instant." };
+  }
+
+  revalidateClients(communeId);
+  return { success: true };
+}
 
 export async function setCommuneSubscription(
   communeId: string,
@@ -14,33 +148,223 @@ export async function setCommuneSubscription(
   await requireRole([USER_ROLES.platformAdmin]);
 
   const supabase = await createClient();
+  const patch: Record<string, unknown> = { subscription_status: status };
+  if (status === SUBSCRIPTION_STATUS.suspended) {
+    patch.suspended_at = new Date().toISOString();
+  } else {
+    patch.suspended_at = null;
+    patch.suspension_reason = null;
+  }
+
   const { error } = await supabase
     .from("communes")
-    .update({ subscription_status: status })
+    .update(patch)
     .eq("id", communeId);
 
   if (error) return;
-  revalidatePath(ROUTES.platform.communes);
+  revalidateClients(communeId);
 }
 
-export async function applyCommuneSubscription(formData: FormData): Promise<void> {
+export async function applyCommuneSubscription(
+  formData: FormData,
+): Promise<void> {
   const communeId = String(formData.get("communeId") ?? "").trim();
   const statusRaw = String(formData.get("status") ?? "").trim();
 
-  const allowed: SubscriptionStatus[] = ["inactive", "trial", "active"];
+  const allowed: SubscriptionStatus[] = [
+    "inactive",
+    "trial",
+    "active",
+    "suspended",
+  ];
   if (!communeId || !allowed.includes(statusRaw as SubscriptionStatus)) return;
 
   await setCommuneSubscription(communeId, statusRaw as SubscriptionStatus);
+}
+
+export async function suspendCommune(formData: FormData): Promise<void> {
+  await requireRole([USER_ROLES.platformAdmin]);
+  const communeId = String(formData.get("communeId") ?? "").trim();
+  if (!communeId) return;
+  const reason = String(formData.get("reason") ?? "").trim() || null;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("communes")
+    .update({
+      subscription_status: SUBSCRIPTION_STATUS.suspended,
+      suspended_at: new Date().toISOString(),
+      suspension_reason: reason,
+    })
+    .eq("id", communeId);
+
+  if (error) return;
+  revalidateClients(communeId);
+}
+
+export async function reactivateCommune(formData: FormData): Promise<void> {
+  await requireRole([USER_ROLES.platformAdmin]);
+  const communeId = String(formData.get("communeId") ?? "").trim();
+  if (!communeId) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("communes")
+    .update({
+      subscription_status: SUBSCRIPTION_STATUS.active,
+      suspended_at: null,
+      suspension_reason: null,
+    })
+    .eq("id", communeId);
+
+  if (error) return;
+  revalidateClients(communeId);
+}
+
+export async function deleteCommune(formData: FormData): Promise<void> {
+  await requireRole([USER_ROLES.platformAdmin]);
+  const communeId = String(formData.get("communeId") ?? "").trim();
+  if (!communeId) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("communes")
+    .delete()
+    .eq("id", communeId);
+
+  if (error) return;
+  revalidateClients();
+  redirect(ROUTES.platform.clients);
+}
+
+// =============================================================================
+// Users (per client)
+// =============================================================================
+
+export async function suspendCommuneUser(formData: FormData): Promise<void> {
+  await requireRole([USER_ROLES.platformAdmin]);
+  const membershipId = String(formData.get("membershipId") ?? "").trim();
+  const communeId = String(formData.get("communeId") ?? "").trim();
+  if (!membershipId) return;
+  const reason = String(formData.get("reason") ?? "").trim() || null;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("memberships")
+    .update({
+      status: MEMBERSHIP_STATUS.suspended,
+      suspended_at: new Date().toISOString(),
+      suspension_reason: reason,
+    })
+    .eq("id", membershipId);
+
+  if (error) return;
+  revalidateClients(communeId);
+}
+
+export async function reactivateCommuneUser(formData: FormData): Promise<void> {
+  await requireRole([USER_ROLES.platformAdmin]);
+  const membershipId = String(formData.get("membershipId") ?? "").trim();
+  const communeId = String(formData.get("communeId") ?? "").trim();
+  if (!membershipId) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("memberships")
+    .update({
+      status: MEMBERSHIP_STATUS.active,
+      suspended_at: null,
+      suspension_reason: null,
+    })
+    .eq("id", membershipId);
+
+  if (error) return;
+  revalidateClients(communeId);
+}
+
+export async function deleteCommuneUser(formData: FormData): Promise<void> {
+  const ctx = await requireRole([USER_ROLES.platformAdmin]);
+  const userId = String(formData.get("userId") ?? "").trim();
+  const communeId = String(formData.get("communeId") ?? "").trim();
+  if (!userId) return;
+  // Never let an admin delete their own account from the backoffice.
+  if (userId === ctx.userId) return;
+
+  // Account deletion requires the auth admin API (service role). Cascades to
+  // profiles and memberships via ON DELETE CASCADE.
+  const admin = await createServiceClient();
+  const { error } = await admin.auth.admin.deleteUser(userId);
+  if (error) return;
+
+  revalidateClients(communeId);
+}
+
+// =============================================================================
+// Payments (revenue)
+// =============================================================================
+
+export async function recordPayment(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  await requireRole([USER_ROLES.platformAdmin]);
+  const communeId = String(formData.get("communeId") ?? "").trim();
+  if (!communeId) return { error: "Commune introuvable." };
+
+  const amountCents = parseEurosToCents(
+    String(formData.get("amount") ?? "").trim(),
+  );
+  if (amountCents === null) {
+    return { error: "Montant invalide." };
+  }
+
+  const parsed = paymentAdminSchema.safeParse({
+    status: String(formData.get("status") ?? "paid"),
+    periodStart: String(formData.get("periodStart") ?? ""),
+    periodEnd: String(formData.get("periodEnd") ?? ""),
+    note: String(formData.get("note") ?? ""),
+  });
+  if (!parsed.success) return { error: "Formulaire de paiement invalide." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("commune_payments").insert({
+    commune_id: communeId,
+    amount_cents: amountCents,
+    status: parsed.data.status,
+    period_start: parsed.data.periodStart || null,
+    period_end: parsed.data.periodEnd || null,
+    paid_at:
+      parsed.data.status === "paid" ? new Date().toISOString() : null,
+    note: parsed.data.note || null,
+  });
+
+  if (error) return { error: "Enregistrement du paiement impossible." };
+
+  revalidateClients(communeId);
+  return { success: true };
+}
+
+export async function deletePayment(formData: FormData): Promise<void> {
+  await requireRole([USER_ROLES.platformAdmin]);
+  const paymentId = String(formData.get("paymentId") ?? "").trim();
+  const communeId = String(formData.get("communeId") ?? "").trim();
+  if (!paymentId) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("commune_payments")
+    .delete()
+    .eq("id", paymentId);
+
+  if (error) return;
+  revalidateClients(communeId);
 }
 
 export async function softDeleteAnnouncementByAdmin(id: string) {
   await requireRole([USER_ROLES.platformAdmin]);
 
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("announcements")
-    .delete()
-    .eq("id", id);
+  const { error } = await supabase.from("announcements").delete().eq("id", id);
 
   if (error) return { error: error.message };
   revalidatePath(ROUTES.platform.admin);
