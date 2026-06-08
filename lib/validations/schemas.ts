@@ -80,6 +80,11 @@ export const appealSchema = z.object({
   message: z.string().min(10).max(2000),
 });
 
+export const suspendMembershipSchema = z.object({
+  membershipId: z.string().uuid(),
+  reason: z.string().max(500).optional(),
+});
+
 export const communeSettingsSchema = z.object({
   address: z.string().optional(),
   phone: z.string().optional(),

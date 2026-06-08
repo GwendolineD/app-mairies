@@ -1,6 +1,6 @@
 import { NavLink } from "@/components/ui/nav-link";
 import { requireRole } from "@/lib/auth/session";
-import { MUNICIPALITY_NAV } from "@/lib/constants/routes";
+import { MUNICIPALITY_NAV, ROUTES } from "@/lib/constants/routes";
 import { USER_ROLES } from "@/lib/constants/roles";
 
 export default async function MunicipalityDashboardLayout({
@@ -20,7 +20,13 @@ export default async function MunicipalityDashboardLayout({
           <p className="mb-6 px-3 text-lg font-bold leading-7 text-text">Pilotage</p>
           <nav className="flex flex-col gap-1">
             {MUNICIPALITY_NAV.map((l) => (
-              <NavLink key={l.href} href={l.href} label={l.label} variant="sidebar" />
+              <NavLink
+                key={l.href}
+                href={l.href}
+                label={l.label}
+                variant="sidebar"
+                exact={l.href === ROUTES.mairie.dashboard}
+              />
             ))}
           </nav>
         </aside>
@@ -36,7 +42,12 @@ export default async function MunicipalityDashboardLayout({
           </header>
           <nav className="flex flex-wrap gap-2 border-b border-border/60 px-4 py-4 lg:hidden">
             {MUNICIPALITY_NAV.map((l) => (
-              <NavLink key={l.href} href={l.href} label={l.label} />
+              <NavLink
+                key={l.href}
+                href={l.href}
+                label={l.label}
+                exact={l.href === ROUTES.mairie.dashboard}
+              />
             ))}
           </nav>
           <main className="mt-4 px-4 lg:mt-6 lg:px-8">{children}</main>

@@ -13,6 +13,10 @@ export type Commune = {
   centroid_lat: number | null;
   centroid_lng: number | null;
   subscription_status: SubscriptionStatus;
+  subscription_started_at: string | null;
+  subscription_ends_at: string | null;
+  subscription_paid: boolean;
+  created_at?: string;
   settings: CommuneSettings;
 };
 
@@ -48,6 +52,8 @@ export type Membership = {
   status: MembershipStatus;
   suspended_at: string | null;
   suspension_reason: string | null;
+  created_at?: string;
+  updated_at?: string;
   commune?: Commune;
 };
 

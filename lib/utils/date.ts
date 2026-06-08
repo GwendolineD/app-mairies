@@ -31,3 +31,28 @@ export function formatEventDetail(start: string, end: string): string {
     return "Planning à confirmer";
   }
 }
+
+const DATE_DAY: Intl.DateTimeFormatOptions = { dateStyle: "medium" };
+const MONTH_SHORT: Intl.DateTimeFormatOptions = {
+  month: "short",
+  year: "2-digit",
+};
+
+/** Short day date, e.g. "8 juin 2026". Returns "—" on invalid input. */
+export function formatDay(value: string | null | undefined): string {
+  if (!value) return "—";
+  try {
+    return formatFr(new Date(value), DATE_DAY);
+  } catch {
+    return "—";
+  }
+}
+
+/** Compact month label for chart axes, e.g. "juin 26". */
+export function formatMonthShort(value: string): string {
+  try {
+    return formatFr(new Date(value), MONTH_SHORT).replace(".", "");
+  } catch {
+    return value;
+  }
+}

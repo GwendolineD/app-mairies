@@ -4,8 +4,14 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import { USER_ROLES } from "@/lib/constants/roles";
+import { MEMBERSHIP_STATUS } from "@/lib/constants/statuses";
 import { createClient } from "@/lib/supabase/server";
-import { communeSettingsSchema } from "@/lib/validations/schemas";
+import {
+  communeSettingsSchema,
+  suspendMembershipSchema,
+} from "@/lib/validations/schemas";
+
+export type MembershipActionResult = { error?: string; success?: boolean };
 
 export async function updateCommuneWelcomeMessage(formData: FormData): Promise<void> {
   const ctx = await requireRole([USER_ROLES.municipalityStaff]);
@@ -67,4 +73,72 @@ export async function markReportHandledForm(formData: FormData): Promise<void> {
   const reportId = formData.get("reportId");
   if (typeof reportId !== "string" || !reportId) return;
   await setReportReviewed(reportId);
+}
+
+// Resolves the active commune of the staff member and confirms the target
+// membership belongs to it (defense in depth on top of RLS).
+async function resolveStaffCommune(): Promise<{
+  communeId: string | null;
+}> {
+  const ctx = await requireRole([USER_ROLES.municipalityStaff]);
+  return { communeId: ctx.profile.active_commune_id };
+}
+
+export async function suspendMembership(
+  formData: FormData,
+): Promise<MembershipActionResult> {
+  const { communeId } = await resolveStaffCommune();
+  if (!communeId) return { error: "Aucune commune active." };
+
+  const parsed = suspendMembershipSchema.safeParse({
+    membershipId: formData.get("membershipId"),
+    reason: formData.get("reason") || undefined,
+  });
+  if (!parsed.success) return { error: "Requête invalide." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("memberships")
+    .update({
+      status: MEMBERSHIP_STATUS.suspended,
+      suspended_at: new Date().toISOString(),
+      suspension_reason: parsed.data.reason ?? null,
+    })
+    .eq("id", parsed.data.membershipId)
+    .eq("commune_id", communeId)
+    .neq("status", MEMBERSHIP_STATUS.left);
+
+  if (error) return { error: error.message };
+
+  revalidatePath(ROUTES.mairie.habitants);
+  revalidatePath(ROUTES.mairie.dashboard);
+  return { success: true };
+}
+
+export async function reactivateMembership(
+  formData: FormData,
+): Promise<MembershipActionResult> {
+  const { communeId } = await resolveStaffCommune();
+  if (!communeId) return { error: "Aucune commune active." };
+
+  const membershipId = String(formData.get("membershipId") ?? "").trim();
+  if (!membershipId) return { error: "Requête invalide." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("memberships")
+    .update({
+      status: MEMBERSHIP_STATUS.active,
+      suspended_at: null,
+      suspension_reason: null,
+    })
+    .eq("id", membershipId)
+    .eq("commune_id", communeId)
+    .eq("status", MEMBERSHIP_STATUS.suspended);
+
+  if (error) return { error: error.message };
+
+  revalidatePath(ROUTES.mairie.habitants);
+  revalidatePath(ROUTES.mairie.dashboard);
+  return { success: true };
 }
