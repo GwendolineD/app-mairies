@@ -37,6 +37,12 @@ export const ROUTES = {
   mairie: {
     dashboard: "/mairie",
     habitants: "/mairie/habitants",
+    annonces: "/mairie/annonces",
+    annonceDetail: (id: string) => `/mairie/annonces/${id}`,
+    initiatives: "/mairie/initiatives",
+    initiativeDetail: (id: string) => `/mairie/initiatives/${id}`,
+    evenements: "/mairie/evenements",
+    evenementDetail: (id: string) => `/mairie/evenements/${id}`,
     parametres: "/mairie/parametres",
     signalements: "/mairie/signalements",
     eventNew: "/mairie/evenements/nouveau",
@@ -60,10 +66,13 @@ export const RESIDENT_BOTTOM_NAV = [
 ] as const;
 
 export const MUNICIPALITY_NAV = [
-  { href: ROUTES.mairie.dashboard, label: "Tableau mairie" },
+  { href: ROUTES.mairie.dashboard, label: "Tableau de bord" },
   { href: ROUTES.mairie.habitants, label: "Habitant·es" },
-  { href: ROUTES.mairie.parametres, label: "Paramètres" },
+  { href: ROUTES.mairie.annonces, label: "Annonces" },
+  { href: ROUTES.mairie.initiatives, label: "Initiatives" },
+  { href: ROUTES.mairie.evenements, label: "Événements" },
   { href: ROUTES.mairie.signalements, label: "Signalements" },
+  { href: ROUTES.mairie.parametres, label: "Paramètres" },
   { href: ROUTES.mairie.eventNew, label: "+ Événement" },
 ] as const;
 

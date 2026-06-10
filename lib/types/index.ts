@@ -19,6 +19,9 @@ export type Commune = {
   centroid_lat: number | null;
   centroid_lng: number | null;
   subscription_status: SubscriptionStatus;
+  subscription_started_at: string | null;
+  subscription_ends_at: string | null;
+  subscription_paid: boolean;
   plan: CommunePlan;
   monthly_amount_cents: number;
   billing_email: string | null;

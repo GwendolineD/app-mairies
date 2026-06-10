@@ -28,6 +28,9 @@ BEGIN
     centroid_lat,
     centroid_lng,
     subscription_status,
+    subscription_started_at,
+    subscription_ends_at,
+    subscription_paid,
     settings
   )
   VALUES (
@@ -39,6 +42,9 @@ BEGIN
     48.8978,
     1.2338,
     'active',
+    now() - interval '8 months',
+    now() + interval '4 months',
+    true,
     jsonb_build_object(
       'welcomeMessage',
       'Bienvenue sur Vie Locale Les Authieux — découvrir, partager, s''entraider.'
@@ -51,6 +57,9 @@ BEGIN
     centroid_lat = excluded.centroid_lat,
     centroid_lng = excluded.centroid_lng,
     subscription_status = excluded.subscription_status,
+    subscription_started_at = excluded.subscription_started_at,
+    subscription_ends_at = excluded.subscription_ends_at,
+    subscription_paid = excluded.subscription_paid,
     settings = excluded.settings;
 
   INSERT INTO public.commune_email_templates (

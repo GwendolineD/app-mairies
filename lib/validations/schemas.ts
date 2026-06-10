@@ -84,6 +84,11 @@ export const appealSchema = z.object({
   message: z.string().min(10).max(2000),
 });
 
+export const suspendMembershipSchema = z.object({
+  membershipId: z.string().uuid(),
+  reason: z.string().max(500).optional(),
+});
+
 export const communeAdminSchema = z.object({
   name: z.string().min(2, "Nom requis").max(120),
   inseeCode: z
