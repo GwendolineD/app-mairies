@@ -7,12 +7,14 @@ const STATUS_LABEL: Record<Commune["subscription_status"], string> = {
   inactive: "Inactif",
   trial: "Période d'essai",
   active: "Actif",
+  suspended: "Suspendu",
 };
 
 const STATUS_STYLE: Record<Commune["subscription_status"], string> = {
   inactive: "bg-warm text-muted",
   trial: "bg-sun/15 text-orange",
   active: "bg-mint/15 text-mint",
+  suspended: "bg-coral/15 text-coral",
 };
 
 function daysUntil(value: string | null): number | null {

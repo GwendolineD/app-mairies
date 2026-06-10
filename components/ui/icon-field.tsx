@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
-import { formFieldClassName } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/form-field";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 type IconFieldProps = {
   label: string;
@@ -17,7 +18,7 @@ export function IconField({
 }: IconFieldProps) {
   return (
     <div className={cn("w-full", className)}>
-      <label className="mb-1.5 block text-xs font-semibold text-text">{label}</label>
+      <Label className="mb-1.5 block text-xs font-semibold text-text">{label}</Label>
       <div className="relative">
         <Icon
           className="pointer-events-none absolute left-3.5 top-1/2 z-10 size-[18px] -translate-y-1/2 text-subtle"
@@ -34,9 +35,6 @@ export function IconInput({
   ...props
 }: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
-    <input
-      className={cn(formFieldClassName, "pl-10 placeholder:text-subtle", className)}
-      {...props}
-    />
+    <Input className={cn("pl-10 placeholder:text-subtle", className)} {...props} />
   );
 }

@@ -5,7 +5,14 @@ alwaysApply: true
 
 # Vie Locale Design System
 
-Référence officielle : charte graphique Vie Locale. **Ne jamais inventer de couleurs, dégradés ou styles hors de ce système.** Source de vérité code : `app/globals.css` + composants `components/ui/`.
+Référence officielle : charte graphique Vie Locale. **Ne jamais inventer de couleurs, dégradés ou styles hors de ce système.**
+
+**Sources de vérité code :**
+
+1. **Tokens** (couleurs, radius, ombres, dégradés) → `app/globals.css`
+2. **Composants UI** → **shadcn/ui** dans `components/ui/` (Button, Card, Dialog, Input, Label, Textarea, Select, Popover, DropdownMenu…)
+
+**Règle impérative :** utiliser les composants shadcn du projet — **pas** de `<button>`, `<input>`, modales ou cartes HTML bruts stylés à la main. Les wrappers Vie Locale (`Modal`, `FormField`, `GradientButton`) s’appuient sur shadcn en dessous ; ne pas les contourner.
 
 ---
 
@@ -26,32 +33,32 @@ Utiliser **uniquement** les tokens Tailwind/CSS définis dans `globals.css`. Int
 
 ### Couleurs principales
 
-| Token Tailwind | Hex charte | Usage |
-|---|---|---|
-| `coral` | `#FF6B6B` | Alertes douces, demandes, accents chaleureux |
-| `orange` | `#FFB347` | Événements, badges « coup de main » |
-| `pink` | `#FF7FCB` | Accents féminins, tags don |
-| `magenta` | `#F120D2` | Accents vifs, dégradés initiative |
-| `purple` | `#9A52FF` | Navigation active, hero, CTA principal |
-| `turquoise` | `#35D1D1` | Offres, fraîcheur, liens secondaires |
-| `aqua` | `#1BB9D9` | Complément offre / eau |
-| `mint` | `#74E3B2` | Initiatives, succès, positif |
-| `sun` | `#FFC93D` | Highlights, événements, joie |
+| Token Tailwind | Hex charte | Usage                                        |
+| -------------- | ---------- | -------------------------------------------- |
+| `coral`        | `#FF6B6B`  | Alertes douces, demandes, accents chaleureux |
+| `orange`       | `#FFB347`  | Événements, badges « coup de main »          |
+| `pink`         | `#FF7FCB`  | Accents féminins, tags don                   |
+| `magenta`      | `#F120D2`  | Accents vifs, dégradés initiative            |
+| `purple`       | `#9A52FF`  | Navigation active, hero, CTA principal       |
+| `turquoise`    | `#35D1D1`  | Offres, fraîcheur, liens secondaires         |
+| `aqua`         | `#1BB9D9`  | Complément offre / eau                       |
+| `mint`         | `#74E3B2`  | Initiatives, succès, positif                 |
+| `sun`          | `#FFC93D`  | Highlights, événements, joie                 |
 
 > Le code mappe parfois des hex légèrement arrondis (ex. `#FF8A4C` pour orange) — **ne pas les modifier ad hoc dans les composants** ; utiliser le token (`bg-orange`, `text-coral`…).
 
 ### Neutres
 
-| Token | Hex | Usage |
-|---|---|---|
-| `background` | `#FBFBFC` | Fond app |
-| `surface` | `#FFFFFF` | Cartes, modales, panneaux |
-| `warm` | `#F5F5F6` | Fond alternatif doux, hover secondaire |
-| `border` | `#ECECF3` | Séparateurs, contours |
-| `text` | `#252630` | Texte principal |
-| `muted` | `#7D7E8D` | Texte secondaire |
-| `subtle` | `#A4A5B8` | Labels, hints, meta |
-| `soft-pink` | `#FDF4F8` | État actif nav, fond tags |
+| Token        | Hex       | Usage                                  |
+| ------------ | --------- | -------------------------------------- |
+| `background` | `#FBFBFC` | Fond app                               |
+| `surface`    | `#FFFFFF` | Cartes, modales, panneaux              |
+| `warm`       | `#F5F5F6` | Fond alternatif doux, hover secondaire |
+| `border`     | `#ECECF3` | Séparateurs, contours                  |
+| `text`       | `#252630` | Texte principal                        |
+| `muted`      | `#7D7E8D` | Texte secondaire                       |
+| `subtle`     | `#A4A5B8` | Labels, hints, meta                    |
+| `soft-pink`  | `#FDF4F8` | État actif nav, fond tags              |
 
 ---
 
@@ -59,15 +66,16 @@ Utiliser **uniquement** les tokens Tailwind/CSS définis dans `globals.css`. Int
 
 Classes utilitaires existantes : `gradient-hero`, `gradient-demande`, `gradient-offre`, `gradient-initiative`, `gradient-events`.
 
-| Type | Intention charte | Quand l'utiliser |
-|---|---|---|
-| **Hero / Principal** | Rose → Violet | CTA principal, headers, branding |
-| **Demande** | Rose → Orange | Annonces « je cherche de l'aide » |
-| **Offre** | Bleu → Turquoise | Annonces « je propose » |
-| **Initiative** | Vert → Menthe | Projets collectifs, initiatives |
-| **Événements** | Orange → Rouge/Coral | Agenda, événements communaux |
+| Type                 | Intention charte     | Quand l'utiliser                  |
+| -------------------- | -------------------- | --------------------------------- |
+| **Hero / Principal** | Rose → Violet        | CTA principal, headers, branding  |
+| **Demande**          | Rose → Orange        | Annonces « je cherche de l'aide » |
+| **Offre**            | Bleu → Turquoise     | Annonces « je propose »           |
+| **Initiative**       | Vert → Menthe        | Projets collectifs, initiatives   |
+| **Événements**       | Orange → Rouge/Coral | Agenda, événements communaux      |
 
 **Règles :**
+
 - Réserver les dégradés aux badges, heroes, chips, barres de progression, empty states — **pas** comme fond de page entier sauf hero/marketing.
 - Préférer `<Button variant="primary">` ou `<GradientButton gradient="demande">` plutôt que recopier un `linear-gradient`.
 - Ne pas mélanger deux dégradés catégoriels sur le même bloc.
@@ -78,13 +86,13 @@ Classes utilitaires existantes : `gradient-hero`, `gradient-demande`, `gradient-
 
 Chargée via `next/font` dans `app/layout.tsx`. Poids disponibles : Regular, Medium, SemiBold, Bold.
 
-| Niveau | Poids | Taille / Interligne | Classe Tailwind typique |
-|---|---|---|---|
-| H1 | Bold (700) | 48px / 56px | `text-5xl font-bold leading-[56px]` |
-| H2 | Bold (700) | 28px / 36px | `text-[28px] font-bold leading-9` |
-| H3 | SemiBold (600) | 20px / 28px | `text-xl font-semibold leading-7` |
-| Body | Medium (500) | 16px / 24px | `text-base font-medium leading-6` |
-| Caption | Medium (500) | 14px / 20px | `text-sm font-medium leading-5` |
+| Niveau  | Poids          | Taille / Interligne | Classe Tailwind typique             |
+| ------- | -------------- | ------------------- | ----------------------------------- |
+| H1      | Bold (700)     | 48px / 56px         | `text-5xl font-bold leading-[56px]` |
+| H2      | Bold (700)     | 28px / 36px         | `text-[28px] font-bold leading-9`   |
+| H3      | SemiBold (600) | 20px / 28px         | `text-xl font-semibold leading-7`   |
+| Body    | Medium (500)   | 16px / 24px         | `text-base font-medium leading-6`   |
+| Caption | Medium (500)   | 14px / 20px         | `text-sm font-medium leading-5`     |
 
 - Corps de texte par défaut : `text-base font-medium text-text`.
 - Meta / dates / compteurs : `text-sm text-muted`.
@@ -92,37 +100,65 @@ Chargée via `next/font` dans `app/layout.tsx`. Poids disponibles : Regular, Med
 
 ---
 
-## Composants UI — patterns imposés
+## Composants UI — shadcn/ui + wrappers Vie Locale
+
+Stack : **Tailwind CSS v4** + **shadcn/ui** (`@base-ui/react`). Ajouter un composant manquant :
+
+```bash
+npx shadcn@latest add [nom-composant]
+```
+
+Personnaliser via **tokens `globals.css`** et **`className`** — ne pas dupliquer la logique shadcn dans les features.
+
+| Besoin              | Composant à importer                          |
+| ------------------- | --------------------------------------------- |
+| Bouton action       | `@/components/ui/button`                      |
+| CTA dégradé         | `@/components/ui/gradient-button`             |
+| Carte               | `@/components/ui/card`                        |
+| Modale              | `@/components/ui/modal` (wrapper → `Dialog`)  |
+| Champ + label       | `@/components/ui/form-field`                  |
+| Input seul          | `@/components/ui/input` ou `form-field`       |
+| Menu / popover      | `@/components/ui/dropdown-menu`, `popover`    |
+
+Utilitaire `cn()` : `@/lib/utils` (réexport aussi `@/lib/utils/cn`).
 
 ### Boutons (`components/ui/button.tsx`, `gradient-button.tsx`)
 
-| Variante | Style | Usage |
-|---|---|---|
-| **Primary** | `gradient-hero`, texte blanc, `rounded-sm` | Action principale (1 par écran) |
-| **Secondary** | `bg-surface border border-border`, texte `text-text`, `rounded-sm` | Actions secondaires |
-| **Ghost / Tertiary** | Texte seul, hover `bg-warm` | Liens d'action discrets ; souligner si lien inline |
-| **Danger** | `bg-coral text-white`, `rounded-sm` | Suppression, signalement |
+| Variante             | Style                                                              | Usage                                              |
+| -------------------- | ------------------------------------------------------------------ | -------------------------------------------------- |
+| **Primary**          | `gradient-hero`, texte blanc, `rounded-sm`                         | Action principale (1 par écran)                    |
+| **Secondary**        | `bg-surface border border-border`, texte `text-text`, `rounded-sm` | Actions secondaires                                |
+| **Ghost / Tertiary** | Texte seul, hover `bg-warm`                                        | Liens d'action discrets ; souligner si lien inline |
+| **Danger**           | `bg-coral text-white`, `rounded-sm`                                | Suppression, signalement                           |
 
 - Toujours `rounded-sm` (8px) pour les boutons d'action — coins discrets, alignés sur les champs de formulaire.
 - Padding standard : `px-5 py-2.5` (Button) ou `px-6 py-3` (GradientButton).
 - État disabled : `opacity-50`, pas de couleur grise générique.
 
-### Champs de formulaire (`components/ui/form-field.tsx`, `icon-field.tsx`, `password-field.tsx`, `ban-autocomplete.tsx`)
+### Champs de formulaire (`components/ui/form-field.tsx`, shadcn `input` / `textarea` / `label`)
 
+- Base shadcn : `Input`, `Textarea`, `Label` dans `components/ui/`.
+- Wrapper projet : `FormField`, `Input`, `Select`, `Textarea` depuis `form-field.tsx` (styles Vie Locale via `formFieldClassName`).
 - Contour : `rounded-sm` (8px), `border border-border`, fond `bg-surface`.
-- Focus : `focus:border-purple` — pas de ring coloré générique.
-- Classe de référence : `formFieldClassName` dans `form-field.tsx`.
+- Focus : `focus-visible:border-purple` + ring violet discret — pas de ring générique hors charte.
 - Autocomplete / listes déroulantes : panneau en `rounded-sm`, items sans radius propre.
 - Hauteur auth (inscription, connexion) : `py-3.5` mobile, `md:py-2.5` desktop.
+- Champs spécialisés : `icon-field.tsx`, `password-field.tsx`, `ban-autocomplete.tsx` — réutilisent `Input` / `formFieldClassName`.
 
-### Cartes (`components/ui/card.tsx`)
+### Cartes (`components/ui/card.tsx` — shadcn + tokens Vie Locale)
 
 ```tsx
 <Card className="p-6">…</Card>
 ```
 
-- `rounded-3xl` (32px), `bg-surface`, `shadow-card`, `border border-border/60`.
+- Par défaut : `rounded-3xl`, `bg-surface`, `shadow-card`, `border border-border/60`.
+- Sous-composants shadcn disponibles : `CardHeader`, `CardTitle`, `CardContent`, `CardFooter`…
 - Espacement interne : multiples de 8 (16, 24, 32).
+
+### Modales (`components/ui/modal.tsx` → shadcn `Dialog`)
+
+- Toujours `<Modal open onClose title>` — pas de `<div role="dialog">` maison.
+- Mobile : sheet bas (`rounded-t-3xl`) ; desktop : centrée.
 
 ### Tags / badges (`components/ui/category-tag.tsx`)
 
@@ -134,28 +170,37 @@ Chargée via `next/font` dans `app/layout.tsx`. Poids disponibles : Regular, Med
 
 - **État actif** : fond `bg-soft-pink`, icône/texte en couleur brand (`text-purple` ou couleur de section).
 - **Inactif** : `text-muted`, hover `text-text`.
-- Items résident·e → `lib/constants/routes.ts` (`RESIDENT_BOTTOM_NAV`) ; composants `components/features/resident-nav.tsx` (bottom + sidebar).
+- Items résident·e → `lib/constants/routes.ts` (`RESIDENT_BOTTOM_NAV`) ; composants `components/features/resident-nav.tsx` (bottom + liens) et `components/features/resident-sidebar.tsx` (shell desktop).
+- **Sidebar desktop rétractable** (`ResidentSidebar`, `≥ md`) :
+  - **Agrandi** : `md:w-56 lg:w-64`, icône + libellé (`ResidentSidebarNav`).
+  - **Réduit** : `md:w-16`, icônes seules ; survol → Popover (`openOnHover`, `side="right"`) avec le libellé.
+  - **Toggle** : bouton rond à cheval sur le bord droit (`ChevronLeft` / `ChevronRight`) — visible au survol de la colonne en mode agrandi, toujours visible en mode réduit.
+  - **Persistance** : `localStorage` clé `vl:resident-sidebar-collapsed` (`true` / `false`).
+- **Header résident·e** (`components/features/resident-header.tsx`) :
+  - **Gauche** : logo horizontal (`ILLUSTRATIONS.resident.header.logoHorizontal`) → accueil.
+  - **Droite** : `CommuneSwitcher` (Popover shadcn — icône + nom fermé, liste scroll ~54px/item, bouton « Adhérer à une autre commune ») + `ResidentUserMenu` (DropdownMenu — avatar + prénom → « Mon profil » / « Se déconnecter »).
+  - Adhésion nouvelle commune → `JoinCommuneModal` (commune + adresse, comme inscription).
 - **Mobile** (`< md`) : bottom nav fixe. **Desktop** (`≥ md`) : sidebar verticale — **pas** de bottom nav visible.
 
 ---
 
 ## Layout responsive (mobile-first, desktop natif)
 
-**Principe :** mobile = app mobile (touch, colonne unique, nav basse) ; desktop = app desktop (espace utile, nav latérale ou top, grilles) — **jamais** un téléphone élargi au centre d’un grand écran.
+**Principe :** mobile = app mobile (touch, colonne unique, nav basse) ; desktop = app desktop (espace utile, nav latérale ou top, grilles) — **jamais** un téléphone élargi au centre d’un grand écran, on prend toute la largeur de l'écran.
 
 ### Breakpoints (Tailwind par défaut)
 
-| Seuil | Usage |
-|---|---|
-| `< md` (< 768px) | Mobile — bottom nav, pleine largeur, safe areas |
-| `≥ md` | Desktop — sidebar ou nav horizontale persistante, bottom nav **masquée** |
-| `≥ lg` | Grand desktop — colonnes supplémentaires, padding plus généreux |
+| Seuil            | Usage                                                                    |
+| ---------------- | ------------------------------------------------------------------------ |
+| `< md` (< 768px) | Mobile — bottom nav, pleine largeur, safe areas                          |
+| `≥ md`           | Desktop — sidebar ou nav horizontale persistante, bottom nav **masquée** |
+| `≥ lg`           | Grand desktop — colonnes supplémentaires, padding plus généreux          |
 
 ### Espace résident·e (`app/(resident)/`)
 
 - **Mobile** : colonne unique, `BottomNav`, header compact, `pb` pour la barre fixe.
-- **Desktop** : shell `max-w-6xl`, **`ResidentSidebarNav`** à gauche, contenu principal fluide (`md:px-6 lg:px-8`).
-- **Interdit** : `max-w-md` (ou équivalent phone) comme conteneur global de toute l’app sur desktop.
+- **Desktop** : shell **pleine largeur** (`h-dvh w-full`), header fixe haut, **`ResidentSidebar`** (rétractable) fixe à gauche, contenu scrollable à droite (`main overflow-y-auto`).
+- **Interdit** : `max-w-md` ou `max-w-6xl` comme conteneur global de toute l’app sur desktop.
 - Listes + détail : envisager master-detail ou grilles `md:grid-cols-2` quand ça améliore la lecture (pas une seule colonne étroite centrée).
 
 ### Pages publiques (landing, connexion, inscription)
@@ -176,20 +221,23 @@ Chargée via `next/font` dans `app/layout.tsx`. Poids disponibles : Regular, Med
   <BottomNav /> {/* visible aussi sur desktop */}
 </div>
 
-// ✅ Shell adaptatif
-<div className="mx-auto flex max-w-6xl min-h-dvh">
-  <ResidentSidebarNav /> {/* md+ */}
-  <main className="flex-1">…</main>
+// ✅ Shell adaptatif pleine largeur
+<div className="flex h-dvh w-full flex-col overflow-hidden">
+  <header className="shrink-0">…</header>
+  <div className="flex min-h-0 flex-1">
+    <ResidentSidebarNav /> {/* md+ */}
+    <main className="min-w-0 flex-1 overflow-y-auto">…</main>
+  </div>
   <BottomNav /> {/* md:hidden */}
 </div>
 ```
 
 ### Ombres
 
-| Token | Valeur | Usage |
-|---|---|---|
-| `shadow-card` | `0 8px 24px rgba(37,38,48,0.05)` | Cartes, list items |
-| Élévation | `0 12px 32px rgba(37,38,48,0.10)` | Modales, popovers, FAB |
+| Token         | Valeur                            | Usage                  |
+| ------------- | --------------------------------- | ---------------------- |
+| `shadow-card` | `0 8px 24px rgba(37,38,48,0.05)`  | Cartes, list items     |
+| Élévation     | `0 12px 32px rgba(37,38,48,0.10)` | Modales, popovers, FAB |
 
 Ne pas empiler plusieurs ombres sur le même élément.
 
@@ -199,15 +247,15 @@ Ne pas empiler plusieurs ombres sur le même élément.
 
 ### Border radius (tokens `@theme`)
 
-| Token | px | Usage |
-|---|---|---|
-| `rounded-sm` | 8 | Boutons d'action, inputs, autocomplete, chips compacts |
-| `rounded-md` | 12 | Petits blocs intermédiaires, alertes inline |
-| `rounded-lg` | 16 | Sous-cartes |
-| `rounded-xl` | 20 | Panneaux auth, blocs features |
-| `rounded-2xl` | 24 | Images, placeholders |
-| `rounded-3xl` | 32 | Cartes principales |
-| `rounded-full` | — | Tags, avatars, puces compactes |
+| Token          | px  | Usage                                                  |
+| -------------- | --- | ------------------------------------------------------ |
+| `rounded-sm`   | 8   | Boutons d'action, inputs, autocomplete, chips compacts |
+| `rounded-md`   | 12  | Petits blocs intermédiaires, alertes inline            |
+| `rounded-lg`   | 16  | Sous-cartes                                            |
+| `rounded-xl`   | 20  | Panneaux auth, blocs features                          |
+| `rounded-2xl`  | 24  | Images, placeholders                                   |
+| `rounded-3xl`  | 32  | Cartes principales                                     |
+| `rounded-full` | —   | Tags, avatars, puces compactes                         |
 
 ### Grille 8px
 
@@ -237,15 +285,15 @@ Espacements autorisés : `1, 2, 3, 4, 5, 6, 8, 10, 12, 16` (Tailwind) = 4, 8, 12
 
 Tout élément cliquable doit afficher un curseur **pointer** pour signaler l'interactivité.
 
-| Élément | Classe / règle |
-|---|---|
-| Boutons (`Button`, `GradientButton`) | `cursor-pointer` + `disabled:cursor-not-allowed` dans la classe de base |
-| Liens (`<a>`, `<Link>`) | `cursor-pointer` (base globale `@layer base` dans `globals.css`) |
-| Labels checkbox / radio | `cursor-pointer` sur le `<label>` |
-| Items de liste cliquables (autocomplete, menus) | `cursor-pointer` sur le bouton / item |
-| Boutons icône (ex. afficher mot de passe) | `cursor-pointer` |
-| Overlay modal (fermeture) | `cursor-pointer` |
-| Champs texte, textarea | curseur par défaut — **ne pas** mettre `cursor-pointer` |
+| Élément                                         | Classe / règle                                                          |
+| ----------------------------------------------- | ----------------------------------------------------------------------- |
+| Boutons (`Button`, `GradientButton`)            | `cursor-pointer` + `disabled:cursor-not-allowed` dans la classe de base |
+| Liens (`<a>`, `<Link>`)                         | `cursor-pointer` (base globale `@layer base` dans `globals.css`)        |
+| Labels checkbox / radio                         | `cursor-pointer` sur le `<label>`                                       |
+| Items de liste cliquables (autocomplete, menus) | `cursor-pointer` sur le bouton / item                                   |
+| Boutons icône (ex. afficher mot de passe)       | `cursor-pointer`                                                        |
+| Overlay modal (fermeture)                       | `cursor-pointer`                                                        |
+| Champs texte, textarea                          | curseur par défaut — **ne pas** mettre `cursor-pointer`                 |
 
 Règle globale dans `globals.css` : liens, boutons actifs, checkbox/radio et labels associés. Pour les zones custom (`onClick` sur un `div`), ajouter explicitement `cursor-pointer`.
 
@@ -260,8 +308,12 @@ Règle globale dans `globals.css` : liens, boutons actifs, checkbox/radio et lab
 // ❌ Dégradé arbitraire
 <div style={{ background: "linear-gradient(to right, #000, #fff)" }} />
 
-// ❌ Bouton carré ou sans variante du design system
+// ❌ Bouton HTML brut ou sans composant du design system
 <button className="bg-purple rounded px-4">OK</button>
+
+// ❌ Input / modale HTML bruts
+<input className="border p-2" />
+<div role="dialog">…</div>
 
 // ❌ Ombre Tailwind générique non tokenisée sur une carte
 <div className="shadow-lg shadow-black/20" />
@@ -279,11 +331,11 @@ Règle globale dans `globals.css` : liens, boutons actifs, checkbox/radio et lab
 
 1. Couleurs = tokens `globals.css` uniquement ?
 2. Typo = Manrope avec la bonne hiérarchie ?
-3. Boutons = composants `Button` / `GradientButton` ?
-4. Cartes = `Card` + `shadow-card` + `rounded-3xl` ?
+3. UI = composants **shadcn** (`Button`, `Card`, `Modal`/`Dialog`, `Input`, `FormField`) — pas d’éléments HTML bruts ?
+4. Cartes = `Card` + styles par défaut (`rounded-3xl`, `shadow-card`) ?
 5. Dégradé = sémantique (demande/offre/initiative/events/hero) ?
 6. Ton visuel = chaleureux, inclusif, pas corporate ?
 7. Assets manquants = `AssetPlaceholder`, pas de stock photo ?
 8. Illustrations = `lib/constants/illustrations.ts` ; logos locaux = `lib/constants/assets.ts` ; pas d’URL en dur ?
-9. Mobile = bottom nav ; desktop = sidebar / layout large (pas de shell `max-w-md` global sur l’app connectée) ?
+9. Mobile = bottom nav ; desktop = sidebar + layout **pleine largeur** (pas de shell `max-w-md` / `max-w-6xl` global) ?
 10. Curseur = `cursor-pointer` sur tout élément cliquable ; `cursor-not-allowed` si disabled ?

@@ -48,7 +48,8 @@ export function AuthPageShell({ children }: Props) {
                 width={168}
                 height={48}
                 priority
-                className="mx-auto h-12 w-auto object-contain"
+                style={{ width: "auto" }}
+                className="mx-auto h-12 object-contain"
               />
             ) : null}
           </header>

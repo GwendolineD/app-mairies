@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { submitContentReport } from "@/lib/actions/reports";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/form-field";
+import { Modal } from "@/components/ui/modal";
 
 type Props = {
   contextType: "announcement" | "initiative" | "event";
@@ -14,55 +15,45 @@ export function ReportButton({ contextType, contextId }: Props) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="relative">
+    <>
       <Button
         type="button"
         variant="ghost"
         className="text-xs uppercase tracking-wide"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen(true)}
       >
         Signaler
       </Button>
-      {open ? (
-        <div className="fixed inset-0 z-40 flex items-end justify-center bg-text/35 p-4 sm:items-center">
-          <Card className="w-full max-w-md space-y-3 p-6 shadow-elevated">
-            <div>
-              <h2 className="text-[28px] font-bold leading-9 text-text">
-                Signalement bienveillant
-              </h2>
-              <p className="text-sm font-medium leading-5 text-muted">
-                Expliquez le problème de manière constructive. Une modératrice examine
-                chaque dossier lorsque la commune le permet.
-              </p>
-            </div>
-            <form action={submitContentReport} className="space-y-3">
-              <input type="hidden" name="contextType" value={contextType} />
-              <input type="hidden" name="contextId" value={contextId} />
-              <textarea
-                name="reason"
-                required
-                minLength={10}
-                rows={4}
-                className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-purple"
-                placeholder="Détaillez précisément le motif (minimum 10 caractères)."
-              />
-              <div className="flex gap-2">
-                <Button type="submit" className="flex-1 py-2 text-sm">
-                  Envoyer
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="py-2 text-sm"
-                  onClick={() => setOpen(false)}
-                >
-                  Annuler
-                </Button>
-              </div>
-            </form>
-          </Card>
-        </div>
-      ) : null}
-    </div>
+      <Modal open={open} onClose={() => setOpen(false)} title="Signalement bienveillant" size="md">
+        <p className="mb-3 text-sm font-medium leading-5 text-muted">
+          Expliquez le problème de manière constructive. Une modératrice examine
+          chaque dossier lorsque la commune le permet.
+        </p>
+        <form action={submitContentReport} className="space-y-3">
+          <input type="hidden" name="contextType" value={contextType} />
+          <input type="hidden" name="contextId" value={contextId} />
+          <Textarea
+            name="reason"
+            required
+            minLength={10}
+            rows={4}
+            placeholder="Détaillez précisément le motif (minimum 10 caractères)."
+          />
+          <div className="flex gap-2">
+            <Button type="submit" className="flex-1 py-2 text-sm">
+              Envoyer
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              className="py-2 text-sm"
+              onClick={() => setOpen(false)}
+            >
+              Annuler
+            </Button>
+          </div>
+        </form>
+      </Modal>
+    </>
   );
 }

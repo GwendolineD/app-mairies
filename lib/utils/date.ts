@@ -198,3 +198,34 @@ export function formatMonthShort(value: string): string {
     return value;
   }
 }
+
+export function formatRelativeTimeAccueil(iso: string): string {
+  const relative = formatRelativeTime(iso);
+  if (!relative) return relative;
+  return relative.charAt(0).toUpperCase() + relative.slice(1);
+}
+
+export function formatEventAccueilDate(iso: string): { day: number; month: string } {
+  const date = new Date(iso);
+  const month = new Intl.DateTimeFormat("fr-FR", { month: "short" })
+    .format(date)
+    .replace(".", "")
+    .toUpperCase();
+  return { day: date.getDate(), month };
+}
+
+export function formatEventAccueilSchedule(iso: string): string {
+  try {
+    const date = new Date(iso);
+    const weekday = new Intl.DateTimeFormat("fr-FR", { weekday: "long" }).format(date);
+    const dayMonth = new Intl.DateTimeFormat("fr-FR", {
+      day: "numeric",
+      month: "long",
+    }).format(date);
+    const time = new Intl.DateTimeFormat("fr-FR", { timeStyle: "short" }).format(date);
+    const capitalizedWeekday = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+    return `${capitalizedWeekday} ${dayMonth} à ${time}`;
+  } catch {
+    return "Date à confirmer";
+  }
+}

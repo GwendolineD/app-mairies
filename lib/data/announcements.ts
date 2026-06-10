@@ -10,7 +10,8 @@ export type AnnouncementWithMembership = Announcement & {
     id: string;
     user_id: string;
     created_at: string;
-    address_label: string | null;
+    address_street: string | null;
+    address_city: string | null;
   } | null;
 };
 
@@ -33,7 +34,7 @@ export const getAnnouncement = cache(
     const { data, error } = await supabase
       .from("announcements")
       .select(
-        "*, author_membership:memberships!author_membership_id(id, user_id, created_at, address_label)",
+        "*, author_membership:memberships!author_membership_id(id, user_id, created_at, address_street, address_city)",
       )
       .eq("id", id)
       .eq("commune_id", communeId)

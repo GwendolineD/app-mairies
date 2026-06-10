@@ -164,7 +164,7 @@ AS $$
     m.id,
     m.status,
     (u.banned_until IS NOT NULL AND u.banned_until > now()),
-    m.address_label,
+    COALESCE(m.address_street, m.address_city, ''),
     (SELECT count(*) FROM public.announcements a
       WHERE a.author_membership_id = m.id),
     m.created_at

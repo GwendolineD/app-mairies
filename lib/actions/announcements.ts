@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { assertAuthorMembership } from "@/lib/auth/ownership";
 import { requireActiveMembership } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
@@ -9,15 +8,20 @@ import {
   ANNOUNCEMENT_STATUS,
   type AnnouncementStatusValue,
 } from "@/lib/constants/statuses";
+import {
+  listAnnouncementsPage,
+  type AnnouncementListFilters,
+} from "@/lib/queries/announcements";
 import { createClient } from "@/lib/supabase/server";
 import { announcementSchema } from "@/lib/validations/schemas";
+import { isAnnouncementType, type AnnouncementType } from "@/lib/constants/announcement-types";
 
 type AnnouncementStatusUpdate = Extract<
   AnnouncementStatusValue,
   "pourvue" | "archivee" | "ouverte"
 >;
 
-export async function createAnnouncement(formData: FormData): Promise<void> {
+export async function createAnnouncement(formData: FormData): Promise<{ id: string }> {
   const ctx = await requireActiveMembership();
   const raw = {
     type: formData.get("type") as string,
@@ -27,16 +31,17 @@ export async function createAnnouncement(formData: FormData): Promise<void> {
     targetDate: (formData.get("targetDate") as string) || undefined,
     photoUrl: (formData.get("photoUrl") as string) || "",
   };
-  const redirectTo = (formData.get("redirectTo") as string) || ROUTES.annonces.list;
-  const safeRedirectTo = redirectTo.startsWith("/") ? redirectTo : ROUTES.annonces.list;
 
   const parsed = announcementSchema.safeParse(raw);
-  if (!parsed.success) return;
+  if (!parsed.success) {
+    throw new Error("Les données du formulaire sont invalides.");
+  }
 
+  const membership = ctx.activeMembership!;
   const supabase = await createClient();
-  const { error } = await supabase.from("announcements").insert({
-    commune_id: ctx.activeMembership!.commune_id,
-    author_membership_id: ctx.activeMembership!.id,
+  const { data: created, error } = await supabase.from("announcements").insert({
+    commune_id: membership.commune_id,
+    author_membership_id: membership.id,
     type: parsed.data.type,
     category_slug: parsed.data.categorySlug,
     title: parsed.data.title,
@@ -44,12 +49,20 @@ export async function createAnnouncement(formData: FormData): Promise<void> {
     target_date: parsed.data.targetDate || null,
     photo_url: parsed.data.photoUrl || null,
     status: ANNOUNCEMENT_STATUS.ouverte,
-  });
+    address_lat: membership.address_lat,
+    address_lng: membership.address_lng,
+  }).select("id").single();
 
-  if (error) return;
+  if (error) {
+    if (error.code === "23503") {
+      throw new Error("Catégorie non reconnue. Réessayez ou choisissez une autre catégorie.");
+    }
+    throw new Error("Impossible de publier l'annonce.");
+  }
   revalidatePath(ROUTES.annonces.list);
-  revalidatePath(ROUTES.profil);
-  redirect(safeRedirectTo);
+  revalidatePath(ROUTES.accueil);
+  revalidatePath(ROUTES.annonces.detail(created.id));
+  return { id: created.id };
 }
 
 export async function updateAnnouncementStatus(
@@ -94,4 +107,19 @@ export async function deleteAnnouncement(id: string) {
   if (error) return { error: error.message };
   revalidatePath(ROUTES.annonces.list);
   return { success: true };
+}
+
+export async function fetchAnnouncementsPage(
+  cursor: string | null,
+  filters: { type?: string; categorie?: string },
+) {
+  const ctx = await requireActiveMembership();
+  const listFilters: AnnouncementListFilters = {
+    communeId: ctx.activeMembership!.commune_id,
+    type: isAnnouncementType(filters.type ?? "") ? filters.type as AnnouncementType : undefined,
+    categorie: filters.categorie || undefined,
+  };
+
+  const supabase = await createClient();
+  return listAnnouncementsPage(supabase, listFilters, { cursor });
 }

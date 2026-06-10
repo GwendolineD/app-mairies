@@ -188,6 +188,7 @@ function SignupWithAddressSection(props: {
   const { communeMeta, citycode } = props;
   const [addr, setAddr] = useState({
     label: "",
+    city: communeMeta.city ?? communeMeta.name ?? "",
     postcode: communeMeta.postcode ?? "",
     lat: communeMeta.lat,
     lng: communeMeta.lng,
@@ -198,12 +199,13 @@ function SignupWithAddressSection(props: {
       <AddressFields
         citycode={citycode}
         onSelect={(feat) =>
-          setAddr({
+          setAddr((prev) => ({
+            ...prev,
             label: feat.label,
             postcode: feat.postcode,
             lat: feat.lat,
             lng: feat.lng,
-          })
+          }))
         }
         valueLabel={addr.label}
       />
@@ -219,7 +221,7 @@ function SignupWithAddressSection(props: {
         className="mt-6 flex flex-col gap-3"
       >
         <input type="hidden" name="inseeCode" value={citycode} />
-        <input type="hidden" name="addressLabel" value={addr.label} />
+        <input type="hidden" name="addressCity" value={addr.city} />
         <input type="hidden" name="addressCitycode" value={citycode} />
         <input type="hidden" name="addressPostcode" value={addr.postcode} />
         <input type="hidden" name="addressLat" value={String(addr.lat)} />

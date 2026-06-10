@@ -1,45 +1,19 @@
-import { requireActiveMembership } from "@/lib/auth/session";
+import { redirect } from "next/navigation";
 import { ROUTES } from "@/lib/constants/routes";
-import { AssetPlaceholder } from "@/components/ui/asset-placeholder";
-import { BackLink } from "@/components/ui/back-link";
-import { PageHeading } from "@/components/ui/page-heading";
-import { PageStack } from "@/components/ui/page-stack";
-import { CarteAnnoncesMap } from "@/components/features/carte-preview-map";
+import { buildAnnouncementListQuery } from "@/lib/utils/search-params";
 
-export default async function AnnoncesCartePage() {
-  const ctx = await requireActiveMembership();
-  const lat =
-    ctx.activeMembership?.address_lat ??
-    ctx.activeMembership?.commune?.centroid_lat ??
-    46;
-  const lng =
-    ctx.activeMembership?.address_lng ??
-    ctx.activeMembership?.commune?.centroid_lng ??
-    2.3;
+export default async function AnnoncesCarteRedirectPage(props: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = (await props.searchParams) ?? {};
+  const categorie = Array.isArray(sp.categorie) ? sp.categorie[0] : sp.categorie;
+  const type = Array.isArray(sp.type) ? sp.type[0] : sp.type;
 
-  return (
-    <PageStack gap="4">
-      <BackLink href={ROUTES.annonces.list}>← Retour liste</BackLink>
-      <PageHeading
-        title="Carte communautaire"
-        subtitle="Implémentation provisoire : la vue détaillée utilisera ensuite le composant dédié MapViewCommune pour géolocaliser chaque épingle d'annonce."
-      />
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,18rem)_1fr]">
-        <AssetPlaceholder
-          aspectRatio="2/5"
-          className="rounded-3xl lg:aspect-auto lg:min-h-80"
-          description="Légende & filtres carte — placeholders design"
-        />
-        <CarteAnnoncesMap
-          communeName={
-            ctx.activeMembership?.commune?.name ??
-            ctx.activeMembership?.commune?.insee_code ??
-            "Centre"
-          }
-          latitude={lat}
-          longitude={lng}
-        />
-      </div>
-    </PageStack>
+  redirect(
+    `${ROUTES.annonces.list}${buildAnnouncementListQuery({
+      vue: "carte",
+      categorie: categorie || undefined,
+      type: type === "demande" || type === "offre" ? type : undefined,
+    })}`,
   );
 }

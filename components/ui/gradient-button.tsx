@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "@/lib/utils";
 import type { ButtonHTMLAttributes } from "react";
 
 type Gradient = "hero" | "demande" | "offre" | "initiative" | "events";

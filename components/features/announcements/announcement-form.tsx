@@ -21,7 +21,7 @@ export function AnnouncementForm({
   compact = false,
 }: Props) {
   return (
-    <form action={createAnnouncement} className="flex flex-col gap-3">
+    <form action={createAnnouncement as unknown as (fd: FormData) => void} className="flex flex-col gap-3">
       {redirectTo ? <input type="hidden" name="redirectTo" value={redirectTo} /> : null}
       <FormField label="Type">
         <Select name="type" defaultValue={presetType}>

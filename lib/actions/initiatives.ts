@@ -102,6 +102,43 @@ export async function toggleInitiativeParticipation(
   revalidatePath(ROUTES.initiatives.detail(initiativeId));
 }
 
+export async function submitInitiativeResponse(
+  initiativeId: string,
+  responseType: string,
+): Promise<void> {
+  const ctx = await requireActiveMembership();
+  const supabase = await createClient();
+  const membershipId = ctx.activeMembership!.id;
+
+  const { data: initiative } = await supabase
+    .from("initiatives")
+    .select("id")
+    .eq("id", initiativeId)
+    .eq("commune_id", ctx.activeMembership!.commune_id)
+    .single();
+  if (!initiative) return;
+
+  const { data: existing } = await supabase
+    .from("initiative_responses")
+    .select("id")
+    .eq("initiative_id", initiativeId)
+    .eq("membership_id", membershipId)
+    .eq("response_type", responseType)
+    .maybeSingle();
+
+  if (existing) {
+    await supabase.from("initiative_responses").delete().eq("id", existing.id);
+  } else {
+    await supabase.from("initiative_responses").insert({
+      initiative_id: initiativeId,
+      membership_id: membershipId,
+      response_type: responseType,
+    });
+  }
+
+  revalidatePath(ROUTES.initiatives.detail(initiativeId));
+}
+
 export async function updateInitiativeStatus(
   id: string,
   status: (typeof INITIATIVE_STATUS)[keyof typeof INITIATIVE_STATUS],

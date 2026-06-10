@@ -153,7 +153,7 @@ export default async function MairieHabitantsPage(props: {
                     ) : null}
                   </div>
                   <p className="text-xs font-medium text-muted">
-                    {m.address_label ?? "Adresse non renseignée"}
+                    {m.address_street ?? m.address_city ?? "Adresse non renseignée"}
                     {m.address_postcode ? ` · ${m.address_postcode}` : ""}
                   </p>
                   <p className="text-[10px] font-medium text-subtle">

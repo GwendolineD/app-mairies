@@ -1,0 +1,122 @@
+import { NextResponse } from "next/server";
+import { requireActiveMembership } from "@/lib/auth/session";
+import {
+  buildCloudinaryFolder,
+  isUploadContentType,
+} from "@/lib/services/cloudinary";
+import {
+  AntivirusServiceError,
+  scanFile,
+} from "@/lib/services/antivirus-scanner";
+
+const MAX_BYTES = 5 * 1024 * 1024;
+const ALLOWED_TYPES = ["image/jpeg", "image/png"];
+
+export async function POST(request: Request) {
+  try {
+    const ctx = await requireActiveMembership();
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    const apiKey = process.env.CLOUDINARY_API_KEY;
+    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+    if (!cloudName || !apiKey || !apiSecret) {
+      return NextResponse.json({ error: "Cloudinary non configuré" }, { status: 503 });
+    }
+
+    const uploadEnv = process.env.CLOUDINARY_UPLOAD_ENV;
+    if (!uploadEnv) {
+      return NextResponse.json(
+        { error: "CLOUDINARY_UPLOAD_ENV non configuré" },
+        { status: 503 },
+      );
+    }
+
+    const formData = await request.formData();
+    const file = formData.get("file");
+    const contentType = (formData.get("contentType") as string) || "announcement";
+
+    if (!(file instanceof File)) {
+      return NextResponse.json({ error: "Fichier manquant" }, { status: 400 });
+    }
+
+    if (!isUploadContentType(contentType)) {
+      return NextResponse.json(
+        { error: "Type de contenu invalide", errorType: "invalid_content_type" },
+        { status: 400 },
+      );
+    }
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return NextResponse.json(
+        { error: "Format non autorisé (JPG ou PNG uniquement)", errorType: "invalid_type" },
+        { status: 400 },
+      );
+    }
+
+    if (file.size > MAX_BYTES) {
+      return NextResponse.json(
+        { error: "Fichier trop volumineux (5 Mo max)", errorType: "file_too_large" },
+        { status: 400 },
+      );
+    }
+
+    const buffer = await file.arrayBuffer();
+    const scan = await scanFile(buffer, file.name);
+
+    if (!scan.isClean) {
+      return NextResponse.json(
+        {
+          error: `Virus détecté : ${scan.virus}. Fichier rejeté.`,
+          errorType: "virus_detected",
+        },
+        { status: 400 },
+      );
+    }
+
+    const folder = buildCloudinaryFolder(uploadEnv, contentType, ctx.userId);
+    const timestamp = Math.floor(Date.now() / 1000);
+
+    const paramsToSign = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
+    const encoder = new TextEncoder();
+    const hashBuffer = await crypto.subtle.digest("SHA-1", encoder.encode(paramsToSign));
+    const signature = Array.from(new Uint8Array(hashBuffer))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    const uploadForm = new FormData();
+    uploadForm.append("file", new Blob([buffer], { type: file.type }), file.name);
+    uploadForm.append("api_key", apiKey);
+    uploadForm.append("timestamp", String(timestamp));
+    uploadForm.append("signature", signature);
+    uploadForm.append("folder", folder);
+
+    const uploadRes = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      { method: "POST", body: uploadForm },
+    );
+
+    if (!uploadRes.ok) {
+      return NextResponse.json({ error: "Échec upload Cloudinary" }, { status: 502 });
+    }
+
+    const payload = (await uploadRes.json()) as {
+      secure_url?: string;
+      public_id?: string;
+    };
+    return NextResponse.json({
+      url: payload.secure_url ?? null,
+      publicId: payload.public_id ?? null,
+    });
+  } catch (error) {
+    if (error instanceof AntivirusServiceError) {
+      return NextResponse.json(
+        {
+          error: error.message,
+          errorType: "service_unavailable",
+        },
+        { status: 503 },
+      );
+    }
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  }
+}

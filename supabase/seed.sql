@@ -269,7 +269,8 @@ En quelques minutes, vous pourrez voir les annonces utiles, les initiatives loca
   INSERT INTO public.memberships (
     user_id,
     commune_id,
-    address_label,
+    address_street,
+    address_city,
     address_citycode,
     address_postcode,
     address_lat,
@@ -281,7 +282,8 @@ En quelques minutes, vous pourrez voir les annonces utiles, les initiatives loca
     (
       v_admin_id,
       v_commune_id,
-      'Les Authieux, 27220',
+      NULL,
+      'Les Authieux',
       '27027',
       '27220',
       48.8978,
@@ -292,7 +294,8 @@ En quelques minutes, vous pourrez voir les annonces utiles, les initiatives loca
     (
       v_mairie_id,
       v_commune_id,
-      'Mairie — Les Authieux, 27220',
+      NULL,
+      'Les Authieux',
       '27027',
       '27220',
       48.8978,
@@ -301,7 +304,8 @@ En quelques minutes, vous pourrez voir les annonces utiles, les initiatives loca
       'active'
     )
   ON CONFLICT (user_id, commune_id) DO UPDATE SET
-    address_label = excluded.address_label,
+    address_street = excluded.address_street,
+    address_city = excluded.address_city,
     status = 'active',
     updated_at = now();
 

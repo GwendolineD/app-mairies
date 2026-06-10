@@ -138,7 +138,8 @@ export type Membership = {
   id: string;
   user_id: string;
   commune_id: string;
-  address_label: string | null;
+  address_street: string | null;
+  address_city: string | null;
   address_citycode: string | null;
   address_postcode: string | null;
   address_lat: number | null;
@@ -220,6 +221,7 @@ export type AgendaEventRecord = {
   ends_at: string;
   status: "active" | "archived";
   photo_url: string | null;
+  address_label: string | null;
   address_lat: number | null;
   address_lng: number | null;
   created_at: string;

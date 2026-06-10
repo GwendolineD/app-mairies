@@ -132,7 +132,7 @@ export function BottomNav() {
 }
 
 /** Desktop only — vertical sidebar (≥ md). */
-export function ResidentSidebarNav() {
+export function ResidentSidebarNav({ collapsed }: { collapsed?: boolean } = {}) {
   const links = useResidentNavLinks();
 
   return (
@@ -144,9 +144,9 @@ export function ResidentSidebarNav() {
         <ResidentNavLink
           key={href}
           href={href}
-          label={label}
+          label={collapsed ? "" : label}
           active={active}
-          badge={badge}
+          badge={collapsed ? 0 : badge}
           variant="sidebar"
         />
       ))}

@@ -13,7 +13,7 @@ Performance, maintainability, and scalability defaults → `vie-locale-quality.m
 - **Next.js** (App Router only — no Pages Router for new code).
 - **TypeScript** strict (`"strict": true`).
 - **Supabase** for PostgreSQL + Auth (clients in `lib/supabase/`).
-- **Tailwind CSS** + **shadcn/ui** for UI.
+- **Tailwind CSS** + **shadcn/ui** for UI (`components/ui/`). Add missing primitives with `npx shadcn@latest add [component]` — customize via `globals.css` tokens and `className`, not ad-hoc duplicates in features.
 - **One** date library only: **Dayjs** (no date-fns in parallel).
 
 ## Deployment

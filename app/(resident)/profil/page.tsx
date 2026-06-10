@@ -199,7 +199,7 @@ async function ProfilContent({ searchParams }: { searchParams?: SearchParams }) 
         <aside className="space-y-5">
           <AboutCard
             displayName={displayName}
-            addressLabel={membership.address_label}
+            addressLabel={membership.address_street ?? membership.address_city}
             communeName={communeName}
           />
           <NeighborInviteCard

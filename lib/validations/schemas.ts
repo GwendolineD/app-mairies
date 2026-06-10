@@ -33,7 +33,7 @@ export const signupSchema = z.object({
   firstName: z.string().min(1, "Prénom requis"),
   lastName: z.string().min(1, "Nom requis"),
   inseeCode: z.string().min(1),
-  addressLabel: z.string().min(5, "Adresse requise"),
+  addressCity: z.string().min(1, "Ville requise"),
   addressCitycode: z.string().min(1),
   addressPostcode: z.string().min(4),
   addressLat: z.number(),
@@ -41,6 +41,15 @@ export const signupSchema = z.object({
   acceptedTerms: z.literal("true", {
     message: "Acceptation des conditions requise",
   }),
+});
+
+export const joinCommuneSchema = z.object({
+  inseeCode: z.string().min(1),
+  addressCity: z.string().min(1, "Ville requise"),
+  addressCitycode: z.string().min(1),
+  addressPostcode: z.string().min(4),
+  addressLat: z.number(),
+  addressLng: z.number(),
 });
 
 export const announcementSchema = z.object({
@@ -68,10 +77,22 @@ export const eventSchema = z.object({
   description: z.string().max(3000).optional(),
   startsAt: z.string(),
   endsAt: z.string(),
+  addressLabel: z.string().max(200).optional(),
+});
+
+export const profileUpdateSchema = z.object({
+  displayName: z.string().min(1).max(80),
+  bio: z.string().max(500).optional(),
+  avatarUrl: z.string().url().optional().or(z.literal("")),
 });
 
 export const messageSchema = z.object({
   body: z.string().min(1).max(5000),
+});
+
+export const userReportSchema = z.object({
+  reportedUserId: z.string().uuid(),
+  reason: z.string().min(10).max(1000),
 });
 
 export const reportSchema = z.object({
