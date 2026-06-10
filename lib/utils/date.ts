@@ -32,6 +32,59 @@ export function formatEventDetail(start: string, end: string): string {
   }
 }
 
+// Community content is scheduled and displayed in French local time,
+// regardless of the server timezone (which is UTC in production/CI).
+const PARIS_TZ = "Europe/Paris";
+
+const WEEKDAY_DATE: Intl.DateTimeFormatOptions = {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: PARIS_TZ,
+};
+
+function capitalize(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+/** "Samedi 15 juin 2025" */
+export function formatLongDateFr(value: string): string | null {
+  try {
+    return capitalize(formatFr(new Date(value), WEEKDAY_DATE));
+  } catch {
+    return null;
+  }
+}
+
+/** "9h00" */
+export function formatTimeFr(value: string): string | null {
+  try {
+    const parts = new Intl.DateTimeFormat("fr-FR", {
+      hour: "numeric",
+      minute: "2-digit",
+      hourCycle: "h23",
+      timeZone: PARIS_TZ,
+    }).formatToParts(new Date(value));
+    const hour = parts.find((p) => p.type === "hour")?.value ?? "";
+    const minute = parts.find((p) => p.type === "minute")?.value ?? "00";
+    if (!hour) return null;
+    return `${parseInt(hour, 10)}h${minute}`;
+  } catch {
+    return null;
+  }
+}
+
+/** Short, human temporality label for an initiative card. */
+export function formatInitiativeWhen(
+  dateMode: string,
+  startsAt: string | null,
+): string {
+  if (dateMode === "once" && startsAt) {
+    return formatLongDateFr(startsAt) ?? "Date à confirmer";
+  }
+  if (dateMode === "recurring") return "Rendez-vous récurrent";
+  return "À tout moment";
 const RELATIVE_DIVISIONS: { amount: number; unit: Intl.RelativeTimeFormatUnit }[] = [
   { amount: 60, unit: "second" },
   { amount: 60, unit: "minute" },

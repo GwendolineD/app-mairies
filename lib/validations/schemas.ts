@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ANNOUNCEMENT_CATEGORIES } from "@/lib/constants/announcement-categories";
 import { ANNOUNCEMENT_TYPE_SLUGS } from "@/lib/constants/announcement-types";
+import { CONTENT_CATEGORY_SLUGS } from "@/lib/constants/content-categories";
 
 const categorySlugs = ANNOUNCEMENT_CATEGORIES.map((c) => c.slug) as [
   string,
@@ -52,11 +53,14 @@ export const announcementSchema = z.object({
 });
 
 export const initiativeSchema = z.object({
+  categorySlug: z.enum(CONTENT_CATEGORY_SLUGS),
   title: z.string().min(3).max(120),
   description: z.string().max(3000).optional(),
   dateMode: z.enum(["none", "once", "recurring"]),
   singleStartsAt: z.string().optional(),
   singleEndsAt: z.string().optional(),
+  locationLabel: z.string().max(160).optional(),
+  photoUrl: z.string().url().optional().or(z.literal("")),
 });
 
 export const eventSchema = z.object({

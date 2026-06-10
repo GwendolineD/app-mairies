@@ -1,5 +1,6 @@
 import { createInitiative } from "@/lib/actions/initiatives";
 import { ROUTES } from "@/lib/constants/routes";
+import { CONTENT_CATEGORIES } from "@/lib/constants/content-categories";
 import { BackLink } from "@/components/ui/back-link";
 import { Card } from "@/components/ui/card";
 import { FormField, Input, Select, Textarea } from "@/components/ui/form-field";
@@ -11,14 +12,30 @@ export default function NouvelleInitiativePage() {
   return (
     <PageStack gap="4">
       <BackLink href={ROUTES.initiatives.list}>← Liste</BackLink>
-      <PageHeading title="Nouvelle initiative" />
+      <PageHeading
+        title="Nouvelle initiative"
+        subtitle="Lancez un projet collectif et invitez vos voisin·es à y participer."
+      />
       <Card className="space-y-3 p-5 lg:max-w-2xl">
         <form action={createInitiative} className="flex flex-col gap-3">
-          <FormField label="Titre">
-            <Input name="title" required />
+          <FormField label="Catégorie">
+            <Select name="categorySlug" defaultValue="solidarite">
+              {CONTENT_CATEGORIES.map((cat) => (
+                <option key={cat.slug} value={cat.slug}>
+                  {cat.label}
+                </option>
+              ))}
+            </Select>
           </FormField>
-          <FormField label="Description optionnelle">
-            <Textarea name="description" rows={4} />
+          <FormField label="Titre">
+            <Input name="title" required minLength={3} placeholder="Court et mobilisateur" />
+          </FormField>
+          <FormField label="Description (objectifs inclus)">
+            <Textarea
+              name="description"
+              rows={5}
+              placeholder="Présentez le projet, ses objectifs et ce que vous attendez des participant·es…"
+            />
           </FormField>
           <FormField label="Temporalité">
             <Select name="dateMode">
@@ -38,6 +55,12 @@ export default function NouvelleInitiativePage() {
               <Input type="datetime-local" name="singleEndsAt" className="px-3 py-2 text-xs" />
             </FormField>
           </fieldset>
+          <FormField label="Lieu de rendez-vous (optionnel)">
+            <Input name="locationLabel" placeholder="Ex. Parking du Pont Neuf" />
+          </FormField>
+          <FormField label="Photo principale · URL accessible (optionnel)">
+            <Input type="url" name="photoUrl" placeholder="https://" />
+          </FormField>
           <GradientButton type="submit" gradient="initiative" className="w-full">
             Publier l&apos;initiative
           </GradientButton>
