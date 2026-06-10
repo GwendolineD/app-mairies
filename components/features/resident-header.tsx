@@ -34,7 +34,8 @@ export function ResidentHeader({
             width={200}
             height={56}
             priority
-            className="h-11 w-auto max-w-[11rem] object-contain object-left md:h-12 md:max-w-[13rem]"
+            style={{ width: "auto" }}
+            className="h-11 max-w-[11rem] object-contain object-left md:h-12 md:max-w-[13rem]"
           />
         </Link>
 

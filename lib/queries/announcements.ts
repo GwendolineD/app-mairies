@@ -14,7 +14,7 @@ export type AnnouncementListFilters = {
 export type AnnouncementWithAuthor = Announcement & {
   author_membership: (Pick<
     Membership,
-    "address_label" | "address_lat" | "address_lng"
+    "address_street" | "address_city" | "address_lat" | "address_lng"
   > & {
     profiles: Pick<Profile, "first_name" | "display_name"> | null;
   }) | null;
@@ -84,7 +84,7 @@ export async function listAnnouncementsPage(
   let query = supabase
     .from("announcements")
     .select(
-      "*, author_membership:memberships!announcements_author_membership_id_fkey(address_label, address_lat, address_lng, profiles:profiles!memberships_profiles_user_id_fkey(first_name, display_name))",
+      "*, author_membership:memberships!announcements_author_membership_id_fkey(address_street, address_city, address_lat, address_lng, profiles:profiles!memberships_profiles_user_id_fkey(first_name, display_name))",
     )
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })

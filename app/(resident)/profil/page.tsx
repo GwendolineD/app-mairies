@@ -2,7 +2,6 @@ import { requireActiveMembership } from "@/lib/auth/session";
 import { createNeighborInvite } from "@/lib/actions/messages";
 import { createClient } from "@/lib/supabase/server";
 import { ROUTES } from "@/lib/constants/routes";
-import { formatStreetDisplay } from "@/lib/ban/display";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/form-field";
@@ -47,7 +46,7 @@ export default async function ProfilPage() {
 
       <Card className="space-y-2 p-5">
         <p className="text-sm text-muted">
-          {formatStreetDisplay(membership.address_label)} · {communeNames}
+          {membership.address_street ?? membership.address_city ?? "Adresse non renseignée"} · {communeNames}
         </p>
         <p className="text-xs text-subtle">Rôle : {ctx.profile.role}</p>
       </Card>

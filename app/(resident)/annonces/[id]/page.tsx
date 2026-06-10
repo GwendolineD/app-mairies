@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { requireActiveMembership } from "@/lib/auth/session";
-import { formatStreetDisplay } from "@/lib/ban/display";
 import { ROUTES } from "@/lib/constants/routes";
 import {
   listSimilarAnnouncements,
@@ -40,7 +39,7 @@ export default async function AnnonceDetailPage(props: {
   const { data } = await supabase
     .from("announcements")
     .select(
-      "*, author_membership:memberships!announcements_author_membership_id_fkey(address_label, user_id, profiles:profiles!memberships_profiles_user_id_fkey(display_name, first_name, last_name))",
+      "*, author_membership:memberships!announcements_author_membership_id_fkey(address_street, address_city, user_id, profiles:profiles!memberships_profiles_user_id_fkey(display_name, first_name, last_name))",
     )
     .eq("id", id)
     .eq("commune_id", ctx.activeMembership!.commune_id)
@@ -50,11 +49,17 @@ export default async function AnnonceDetailPage(props: {
 
   const ann = data as Announcement & {
     author_membership: {
-      address_label: string | null;
+      address_street: string | null;
+      address_city: string | null;
       user_id: string;
       profiles: { display_name: string | null; first_name: string | null; last_name: string | null } | null;
     } | null;
   };
+
+  const authorLocation =
+    ann.author_membership?.address_street ??
+    ann.author_membership?.address_city ??
+    "Adresse non renseignée";
 
   const authorName =
     (ann.author_membership?.profiles?.display_name ??
@@ -85,7 +90,7 @@ export default async function AnnonceDetailPage(props: {
               <h1 className="text-[28px] font-bold leading-9 text-text">{ann.title}</h1>
               <p className="text-sm text-muted">
                 {authorName} · {formatRelativeTime(ann.created_at)} ·{" "}
-                {formatStreetDisplay(ann.author_membership?.address_label)}
+                {authorLocation}
               </p>
             </div>
             <ReportButton contextType="announcement" contextId={ann.id} />
@@ -125,7 +130,7 @@ export default async function AnnonceDetailPage(props: {
           <Card className="space-y-3 p-5">
             <h2 className="text-lg font-semibold text-text">Localisation</h2>
             <p className="text-sm text-muted">
-              {formatStreetDisplay(ann.author_membership?.address_label)}
+              {authorLocation}
             </p>
             {ann.address_lat != null && ann.address_lng != null ? (
               <MapViewCommune

@@ -111,8 +111,12 @@ export function InitiativesPageClient({
                   <p className="line-clamp-2 text-sm text-muted">{item.description}</p>
                 ) : null}
                 <p className="mt-auto text-xs text-subtle">
-                  {formatStreetDisplay(item.address_label ?? item.author_membership?.address_label)} ·{" "}
-                  {formatRelativeTime(item.created_at)}
+                  {item.address_label
+                    ? formatStreetDisplay(item.address_label)
+                    : (item.author_membership?.address_street ??
+                      item.author_membership?.address_city ??
+                      "Adresse non renseignée")}{" "}
+                  · {formatRelativeTime(item.created_at)}
                 </p>
               </Card>
             </Link>

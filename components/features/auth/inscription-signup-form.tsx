@@ -23,7 +23,7 @@ type SignupErrorField = Partial<Record<string, string[] | undefined>>;
 type SignUpState = { error: SignupErrorField } | undefined;
 
 type AddressDraft = {
-  label: string;
+  city: string;
   postcode: string;
   lat: number;
   lng: number;
@@ -37,7 +37,7 @@ export function InscriptionSignupForm() {
   const [modalOpen, setModalOpen] = useState(false);
   const [lookupName, setLookupName] = useState<string | undefined>();
   const [addr, setAddr] = useState<AddressDraft>({
-    label: "",
+    city: "",
     postcode: "",
     lat: 0,
     lng: 0,
@@ -71,7 +71,7 @@ export function InscriptionSignupForm() {
         setLookupName(row.name);
         setModalOpen(false);
         setAddr({
-          label: feature.label,
+          city: row.name ?? feature.city ?? "",
           postcode: feature.postcode ?? row.postcode ?? "",
           lat: row.centroid_lat ?? feature.lat,
           lng: row.centroid_lng ?? feature.lng,
@@ -79,7 +79,7 @@ export function InscriptionSignupForm() {
       } else {
         setLookupName(row?.name ?? feature.city);
         setModalOpen(true);
-        setAddr({ label: "", postcode: "", lat: 0, lng: 0 });
+        setAddr({ city: "", postcode: "", lat: 0, lng: 0 });
       }
     } finally {
       setCommuneLoading(false);
@@ -123,7 +123,7 @@ export function InscriptionSignupForm() {
           {communeFeature ? (
             <input type="hidden" name="inseeCode" value={communeFeature.citycode} />
           ) : null}
-          <input type="hidden" name="addressLabel" value={addr.label} />
+          <input type="hidden" name="addressCity" value={addr.city} />
           <input
             type="hidden"
             name="addressCitycode"

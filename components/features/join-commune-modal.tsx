@@ -34,6 +34,7 @@ export function JoinCommuneModal({
   const [interestOpen, setInterestOpen] = useState(false);
   const [addr, setAddr] = useState({
     label: "",
+    city: "",
     postcode: "",
     lat: 0,
     lng: 0,
@@ -49,7 +50,7 @@ export function JoinCommuneModal({
     setStep("commune");
     setCommuneMeta(null);
     setLookupCommune(null);
-    setAddr({ label: "", postcode: "", lat: 0, lng: 0 });
+    setAddr({ label: "", city: "", postcode: "", lat: 0, lng: 0 });
     setInterestOpen(false);
   }, []);
 
@@ -91,6 +92,7 @@ export function JoinCommuneModal({
 
       setAddr({
         label: "",
+        city: row.name ?? feature.city ?? "",
         postcode: feature.postcode ?? row.postcode ?? "",
         lat: feature.lat,
         lng: feature.lng,
@@ -145,12 +147,13 @@ export function JoinCommuneModal({
               placeholder="Numéro, rue..."
               fetchSuggestions={(q) => searchAddresses(q, citycode)}
               onSelect={(feat) =>
-                setAddr({
+                setAddr((prev) => ({
+                  ...prev,
                   label: feat.label,
                   postcode: feat.postcode,
                   lat: feat.lat,
                   lng: feat.lng,
-                })
+                }))
               }
               value={addr.label}
               disabled={!citycode}
@@ -167,7 +170,7 @@ export function JoinCommuneModal({
               className="space-y-3"
             >
               <input type="hidden" name="inseeCode" value={citycode} />
-              <input type="hidden" name="addressLabel" value={addr.label} />
+              <input type="hidden" name="addressCity" value={addr.city} />
               <input type="hidden" name="addressCitycode" value={citycode} />
               <input type="hidden" name="addressPostcode" value={addr.postcode} />
               <input type="hidden" name="addressLat" value={String(addr.lat)} />
@@ -197,9 +200,7 @@ export function JoinCommuneModal({
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Button
                   type="submit"
-                  disabled={
-                    joinPending || addr.label.length < 5 || !addr.postcode
-                  }
+                  disabled={joinPending || !addr.postcode || !addr.city}
                   className="flex-1"
                 >
                   Adhérer à cette commune

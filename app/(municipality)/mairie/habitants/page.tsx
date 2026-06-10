@@ -34,7 +34,7 @@ export default async function MairieHabitantsPage() {
           (data ?? []).map((m) => (
             <Card key={m.id} className="flex flex-wrap justify-between gap-2 p-4 text-sm">
               <div className="space-y-1">
-                <p className="font-semibold text-text">Adresse : {m.address_label}</p>
+                <p className="font-semibold text-text">Adresse : {m.address_street ?? m.address_city}</p>
                 <p className="text-[10px] font-medium text-muted">Postal : {m.address_postcode}</p>
               </div>
               <CategoryTag label={m.status} className="self-start bg-soft-pink" />

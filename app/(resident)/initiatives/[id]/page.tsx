@@ -47,9 +47,11 @@ export default async function InitiativeDetailPage(props: {
     .select("id", { count: "exact", head: true })
     .eq("initiative_id", id);
 
-  const addressDisplay = formatStreetDisplay(
-    initiative.address_label ?? ctx.activeMembership?.address_label,
-  );
+  const addressDisplay = initiative.address_label
+    ? formatStreetDisplay(initiative.address_label)
+    : (ctx.activeMembership?.address_street ??
+      ctx.activeMembership?.address_city ??
+      "Adresse non renseignée");
 
   return (
     <PageStack gap="5">

@@ -42,7 +42,7 @@ export async function createInitiative(formData: FormData): Promise<void> {
   const hasCustomAddress = !!parsed.data.addressLabel?.trim();
   const addressLabel = hasCustomAddress
     ? parsed.data.addressLabel!.trim()
-    : membership.address_label;
+    : (membership.address_street ?? membership.address_city);
   const addressLat = hasCustomAddress ? null : membership.address_lat;
   const addressLng = hasCustomAddress ? null : membership.address_lng;
 

@@ -1,11 +1,11 @@
 import type { BanFeature } from "@/lib/ban/client";
 
-/** Extracts street line from a BAN address label (no neighbourhood/quartier). */
+/** Extracts street line from a BAN address label (strips postcode + city tail). */
 export function formatStreetDisplay(addressLabel: string | null | undefined): string {
   if (!addressLabel?.trim()) return "Adresse non renseignée";
-  const parts = addressLabel.split(",").map((p) => p.trim()).filter(Boolean);
-  if (parts.length === 0) return addressLabel.trim();
-  return parts[0];
+  const normalized = addressLabel.trim().replace(/\s*,\s*/g, " ");
+  const street = normalized.replace(/\s+\d{5}(?:\s+.+)?$/, "").trim();
+  return street || addressLabel.trim();
 }
 
 export function formatMunicipalityDisplay(feature: BanFeature): string {

@@ -40,7 +40,8 @@ export type Membership = {
   id: string;
   user_id: string;
   commune_id: string;
-  address_label: string | null;
+  address_street: string | null;
+  address_city: string | null;
   address_citycode: string | null;
   address_postcode: string | null;
   address_lat: number | null;

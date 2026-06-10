@@ -10,7 +10,7 @@ export type InitiativeListFilters = {
 };
 
 export type InitiativeWithAuthor = InitiativeRecord & {
-  author_membership: Pick<Membership, "address_label"> | null;
+  author_membership: Pick<Membership, "address_street" | "address_city"> | null;
 };
 
 export type InitiativeMarker = {
@@ -48,7 +48,7 @@ export async function listInitiativesPage(
   let query = supabase
     .from("initiatives")
     .select(
-      "*, author_membership:memberships!initiatives_author_membership_id_fkey(address_label)",
+      "*, author_membership:memberships!initiatives_author_membership_id_fkey(address_street, address_city)",
     )
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })

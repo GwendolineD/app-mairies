@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Clock, Heart, MapPin, MessageCircle } from "lucide-react";
+import { Clock, Heart, MapPin } from "lucide-react";
 import { formatStreetDisplay } from "@/lib/ban/display";
 import { ROUTES } from "@/lib/constants/routes";
 import {
@@ -179,9 +179,10 @@ export function AccueilRecentAnnouncements({ items }: RecentAnnouncementsProps) 
               announcement.type,
               announcement.category_slug,
             );
-            const location = formatStreetDisplay(
-              announcement.author_membership?.address_label,
-            );
+            const location =
+              announcement.author_membership?.address_street ??
+              announcement.author_membership?.address_city ??
+              "Adresse non renseignée";
 
             return (
               <li key={announcement.id}>
@@ -194,31 +195,35 @@ export function AccueilRecentAnnouncements({ items }: RecentAnnouncementsProps) 
                     <img
                       src={announcement.photo_url}
                       alt=""
-                      className="size-14 shrink-0 rounded-lg object-cover md:size-16"
+                      className="size-14 shrink-0 rounded-md object-cover md:size-16"
                     />
                   ) : (
-                    <div className="flex size-14 shrink-0 items-center justify-center rounded-lg bg-warm text-[10px] font-bold uppercase tracking-wide text-muted md:size-16">
+                    <div className="flex size-14 shrink-0 items-center justify-center rounded-md bg-warm text-[10px] font-bold uppercase tracking-wide text-muted md:size-16">
                       Annonce
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <p
-                      className="text-[11px] font-bold uppercase tracking-wide"
-                      style={{ color: category.colorHex }}
+                    <span
+                      className="inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide"
+                      style={{
+                        backgroundColor: `${category.colorHex}20`,
+                        color: category.colorHex,
+                      }}
                     >
                       {category.label}
-                    </p>
+                    </span>
                     <p className="mt-0.5 line-clamp-2 text-sm font-bold leading-snug text-text">
                       {announcement.title}
                     </p>
                     <p className="mt-1 text-xs font-medium text-muted">
                       {announcementAuthorName(announcement)} ·{" "}
-                      {formatRelativeTimeAccueil(announcement.created_at)} · {location}
+                      {formatRelativeTimeAccueil(announcement.created_at)}
+                    </p>
+                    <p className="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-muted">
+                      <MapPin className="size-3.5 shrink-0" aria-hidden />
+                      {location}
                     </p>
                   </div>
-                  <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-subtle">
-                    <MessageCircle className="size-4" aria-hidden />
-                  </span>
                 </Link>
               </li>
             );

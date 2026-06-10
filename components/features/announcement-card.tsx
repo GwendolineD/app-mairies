@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { formatStreetDisplay } from "@/lib/ban/display";
 import { ROUTES } from "@/lib/constants/routes";
 import {
   getCategoryColorHex,
@@ -18,7 +17,10 @@ type Props = {
 };
 
 export function AnnouncementCard({ announcement: a, layout = "vertical" }: Props) {
-  const street = formatStreetDisplay(a.author_membership?.address_label);
+  const street =
+    a.author_membership?.address_street ??
+    a.author_membership?.address_city ??
+    "Adresse non renseignée";
 
   if (layout === "horizontal") {
     return (
