@@ -25,6 +25,18 @@ export type CommuneSettings = {
   welcomeMessage?: string;
 };
 
+export type CommuneEmailTemplate = {
+  id: string;
+  commune_id: string;
+  template_key: "neighbor_invite";
+  subject: string;
+  preheader: string | null;
+  body_markdown: string;
+  cta_label: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Profile = {
   user_id: string;
   first_name: string | null;
@@ -33,6 +45,8 @@ export type Profile = {
   avatar_url: string | null;
   active_commune_id: string | null;
   role: UserRole;
+  created_at: string;
+  updated_at: string;
 };
 
 export type Membership = {
@@ -48,7 +62,17 @@ export type Membership = {
   status: MembershipStatus;
   suspended_at: string | null;
   suspension_reason: string | null;
+  created_at: string;
+  updated_at: string;
   commune?: Commune;
+};
+
+export type ProfileNotificationPreferences = {
+  user_id: string;
+  message_notifications_enabled: boolean;
+  announcement_notifications_enabled: boolean;
+  initiative_notifications_enabled: boolean;
+  updated_at: string;
 };
 
 export type Announcement = {

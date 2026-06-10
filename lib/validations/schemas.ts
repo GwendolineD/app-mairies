@@ -87,4 +87,8 @@ export const communeSettingsSchema = z.object({
   referentRole: z.string().optional(),
   openingHours: z.string().optional(),
   welcomeMessage: z.string().optional(),
+  neighborInviteSubject: z.string().min(3).max(180),
+  neighborInvitePreheader: z.string().max(280).optional(),
+  neighborInviteBodyMarkdown: z.string().min(20).max(4000),
+  neighborInviteCtaLabel: z.string().min(2).max(80),
 });

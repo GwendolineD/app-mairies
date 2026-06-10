@@ -41,15 +41,20 @@ export function BanAutocomplete({
   formatSuggestion,
 }: Props) {
   const listboxId = useId();
-  const [query, setQuery] = useState(value ?? "");
   const [suggestions, setSuggestions] = useState<BanFeature[]>([]);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  const queryRef = useRef(value ?? "");
 
   useEffect(() => {
-    if (value !== undefined) setQuery(value);
+    if (value === undefined) return;
+    queryRef.current = value;
+    if (inputRef.current) {
+      inputRef.current.value = value;
+    }
   }, [value]);
 
   useEffect(() => {
@@ -64,13 +69,17 @@ export function BanAutocomplete({
   }
 
   function selectSuggestion(feature: BanFeature) {
-    setQuery(suggestionLabel(feature, formatSuggestion));
+    const nextQuery = suggestionLabel(feature, formatSuggestion);
+    queryRef.current = nextQuery;
+    if (inputRef.current) {
+      inputRef.current.value = nextQuery;
+    }
     onSelect(feature);
     closeList();
   }
 
   function handleChange(text: string) {
-    setQuery(text);
+    queryRef.current = text;
     setActiveIndex(-1);
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
@@ -82,6 +91,7 @@ export function BanAutocomplete({
   }
 
   async function handleFocus() {
+    const query = queryRef.current;
     if (query.trim().length >= 2) {
       const results = await fetchSuggestions(query);
       setSuggestions(results);
@@ -162,6 +172,7 @@ export function BanAutocomplete({
           />
         ) : null}
         <input
+          ref={inputRef}
           type="text"
           name="autocomplete"
           autoComplete="off"
@@ -172,7 +183,7 @@ export function BanAutocomplete({
           aria-activedescendant={activeOptionId}
           disabled={disabled}
           placeholder={placeholder}
-          value={query}
+          defaultValue={value ?? ""}
           onChange={(e) => handleChange(e.target.value)}
           onFocus={() => void handleFocus()}
           onBlur={() => setTimeout(() => closeList(), 150)}
