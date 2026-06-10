@@ -15,6 +15,7 @@ export const ROUTES = {
   suspendu: "/suspendu",
   profil: "/profil",
   messages: "/messages",
+  messageThread: (id: string) => `/messages/${id}`,
   annonces: {
     list: "/annonces",
     map: "/annonces/carte",

@@ -15,6 +15,7 @@ import { BackLink } from "@/components/ui/back-link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";
+import { ContactButton } from "@/components/features/messaging/contact-button";
 import { ReportButton } from "@/components/features/report-button";
 import { InitiativeLocationMap } from "@/components/features/initiatives/initiative-location-map";
 import { ParticipateButton } from "@/components/features/initiatives/participate-button";
@@ -139,6 +140,20 @@ export default async function InitiativeDetailPage(props: {
           </Card>
 
           <OrganizerCard author={author} fallbackName={authorName} />
+
+          {!isAuthor ? (
+            <Card className="space-y-3 p-6">
+              <p className="text-sm font-semibold leading-5 text-text">
+                Envie de participer ? Écrivez à l&apos;organisateur·rice.
+              </p>
+              <ContactButton
+                contextType="initiative"
+                contextId={initiative.id}
+                contextTitle={initiative.title}
+                gradient="initiative"
+              />
+            </Card>
+          ) : null}
 
           <Card className="space-y-3 p-6">
             <h2 className="text-sm font-semibold text-text">Où ça se passe ?</h2>

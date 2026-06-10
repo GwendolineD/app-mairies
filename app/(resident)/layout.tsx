@@ -1,6 +1,9 @@
 import { BottomNav, ResidentSidebarNav } from "@/components/features/resident-nav";
 import { CommuneSwitcher } from "@/components/features/commune-switcher";
+import { MessagingProvider } from "@/components/features/messaging/messaging-provider";
+import { PushRegistrar } from "@/components/features/messaging/push-registrar";
 import { requireActiveMembership } from "@/lib/auth/session";
+import { getUnreadCount } from "@/lib/data/messages";
 import { signOut } from "@/lib/actions/auth";
 import { ROUTES } from "@/lib/constants/routes";
 import { Button } from "@/components/ui/button";
@@ -11,13 +14,20 @@ export default async function ResidentRootLayout({
   children: React.ReactNode;
 }) {
   const ctx = await requireActiveMembership();
+  const communeId = ctx.activeMembership!.commune_id;
   const communeName =
     ctx.activeMembership?.commune?.name ??
     ctx.memberships.find((m) => m.commune_id === ctx.activeCommuneId)?.commune?.name ??
     "Vie locale";
+  const initialUnread = await getUnreadCount(communeId);
 
   return (
-    <div className="min-h-dvh bg-background text-text">
+    <MessagingProvider
+      currentUserId={ctx.userId}
+      communeId={communeId}
+      initialUnread={initialUnread}
+    >
+      <div className="min-h-dvh bg-background text-text">
       <div className="mx-auto flex min-h-dvh w-full max-w-6xl">
         <aside className="hidden shrink-0 flex-col border-r border-border/80 bg-surface/50 px-3 py-6 md:flex md:w-56 lg:w-64">
           <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted">
@@ -66,6 +76,8 @@ export default async function ResidentRootLayout({
           <BottomNav />
         </div>
       </div>
-    </div>
+      </div>
+      <PushRegistrar />
+    </MessagingProvider>
   );
 }

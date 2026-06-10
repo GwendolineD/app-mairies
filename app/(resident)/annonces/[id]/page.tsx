@@ -36,7 +36,11 @@ export default async function AnnonceDetailPage(props: {
         </div>
         <aside className="flex flex-col gap-5">
           <Suspense fallback={<AnnouncementContactSkeleton />}>
-            <AnnouncementContact id={id} communeId={communeId} />
+            <AnnouncementContact
+              id={id}
+              communeId={communeId}
+              viewerMembershipId={membership.id}
+            />
           </Suspense>
           <Suspense fallback={<AnnouncementLocationSkeleton />}>
             <AnnouncementLocation

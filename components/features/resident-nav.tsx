@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { RESIDENT_BOTTOM_NAV } from "@/lib/constants/routes";
+import { RESIDENT_BOTTOM_NAV, ROUTES } from "@/lib/constants/routes";
 import { cn } from "@/lib/utils/cn";
 import { isActivePath } from "@/lib/utils/routes";
+import { useMessaging } from "@/components/features/messaging/messaging-context";
 import {
   Calendar,
   Home,
@@ -29,10 +30,26 @@ type NavLinkProps = {
   href: string;
   label: string;
   active: boolean;
+  badge: number;
   variant: "bottom" | "sidebar";
 };
 
-function ResidentNavLink({ href, label, active, variant }: NavLinkProps) {
+function NavBadge({ count, className }: { count: number; className?: string }) {
+  if (count <= 0) return null;
+  return (
+    <span
+      className={cn(
+        "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold leading-5 text-white gradient-hero",
+        className,
+      )}
+      aria-label={`${count} non lus`}
+    >
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
+
+function ResidentNavLink({ href, label, active, badge, variant }: NavLinkProps) {
   const Icon = RESIDENT_NAV_ICONS[label as keyof typeof RESIDENT_NAV_ICONS];
 
   if (variant === "sidebar") {
@@ -47,7 +64,8 @@ function ResidentNavLink({ href, label, active, variant }: NavLinkProps) {
         )}
       >
         <Icon className="size-5 shrink-0" aria-hidden />
-        {label}
+        <span className="flex-1">{label}</span>
+        <NavBadge count={badge} />
       </Link>
     );
   }
@@ -56,13 +74,19 @@ function ResidentNavLink({ href, label, active, variant }: NavLinkProps) {
     <Link
       href={href}
       className={cn(
-        "flex flex-col items-center gap-0.5 rounded-xl px-2 py-1 text-[10px] font-semibold transition",
+        "relative flex flex-col items-center gap-0.5 rounded-xl px-2 py-1 text-[10px] font-semibold transition",
         active
           ? "bg-soft-pink text-purple"
           : "text-muted hover:text-text",
       )}
     >
-      <Icon className="size-6" aria-hidden />
+      <span className="relative">
+        <Icon className="size-6" aria-hidden />
+        <NavBadge
+          count={badge}
+          className="absolute -right-2.5 -top-1.5 border border-surface"
+        />
+      </span>
       <span className="text-center">{label}</span>
     </Link>
   );
@@ -70,10 +94,13 @@ function ResidentNavLink({ href, label, active, variant }: NavLinkProps) {
 
 function useResidentNavLinks() {
   const pathname = usePathname();
+  const messaging = useMessaging();
+  const unread = messaging?.unreadCount ?? 0;
   return RESIDENT_BOTTOM_NAV.map(({ href, label }) => ({
     href,
     label,
     active: isActivePath(pathname, href),
+    badge: href === ROUTES.messages ? unread : 0,
   }));
 }
 
@@ -90,12 +117,13 @@ export function BottomNav() {
       )}
       aria-label="Navigation principale"
     >
-      {links.map(({ href, label, active }) => (
+      {links.map(({ href, label, active, badge }) => (
         <ResidentNavLink
           key={href}
           href={href}
           label={label}
           active={active}
+          badge={badge}
           variant="bottom"
         />
       ))}
@@ -112,12 +140,13 @@ export function ResidentSidebarNav() {
       className="hidden flex-col gap-1 md:flex"
       aria-label="Navigation principale"
     >
-      {links.map(({ href, label, active }) => (
+      {links.map(({ href, label, active, badge }) => (
         <ResidentNavLink
           key={href}
           href={href}
           label={label}
           active={active}
+          badge={badge}
           variant="sidebar"
         />
       ))}
