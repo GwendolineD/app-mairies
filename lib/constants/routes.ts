@@ -42,7 +42,9 @@ export const ROUTES = {
   },
   platform: {
     admin: "/platform/admin",
-    communes: "/platform/communes",
+    clients: "/platform/clients",
+    clientDetail: (id: string) => `/platform/clients/${id}`,
+    clientNew: "/platform/clients/nouveau",
     leads: "/platform/leads",
     stats: "/platform/stats",
   },
@@ -66,7 +68,7 @@ export const MUNICIPALITY_NAV = [
 
 export const PLATFORM_NAV = [
   { href: ROUTES.platform.admin, label: "Vue d'ensemble" },
-  { href: ROUTES.platform.communes, label: "Communes pilotées" },
+  { href: ROUTES.platform.clients, label: "Clients (communes)" },
+  { href: ROUTES.platform.stats, label: "Statistiques & revenus" },
   { href: ROUTES.platform.leads, label: "Leads pré-inscription" },
-  { href: ROUTES.platform.stats, label: "Statistiques" },
 ] as const;

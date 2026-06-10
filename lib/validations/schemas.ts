@@ -84,6 +84,30 @@ export const appealSchema = z.object({
   message: z.string().min(10).max(2000),
 });
 
+export const communeAdminSchema = z.object({
+  name: z.string().min(2, "Nom requis").max(120),
+  inseeCode: z
+    .string()
+    .min(4, "Code INSEE invalide")
+    .max(10, "Code INSEE invalide"),
+  postcode: z.string().max(10).optional().or(z.literal("")),
+  department: z.string().max(120).optional().or(z.literal("")),
+  plan: z.enum(["free", "standard", "premium"]),
+  subscriptionStatus: z.enum(["inactive", "trial", "active", "suspended"]),
+  billingEmail: z
+    .string()
+    .email("Email de facturation invalide")
+    .optional()
+    .or(z.literal("")),
+});
+
+export const paymentAdminSchema = z.object({
+  status: z.enum(["paid", "pending", "failed", "refunded"]),
+  periodStart: z.string().optional().or(z.literal("")),
+  periodEnd: z.string().optional().or(z.literal("")),
+  note: z.string().max(300).optional().or(z.literal("")),
+});
+
 export const communeSettingsSchema = z.object({
   address: z.string().optional(),
   phone: z.string().optional(),
@@ -91,4 +115,8 @@ export const communeSettingsSchema = z.object({
   referentRole: z.string().optional(),
   openingHours: z.string().optional(),
   welcomeMessage: z.string().optional(),
+  neighborInviteSubject: z.string().min(3).max(180),
+  neighborInvitePreheader: z.string().max(280).optional(),
+  neighborInviteBodyMarkdown: z.string().min(20).max(4000),
+  neighborInviteCtaLabel: z.string().min(2).max(80),
 });

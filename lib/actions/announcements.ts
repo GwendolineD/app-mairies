@@ -27,6 +27,8 @@ export async function createAnnouncement(formData: FormData): Promise<void> {
     targetDate: (formData.get("targetDate") as string) || undefined,
     photoUrl: (formData.get("photoUrl") as string) || "",
   };
+  const redirectTo = (formData.get("redirectTo") as string) || ROUTES.annonces.list;
+  const safeRedirectTo = redirectTo.startsWith("/") ? redirectTo : ROUTES.annonces.list;
 
   const parsed = announcementSchema.safeParse(raw);
   if (!parsed.success) return;
@@ -46,7 +48,8 @@ export async function createAnnouncement(formData: FormData): Promise<void> {
 
   if (error) return;
   revalidatePath(ROUTES.annonces.list);
-  redirect(ROUTES.annonces.list);
+  revalidatePath(ROUTES.profil);
+  redirect(safeRedirectTo);
 }
 
 export async function updateAnnouncementStatus(
