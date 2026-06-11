@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
+import { PageStack } from "@/components/ui/page-stack";
 
 export default async function PlatformLeadsPage() {
   const supabase = await createClient();
@@ -13,7 +14,7 @@ export default async function PlatformLeadsPage() {
   const rows = data ?? [];
 
   return (
-    <div className="space-y-4">
+    <PageStack>
       <PageHeading
         title="Leads pré-inscription"
         subtitle="Intérêt manifesté avant activation complète d'une commune : contactez vos partenaires locaux lorsque la charge le permet."
@@ -46,6 +47,6 @@ export default async function PlatformLeadsPage() {
           ))
         )}
       </div>
-    </div>
+    </PageStack>
   );
 }

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";
 import { PageHeading } from "@/components/ui/page-heading";
+import { PageStack } from "@/components/ui/page-stack";
 
 export default async function MairieHabitantsPage() {
   const { communeId } = await requireCommuneStaff();
@@ -16,13 +17,12 @@ export default async function MairieHabitantsPage() {
     .order("created_at", { ascending: false });
 
   return (
-    <div className="space-y-4">
-      <Card className="p-6">
-        <PageHeading
-          title="Habitant·es suivis localement"
-          subtitle="Les profils nominatifs sont visibles depuis les politiques RLS — cet écran liste l'essentiel : statuts d'adhésion et adresses approximatives."
-        />
-      </Card>
+    <PageStack>
+      <PageHeading
+        title="Habitant·es suivis localement"
+        subtitle="Les profils nominatifs sont visibles depuis les politiques RLS — cet écran liste l'essentiel : statuts d'adhésion et adresses approximatives."
+      />
+
       <div className="space-y-2">
         {(data ?? []).length === 0 ? (
           <p className="text-sm font-medium text-muted">Aucune adhésion pour l&apos;instant.</p>
@@ -38,6 +38,6 @@ export default async function MairieHabitantsPage() {
           ))
         )}
       </div>
-    </div>
+    </PageStack>
   );
 }

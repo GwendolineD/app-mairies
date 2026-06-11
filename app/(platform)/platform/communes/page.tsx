@@ -3,6 +3,7 @@ import { applyCommuneSubscription } from "@/lib/actions/platform";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
+import { PageStack } from "@/components/ui/page-stack";
 import type { SubscriptionStatus } from "@/lib/types";
 
 export default async function PlatformCommunesPage() {
@@ -15,7 +16,7 @@ export default async function PlatformCommunesPage() {
   const rows = data ?? [];
 
   return (
-    <div className="space-y-4">
+    <PageStack>
       <PageHeading title="Communes" />
       <div className="space-y-3">
         {rows.map((c) => (
@@ -46,6 +47,6 @@ export default async function PlatformCommunesPage() {
           </Card>
         ))}
       </div>
-    </div>
+    </PageStack>
   );
 }

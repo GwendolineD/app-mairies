@@ -2,17 +2,17 @@ import { Card } from "@/components/ui/card";
 import { FormField, Input, Textarea } from "@/components/ui/form-field";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { PageHeading } from "@/components/ui/page-heading";
+import { PageStack } from "@/components/ui/page-stack";
 import { updateCommuneWelcomeMessage } from "@/lib/actions/municipality";
 
 export default function MairieParametresPage() {
   return (
-    <div className="space-y-4">
-      <Card className="space-y-3 p-6">
-        <PageHeading
-          title="Paramètres communaux"
-          subtitle="Ajustez prochainement l'humeur générale : téléphone Mairie public, horaires d'accueil, message d'entête…"
-        />
-      </Card>
+    <PageStack>
+      <PageHeading
+        title="Paramètres communaux"
+        subtitle="Ajustez prochainement l'humeur générale : téléphone Mairie public, horaires d'accueil, message d'entête…"
+      />
+
       <Card className="space-y-3 p-6">
         <form action={updateCommuneWelcomeMessage} className="space-y-3">
           <FormField label="Message d'accueil empathique affiché sur le portail Vie Locale communal">
@@ -42,6 +42,6 @@ export default function MairieParametresPage() {
           </GradientButton>
         </form>
       </Card>
-    </div>
+    </PageStack>
   );
 }

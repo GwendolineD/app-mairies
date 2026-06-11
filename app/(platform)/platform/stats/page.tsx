@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
+import { PageStack } from "@/components/ui/page-stack";
 
 export default async function PlatformStatsPage() {
   const supabase = await createClient();
@@ -15,7 +16,7 @@ export default async function PlatformStatsPage() {
     .eq("subscription_status", "active");
 
   return (
-    <div className="space-y-4">
+    <PageStack>
       <PageHeading title="Statistiques globales" />
       <div className="grid gap-3 sm:grid-cols-2">
         <Card className="space-y-1 p-5">
@@ -35,6 +36,6 @@ export default async function PlatformStatsPage() {
         Les agrégats détaillés (parcours inscription, carte, signalements) seront reliés aux
         outils métier Vie Locale lors de la mise en ligne progressive.
       </p>
-    </div>
+    </PageStack>
   );
 }

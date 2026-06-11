@@ -7,6 +7,8 @@ import {
 } from "@/lib/constants/statuses";
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
+import { PageHeading } from "@/components/ui/page-heading";
+import { PageStack } from "@/components/ui/page-stack";
 
 export default async function MairieAccueilPage() {
   const { communeId } = await requireCommuneStaff();
@@ -31,7 +33,9 @@ export default async function MairieAccueilPage() {
     .eq("status", MEMBERSHIP_STATUS.active);
 
   return (
-    <div className="space-y-4">
+    <PageStack>
+      <PageHeading title="Tableau de bord" />
+
       <div className="grid gap-3 sm:grid-cols-3">
         <Card className="space-y-1 p-4">
           <p className="text-[10px] font-semibold uppercase text-muted">Annonces</p>
@@ -48,6 +52,7 @@ export default async function MairieAccueilPage() {
           <p className="text-5xl font-bold text-text">{residents ?? 0}</p>
         </Card>
       </div>
+
       <Card className="space-y-2 p-6">
         <h2 className="text-[28px] font-bold leading-9 text-text">Pilotage équipe</h2>
         <p className="text-base font-medium leading-6 text-muted">
@@ -61,6 +66,6 @@ export default async function MairieAccueilPage() {
           Voir les signalements →
         </Link>
       </Card>
-    </div>
+    </PageStack>
   );
 }
