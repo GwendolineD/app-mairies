@@ -1,14 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/lib/auth/session";
+import { requireCommuneStaff } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
-import { USER_ROLES } from "@/lib/constants/roles";
 import { createClient } from "@/lib/supabase/server";
 import { communeSettingsSchema } from "@/lib/validations/schemas";
 
 export async function updateCommuneWelcomeMessage(formData: FormData): Promise<void> {
-  const ctx = await requireRole([USER_ROLES.municipalityStaff]);
+  const { communeId } = await requireCommuneStaff();
 
   const raw = Object.fromEntries(
     [...formData.entries()].map(([k, v]) => [k, String(v)]),
@@ -16,9 +15,6 @@ export async function updateCommuneWelcomeMessage(formData: FormData): Promise<v
 
   const parsed = communeSettingsSchema.safeParse(raw);
   if (!parsed.success) return;
-
-  const communeId = ctx.profile.active_commune_id;
-  if (!communeId) return;
 
   const supabase = await createClient();
 
@@ -48,7 +44,7 @@ export async function updateCommuneWelcomeMessage(formData: FormData): Promise<v
 }
 
 export async function setReportReviewed(reportId: string): Promise<void> {
-  await requireRole([USER_ROLES.municipalityStaff]);
+  await requireCommuneStaff();
   const supabase = await createClient();
 
   const { error } = await supabase

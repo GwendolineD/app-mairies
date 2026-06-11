@@ -1,14 +1,13 @@
 import { NavLink } from "@/components/ui/nav-link";
-import { requireRole } from "@/lib/auth/session";
+import { requireCommuneStaff } from "@/lib/auth/session";
 import { MUNICIPALITY_NAV } from "@/lib/constants/routes";
-import { USER_ROLES } from "@/lib/constants/roles";
 
 export default async function MunicipalityDashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  await requireRole([USER_ROLES.municipalityStaff]);
+  await requireCommuneStaff();
 
   return (
     <div className="min-h-dvh bg-warm">

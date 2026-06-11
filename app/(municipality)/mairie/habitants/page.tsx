@@ -1,15 +1,11 @@
-import { requireRole } from "@/lib/auth/session";
-import { USER_ROLES } from "@/lib/constants/roles";
+import { requireCommuneStaff } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";
 import { PageHeading } from "@/components/ui/page-heading";
 
 export default async function MairieHabitantsPage() {
-  const ctx = await requireRole([USER_ROLES.municipalityStaff]);
-  const communeId = ctx.profile.active_commune_id;
-  if (!communeId)
-    return <p className="font-medium text-muted">Associez d&apos;abord une commune.</p>;
+  const { communeId } = await requireCommuneStaff();
 
   const supabase = await createClient();
 

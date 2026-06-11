@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { ROUTES } from "@/lib/constants/routes";
-import { STAFF_ROLES, type StaffRole } from "@/lib/constants/roles";
+import { COMMUNE_STAFF_ROLES } from "@/lib/constants/roles";
 import { createClient } from "@/lib/supabase/server";
-import type { Membership, Profile } from "@/lib/types";
+import type { Membership, MembershipRole, Profile } from "@/lib/types";
 
 export type SessionContext = {
   userId: string;
@@ -76,12 +76,39 @@ export async function requireActiveMembership() {
   return ctx;
 }
 
-export async function requireRole(roles: StaffRole[]) {
+/**
+ * Guard: only platform super-admins.
+ */
+export async function requirePlatformAdmin() {
   const ctx = await requireAuth();
-  if (!roles.includes(ctx.profile.role as StaffRole)) {
+  if (!ctx.profile.is_platform_admin) {
     redirect(ROUTES.home);
   }
   return ctx;
 }
 
-export { STAFF_ROLES };
+/**
+ * Guard: commune staff (staff | mayor on active membership) OR platform admin.
+ * Returns the ctx with a guaranteed communeId.
+ */
+export async function requireCommuneStaff(): Promise<
+  SessionContext & { communeId: string }
+> {
+  const ctx = await requireAuth();
+
+  if (ctx.profile.is_platform_admin && ctx.activeCommuneId) {
+    return { ...ctx, communeId: ctx.activeCommuneId };
+  }
+
+  const m = ctx.activeMembership;
+  if (
+    m &&
+    (COMMUNE_STAFF_ROLES as readonly MembershipRole[]).includes(m.role)
+  ) {
+    return { ...ctx, communeId: m.commune_id };
+  }
+
+  redirect(ROUTES.home);
+}
+
+export { COMMUNE_STAFF_ROLES };

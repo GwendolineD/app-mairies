@@ -1,14 +1,13 @@
 import { NavLink } from "@/components/ui/nav-link";
-import { requireRole } from "@/lib/auth/session";
+import { requirePlatformAdmin } from "@/lib/auth/session";
 import { PLATFORM_NAV } from "@/lib/constants/routes";
-import { USER_ROLES } from "@/lib/constants/roles";
 
 export default async function PlatformLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  await requireRole([USER_ROLES.platformAdmin]);
+  await requirePlatformAdmin();
 
   return (
     <div className="min-h-dvh bg-background">

@@ -48,7 +48,15 @@ export default async function ProfilPage() {
         <p className="text-sm text-muted">
           {membership.address_street ?? membership.address_city ?? "Adresse non renseignée"} · {communeNames}
         </p>
-        <p className="text-xs text-subtle">Rôle : {ctx.profile.role}</p>
+        <p className="text-xs text-subtle">
+          Rôle : {ctx.profile.is_platform_admin
+            ? "Super admin"
+            : membership.role === "mayor"
+              ? "Maire"
+              : membership.role === "staff"
+                ? "Staff mairie"
+                : "Résident·e"}
+        </p>
       </Card>
 
       <ProfilClient

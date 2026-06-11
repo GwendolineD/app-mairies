@@ -1,9 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/lib/auth/session";
+import { requirePlatformAdmin } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
-import { USER_ROLES } from "@/lib/constants/roles";
 import { createClient } from "@/lib/supabase/server";
 import type { SubscriptionStatus } from "@/lib/types";
 
@@ -11,7 +10,7 @@ export async function setCommuneSubscription(
   communeId: string,
   status: SubscriptionStatus,
 ): Promise<void> {
-  await requireRole([USER_ROLES.platformAdmin]);
+  await requirePlatformAdmin();
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -34,7 +33,7 @@ export async function applyCommuneSubscription(formData: FormData): Promise<void
 }
 
 export async function softDeleteAnnouncementByAdmin(id: string) {
-  await requireRole([USER_ROLES.platformAdmin]);
+  await requirePlatformAdmin();
 
   const supabase = await createClient();
   const { error } = await supabase

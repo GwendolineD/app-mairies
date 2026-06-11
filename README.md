@@ -42,8 +42,8 @@ npx tsx scripts/import-communes.ts
 
 | Compte | Email | Rôle | URL |
 |--------|-------|------|-----|
-| Vous (backoffice) | `dubois.gwendoline@hotmail.fr` | `platform_admin` | `/platform/admin` |
-| Mairie pilote | `mairie.les-authieux@vie-locale.dev` | `municipality_staff` | `/mairie` |
+| Vous (backoffice) | `dubois.gwendoline@hotmail.fr` | Super admin (`profiles.is_platform_admin`) | `/platform/admin` |
+| Mairie pilote | `mairie.les-authieux@vie-locale.dev` | Staff commune (`memberships.role = 'staff'`) | `/mairie` |
 
 Mot de passe seed local : **`VieLocaleDev2026!`** (voir [`supabase/seed.sql`](supabase/seed.sql))
 
@@ -65,14 +65,14 @@ Icônes et épingle carte : placeholders (`icon_url`, `map_pin_url` null) — à
 
 ## Espaces
 
-| Route | Rôle |
-|-------|------|
-| `/` | Landing |
-| `/inscription`, `/connexion` | Auth + choix commune (BAN) |
-| `/accueil`, `/annonces`, `/initiatives`, `/evenements`, `/messages`, `/profil` | Habitant |
-| `/mairie/*` | Dashboard mairie |
-| `/platform/*` | Backoffice éditeur |
-| `/suspendu` | Page réclamation (membership suspendue) |
+| Route | Rôle | Accès |
+|-------|------|-------|
+| `/` | Landing | Public |
+| `/inscription`, `/connexion` | Auth + choix commune (BAN) | Public |
+| `/accueil`, `/annonces`, `/initiatives`, `/evenements`, `/messages`, `/profil` | Habitant | Membership active |
+| `/mairie/*` | Dashboard mairie | `memberships.role` staff/mayor **ou** super admin |
+| `/platform/*` | Backoffice éditeur | Super admin (`profiles.is_platform_admin`) |
+| `/suspendu` | Page réclamation (membership suspendue) | Membership suspendue |
 
 ## Cron (cycle de vie annonces)
 

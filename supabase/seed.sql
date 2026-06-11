@@ -191,14 +191,14 @@ BEGIN
     identity_data = excluded.identity_data,
     updated_at = now();
 
-  -- Profiles (trigger may have created rows; upsert roles)
+  -- Profiles (trigger may have created rows; upsert is_platform_admin)
   INSERT INTO public.profiles (
     user_id,
     first_name,
     last_name,
     display_name,
     active_commune_id,
-    role
+    is_platform_admin
   )
   VALUES
     (
@@ -207,7 +207,7 @@ BEGIN
       'Dubois',
       'Gwendoline D.',
       v_commune_id,
-      'platform_admin'
+      true
     ),
     (
       v_mairie_id,
@@ -215,14 +215,14 @@ BEGIN
       'Mairie',
       'Référent M.',
       v_commune_id,
-      'municipality_staff'
+      false
     )
   ON CONFLICT (user_id) DO UPDATE SET
     first_name = excluded.first_name,
     last_name = excluded.last_name,
     display_name = excluded.display_name,
     active_commune_id = excluded.active_commune_id,
-    role = excluded.role,
+    is_platform_admin = excluded.is_platform_admin,
     updated_at = now();
 
   -- Memberships (habitant actif dans la commune pilote)
@@ -236,7 +236,8 @@ BEGIN
     address_lat,
     address_lng,
     is_primary,
-    status
+    status,
+    role
   )
   VALUES
     (
@@ -249,7 +250,8 @@ BEGIN
       48.8978,
       1.2338,
       true,
-      'active'
+      'active',
+      'member'
     ),
     (
       v_mairie_id,
@@ -261,12 +263,14 @@ BEGIN
       48.8978,
       1.2338,
       true,
-      'active'
+      'active',
+      'staff'
     )
   ON CONFLICT (user_id, commune_id) DO UPDATE SET
     address_street = excluded.address_street,
     address_city = excluded.address_city,
     status = 'active',
+    role = excluded.role,
     updated_at = now();
 
 END $$;

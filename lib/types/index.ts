@@ -1,6 +1,6 @@
 import type { AnnouncementType } from "@/lib/constants/announcement-types";
 
-export type UserRole = "resident" | "municipality_staff" | "platform_admin";
+export type MembershipRole = "member" | "staff" | "mayor";
 export type SubscriptionStatus = "inactive" | "trial" | "active";
 export type MembershipStatus = "active" | "suspended" | "left";
 
@@ -33,7 +33,7 @@ export type Profile = {
   bio: string | null;
   avatar_url: string | null;
   active_commune_id: string | null;
-  role: UserRole;
+  is_platform_admin: boolean;
 };
 
 export type Membership = {
@@ -46,6 +46,7 @@ export type Membership = {
   address_postcode: string | null;
   address_lat: number | null;
   address_lng: number | null;
+  role: MembershipRole;
   is_primary: boolean;
   status: MembershipStatus;
   suspended_at: string | null;
