@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { CommuneSwitcher } from "@/components/features/commune-switcher";
 import { ResidentUserMenu } from "@/components/features/resident-user-menu";
+import type { BackofficeNavLink } from "@/lib/auth/permissions";
 import { APP_NAME } from "@/lib/constants/app";
 import { ILLUSTRATIONS } from "@/lib/constants/illustrations";
 import { ROUTES } from "@/lib/constants/routes";
@@ -11,12 +12,14 @@ type Props = {
   profile: Profile;
   memberships: Membership[];
   activeCommuneId: string | null | undefined;
+  backofficeLinks?: BackofficeNavLink[];
 };
 
 export function ResidentHeader({
   profile,
   memberships,
   activeCommuneId,
+  backofficeLinks = [],
 }: Props) {
   const logo = ILLUSTRATIONS.resident.header.logoHorizontal;
 
@@ -44,7 +47,10 @@ export function ResidentHeader({
             memberships={memberships}
             activeCommuneId={activeCommuneId}
           />
-          <ResidentUserMenu profile={profile} />
+          <ResidentUserMenu
+            profile={profile}
+            backofficeLinks={backofficeLinks}
+          />
         </div>
       </div>
     </header>

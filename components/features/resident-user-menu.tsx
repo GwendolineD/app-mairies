@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { signOut } from "@/lib/actions/auth";
+import type { BackofficeNavLink } from "@/lib/auth/permissions";
 import { ROUTES } from "@/lib/constants/routes";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +22,7 @@ const HEADER_TRIGGER_CLASS =
 
 type Props = {
   profile: Pick<Profile, "first_name" | "display_name" | "avatar_url">;
+  backofficeLinks?: BackofficeNavLink[];
   className?: string;
 };
 
@@ -35,7 +37,11 @@ function initials(profile: Props["profile"]) {
   return name.slice(0, 1).toUpperCase();
 }
 
-export function ResidentUserMenu({ profile, className }: Props) {
+export function ResidentUserMenu({
+  profile,
+  backofficeLinks = [],
+  className,
+}: Props) {
   const label = firstName(profile);
 
   return (
@@ -73,6 +79,15 @@ export function ResidentUserMenu({ profile, className }: Props) {
         >
           Mon profil
         </DropdownMenuItem>
+        {backofficeLinks.map((link) => (
+          <DropdownMenuItem
+            key={link.id}
+            className="font-semibold"
+            render={<Link href={link.href} className="w-full" />}
+          >
+            {link.label}
+          </DropdownMenuItem>
+        ))}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           variant="destructive"

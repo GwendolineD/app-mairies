@@ -59,6 +59,19 @@ export const RESIDENT_BOTTOM_NAV = [
   { href: ROUTES.messages.list, label: "Messages" },
 ] as const;
 
+export const RESIDENT_BACKOFFICE_NAV = {
+  mairie: {
+    id: "mairie",
+    href: ROUTES.mairie.dashboard,
+    label: "Espace mairie",
+  },
+  platform: {
+    id: "platform",
+    href: ROUTES.platform.admin,
+    label: "Admin plateforme",
+  },
+} as const;
+
 export const MUNICIPALITY_NAV = [
   { href: ROUTES.mairie.dashboard, label: "Tableau mairie" },
   { href: ROUTES.mairie.habitants, label: "Habitant·es" },

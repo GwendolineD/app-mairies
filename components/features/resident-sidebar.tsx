@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ResidentSidebarNav } from "@/components/features/resident-nav";
+import type { BackofficeNavLink } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils/cn";
 
 const STORAGE_KEY = "vl:resident-sidebar-collapsed";
@@ -26,7 +27,11 @@ function writeCollapsedPreference(collapsed: boolean): void {
 }
 
 /** Desktop only — collapsible vertical sidebar (≥ md). */
-export function ResidentSidebar() {
+export function ResidentSidebar({
+  backofficeLinks = [],
+}: {
+  backofficeLinks?: BackofficeNavLink[];
+}) {
   const [collapsed, setCollapsed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
@@ -68,7 +73,10 @@ export function ResidentSidebar() {
       </button>
 
       <div className={cn("min-w-0", collapsed && "overflow-hidden")}>
-        <ResidentSidebarNav collapsed={collapsed} />
+        <ResidentSidebarNav
+          collapsed={collapsed}
+          backofficeLinks={backofficeLinks}
+        />
       </div>
     </aside>
   );
