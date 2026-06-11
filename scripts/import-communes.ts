@@ -1,6 +1,7 @@
 #!/usr/bin/env tsx
 /**
- * One-shot import of French communes from geo.api.gouv.fr into Supabase.
+ * Optional one-shot import of French communes from geo.api.gouv.fr into Supabase.
+ * Not executed on `supabase db reset` — run manually when needed.
  * Usage: SUPABASE_SERVICE_ROLE_KEY=... NEXT_PUBLIC_SUPABASE_URL=... npx tsx scripts/import-communes.ts
  */
 import { createClient } from "@supabase/supabase-js";

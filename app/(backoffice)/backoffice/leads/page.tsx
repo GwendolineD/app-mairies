@@ -3,7 +3,9 @@ import { Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
 
-export default async function PlatformLeadsPage() {
+export const dynamic = "force-dynamic";
+
+export default async function BackofficeLeadsPage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("commune_interest_leads")

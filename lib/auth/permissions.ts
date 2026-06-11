@@ -6,7 +6,7 @@ import type { MembershipRole } from "@/lib/types";
 export type BackofficeNavLink = {
   href: string;
   label: string;
-  id: "mairie" | "platform";
+  id: "mairie" | "backoffice";
 };
 
 /**
@@ -41,7 +41,7 @@ export function getResidentBackofficeNav(
   }
 
   if (canAccessPlatformAdmin(ctx)) {
-    items.push(RESIDENT_BACKOFFICE_NAV.platform);
+    items.push(RESIDENT_BACKOFFICE_NAV.backoffice);
   }
 
   return items;

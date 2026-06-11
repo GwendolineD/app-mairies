@@ -43,11 +43,12 @@ export const ROUTES = {
     signalements: "/mairie/signalements",
     eventNew: "/mairie/evenements/nouveau",
   },
-  platform: {
-    admin: "/platform/admin",
-    communes: "/platform/communes",
-    leads: "/platform/leads",
-    stats: "/platform/stats",
+  backoffice: {
+    admin: "/backoffice/admin",
+    communes: "/backoffice/communes",
+    communeDetail: (id: string) => `/backoffice/communes/${id}`,
+    userDetail: (id: string) => `/backoffice/users/${id}`,
+    leads: "/backoffice/leads",
   },
 } as const;
 
@@ -65,10 +66,10 @@ export const RESIDENT_BACKOFFICE_NAV = {
     href: ROUTES.mairie.dashboard,
     label: "Espace mairie",
   },
-  platform: {
-    id: "platform",
-    href: ROUTES.platform.admin,
-    label: "Admin plateforme",
+  backoffice: {
+    id: "backoffice",
+    href: ROUTES.backoffice.admin,
+    label: "Backoffice",
   },
 } as const;
 
@@ -79,8 +80,7 @@ export type AdminNavIcon =
   | "flag"
   | "calendar-plus"
   | "building2"
-  | "mail"
-  | "bar-chart3";
+  | "mail";
 
 export type AdminNavItem = {
   href: string;
@@ -89,7 +89,7 @@ export type AdminNavItem = {
 };
 
 export const MUNICIPALITY_SIDEBAR_STORAGE_KEY = "vl:municipality-sidebar-collapsed";
-export const PLATFORM_SIDEBAR_STORAGE_KEY = "vl:platform-sidebar-collapsed";
+export const BACKOFFICE_SIDEBAR_STORAGE_KEY = "vl:backoffice-sidebar-collapsed";
 
 export const MUNICIPALITY_NAV: readonly AdminNavItem[] = [
   { href: ROUTES.mairie.dashboard, label: "Tableau mairie", icon: "layout-dashboard" },
@@ -99,9 +99,8 @@ export const MUNICIPALITY_NAV: readonly AdminNavItem[] = [
   { href: ROUTES.mairie.eventNew, label: "+ Événement", icon: "calendar-plus" },
 ];
 
-export const PLATFORM_NAV: readonly AdminNavItem[] = [
-  { href: ROUTES.platform.admin, label: "Vue d'ensemble", icon: "layout-dashboard" },
-  { href: ROUTES.platform.communes, label: "Communes pilotées", icon: "building2" },
-  { href: ROUTES.platform.leads, label: "Leads pré-inscription", icon: "mail" },
-  { href: ROUTES.platform.stats, label: "Statistiques", icon: "bar-chart3" },
+export const BACKOFFICE_NAV: readonly AdminNavItem[] = [
+  { href: ROUTES.backoffice.admin, label: "Dashboard", icon: "layout-dashboard" },
+  { href: ROUTES.backoffice.communes, label: "Communes pilotées", icon: "building2" },
+  { href: ROUTES.backoffice.leads, label: "Leads pré-inscription", icon: "mail" },
 ];

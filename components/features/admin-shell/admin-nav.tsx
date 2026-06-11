@@ -13,7 +13,6 @@ import { cn } from "@/lib/utils/cn";
 import { isActivePath } from "@/lib/utils/routes";
 import {
   ArrowLeft,
-  BarChart3,
   Building2,
   CalendarPlus,
   Flag,
@@ -32,7 +31,6 @@ const ADMIN_NAV_ICONS: Record<AdminNavItem["icon"], LucideIcon> = {
   "calendar-plus": CalendarPlus,
   building2: Building2,
   mail: Mail,
-  "bar-chart3": BarChart3,
 };
 
 type NavLinkProps = {

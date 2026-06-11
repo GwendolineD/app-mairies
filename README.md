@@ -42,7 +42,7 @@ npx tsx scripts/import-communes.ts
 
 | Compte | Email | Rôle | URL |
 |--------|-------|------|-----|
-| Vous (backoffice) | `dubois.gwendoline@hotmail.fr` | Super admin (`profiles.is_platform_admin`) | `/platform/admin` |
+| Vous (backoffice) | `dubois.gwendoline@hotmail.fr` | Super admin (`profiles.is_platform_admin`) | `/backoffice/admin` |
 | Mairie pilote | `mairie.les-authieux@vie-locale.dev` | Staff commune (`memberships.role = 'staff'`) | `/mairie` |
 
 Mot de passe seed local : **`VieLocaleDev2026!`** (voir [`supabase/seed.sql`](supabase/seed.sql))
@@ -71,7 +71,7 @@ Icônes et épingle carte : placeholders (`icon_url`, `map_pin_url` null) — à
 | `/inscription`, `/connexion` | Auth + choix commune (BAN) | Public |
 | `/accueil`, `/annonces`, `/initiatives`, `/evenements`, `/messages`, `/profil` | Habitant | Membership active |
 | `/mairie/*` | Dashboard mairie | `memberships.role` staff/mayor **ou** super admin |
-| `/platform/*` | Backoffice éditeur | Super admin (`profiles.is_platform_admin`) |
+| `/backoffice/*` | Backoffice éditeur | Super admin (`profiles.is_platform_admin`) |
 | `/suspendu` | Page réclamation (membership suspendue) | Membership suspendue |
 
 ## Cron (cycle de vie annonces)

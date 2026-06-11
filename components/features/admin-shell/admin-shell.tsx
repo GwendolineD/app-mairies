@@ -9,7 +9,7 @@ type Props = {
   navItems: readonly AdminNavItem[];
   storageKey: string;
   sidebarTitle: string;
-  sidebarSectionLabel: string;
+  sidebarSectionLabel?: string;
   backHref?: string;
 };
 

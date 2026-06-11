@@ -37,7 +37,7 @@ export const RESIDENT_NAV_ICONS: Record<
 
 const BACKOFFICE_NAV_ICONS: Record<BackofficeNavLink["label"], LucideIcon> = {
   "Espace mairie": Building2,
-  "Admin plateforme": Shield,
+  Backoffice: Shield,
 };
 
 function navIcon(label: string): LucideIcon {

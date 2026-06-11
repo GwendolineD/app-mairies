@@ -1,12 +1,12 @@
 import { requireActiveMembership } from "@/lib/auth/session";
 import { createNeighborInvite } from "@/lib/actions/messages";
 import { createClient } from "@/lib/supabase/server";
-import { ROUTES } from "@/lib/constants/routes";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/form-field";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
+import { ProfilAddCommuneButton } from "@/components/features/profil-add-commune-button";
 import { ProfilClient } from "@/components/features/profil-client";
 
 export default async function ProfilPage() {
@@ -83,9 +83,7 @@ export default async function ProfilPage() {
       </Card>
 
       <Card className="space-y-3 p-5">
-        <Button href={ROUTES.inscription.root} variant="secondary" className="w-full">
-          Ajouter une commune
-        </Button>
+        <ProfilAddCommuneButton memberships={ctx.memberships} />
       </Card>
     </PageStack>
   );

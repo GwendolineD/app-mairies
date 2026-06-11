@@ -1,5 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isGuestOnlyAuthPath } from "@/lib/constants/auth";
+import { ROUTES } from "@/lib/constants/routes";
 
 function isStaleAuthError(error: { code?: string; message?: string }) {
   return (
@@ -19,6 +21,16 @@ async function clearStaleSession(
   } catch {
     // Best effort — response cookies may still be cleared by signOut's setAll
   }
+}
+
+function withSupabaseCookies(
+  target: NextResponse,
+  source: NextResponse,
+): NextResponse {
+  source.cookies.getAll().forEach(({ name, value }) => {
+    target.cookies.set(name, value);
+  });
+  return target;
 }
 
 export async function updateSession(request: NextRequest) {
@@ -45,10 +57,14 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
+  let user: { id: string } | null = null;
+
   try {
-    const { error } = await supabase.auth.getUser();
+    const { data, error } = await supabase.auth.getUser();
+    user = data.user;
     if (error && isStaleAuthError(error)) {
       await clearStaleSession(supabase);
+      user = null;
     }
   } catch (error) {
     // Stale cookies (old project, DB reset, expired session) — do not spam logs
@@ -60,6 +76,12 @@ export async function updateSession(request: NextRequest) {
     ) {
       await clearStaleSession(supabase);
     }
+  }
+
+  if (user && isGuestOnlyAuthPath(request.nextUrl.pathname)) {
+    const url = request.nextUrl.clone();
+    url.pathname = ROUTES.accueil;
+    return withSupabaseCookies(NextResponse.redirect(url), supabaseResponse);
   }
 
   return supabaseResponse;
