@@ -113,3 +113,16 @@ export const communeSettingsSchema = z.object({
   openingHours: z.string().optional(),
   welcomeMessage: z.string().optional(),
 });
+
+export const createPilotCommuneSchema = z.object({
+  inseeCode: z.string().min(1, "Code INSEE requis"),
+  name: z.string().min(1, "Nom requis"),
+  postcode: z
+    .string()
+    .optional()
+    .transform((value) => (value?.trim() ? value.trim() : undefined)),
+  centroidLat: z.number(),
+  centroidLng: z.number(),
+  subscriptionStatus: z.enum(["inactive", "trial", "active"]),
+  mairieAddress: z.string().trim().min(3, "Adresse mairie requise"),
+});

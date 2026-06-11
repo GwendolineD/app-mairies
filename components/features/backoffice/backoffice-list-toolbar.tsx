@@ -1,11 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { X } from "lucide-react";
+import { Check, ChevronDown, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -17,6 +22,7 @@ import {
   buildBackofficeCommunesListQuery,
   buildBackofficeMembersListQuery,
 } from "@/lib/utils/backoffice-search-params";
+import type { SubscriptionStatus } from "@/lib/types";
 import { cn } from "@/lib/utils/cn";
 
 type FilterOption = {
@@ -26,16 +32,21 @@ type FilterOption = {
 
 type QueryVariant = "communes" | "members";
 
+type BackofficeListParams = Record<
+  string,
+  string | number | string[] | undefined
+>;
+
 const BUILD_QUERY_BY_VARIANT: Record<
   QueryVariant,
-  (params: Record<string, string | number | undefined>) => string
+  (params: BackofficeListParams) => string
 > = {
   communes: buildBackofficeCommunesListQuery,
   members: buildBackofficeMembersListQuery,
 };
 
 type BackofficeListQueryProps = {
-  params: Record<string, string | number | undefined>;
+  params: BackofficeListParams;
   queryVariant: QueryVariant;
   totalCount: number;
   pageSize: number;
@@ -57,7 +68,7 @@ function useBackofficeListNavigation({
   const limit = Number(params.limit ?? pageSize);
   const totalPages = Math.max(1, Math.ceil(totalCount / limit));
 
-  function navigate(next: Record<string, string | number | undefined>) {
+  function navigate(next: BackofficeListParams) {
     startTransition(() => {
       router.push(`${pathname}${buildQuery({ ...params, page: 1, ...next })}`);
     });
@@ -72,9 +83,73 @@ function useBackofficeListNavigation({
   };
 }
 
+function statusFilterLabel(
+  selectedStatuses: string[],
+  statusOptions: FilterOption[],
+): string {
+  if (selectedStatuses.length === 0) return "Tous les statuts";
+  if (selectedStatuses.length === 1) {
+    const match = statusOptions.find(
+      (option) => option.value === selectedStatuses[0],
+    );
+    return match?.label ?? "Tous les statuts";
+  }
+  return `${selectedStatuses.length} statuts`;
+}
+
+function StatusMultiSelectOption({
+  label,
+  checked,
+  onToggle,
+  onSelectOnly,
+}: {
+  label: string;
+  checked: boolean;
+  onToggle: () => void;
+  onSelectOnly: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-2 rounded-sm px-1.5 py-1 text-sm font-medium hover:bg-warm">
+      <button
+        type="button"
+        role="checkbox"
+        aria-checked={checked}
+        aria-label={`${checked ? "Retirer" : "Ajouter"} ${label}`}
+        onPointerDown={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+        }}
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          onToggle();
+        }}
+        className={cn(
+          "flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-sm border border-border bg-surface transition",
+          checked && "border-purple bg-purple text-white",
+        )}
+      >
+        {checked ? <Check className="size-3" aria-hidden /> : null}
+      </button>
+      <button
+        type="button"
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          onSelectOnly();
+        }}
+        className="min-w-0 flex-1 cursor-pointer truncate text-left text-text"
+      >
+        {label}
+      </button>
+    </div>
+  );
+}
+
 type FiltersProps = BackofficeListQueryProps & {
   searchPlaceholder?: string;
   statusOptions?: FilterOption[];
+  statusMultiSelect?: boolean;
   roleOptions?: FilterOption[];
 };
 
@@ -85,8 +160,12 @@ export function BackofficeListFilters({
   pageSize,
   searchPlaceholder = "Rechercher…",
   statusOptions,
+  statusMultiSelect = false,
   roleOptions,
 }: FiltersProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const [, startStatusTransition] = useTransition();
   const { navigate } = useBackofficeListNavigation({
     params,
     queryVariant,
@@ -94,6 +173,33 @@ export function BackofficeListFilters({
     pageSize,
   });
   const [search, setSearch] = useState(String(params.q ?? ""));
+  const [statusMenuOpen, setStatusMenuOpen] = useState(false);
+
+  const urlStatuses = Array.isArray(params.statuses)
+    ? params.statuses.map(String)
+    : params.status
+      ? [String(params.status)]
+      : [];
+
+  const [localStatuses, setLocalStatuses] = useState<string[]>(urlStatuses);
+
+  useEffect(() => {
+    setLocalStatuses(urlStatuses);
+  }, [urlStatuses.join(",")]);
+
+  function navigateStatuses(nextStatuses: SubscriptionStatus[]) {
+    setLocalStatuses(nextStatuses);
+    startStatusTransition(() => {
+      router.push(
+        `${pathname}${buildBackofficeCommunesListQuery({
+          q: String(params.q ?? "") || undefined,
+          statuses: nextStatuses,
+          page: 1,
+          limit: Number(params.limit ?? pageSize),
+        })}`,
+      );
+    });
+  }
 
   useEffect(() => {
     setSearch(String(params.q ?? ""));
@@ -137,7 +243,44 @@ export function BackofficeListFilters({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        {statusOptions ? (
+        {statusOptions && statusMultiSelect ? (
+          <Popover open={statusMenuOpen} onOpenChange={setStatusMenuOpen}>
+            <PopoverTrigger
+              render={
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="min-w-36 justify-between rounded-sm"
+                />
+              }
+            >
+              {statusFilterLabel(localStatuses, statusOptions)}
+              <ChevronDown className="size-4 text-muted" aria-hidden />
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-36 rounded-sm p-1">
+              {statusOptions.map((option) => (
+                <StatusMultiSelectOption
+                  key={option.value}
+                  label={option.label}
+                  checked={localStatuses.includes(option.value)}
+                  onToggle={() => {
+                    const next = localStatuses.includes(option.value)
+                      ? localStatuses.filter((value) => value !== option.value)
+                      : [...localStatuses, option.value];
+                    navigateStatuses(next as SubscriptionStatus[]);
+                  }}
+                  onSelectOnly={() => {
+                    navigateStatuses([option.value as SubscriptionStatus]);
+                    setStatusMenuOpen(false);
+                  }}
+                />
+              ))}
+            </PopoverContent>
+          </Popover>
+        ) : null}
+
+        {statusOptions && !statusMultiSelect ? (
           <Select
             items={[
               { value: "all", label: "Tous les statuts" },

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { AddCommuneButton } from "@/components/features/backoffice/add-commune-button";
 import {
   BackofficeListFilters,
   BackofficeListLinkCard,
@@ -9,7 +10,7 @@ import { SubscriptionStatusBadge } from "@/components/features/backoffice/subscr
 import { Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
-import { SUBSCRIPTION_STATUS_LABELS } from "@/lib/constants/subscription-status";
+import { ALL_SUBSCRIPTION_STATUSES, SUBSCRIPTION_STATUS_LABELS } from "@/lib/constants/subscription-status";
 import { ROUTES } from "@/lib/constants/routes";
 import { listPilotCommunesPage } from "@/lib/queries/backoffice-communes";
 import { formatShortDate } from "@/lib/utils/format-date";
@@ -34,15 +35,16 @@ export default async function BackofficeCommunesPage(props: {
 
   return (
     <PageStack>
-      <PageHeading title="Communes pilotées" />
+      <PageHeading title="Communes pilotées" actions={<AddCommuneButton />} />
 
       <BackofficeListFilters
         {...listQueryProps}
         searchPlaceholder="Rechercher par nom ou code postal"
-        statusOptions={[
-          { value: "active", label: SUBSCRIPTION_STATUS_LABELS.active },
-          { value: "trial", label: SUBSCRIPTION_STATUS_LABELS.trial },
-        ]}
+        statusMultiSelect
+        statusOptions={ALL_SUBSCRIPTION_STATUSES.map((status) => ({
+          value: status,
+          label: SUBSCRIPTION_STATUS_LABELS[status],
+        }))}
       />
 
       <BackofficeListResultCount {...listQueryProps} />

@@ -1,11 +1,14 @@
 import type { MembershipRole, MembershipStatus, SubscriptionStatus } from "@/lib/types";
 import {
+  ALL_SUBSCRIPTION_STATUSES,
   BACKOFFICE_COMMUNES_PAGE_SIZES,
   BACKOFFICE_MEMBERS_PAGE_SIZES,
   DEFAULT_BACKOFFICE_COMMUNES_PAGE_SIZE,
   DEFAULT_BACKOFFICE_MEMBERS_PAGE_SIZE,
   PILOT_SUBSCRIPTION_STATUSES,
 } from "@/lib/constants/subscription-status";
+
+const VALID_SUBSCRIPTION_STATUSES = new Set<string>(ALL_SUBSCRIPTION_STATUSES);
 
 function raw(
   searchParams: Record<string, string | string[] | undefined>,
@@ -28,9 +31,35 @@ function parseLimit(
   return allowed.includes(parsed) ? parsed : fallback;
 }
 
+function rawAll(
+  searchParams: Record<string, string | string[] | undefined>,
+  key: string,
+): string[] {
+  const value = searchParams[key];
+  if (!value) return [];
+  return Array.isArray(value) ? value : [value];
+}
+
+function parseSubscriptionStatuses(
+  searchParams: Record<string, string | string[] | undefined>,
+): SubscriptionStatus[] {
+  const seen = new Set<SubscriptionStatus>();
+  const statuses: SubscriptionStatus[] = [];
+
+  for (const rawValue of rawAll(searchParams, "status")) {
+    if (!VALID_SUBSCRIPTION_STATUSES.has(rawValue)) continue;
+    const status = rawValue as SubscriptionStatus;
+    if (seen.has(status)) continue;
+    seen.add(status);
+    statuses.push(status);
+  }
+
+  return statuses;
+}
+
 export type BackofficeCommunesListParams = {
   q: string;
-  status?: SubscriptionStatus;
+  statuses: SubscriptionStatus[];
   page: number;
   limit: number;
 };
@@ -38,13 +67,9 @@ export type BackofficeCommunesListParams = {
 export function parseBackofficeCommunesListParams(
   searchParams: Record<string, string | string[] | undefined>,
 ): BackofficeCommunesListParams {
-  const statusRaw = raw(searchParams, "status");
-  const status =
-    statusRaw === "trial" || statusRaw === "active" ? statusRaw : undefined;
-
   return {
     q: (raw(searchParams, "q") ?? "").trim(),
-    status,
+    statuses: parseSubscriptionStatuses(searchParams),
     page: parsePage(raw(searchParams, "page")),
     limit: parseLimit(
       raw(searchParams, "limit"),
@@ -59,7 +84,9 @@ export function buildBackofficeCommunesListQuery(
 ): string {
   const sp = new URLSearchParams();
   if (params.q) sp.set("q", params.q);
-  if (params.status) sp.set("status", params.status);
+  for (const status of params.statuses ?? []) {
+    sp.append("status", status);
+  }
   if (params.page && params.page > 1) sp.set("page", String(params.page));
   if (params.limit && params.limit !== DEFAULT_BACKOFFICE_COMMUNES_PAGE_SIZE) {
     sp.set("limit", String(params.limit));
@@ -117,4 +144,4 @@ export function buildBackofficeMembersListQuery(
   return qs ? `?${qs}` : "";
 }
 
-export { PILOT_SUBSCRIPTION_STATUSES };
+export { ALL_SUBSCRIPTION_STATUSES, PILOT_SUBSCRIPTION_STATUSES };

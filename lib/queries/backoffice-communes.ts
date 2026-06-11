@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { PILOT_SUBSCRIPTION_STATUSES } from "@/lib/constants/subscription-status";
+import { ALL_SUBSCRIPTION_STATUSES } from "@/lib/constants/subscription-status";
 import type { BackofficeCommunesListParams } from "@/lib/utils/backoffice-search-params";
 import type { SubscriptionStatus } from "@/lib/types";
 
@@ -82,7 +82,8 @@ export async function listPilotCommunesPage(
   params: BackofficeCommunesListParams,
 ): Promise<{ items: CommuneListRow[]; totalCount: number }> {
   const offset = (params.page - 1) * params.limit;
-  const statuses = params.status ? [params.status] : [...PILOT_SUBSCRIPTION_STATUSES];
+  const statuses =
+    params.statuses.length > 0 ? params.statuses : [...ALL_SUBSCRIPTION_STATUSES];
 
   let countQuery = supabase
     .from("communes")
