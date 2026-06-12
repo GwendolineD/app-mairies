@@ -66,7 +66,7 @@ export function InscriptionSignupForm() {
       const json = (await res.json()) as LookupResponse;
       const row = json.commune;
 
-      if (row?.subscription_status === "active") {
+      if (row?.access_status === "active") {
         setCommuneActive(true);
         setLookupName(row.name);
         setModalOpen(false);

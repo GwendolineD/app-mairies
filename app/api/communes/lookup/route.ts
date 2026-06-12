@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase
     .from("communes")
     .select(
-      "id, insee_code, name, postcode, department, subscription_status, centroid_lat, centroid_lng",
+      "id, insee_code, name, postcode, department, access_status, centroid_lat, centroid_lng",
     )
     .eq("insee_code", inseeCode)
     .maybeSingle();

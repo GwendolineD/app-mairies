@@ -42,6 +42,7 @@ export const ROUTES = {
     parametres: "/mairie/parametres",
     signalements: "/mairie/signalements",
     eventNew: "/mairie/evenements/nouveau",
+    abonnement: "/mairie/abonnement",
   },
   backoffice: {
     admin: "/backoffice/admin",
@@ -49,6 +50,7 @@ export const ROUTES = {
     communeDetail: (id: string) => `/backoffice/communes/${id}`,
     userDetail: (id: string) => `/backoffice/users/${id}`,
     leads: "/backoffice/leads",
+    emails: "/backoffice/emails",
   },
 } as const;
 
@@ -80,7 +82,9 @@ export type AdminNavIcon =
   | "flag"
   | "calendar-plus"
   | "building2"
-  | "mail";
+  | "mail"
+  | "flame"
+  | "credit-card";
 
 export type AdminNavItem = {
   href: string;
@@ -97,10 +101,12 @@ export const MUNICIPALITY_NAV: readonly AdminNavItem[] = [
   { href: ROUTES.mairie.parametres, label: "Paramètres", icon: "settings" },
   { href: ROUTES.mairie.signalements, label: "Signalements", icon: "flag" },
   { href: ROUTES.mairie.eventNew, label: "+ Événement", icon: "calendar-plus" },
+  { href: ROUTES.mairie.abonnement, label: "Abonnement", icon: "credit-card" },
 ];
 
 export const BACKOFFICE_NAV: readonly AdminNavItem[] = [
   { href: ROUTES.backoffice.admin, label: "Dashboard", icon: "layout-dashboard" },
   { href: ROUTES.backoffice.communes, label: "Communes pilotées", icon: "building2" },
-  { href: ROUTES.backoffice.leads, label: "Leads pré-inscription", icon: "mail" },
+  { href: ROUTES.backoffice.leads, label: "Leads pré-inscription", icon: "flame" },
+  { href: ROUTES.backoffice.emails, label: "Templates email", icon: "mail" },
 ];

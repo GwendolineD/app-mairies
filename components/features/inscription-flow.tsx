@@ -64,7 +64,7 @@ export function InscriptionFlow() {
         return;
       }
 
-      if (row.subscription_status !== "active") {
+      if (row.access_status !== "active") {
         setStep("interest");
       } else {
         setStep("signup");

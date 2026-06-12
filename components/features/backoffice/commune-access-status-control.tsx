@@ -2,8 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { setCommuneSubscription } from "@/lib/actions/platform";
-import { SubscriptionStatusBadge } from "@/components/features/backoffice/subscription-status-badge";
+import { setCommuneAccessStatus } from "@/lib/actions/platform";
+import { AccessStatusBadge } from "@/components/features/backoffice/access-status-badge";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import {
@@ -12,34 +12,34 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import {
-  ALL_SUBSCRIPTION_STATUSES,
-  SUBSCRIPTION_STATUS_CHANGE_DISCLAIMERS,
-  SUBSCRIPTION_STATUS_LABELS,
-} from "@/lib/constants/subscription-status";
-import type { SubscriptionStatus } from "@/lib/types";
+  ALL_ACCESS_STATUSES,
+  ACCESS_STATUS_CHANGE_DISCLAIMERS,
+  ACCESS_STATUS_LABELS,
+} from "@/lib/constants/access-status";
+import type { AccessStatus } from "@/lib/types";
 
 type Props = {
   communeId: string;
-  currentStatus: SubscriptionStatus;
+  currentStatus: AccessStatus;
 };
 
-export function CommuneSubscriptionStatusControl({
+export function CommuneAccessStatusControl({
   communeId,
   currentStatus,
 }: Props) {
   const router = useRouter();
   const [popoverOpen, setPopoverOpen] = useState(false);
-  const [pendingStatus, setPendingStatus] = useState<SubscriptionStatus | null>(
+  const [pendingStatus, setPendingStatus] = useState<AccessStatus | null>(
     null,
   );
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const otherStatuses = ALL_SUBSCRIPTION_STATUSES.filter(
+  const otherStatuses = ALL_ACCESS_STATUSES.filter(
     (status) => status !== currentStatus,
   );
 
-  function handlePickStatus(status: SubscriptionStatus) {
+  function handlePickStatus(status: AccessStatus) {
     setPopoverOpen(false);
     setPendingStatus(status);
     setError(null);
@@ -55,7 +55,7 @@ export function CommuneSubscriptionStatusControl({
     if (!pendingStatus) return;
 
     startTransition(async () => {
-      const result = await setCommuneSubscription(communeId, pendingStatus);
+      const result = await setCommuneAccessStatus(communeId, pendingStatus);
       if (!result.success) {
         setError(result.error ?? "Impossible de modifier le statut.");
         return;
@@ -74,15 +74,15 @@ export function CommuneSubscriptionStatusControl({
             <button
               type="button"
               className="cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-purple/40"
-              aria-label="Modifier le statut d'abonnement"
+              aria-label="Modifier le statut d'accès"
             />
           }
         >
-          <SubscriptionStatusBadge status={currentStatus} />
+          <AccessStatusBadge status={currentStatus} />
         </PopoverTrigger>
 
         <PopoverContent align="end" sideOffset={8} className="w-48 p-1">
-          <ul role="listbox" aria-label="Statuts d'abonnement">
+          <ul role="listbox" aria-label="Statuts d'accès">
             {otherStatuses.map((status) => (
               <li key={status} role="presentation">
                 <button
@@ -91,7 +91,7 @@ export function CommuneSubscriptionStatusControl({
                   className="flex w-full cursor-pointer items-center rounded-sm px-3 py-2 text-sm font-medium text-text transition hover:bg-warm"
                   onClick={() => handlePickStatus(status)}
                 >
-                  {SUBSCRIPTION_STATUS_LABELS[status]}
+                  {ACCESS_STATUS_LABELS[status]}
                 </button>
               </li>
             ))}
@@ -104,7 +104,7 @@ export function CommuneSubscriptionStatusControl({
         onClose={handleCloseModal}
         title={
           pendingStatus
-            ? `Passer en ${SUBSCRIPTION_STATUS_LABELS[pendingStatus]}`
+            ? `Passer en ${ACCESS_STATUS_LABELS[pendingStatus]}`
             : "Modifier le statut"
         }
         closeDisabled={isPending}
@@ -112,7 +112,7 @@ export function CommuneSubscriptionStatusControl({
         {pendingStatus ? (
           <div className="space-y-4">
             <p className="text-sm font-medium text-muted">
-              {SUBSCRIPTION_STATUS_CHANGE_DISCLAIMERS[pendingStatus]}
+              {ACCESS_STATUS_CHANGE_DISCLAIMERS[pendingStatus]}
             </p>
 
             {error ? (
@@ -124,7 +124,7 @@ export function CommuneSubscriptionStatusControl({
             <div className="flex flex-wrap justify-end gap-2">
               <Button
                 type="button"
-                variant="secondary"
+                variant="ghost"
                 disabled={isPending}
                 onClick={handleCloseModal}
               >

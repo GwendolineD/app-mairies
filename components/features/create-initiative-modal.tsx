@@ -166,7 +166,7 @@ export function CreateInitiativeModal({ open, onClose, communeId }: Props) {
         ) : null}
 
         <div className="mt-2 flex gap-2">
-          <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
+          <Button type="button" variant="ghost" onClick={onClose} className="flex-1">
             Annuler
           </Button>
           <GradientButton

@@ -5,7 +5,7 @@ import { requirePlatformAdmin } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
 import { createPilotCommuneSchema } from "@/lib/validations/schemas";
-import type { SubscriptionStatus } from "@/lib/types";
+import type { AccessStatus } from "@/lib/types";
 
 export type PlatformActionResult =
   | { success: true }
@@ -43,7 +43,7 @@ export async function createPilotCommuneAction(
     postcode: String(formData.get("postcode") ?? "").trim(),
     centroidLat: Number(formData.get("centroidLat")),
     centroidLng: Number(formData.get("centroidLng")),
-    subscriptionStatus: String(formData.get("subscriptionStatus") ?? "inactive").trim(),
+    accessStatus: String(formData.get("accessStatus") ?? "inactive").trim(),
     mairieAddress: String(formData.get("mairieAddress") ?? "").trim(),
   });
 
@@ -89,7 +89,7 @@ export async function createPilotCommuneAction(
       department,
       centroid_lat: centroidLat,
       centroid_lng: centroidLng,
-      subscription_status: data.subscriptionStatus,
+      access_status: data.accessStatus,
       settings: { address: data.mairieAddress },
     })
     .select("id")
@@ -105,16 +105,16 @@ export async function createPilotCommuneAction(
   return { success: true, communeId: inserted.id };
 }
 
-export async function setCommuneSubscription(
+export async function setCommuneAccessStatus(
   communeId: string,
-  status: SubscriptionStatus,
+  status: AccessStatus,
 ): Promise<PlatformActionResult> {
   await requirePlatformAdmin();
 
   const supabase = await createClient();
   const { error } = await supabase
     .from("communes")
-    .update({ subscription_status: status })
+    .update({ access_status: status })
     .eq("id", communeId);
 
   if (error) {
@@ -126,14 +126,14 @@ export async function setCommuneSubscription(
   return { success: true };
 }
 
-export async function applyCommuneSubscription(formData: FormData): Promise<void> {
+export async function applyCommuneAccessStatus(formData: FormData): Promise<void> {
   const communeId = String(formData.get("communeId") ?? "").trim();
   const statusRaw = String(formData.get("status") ?? "").trim();
 
-  const allowed: SubscriptionStatus[] = ["inactive", "trial", "active"];
-  if (!communeId || !allowed.includes(statusRaw as SubscriptionStatus)) return;
+  const allowed: AccessStatus[] = ["inactive", "trial", "active"];
+  if (!communeId || !allowed.includes(statusRaw as AccessStatus)) return;
 
-  await setCommuneSubscription(communeId, statusRaw as SubscriptionStatus);
+  await setCommuneAccessStatus(communeId, statusRaw as AccessStatus);
 }
 
 export async function updateCommuneWelcomeMessageAsAdmin(
@@ -186,5 +186,176 @@ export async function softDeleteAnnouncementByAdmin(id: string) {
 
   if (error) return { error: error.message };
   revalidatePath(ROUTES.backoffice.admin);
+  return { success: true };
+}
+
+export async function createCommuneSubscriptionPeriod(
+  communeId: string,
+  data: { startsAt: string; endsAt: string; amountCents: number },
+): Promise<PlatformActionResult> {
+  await requirePlatformAdmin();
+
+  if (!communeId || !data.startsAt || !data.endsAt || data.amountCents < 0) {
+    return { success: false, error: "Paramètres invalides." };
+  }
+
+  const supabase = await createClient();
+
+  // Validate no overlap with existing periods
+  const { data: overlap } = await supabase
+    .from("commune_subscriptions")
+    .select("id")
+    .eq("commune_id", communeId)
+    .lte("starts_at", data.endsAt)
+    .gte("ends_at", data.startsAt)
+    .limit(1);
+
+  if (overlap?.length) {
+    return { success: false, error: "Les dates chevauchent une période existante." };
+  }
+
+  const { error } = await supabase.from("commune_subscriptions").insert({
+    commune_id: communeId,
+    starts_at: data.startsAt,
+    ends_at: data.endsAt,
+    amount_cents: data.amountCents,
+    payment_status: "unpaid",
+    auto_renew: true,
+  });
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  // Auto-update subscribed_since if new period starts earlier or if null
+  const { data: commune } = await supabase
+    .from("communes")
+    .select("subscribed_since")
+    .eq("id", communeId)
+    .single();
+
+  if (!commune?.subscribed_since || data.startsAt < commune.subscribed_since) {
+    await supabase
+      .from("communes")
+      .update({ subscribed_since: data.startsAt })
+      .eq("id", communeId);
+  }
+
+  revalidatePath(ROUTES.backoffice.communeDetail(communeId));
+  return { success: true };
+}
+
+export async function markSubscriptionPaid(
+  subscriptionId: string,
+  paidAt: string,
+  paymentMethod: string,
+): Promise<PlatformActionResult> {
+  await requirePlatformAdmin();
+
+  if (!paidAt || !paymentMethod.trim()) {
+    return { success: false, error: "Date et moyen de paiement requis." };
+  }
+
+  const supabase = await createClient();
+  const { data: subscription, error: fetchError } = await supabase
+    .from("commune_subscriptions")
+    .select("commune_id")
+    .eq("id", subscriptionId)
+    .single();
+
+  if (fetchError || !subscription) {
+    return { success: false, error: "Abonnement introuvable." };
+  }
+
+  const { error } = await supabase
+    .from("commune_subscriptions")
+    .update({
+      payment_status: "paid",
+      paid_at: paidAt,
+      payment_method: paymentMethod.trim(),
+    })
+    .eq("id", subscriptionId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath(ROUTES.backoffice.communeDetail(subscription.commune_id));
+  return { success: true };
+}
+
+export async function deleteSubscriptionPeriod(
+  subscriptionId: string,
+): Promise<PlatformActionResult> {
+  await requirePlatformAdmin();
+
+  const supabase = await createClient();
+  const { data: subscription, error: fetchError } = await supabase
+    .from("commune_subscriptions")
+    .select("commune_id")
+    .eq("id", subscriptionId)
+    .single();
+
+  if (fetchError || !subscription) {
+    return { success: false, error: "Abonnement introuvable." };
+  }
+
+  const { error } = await supabase
+    .from("commune_subscriptions")
+    .delete()
+    .eq("id", subscriptionId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath(ROUTES.backoffice.communeDetail(subscription.commune_id));
+  return { success: true };
+}
+
+export async function updateCommuneSubscribedSince(
+  communeId: string,
+  subscribedSince: string | null,
+): Promise<PlatformActionResult> {
+  await requirePlatformAdmin();
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("communes")
+    .update({ subscribed_since: subscribedSince })
+    .eq("id", communeId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath(ROUTES.backoffice.communeDetail(communeId));
+  return { success: true };
+}
+
+export async function updateEmailTemplate(
+  slug: string,
+  data: { subject: string; bodyHtml: string },
+): Promise<PlatformActionResult> {
+  await requirePlatformAdmin();
+
+  if (!slug || !data.subject.trim() || !data.bodyHtml.trim()) {
+    return { success: false, error: "Sujet et contenu HTML requis." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("email_templates")
+    .update({
+      subject: data.subject.trim(),
+      body_html: data.bodyHtml.trim(),
+    })
+    .eq("slug", slug);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath(ROUTES.backoffice.emails);
   return { success: true };
 }

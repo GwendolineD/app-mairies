@@ -1,7 +1,7 @@
 import type { AnnouncementType } from "@/lib/constants/announcement-types";
 
 export type MembershipRole = "member" | "staff" | "mayor";
-export type SubscriptionStatus = "inactive" | "trial" | "active";
+export type AccessStatus = "inactive" | "trial" | "active";
 export type MembershipStatus = "active" | "suspended" | "left";
 
 export type Commune = {
@@ -12,7 +12,7 @@ export type Commune = {
   department: string | null;
   centroid_lat: number | null;
   centroid_lng: number | null;
-  subscription_status: SubscriptionStatus;
+  access_status: AccessStatus;
   settings: CommuneSettings;
 };
 

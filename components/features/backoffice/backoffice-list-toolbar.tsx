@@ -22,7 +22,7 @@ import {
   buildBackofficeCommunesListQuery,
   buildBackofficeMembersListQuery,
 } from "@/lib/utils/backoffice-search-params";
-import type { SubscriptionStatus } from "@/lib/types";
+import type { AccessStatus } from "@/lib/types";
 import { cn } from "@/lib/utils/cn";
 
 type FilterOption = {
@@ -187,7 +187,7 @@ export function BackofficeListFilters({
     setLocalStatuses(urlStatuses);
   }, [urlStatuses.join(",")]);
 
-  function navigateStatuses(nextStatuses: SubscriptionStatus[]) {
+  function navigateStatuses(nextStatuses: AccessStatus[]) {
     setLocalStatuses(nextStatuses);
     startStatusTransition(() => {
       router.push(
@@ -268,10 +268,10 @@ export function BackofficeListFilters({
                     const next = localStatuses.includes(option.value)
                       ? localStatuses.filter((value) => value !== option.value)
                       : [...localStatuses, option.value];
-                    navigateStatuses(next as SubscriptionStatus[]);
+                    navigateStatuses(next as AccessStatus[]);
                   }}
                   onSelectOnly={() => {
-                    navigateStatuses([option.value as SubscriptionStatus]);
+                    navigateStatuses([option.value as AccessStatus]);
                     setStatusMenuOpen(false);
                   }}
                 />

@@ -1,14 +1,14 @@
-import type { MembershipRole, MembershipStatus, SubscriptionStatus } from "@/lib/types";
+import type { MembershipRole, MembershipStatus, AccessStatus } from "@/lib/types";
 import {
-  ALL_SUBSCRIPTION_STATUSES,
+  ALL_ACCESS_STATUSES,
   BACKOFFICE_COMMUNES_PAGE_SIZES,
   BACKOFFICE_MEMBERS_PAGE_SIZES,
   DEFAULT_BACKOFFICE_COMMUNES_PAGE_SIZE,
   DEFAULT_BACKOFFICE_MEMBERS_PAGE_SIZE,
-  PILOT_SUBSCRIPTION_STATUSES,
-} from "@/lib/constants/subscription-status";
+  PILOT_ACCESS_STATUSES,
+} from "@/lib/constants/access-status";
 
-const VALID_SUBSCRIPTION_STATUSES = new Set<string>(ALL_SUBSCRIPTION_STATUSES);
+const VALID_ACCESS_STATUSES = new Set<string>(ALL_ACCESS_STATUSES);
 
 function raw(
   searchParams: Record<string, string | string[] | undefined>,
@@ -40,15 +40,15 @@ function rawAll(
   return Array.isArray(value) ? value : [value];
 }
 
-function parseSubscriptionStatuses(
+function parseAccessStatuses(
   searchParams: Record<string, string | string[] | undefined>,
-): SubscriptionStatus[] {
-  const seen = new Set<SubscriptionStatus>();
-  const statuses: SubscriptionStatus[] = [];
+): AccessStatus[] {
+  const seen = new Set<AccessStatus>();
+  const statuses: AccessStatus[] = [];
 
   for (const rawValue of rawAll(searchParams, "status")) {
-    if (!VALID_SUBSCRIPTION_STATUSES.has(rawValue)) continue;
-    const status = rawValue as SubscriptionStatus;
+    if (!VALID_ACCESS_STATUSES.has(rawValue)) continue;
+    const status = rawValue as AccessStatus;
     if (seen.has(status)) continue;
     seen.add(status);
     statuses.push(status);
@@ -59,7 +59,7 @@ function parseSubscriptionStatuses(
 
 export type BackofficeCommunesListParams = {
   q: string;
-  statuses: SubscriptionStatus[];
+  statuses: AccessStatus[];
   page: number;
   limit: number;
 };
@@ -69,7 +69,7 @@ export function parseBackofficeCommunesListParams(
 ): BackofficeCommunesListParams {
   return {
     q: (raw(searchParams, "q") ?? "").trim(),
-    statuses: parseSubscriptionStatuses(searchParams),
+    statuses: parseAccessStatuses(searchParams),
     page: parsePage(raw(searchParams, "page")),
     limit: parseLimit(
       raw(searchParams, "limit"),
@@ -144,4 +144,4 @@ export function buildBackofficeMembersListQuery(
   return qs ? `?${qs}` : "";
 }
 
-export { ALL_SUBSCRIPTION_STATUSES, PILOT_SUBSCRIPTION_STATUSES };
+export { ALL_ACCESS_STATUSES, PILOT_ACCESS_STATUSES };

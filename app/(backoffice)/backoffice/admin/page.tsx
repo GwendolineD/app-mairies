@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
-import { PILOT_SUBSCRIPTION_STATUSES } from "@/lib/constants/subscription-status";
+import { PILOT_ACCESS_STATUSES } from "@/lib/constants/access-status";
 
 export const dynamic = "force-dynamic";
 
@@ -14,11 +14,11 @@ export default async function BackofficeAdminHomePage() {
       supabase
         .from("communes")
         .select("*", { count: "exact", head: true })
-        .in("subscription_status", [...PILOT_SUBSCRIPTION_STATUSES]),
+        .in("access_status", [...PILOT_ACCESS_STATUSES]),
       supabase
         .from("communes")
         .select("*", { count: "exact", head: true })
-        .eq("subscription_status", "active"),
+        .eq("access_status", "active"),
       supabase.from("analytics_events").select("*", { count: "exact", head: true }),
     ]);
 

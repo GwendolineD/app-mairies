@@ -27,7 +27,7 @@ BEGIN
     department,
     centroid_lat,
     centroid_lng,
-    subscription_status,
+    access_status,
     settings
   )
   VALUES (
@@ -50,7 +50,7 @@ BEGIN
     department = excluded.department,
     centroid_lat = excluded.centroid_lat,
     centroid_lng = excluded.centroid_lng,
-    subscription_status = excluded.subscription_status,
+    access_status = excluded.access_status,
     settings = excluded.settings;
 
   -- Platform admin (backoffice éditeur)

@@ -15,7 +15,9 @@ import {
   ArrowLeft,
   Building2,
   CalendarPlus,
+  CreditCard,
   Flag,
+  Flame,
   LayoutDashboard,
   Mail,
   Settings,
@@ -31,6 +33,8 @@ const ADMIN_NAV_ICONS: Record<AdminNavItem["icon"], LucideIcon> = {
   "calendar-plus": CalendarPlus,
   building2: Building2,
   mail: Mail,
+  flame: Flame,
+  "credit-card": CreditCard,
 };
 
 type NavLinkProps = {

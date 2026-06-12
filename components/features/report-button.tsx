@@ -45,7 +45,7 @@ export function ReportButton({ contextType, contextId }: Props) {
             </Button>
             <Button
               type="button"
-              variant="secondary"
+              variant="ghost"
               className="py-2 text-sm"
               onClick={() => setOpen(false)}
             >

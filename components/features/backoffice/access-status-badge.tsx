@@ -1,19 +1,19 @@
 import { cn } from "@/lib/utils/cn";
-import { SUBSCRIPTION_STATUS_LABELS } from "@/lib/constants/subscription-status";
-import type { SubscriptionStatus } from "@/lib/types";
+import { ACCESS_STATUS_LABELS } from "@/lib/constants/access-status";
+import type { AccessStatus } from "@/lib/types";
 
-const STATUS_CLASS: Record<SubscriptionStatus, string> = {
+const STATUS_CLASS: Record<AccessStatus, string> = {
   inactive: "bg-muted/15 text-muted",
   trial: "bg-orange/15 text-orange",
   active: "bg-mint/15 text-mint",
 };
 
 type Props = {
-  status: SubscriptionStatus;
+  status: AccessStatus;
   className?: string;
 };
 
-export function SubscriptionStatusBadge({ status, className }: Props) {
+export function AccessStatusBadge({ status, className }: Props) {
   return (
     <span
       className={cn(
@@ -22,7 +22,7 @@ export function SubscriptionStatusBadge({ status, className }: Props) {
         className,
       )}
     >
-      {SUBSCRIPTION_STATUS_LABELS[status]}
+      {ACCESS_STATUS_LABELS[status]}
     </span>
   );
 }

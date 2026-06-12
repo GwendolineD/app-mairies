@@ -103,7 +103,7 @@ export function SuspendUserButton({
           <div className="flex flex-wrap justify-end gap-2">
             <Button
               type="button"
-              variant="secondary"
+              variant="ghost"
               disabled={isPending}
               onClick={handleClose}
             >

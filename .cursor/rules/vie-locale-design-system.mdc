@@ -128,11 +128,18 @@ Utilitaire `cn()` : `@/lib/utils` (réexport aussi `@/lib/utils/cn`).
 | -------------------- | ------------------------------------------------------------------ | -------------------------------------------------- |
 | **Primary**          | `gradient-hero`, texte blanc, `rounded-sm`                         | Action principale (1 par écran)                    |
 | **Secondary**        | `bg-surface border border-border`, texte `text-text`, `rounded-sm` | Actions secondaires                                |
-| **Ghost / Tertiary** | Texte seul, hover `bg-warm`                                        | Liens d'action discrets ; souligner si lien inline |
+| **Ghost / Tertiary** | Texte seul, sans bordure, hover `bg-warm`                           | Annuler en modale ; liens d'action discrets        |
 | **Danger**           | `bg-coral text-white`, `rounded-sm`                                | Suppression, signalement                           |
 
+| Taille (`size`) | Padding / typo                         | Usage                                              |
+| --------------- | -------------------------------------- | -------------------------------------------------- |
+| **default**     | `px-5 py-2`, `text-sm`                 | Actions principales d'écran, barres d'outils       |
+| **sm**          | `px-4 py-1.5`, `text-sm`               | Pieds de modale, actions secondaires compactes     |
+| **lg**          | `px-6 py-3`, `text-base`               | CTA marketing, hero                                |
+
 - Toujours `rounded-sm` (8px) pour les boutons d'action — coins discrets, alignés sur les champs de formulaire.
-- Padding standard : `px-5 py-2.5` (Button) ou `px-6 py-3` (GradientButton).
+- Pieds de modale (`Modal`) : **Annuler** → `variant="ghost"` `size="sm"` (sans bordure) ; action principale → `variant="primary"` `size="sm"`.
+- Padding CTA dégradé : `px-6 py-3` (`GradientButton`) — plus grand que le `Button` standard.
 - État disabled : `opacity-50`, pas de couleur grise générique.
 
 ### Champs de formulaire (`components/ui/form-field.tsx`, shadcn `input` / `textarea` / `label`)
@@ -159,6 +166,7 @@ Utilitaire `cn()` : `@/lib/utils` (réexport aussi `@/lib/utils/cn`).
 
 - Toujours `<Modal open onClose title>` — pas de `<div role="dialog">` maison.
 - Mobile : sheet bas (`rounded-t-3xl`) ; desktop : centrée.
+- Pied de modale : `Annuler` en `Button variant="ghost" size="sm"` ; action de confirmation en `variant="primary" size="sm"`.
 
 ### Tags / badges (`components/ui/category-tag.tsx`)
 

@@ -123,6 +123,6 @@ export const createPilotCommuneSchema = z.object({
     .transform((value) => (value?.trim() ? value.trim() : undefined)),
   centroidLat: z.number(),
   centroidLng: z.number(),
-  subscriptionStatus: z.enum(["inactive", "trial", "active"]),
+  accessStatus: z.enum(["inactive", "trial", "active"]),
   mairieAddress: z.string().trim().min(3, "Adresse mairie requise"),
 });

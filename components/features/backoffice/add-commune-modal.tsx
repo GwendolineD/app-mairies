@@ -20,12 +20,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  ALL_SUBSCRIPTION_STATUSES,
-  SUBSCRIPTION_STATUS,
-  SUBSCRIPTION_STATUS_LABELS,
-} from "@/lib/constants/subscription-status";
+  ALL_ACCESS_STATUSES,
+  ACCESS_STATUS,
+  ACCESS_STATUS_LABELS,
+} from "@/lib/constants/access-status";
 import { ROUTES } from "@/lib/constants/routes";
-import type { Commune, SubscriptionStatus } from "@/lib/types";
+import type { Commune, AccessStatus } from "@/lib/types";
 
 type LookupResponse = { commune: Commune | null; error?: string };
 
@@ -40,8 +40,8 @@ export function AddCommuneModal({ open, onClose }: Props) {
   const [communeFeature, setCommuneFeature] = useState<BanFeature | null>(null);
   const [postcode, setPostcode] = useState("");
   const [mairieAddress, setMairieAddress] = useState("");
-  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>(
-    SUBSCRIPTION_STATUS.inactive,
+  const [accessStatus, setAccessStatus] = useState<AccessStatus>(
+    ACCESS_STATUS.inactive,
   );
   const [lookupLoading, setLookupLoading] = useState(false);
   const [duplicateCommuneId, setDuplicateCommuneId] = useState<string | null>(null);
@@ -51,7 +51,7 @@ export function AddCommuneModal({ open, onClose }: Props) {
     setCommuneFeature(null);
     setPostcode("");
     setMairieAddress("");
-    setSubscriptionStatus(SUBSCRIPTION_STATUS.inactive);
+    setAccessStatus(ACCESS_STATUS.inactive);
     setLookupLoading(false);
     setDuplicateCommuneId(null);
     setError(null);
@@ -194,18 +194,18 @@ export function AddCommuneModal({ open, onClose }: Props) {
           name="centroidLng"
           value={String(communeFeature?.lng ?? 0)}
         />
-        <input type="hidden" name="subscriptionStatus" value={subscriptionStatus} />
+        <input type="hidden" name="accessStatus" value={accessStatus} />
 
         <FormField label="Statut">
           <Select
-            items={ALL_SUBSCRIPTION_STATUSES.map((status) => ({
+            items={ALL_ACCESS_STATUSES.map((status) => ({
               value: status,
-              label: SUBSCRIPTION_STATUS_LABELS[status],
+              label: ACCESS_STATUS_LABELS[status],
             }))}
-            value={subscriptionStatus}
+            value={accessStatus}
             onValueChange={(value) => {
               if (!value) return;
-              setSubscriptionStatus(value as SubscriptionStatus);
+              setAccessStatus(value as AccessStatus);
             }}
             disabled={Boolean(duplicateCommuneId)}
           >
@@ -213,9 +213,9 @@ export function AddCommuneModal({ open, onClose }: Props) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {ALL_SUBSCRIPTION_STATUSES.map((status) => (
+              {ALL_ACCESS_STATUSES.map((status) => (
                 <SelectItem key={status} value={status}>
-                  {SUBSCRIPTION_STATUS_LABELS[status]}
+                  {ACCESS_STATUS_LABELS[status]}
                 </SelectItem>
               ))}
             </SelectContent>

@@ -47,11 +47,11 @@ export async function signUp(formData: FormData) {
   const supabase = await createClient();
   const { data: commune } = await supabase
     .from("communes")
-    .select("id, subscription_status")
+    .select("id, access_status")
     .eq("insee_code", parsed.data.inseeCode)
     .single();
 
-  if (!commune || commune.subscription_status !== "active") {
+  if (!commune || commune.access_status !== "active") {
     return { error: { form: ["Cette commune n'est pas encore active."] } };
   }
 
@@ -316,11 +316,11 @@ export async function joinCommune(formData: FormData) {
 
   const { data: commune } = await supabase
     .from("communes")
-    .select("id, subscription_status")
+    .select("id, access_status")
     .eq("insee_code", parsed.data.inseeCode)
     .single();
 
-  if (!commune || commune.subscription_status !== "active") {
+  if (!commune || commune.access_status !== "active") {
     return { error: { form: ["Cette commune n'est pas encore active."] } };
   }
 

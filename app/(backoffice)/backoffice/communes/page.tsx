@@ -6,11 +6,11 @@ import {
   BackofficeListPagination,
   BackofficeListResultCount,
 } from "@/components/features/backoffice/backoffice-list-toolbar";
-import { SubscriptionStatusBadge } from "@/components/features/backoffice/subscription-status-badge";
+import { AccessStatusBadge } from "@/components/features/backoffice/access-status-badge";
 import { Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
-import { ALL_SUBSCRIPTION_STATUSES, SUBSCRIPTION_STATUS_LABELS } from "@/lib/constants/subscription-status";
+import { ALL_ACCESS_STATUSES, ACCESS_STATUS_LABELS } from "@/lib/constants/access-status";
 import { ROUTES } from "@/lib/constants/routes";
 import { listPilotCommunesPage } from "@/lib/queries/backoffice-communes";
 import { formatShortDate } from "@/lib/utils/format-date";
@@ -41,9 +41,9 @@ export default async function BackofficeCommunesPage(props: {
         {...listQueryProps}
         searchPlaceholder="Rechercher par nom ou code postal"
         statusMultiSelect
-        statusOptions={ALL_SUBSCRIPTION_STATUSES.map((status) => ({
+        statusOptions={ALL_ACCESS_STATUSES.map((status) => ({
           value: status,
-          label: SUBSCRIPTION_STATUS_LABELS[status],
+          label: ACCESS_STATUS_LABELS[status],
         }))}
       />
 
@@ -71,7 +71,7 @@ export default async function BackofficeCommunesPage(props: {
                 </>
               }
               titleAside={
-                <SubscriptionStatusBadge status={commune.subscription_status} />
+                <AccessStatusBadge status={commune.access_status} />
               }
               fields={[
                 { label: "Adhérent·es", value: commune.activeMembersCount },

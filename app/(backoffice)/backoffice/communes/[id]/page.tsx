@@ -7,6 +7,7 @@ import {
   BackofficeListResultCount,
 } from "@/components/features/backoffice/backoffice-list-toolbar";
 import { CommuneDetailHeader } from "@/components/features/backoffice/commune-detail-header";
+import { CommuneSubscriptionSection } from "@/components/features/backoffice/commune-subscription-section";
 import { CommuneWelcomeMessageEditor } from "@/components/features/backoffice/commune-welcome-message-editor";
 import { MembershipStatusBadge } from "@/components/features/backoffice/membership-status-badge";
 import { HistoryBackLink } from "@/components/ui/history-back-link";
@@ -14,6 +15,7 @@ import { Card } from "@/components/ui/card";
 import { PageStack } from "@/components/ui/page-stack";
 import { ROUTES } from "@/lib/constants/routes";
 import { getCommuneDetailStats } from "@/lib/queries/backoffice-communes";
+import { getCommuneSubscriptionInfo } from "@/lib/queries/commune-subscription";
 import { listCommuneMembersPage } from "@/lib/queries/backoffice-memberships";
 import { formatShortDate } from "@/lib/utils/format-date";
 import { parseBackofficeMembersListParams } from "@/lib/utils/backoffice-search-params";
@@ -35,12 +37,26 @@ export default async function BackofficeCommuneDetailPage(props: {
   const memberParams = parseBackofficeMembersListParams(searchParams);
   const supabase = await createClient();
 
-  const [stats, membersPage] = await Promise.all([
+  const [stats, membersPage, subscriptionInfo] = await Promise.all([
     getCommuneDetailStats(supabase, id),
     listCommuneMembersPage(supabase, id, memberParams),
+    getCommuneSubscriptionInfo(supabase, id),
   ]);
 
   if (!stats) notFound();
+
+  const cancellationsBySubscription = Object.fromEntries(
+    subscriptionInfo.cancellations
+      .filter((c) => c.subscription_id !== null)
+      .map((c) => [
+        c.subscription_id,
+        {
+          createdAt: c.created_at,
+          requesterName: c.requester_name,
+          comment: c.comment,
+        },
+      ]),
+  );
 
   const memberListQueryProps = {
     params: memberParams,
@@ -59,7 +75,7 @@ export default async function BackofficeCommuneDetailPage(props: {
         inseeCode={stats.commune.insee_code}
         createdAt={stats.commune.created_at}
         communeId={stats.commune.id}
-        subscriptionStatus={stats.commune.subscription_status}
+        accessStatus={stats.commune.access_status}
       />
 
       <div className="space-y-4">
@@ -125,6 +141,13 @@ export default async function BackofficeCommuneDetailPage(props: {
           </Card>
         </div>
       </div>
+
+      <CommuneSubscriptionSection
+        communeId={stats.commune.id}
+        subscribedSince={subscriptionInfo.subscribedSince}
+        periods={subscriptionInfo.periods}
+        cancellationsBySubscription={cancellationsBySubscription}
+      />
 
       <CommuneWelcomeMessageEditor
         communeId={stats.commune.id}

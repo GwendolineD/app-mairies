@@ -1,13 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { ALL_SUBSCRIPTION_STATUSES } from "@/lib/constants/subscription-status";
+import { ALL_ACCESS_STATUSES } from "@/lib/constants/access-status";
 import type { BackofficeCommunesListParams } from "@/lib/utils/backoffice-search-params";
-import type { SubscriptionStatus } from "@/lib/types";
+import type { AccessStatus } from "@/lib/types";
 
 export type CommuneListRow = {
   id: string;
   name: string;
   postcode: string | null;
-  subscription_status: SubscriptionStatus;
+  access_status: AccessStatus;
   created_at: string;
   activeMembersCount: number;
   activeAnnouncementsCount: number;
@@ -83,17 +83,17 @@ export async function listPilotCommunesPage(
 ): Promise<{ items: CommuneListRow[]; totalCount: number }> {
   const offset = (params.page - 1) * params.limit;
   const statuses =
-    params.statuses.length > 0 ? params.statuses : [...ALL_SUBSCRIPTION_STATUSES];
+    params.statuses.length > 0 ? params.statuses : [...ALL_ACCESS_STATUSES];
 
   let countQuery = supabase
     .from("communes")
     .select("id", { count: "exact", head: true })
-    .in("subscription_status", statuses);
+    .in("access_status", statuses);
 
   let dataQuery = supabase
     .from("communes")
-    .select("id, name, postcode, subscription_status, created_at")
-    .in("subscription_status", statuses)
+    .select("id, name, postcode, access_status, created_at")
+    .in("access_status", statuses)
     .order("name")
     .range(offset, offset + params.limit - 1);
 
@@ -118,7 +118,7 @@ export async function listPilotCommunesPage(
     id: row.id,
     name: row.name,
     postcode: row.postcode,
-    subscription_status: row.subscription_status as SubscriptionStatus,
+    access_status: row.access_status as AccessStatus,
     created_at: row.created_at,
     activeMembersCount: counts.members.get(row.id) ?? 0,
     activeAnnouncementsCount: counts.announcements.get(row.id) ?? 0,
@@ -135,7 +135,7 @@ export type CommuneDetailStats = {
     name: string;
     postcode: string | null;
     insee_code: string;
-    subscription_status: SubscriptionStatus;
+    access_status: AccessStatus;
     created_at: string;
     welcomeMessage: string;
   };
@@ -155,7 +155,7 @@ export async function getCommuneDetailStats(
   const { data: commune, error } = await supabase
     .from("communes")
     .select(
-      "id, name, postcode, insee_code, subscription_status, created_at, settings",
+      "id, name, postcode, insee_code, access_status, created_at, settings",
     )
     .eq("id", communeId)
     .maybeSingle();
@@ -215,7 +215,7 @@ export async function getCommuneDetailStats(
       name: commune.name,
       postcode: commune.postcode,
       insee_code: commune.insee_code,
-      subscription_status: commune.subscription_status as SubscriptionStatus,
+      access_status: commune.access_status as AccessStatus,
       created_at: commune.created_at,
       welcomeMessage,
     },

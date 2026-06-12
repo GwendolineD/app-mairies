@@ -44,7 +44,7 @@ async function main() {
       department: c.codeDepartement,
       centroid_lng: c.centre.coordinates[0],
       centroid_lat: c.centre.coordinates[1],
-      subscription_status: "inactive" as const,
+      access_status: "inactive" as const,
     }));
 
     const { error } = await supabase.from("communes").upsert(slice, {

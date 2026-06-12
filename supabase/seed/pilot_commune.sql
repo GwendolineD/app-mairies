@@ -6,7 +6,7 @@ INSERT INTO public.communes (
   department,
   centroid_lat,
   centroid_lng,
-  subscription_status,
+  access_status,
   settings
 )
 VALUES (
@@ -28,5 +28,5 @@ ON CONFLICT (insee_code) DO UPDATE SET
   department = excluded.department,
   centroid_lat = excluded.centroid_lat,
   centroid_lng = excluded.centroid_lng,
-  subscription_status = excluded.subscription_status,
+  access_status = excluded.access_status,
   settings = excluded.settings;

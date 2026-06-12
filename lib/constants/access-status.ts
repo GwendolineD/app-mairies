@@ -1,16 +1,16 @@
-export const SUBSCRIPTION_STATUS = {
+export const ACCESS_STATUS = {
   inactive: "inactive",
   trial: "trial",
   active: "active",
 } as const;
 
-export const PILOT_SUBSCRIPTION_STATUSES = [
-  SUBSCRIPTION_STATUS.trial,
-  SUBSCRIPTION_STATUS.active,
+export const PILOT_ACCESS_STATUSES = [
+  ACCESS_STATUS.trial,
+  ACCESS_STATUS.active,
 ] as const;
 
-export const SUBSCRIPTION_STATUS_LABELS: Record<
-  (typeof SUBSCRIPTION_STATUS)[keyof typeof SUBSCRIPTION_STATUS],
+export const ACCESS_STATUS_LABELS: Record<
+  (typeof ACCESS_STATUS)[keyof typeof ACCESS_STATUS],
   string
 > = {
   inactive: "Inactive",
@@ -18,8 +18,8 @@ export const SUBSCRIPTION_STATUS_LABELS: Record<
   active: "Active",
 };
 
-export const SUBSCRIPTION_STATUS_CHANGE_DISCLAIMERS: Record<
-  (typeof SUBSCRIPTION_STATUS)[keyof typeof SUBSCRIPTION_STATUS],
+export const ACCESS_STATUS_CHANGE_DISCLAIMERS: Record<
+  (typeof ACCESS_STATUS)[keyof typeof ACCESS_STATUS],
   string
 > = {
   inactive:
@@ -30,10 +30,10 @@ export const SUBSCRIPTION_STATUS_CHANGE_DISCLAIMERS: Record<
     "La commune sera pleinement ouverte : inscription et accès résident·es activés pour tous les habitant·es de la commune.",
 };
 
-export const ALL_SUBSCRIPTION_STATUSES = [
-  SUBSCRIPTION_STATUS.inactive,
-  SUBSCRIPTION_STATUS.trial,
-  SUBSCRIPTION_STATUS.active,
+export const ALL_ACCESS_STATUSES = [
+  ACCESS_STATUS.inactive,
+  ACCESS_STATUS.trial,
+  ACCESS_STATUS.active,
 ] as const;
 
 export const BACKOFFICE_COMMUNES_PAGE_SIZES = [10, 25, 50] as const;
