@@ -16,8 +16,7 @@ export default async function MunicipalityDashboardLayout({
     <AdminShell
       navItems={MUNICIPALITY_NAV}
       storageKey={MUNICIPALITY_SIDEBAR_STORAGE_KEY}
-      sidebarSectionLabel="Municipalité"
-      sidebarTitle="Pilotage"
+      sidebarTitle="Espace Mairie"
     >
       {children}
     </AdminShell>

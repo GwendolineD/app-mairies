@@ -12,14 +12,14 @@ import { RESIDENT_BOTTOM_NAV } from "@/lib/constants/routes";
 import { cn } from "@/lib/utils/cn";
 import { isActivePath } from "@/lib/utils/routes";
 import {
-  Building2,
   CalendarDays,
   Home,
+  LampDesk,
+  Landmark,
   LayoutDashboard,
   Mail,
   Megaphone,
   Settings,
-  Shield,
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
@@ -36,8 +36,8 @@ export const RESIDENT_NAV_ICONS: Record<
 };
 
 const BACKOFFICE_NAV_ICONS: Record<BackofficeNavLink["label"], LucideIcon> = {
-  "Espace mairie": Building2,
-  Backoffice: Shield,
+  "Espace mairie": Landmark,
+  Backoffice: LampDesk,
 };
 
 function navIcon(label: string): LucideIcon {
@@ -252,18 +252,15 @@ export function BottomNav({ backofficeLinks = [] }: BackofficeNavProps) {
   );
 }
 
-type ResidentSidebarNavProps = BackofficeNavProps & {
+type ResidentSidebarNavProps = {
   collapsed?: boolean;
 };
 
 /** Desktop only — vertical sidebar (≥ md). */
 export function ResidentSidebarNav({
   collapsed = false,
-  backofficeLinks = [],
 }: ResidentSidebarNavProps) {
-  const pathname = usePathname();
   const links = useResidentNavLinks();
-  const hasBackoffice = backofficeLinks.length > 0;
 
   return (
     <nav
@@ -283,31 +280,6 @@ export function ResidentSidebarNav({
           collapsed={collapsed}
         />
       ))}
-
-      {hasBackoffice ? (
-        <div
-          className={cn(
-            "mt-4 flex flex-col gap-2 border-t border-border pt-4",
-            collapsed && "items-center",
-          )}
-        >
-          {!collapsed ? (
-            <p className="px-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-subtle">
-              Administration
-            </p>
-          ) : null}
-          {backofficeLinks.map((link) => (
-            <ResidentNavLink
-              key={link.id}
-              href={link.href}
-              label={link.label}
-              active={isActivePath(pathname, link.href)}
-              variant="sidebar"
-              collapsed={collapsed}
-            />
-          ))}
-        </div>
-      ) : null}
     </nav>
   );
 }
