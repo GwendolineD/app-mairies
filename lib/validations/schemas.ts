@@ -54,13 +54,27 @@ export const joinCommuneSchema = z.object({
 export const announcementSchema = z.object({
   type: z.enum(ANNOUNCEMENT_TYPE_SLUGS),
   categorySlug: z.enum(ANNOUNCEMENT_CATEGORY_SLUGS),
-  title: z.string().max(70),
-  description: z.string().max(1000),
+  title: z.string().trim().min(1, "Titre requis").max(70, "Titre trop long (70 caractères max.)"),
+  description: z
+    .string()
+    .trim()
+    .min(1, "Description requise")
+    .max(1000, "Description trop longue (1000 caractères max.)"),
   targetDate: z
     .string()
     .optional()
     .transform((v) => (v?.trim() ? v : undefined)),
   photoUrl: z.string().url().optional().or(z.literal("")),
+  addressStreet: z.string().trim().min(1, "Rue requise"),
+  addressCity: z.string().trim().min(1, "Ville requise"),
+  addressCitycode: z.string().trim().min(1, "Commune invalide"),
+  addressPostcode: z.string().trim().min(4, "Code postal invalide"),
+  addressLat: z
+    .number({ error: "Localisation invalide : sélectionnez une adresse dans la liste." })
+    .finite("Localisation invalide : sélectionnez une adresse dans la liste."),
+  addressLng: z
+    .number({ error: "Localisation invalide : sélectionnez une adresse dans la liste." })
+    .finite("Localisation invalide : sélectionnez une adresse dans la liste."),
 });
 
 import { INITIATIVE_CATEGORY_SLUGS } from "@/lib/constants/initiative-categories";

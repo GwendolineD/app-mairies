@@ -4,6 +4,7 @@ import { ResidentHeader } from "@/components/features/resident-header";
 import { ResidentShellClient } from "@/components/features/resident-shell-client";
 import { getResidentBackofficeNav } from "@/lib/auth/permissions";
 import { requireActiveMembership } from "@/lib/auth/session";
+import { membershipToAddress } from "@/lib/types";
 
 export default async function ResidentRootLayout({
   children,
@@ -28,7 +29,10 @@ export default async function ResidentRootLayout({
         <ResidentSidebar />
 
         <main className="min-w-0 flex-1 overflow-y-auto bg-surface px-4 py-4 pb-28 md:px-6 md:py-6 md:pb-6 lg:px-8">
-          <ResidentShellClient communeId={ctx.activeMembership!.commune_id}>
+          <ResidentShellClient
+            communeId={ctx.activeMembership!.commune_id}
+            membershipAddress={membershipToAddress(ctx.activeMembership!)}
+          >
             {children}
           </ResidentShellClient>
         </main>

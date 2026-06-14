@@ -8,12 +8,14 @@ import { buildAnnouncementListQuery } from "@/lib/utils/search-params";
 import { CreateAnnouncementModal } from "@/components/features/create-announcement-modal";
 import { CreateInitiativeModal } from "@/components/features/create-initiative-modal";
 import { useCreationModals } from "@/components/features/creation-modal-context";
+import type { MembershipAddress } from "@/lib/types";
 
 type Props = {
   communeId: string;
+  membershipAddress: MembershipAddress;
 };
 
-export function CreationModalHost({ communeId }: Props) {
+export function CreationModalHost({ communeId, membershipAddress }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const {
@@ -65,6 +67,7 @@ export function CreationModalHost({ communeId }: Props) {
         open={announcementOpen}
         onClose={handleClose}
         communeId={communeId}
+        membershipAddress={membershipAddress}
         presetType={announcementPresetType}
       />
       <CreateInitiativeModal

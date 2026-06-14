@@ -55,6 +55,26 @@ export type Membership = {
   commune?: Commune;
 };
 
+export type MembershipAddress = {
+  street: string | null;
+  city: string | null;
+  citycode: string | null;
+  postcode: string | null;
+  lat: number | null;
+  lng: number | null;
+};
+
+export function membershipToAddress(membership: Membership): MembershipAddress {
+  return {
+    street: membership.address_street,
+    city: membership.address_city,
+    citycode: membership.address_citycode,
+    postcode: membership.address_postcode,
+    lat: membership.address_lat,
+    lng: membership.address_lng,
+  };
+}
+
 export type Announcement = {
   id: string;
   commune_id: string;
@@ -66,6 +86,10 @@ export type Announcement = {
   photo_url: string | null;
   target_date: string | null;
   status: "ouverte" | "pourvue" | "archivee" | "expiree";
+  address_street: string | null;
+  address_city: string | null;
+  address_citycode: string | null;
+  address_postcode: string | null;
   address_lat: number | null;
   address_lng: number | null;
   created_at: string;

@@ -1,9 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, HandHeart, Loader2, Plus } from "lucide-react";
+import { Check, HandHeart, Loader2, MapPin, Plus } from "lucide-react";
 import { createAnnouncement } from "@/lib/actions/announcements";
+import { searchAddresses, type BanFeature } from "@/lib/ban/client";
+import { formatStreetDisplay } from "@/lib/ban/display";
 import {
   ANNOUNCEMENT_CATEGORIES,
   getCategoryBySlug,
@@ -30,7 +32,9 @@ import {
 import { GradientButton } from "@/components/ui/gradient-button";
 import { Modal } from "@/components/ui/modal";
 import { ImageDropzone } from "@/components/features/image-dropzone";
+import { BanAutocomplete } from "@/components/features/ban-autocomplete";
 import { cn } from "@/lib/utils/cn";
+import type { MembershipAddress } from "@/lib/types";
 
 const TITLE_MAX = 70;
 const DESCRIPTION_MAX = 1000;
@@ -44,12 +48,45 @@ const ANNOUNCEMENT_TIPS = [
 
 type SubmitPhase = "idle" | "uploading" | "publishing";
 
+type AddressFormState = {
+  street: string;
+  city: string;
+  citycode: string;
+  postcode: string;
+  lat: number | null;
+  lng: number | null;
+};
+
 type Props = {
   open: boolean;
   onClose: () => void;
   communeId: string;
+  membershipAddress: MembershipAddress;
   presetType?: AnnouncementType;
 };
+
+function getInitialAddressState(
+  membershipAddress: MembershipAddress,
+): { addressData: AddressFormState; addressConfirmed: boolean } {
+  const street = membershipAddress.street?.trim() ?? "";
+  const city = membershipAddress.city?.trim() ?? "";
+  const citycode = membershipAddress.citycode?.trim() ?? "";
+  const postcode = membershipAddress.postcode?.trim() ?? "";
+  const lat = membershipAddress.lat;
+  const lng = membershipAddress.lng;
+  const addressConfirmed =
+    street.length > 0 &&
+    city.length > 0 &&
+    citycode.length > 0 &&
+    postcode.length >= 4 &&
+    lat != null &&
+    lng != null;
+
+  return {
+    addressData: { street, city, citycode, postcode, lat, lng },
+    addressConfirmed,
+  };
+}
 
 function SectionHeading({
   number,
@@ -80,10 +117,15 @@ export function CreateAnnouncementModal({
   open,
   onClose,
   communeId,
+  membershipAddress,
   presetType = "demande",
 }: Props) {
   const router = useRouter();
   const draftKey = `announcement:${communeId}`;
+  const initialAddress = useMemo(
+    () => getInitialAddressState(membershipAddress),
+    [membershipAddress],
+  );
   const [type, setType] = useState<AnnouncementType>(presetType);
   const [categorySlug, setCategorySlug] = useState<AnnouncementCategorySlug>(
     ANNOUNCEMENT_CATEGORIES[0].slug,
@@ -92,22 +134,40 @@ export function CreateAnnouncementModal({
   const [description, setDescription] = useState("");
   const [targetDate, setTargetDate] = useState("");
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [addressData, setAddressData] = useState<AddressFormState>(
+    initialAddress.addressData,
+  );
+  const [addressConfirmed, setAddressConfirmed] = useState(
+    initialAddress.addressConfirmed,
+  );
+  const [addressStreetError, setAddressStreetError] = useState<string | null>(
+    null,
+  );
   const [submitting, setSubmitting] = useState(false);
   const [submitPhase, setSubmitPhase] = useState<SubmitPhase>("idle");
   const [formError, setFormError] = useState<string | null>(null);
 
+  const fetchStreetSuggestions = useCallback(
+    (query: string) => searchAddresses(query, addressData.citycode),
+    [addressData.citycode],
+  );
+
   const resetForm = useCallback(() => {
     const initial = getInitialFormState(presetType);
+    const address = getInitialAddressState(membershipAddress);
     setType(initial.type);
     setCategorySlug(initial.categorySlug);
     setTitle(initial.title);
     setDescription(initial.description);
     setTargetDate(initial.targetDate);
     setPendingFile(initial.pendingFile);
+    setAddressData(address.addressData);
+    setAddressConfirmed(address.addressConfirmed);
+    setAddressStreetError(null);
     setFormError(null);
     setSubmitting(false);
     setSubmitPhase("idle");
-  }, [presetType]);
+  }, [presetType, membershipAddress]);
 
   useEffect(() => {
     if (!open) return;
@@ -121,11 +181,67 @@ export function CreateAnnouncementModal({
     onClose();
   }, [submitting, resetForm, draftKey, onClose]);
 
-  const canSubmit = title.trim().length > 0 && description.trim().length > 0;
+  const canSubmit =
+    title.trim().length > 0 &&
+    description.trim().length > 0 &&
+    addressConfirmed &&
+    addressData.street.trim().length > 0 &&
+    addressData.city.trim().length > 0 &&
+    addressData.citycode.trim().length > 0 &&
+    addressData.postcode.trim().length >= 4 &&
+    addressData.lat != null &&
+    addressData.lng != null;
+
+  function invalidateAddressCoords(
+    patch: Partial<Pick<AddressFormState, "street" | "city" | "postcode">>,
+  ) {
+    setAddressData((prev) => ({
+      ...prev,
+      ...patch,
+      lat: null,
+      lng: null,
+    }));
+    setAddressConfirmed(false);
+    setAddressStreetError(null);
+  }
+
+  function handleStreetInputChange(text: string) {
+    invalidateAddressCoords({ street: text });
+  }
+
+  function handleCityChange(city: string) {
+    invalidateAddressCoords({ city });
+  }
+
+  function handlePostcodeChange(postcode: string) {
+    invalidateAddressCoords({ postcode });
+  }
+
+  function handlePickStreet(feature: BanFeature) {
+    setAddressData((prev) => ({
+      ...prev,
+      street: formatStreetDisplay(feature.label),
+      city: feature.city?.trim() || prev.city,
+      citycode: feature.citycode?.trim() || prev.citycode,
+      postcode: feature.postcode?.trim() || prev.postcode,
+      lat: feature.lat,
+      lng: feature.lng,
+    }));
+    setAddressConfirmed(true);
+    setAddressStreetError(null);
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setFormError(null);
+    setAddressStreetError(null);
+
+    if (!addressConfirmed || addressData.lat == null || addressData.lng == null) {
+      setAddressStreetError(
+        "Sélectionnez une adresse dans la liste pour valider la localisation.",
+      );
+      return;
+    }
 
     setSubmitting(true);
 
@@ -145,6 +261,12 @@ export function CreateAnnouncementModal({
       fd.set("description", description);
       fd.set("targetDate", targetDate);
       fd.set("photoUrl", photoUrl);
+      fd.set("addressStreet", addressData.street.trim());
+      fd.set("addressCity", addressData.city.trim());
+      fd.set("addressCitycode", addressData.citycode.trim());
+      fd.set("addressPostcode", addressData.postcode.trim());
+      fd.set("addressLat", String(addressData.lat));
+      fd.set("addressLng", String(addressData.lng));
       const { id } = await createAnnouncement(fd);
       clearFormDraft(draftKey);
       setSubmitting(false);
@@ -297,6 +419,57 @@ export function CreateAnnouncementModal({
               </span>
             </div>
           </FormField>
+        </section>
+
+        <section className="space-y-4">
+          <SectionHeading number={4} title="Où se situe l'annonce ?" />
+          <FormField label="Rue *">
+            <BanAutocomplete
+              label="Rue"
+              hideLabel
+              placeholder="Numéro, rue..."
+              fetchSuggestions={fetchStreetSuggestions}
+              onSelect={handlePickStreet}
+              onInputChange={handleStreetInputChange}
+              value={addressData.street || undefined}
+              formatSuggestion={(feature) => formatStreetDisplay(feature.label)}
+              disabled={!addressData.citycode}
+              leadingIcon={MapPin}
+            />
+            {addressStreetError ? (
+              <p className="mt-1.5 text-xs font-medium text-coral" role="alert">
+                {addressStreetError}
+              </p>
+            ) : (
+              <p className="mt-1.5 text-xs font-medium text-subtle">
+                Préremplie avec votre adresse. Modifiez-la si l&apos;annonce se
+                situe ailleurs dans la commune.
+              </p>
+            )}
+          </FormField>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <FormField label="Code postal *">
+              <Input
+                name="addressPostcode"
+                required
+                autoComplete="postal-code"
+                inputMode="numeric"
+                value={addressData.postcode}
+                onChange={(e) => handlePostcodeChange(e.target.value)}
+                placeholder="27000"
+              />
+            </FormField>
+            <FormField label="Ville *">
+              <Input
+                name="addressCity"
+                required
+                autoComplete="address-level2"
+                value={addressData.city}
+                onChange={(e) => handleCityChange(e.target.value)}
+                placeholder="Ville"
+              />
+            </FormField>
+          </div>
         </section>
 
         <section className="space-y-4">

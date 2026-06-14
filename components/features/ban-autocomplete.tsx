@@ -12,6 +12,7 @@ type Props = {
   placeholder: string;
   fetchSuggestions: (query: string) => Promise<BanFeature[]>;
   onSelect: (feature: BanFeature) => void;
+  onInputChange?: (text: string) => void;
   value?: string;
   disabled?: boolean;
   inputClassName?: string;
@@ -33,6 +34,7 @@ export function BanAutocomplete({
   placeholder,
   fetchSuggestions,
   onSelect,
+  onInputChange,
   value,
   disabled,
   inputClassName,
@@ -72,6 +74,7 @@ export function BanAutocomplete({
 
   function handleChange(text: string) {
     setQuery(text);
+    onInputChange?.(text);
     setActiveIndex(-1);
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
