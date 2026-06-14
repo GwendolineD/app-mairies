@@ -122,7 +122,7 @@ export default async function AnnonceDetailPage(props: {
           )}
 
           {!isAuthor ? (
-            <ContactAnnouncementButton announcementId={ann.id} label={contactLabel} />
+            <ContactAnnouncementButton contextId={ann.id} label={contactLabel} />
           ) : null}
         </Card>
 
