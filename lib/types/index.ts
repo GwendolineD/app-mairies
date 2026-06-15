@@ -132,6 +132,8 @@ export type AgendaEventRecord = {
   updated_at: string;
 };
 
+export type ConversationContextType = "announcement" | "initiative" | "event";
+
 export type MessageRow = {
   id: string;
   conversation_id: string;
@@ -141,8 +143,46 @@ export type MessageRow = {
   edited_at: string | null;
 };
 
-export type ConversationPreview = {
+export type ConversationRow = {
   id: string;
+  commune_id: string;
+  created_by_user_id: string;
+  context_type: ConversationContextType | null;
+  context_id: string | null;
+  title: string | null;
+  participant_a: string | null;
+  participant_b: string | null;
+  created_at: string;
+  updated_at: string;
+  last_message_at: string | null;
+  last_message_preview: string | null;
+  last_message_sender_id: string | null;
+};
+
+/** Returned by the `list_my_conversations` RPC — one row per conversation for the current user. */
+export type ConversationInboxItem = {
+  conversation_id: string;
+  context_type: ConversationContextType | null;
+  context_id: string | null;
   title: string | null;
   updated_at: string;
+  last_message_at: string | null;
+  last_message_preview: string | null;
+  last_message_sender_id: string | null;
+  archived_at: string | null;
+  last_read_at: string | null;
+  other_user_id: string | null;
+  other_display_name: string | null;
+  other_avatar_url: string | null;
+  unread_count: number;
 };
+
+export type NotificationPreferenceKey =
+  | "notify_message_announcement"
+  | "notify_message_initiative"
+  | "notify_message_event"
+  | "notify_new_announcement"
+  | "notify_new_initiative"
+  | "notify_new_event";
+
+export type NotificationPreferences = Record<NotificationPreferenceKey, boolean>;

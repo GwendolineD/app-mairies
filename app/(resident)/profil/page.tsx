@@ -1,6 +1,8 @@
 import { requireActiveMembership } from "@/lib/auth/session";
 import { createNeighborInvite } from "@/lib/actions/messages";
 import { createClient } from "@/lib/supabase/server";
+import { getNotificationPreferences } from "@/lib/queries/messages";
+import { getPushPublicKey } from "@/lib/actions/notifications";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/form-field";
@@ -8,6 +10,7 @@ import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
 import { ProfilAddCommuneButton } from "@/components/features/profil-add-commune-button";
 import { ProfilClient } from "@/components/features/profil-client";
+import { NotificationPreferencesForm } from "@/components/features/notification-preferences-form";
 
 export default async function ProfilPage() {
   const ctx = await requireActiveMembership();
@@ -20,20 +23,23 @@ export default async function ProfilPage() {
     .eq("user_id", ctx.userId)
     .single();
 
-  const [annCount, initCount, partCount] = await Promise.all([
-    supabase
-      .from("announcements")
-      .select("id", { count: "exact", head: true })
-      .eq("author_membership_id", membership.id),
-    supabase
-      .from("initiatives")
-      .select("id", { count: "exact", head: true })
-      .eq("author_membership_id", membership.id),
-    supabase
-      .from("initiative_responses")
-      .select("id", { count: "exact", head: true })
-      .eq("membership_id", membership.id),
-  ]);
+  const [annCount, initCount, partCount, notificationPrefs, pushPublicKey] =
+    await Promise.all([
+      supabase
+        .from("announcements")
+        .select("id", { count: "exact", head: true })
+        .eq("author_membership_id", membership.id),
+      supabase
+        .from("initiatives")
+        .select("id", { count: "exact", head: true })
+        .eq("author_membership_id", membership.id),
+      supabase
+        .from("initiative_responses")
+        .select("id", { count: "exact", head: true })
+        .eq("membership_id", membership.id),
+      getNotificationPreferences(supabase, ctx.userId),
+      getPushPublicKey(),
+    ]);
 
   const communeNames = ctx.memberships
     .map((m) => m.commune?.name)
@@ -68,6 +74,11 @@ export default async function ProfilPage() {
           initiatives: initCount.count ?? 0,
           participations: partCount.count ?? 0,
         }}
+      />
+
+      <NotificationPreferencesForm
+        initial={notificationPrefs}
+        pushPublicKey={pushPublicKey}
       />
 
       <Card className="space-y-3 p-5">

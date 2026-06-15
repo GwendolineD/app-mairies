@@ -54,6 +54,7 @@ type NavLinkProps = {
   active: boolean;
   variant: "bottom" | "sidebar";
   collapsed?: boolean;
+  badge?: number;
 };
 
 const SIDEBAR_LINK_CLASS = (active: boolean, collapsed: boolean) =>
@@ -65,7 +66,19 @@ const SIDEBAR_LINK_CLASS = (active: boolean, collapsed: boolean) =>
     active ? "bg-soft-pink text-coral" : "text-text hover:bg-soft-pink/70",
   );
 
-function ResidentNavLink({ href, label, active, variant, collapsed }: NavLinkProps) {
+function BadgePill({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <span
+      aria-label={`${count} non lus`}
+      className="flex size-5 items-center justify-center rounded-full bg-coral text-[10px] font-bold text-white"
+    >
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
+
+function ResidentNavLink({ href, label, active, variant, collapsed, badge }: NavLinkProps) {
   const Icon = navIcon(label);
 
   if (variant === "sidebar") {
@@ -83,7 +96,7 @@ function ResidentNavLink({ href, label, active, variant, collapsed }: NavLinkPro
               <Link
                 href={href}
                 aria-label={label}
-                className={linkClass}
+                className={cn(linkClass, "relative")}
               />
             }
           >
@@ -94,6 +107,9 @@ function ResidentNavLink({ href, label, active, variant, collapsed }: NavLinkPro
               )}
               aria-hidden
             />
+            {badge && badge > 0 ? (
+              <span className="absolute top-1 right-1 flex size-2.5 rounded-full bg-coral" />
+            ) : null}
           </PopoverTrigger>
           <PopoverContent
             side="right"
@@ -123,7 +139,8 @@ function ResidentNavLink({ href, label, active, variant, collapsed }: NavLinkPro
           className={cn("size-5 shrink-0", active ? "text-coral" : "text-coral/85")}
           aria-hidden
         />
-        {label}
+        <span className="flex-1">{label}</span>
+        <BadgePill count={badge ?? 0} />
       </Link>
     );
   }
@@ -132,13 +149,20 @@ function ResidentNavLink({ href, label, active, variant, collapsed }: NavLinkPro
     <Link
       href={href}
       className={cn(
-        "flex flex-col items-center gap-0.5 rounded-xl px-2 py-1 text-[10px] font-semibold transition",
+        "relative flex flex-col items-center gap-0.5 rounded-xl px-2 py-1 text-[10px] font-semibold transition",
         active
           ? "bg-soft-pink text-purple"
           : "text-muted hover:text-text",
       )}
     >
-      <Icon className="size-6" aria-hidden />
+      <span className="relative">
+        <Icon className="size-6" aria-hidden />
+        {badge && badge > 0 ? (
+          <span className="absolute -top-1 -right-1.5 flex size-3.5 items-center justify-center rounded-full bg-coral text-[8px] font-bold leading-none text-white">
+            {badge > 9 ? "9+" : badge}
+          </span>
+        ) : null}
+      </span>
       <span className="text-center">{label}</span>
     </Link>
   );
@@ -221,10 +245,14 @@ function BackofficeBottomNavItem({ links }: { links: BackofficeNavLink[] }) {
 
 type BackofficeNavProps = {
   backofficeLinks?: BackofficeNavLink[];
+  unreadMessages?: number;
 };
 
 /** Mobile only — fixed bottom bar (< md). */
-export function BottomNav({ backofficeLinks = [] }: BackofficeNavProps) {
+export function BottomNav({
+  backofficeLinks = [],
+  unreadMessages = 0,
+}: BackofficeNavProps) {
   const links = useResidentNavLinks();
   const hasBackoffice = backofficeLinks.length > 0;
 
@@ -245,6 +273,7 @@ export function BottomNav({ backofficeLinks = [] }: BackofficeNavProps) {
           label={label}
           active={active}
           variant="bottom"
+          badge={label === "Messages" ? unreadMessages : undefined}
         />
       ))}
       {hasBackoffice ? <BackofficeBottomNavItem links={backofficeLinks} /> : null}
@@ -254,11 +283,13 @@ export function BottomNav({ backofficeLinks = [] }: BackofficeNavProps) {
 
 type ResidentSidebarNavProps = {
   collapsed?: boolean;
+  unreadMessages?: number;
 };
 
 /** Desktop only — vertical sidebar (≥ md). */
 export function ResidentSidebarNav({
   collapsed = false,
+  unreadMessages = 0,
 }: ResidentSidebarNavProps) {
   const links = useResidentNavLinks();
 
@@ -278,6 +309,7 @@ export function ResidentSidebarNav({
           active={active}
           variant="sidebar"
           collapsed={collapsed}
+          badge={label === "Messages" ? unreadMessages : undefined}
         />
       ))}
     </nav>

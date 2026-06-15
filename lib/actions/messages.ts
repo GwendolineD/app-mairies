@@ -5,40 +5,76 @@ import { requireActiveMembership } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
 import { messageSchema } from "@/lib/validations/schemas";
+import {
+  notifyUser,
+  shouldNotifyMessage,
+} from "@/lib/services/push-notifications";
+import type { ConversationContextType } from "@/lib/types";
 
 function normalizePair(userIdA: string, userIdB: string): [string, string] {
   return userIdA < userIdB ? [userIdA, userIdB] : [userIdB, userIdA];
 }
 
-export async function ensureAnnouncementConversation(announcementId: string) {
+type EnsureResult = {
+  conversationId: string | null;
+  error: string | null;
+};
+
+type ContextRow = {
+  id: string;
+  commune_id: string;
+  title: string;
+  author_membership_id: string;
+};
+
+const CONTEXT_TABLES: Record<ConversationContextType, string> = {
+  announcement: "announcements",
+  initiative: "initiatives",
+  event: "events",
+};
+
+/**
+ * Generic helper: ensure a 1:1 conversation exists between the current user and
+ * the author of a given context (announcement | initiative | event), scoped to
+ * the active commune. Idempotent thanks to the partial unique index
+ * (commune_id, context_type, context_id, participant_a, participant_b).
+ */
+async function ensureConversation(
+  contextType: ConversationContextType,
+  contextId: string,
+): Promise<EnsureResult> {
   const ctx = await requireActiveMembership();
   const supabase = await createClient();
   const communeId = ctx.activeMembership!.commune_id;
+  const table = CONTEXT_TABLES[contextType];
 
-  const { data: announcement, error: annError } = await supabase
-    .from("announcements")
-    .select("id, title, author_membership_id")
-    .eq("id", announcementId)
+  const { data: row, error: ctxError } = await supabase
+    .from(table)
+    .select("id, commune_id, title, author_membership_id")
+    .eq("id", contextId)
     .eq("commune_id", communeId)
     .single();
 
-  if (annError || !announcement) {
-    return { error: "Annonce introuvable", conversationId: null as string | null };
+  if (ctxError || !row) {
+    return { error: "Élément introuvable", conversationId: null };
   }
+  const context = row as ContextRow;
 
   const { data: authorMembership } = await supabase
     .from("memberships")
     .select("user_id")
-    .eq("id", announcement.author_membership_id)
+    .eq("id", context.author_membership_id)
     .single();
 
   const authorUserId = authorMembership?.user_id;
   if (!authorUserId) {
     return { error: "Auteur introuvable", conversationId: null };
   }
-
   if (authorUserId === ctx.userId) {
-    return { error: "Vous ne pouvez pas vous contacter vous-même", conversationId: null };
+    return {
+      error: "Vous ne pouvez pas vous contacter vous-même",
+      conversationId: null,
+    };
   }
 
   const [participantA, participantB] = normalizePair(ctx.userId, authorUserId);
@@ -47,14 +83,20 @@ export async function ensureAnnouncementConversation(announcementId: string) {
     .from("conversations")
     .select("id")
     .eq("commune_id", communeId)
-    .eq("context_type", "announcement")
-    .eq("context_id", announcementId)
+    .eq("context_type", contextType)
+    .eq("context_id", contextId)
     .eq("participant_a", participantA)
     .eq("participant_b", participantB)
     .maybeSingle();
 
   if (existing) {
-    return { conversationId: existing.id, error: null as string | null };
+    // Restore from archive if the requester had soft-deleted this conversation
+    await supabase
+      .from("conversation_participants")
+      .update({ archived_at: null })
+      .eq("conversation_id", existing.id)
+      .eq("user_id", ctx.userId);
+    return { conversationId: existing.id, error: null };
   }
 
   const { data: conv, error } = await supabase
@@ -62,9 +104,9 @@ export async function ensureAnnouncementConversation(announcementId: string) {
     .insert({
       commune_id: communeId,
       created_by_user_id: ctx.userId,
-      context_type: "announcement",
-      context_id: announcementId,
-      title: announcement.title,
+      context_type: contextType,
+      context_id: contextId,
+      title: context.title,
       participant_a: participantA,
       participant_b: participantB,
     })
@@ -84,38 +126,170 @@ export async function ensureAnnouncementConversation(announcementId: string) {
   return { conversationId: conv.id, error: null };
 }
 
-export async function sendConversationMessage(formData: FormData) {
+export async function ensureAnnouncementConversation(announcementId: string) {
+  return ensureConversation("announcement", announcementId);
+}
+
+export async function ensureInitiativeConversation(initiativeId: string) {
+  return ensureConversation("initiative", initiativeId);
+}
+
+export async function ensureEventConversation(eventId: string) {
+  return ensureConversation("event", eventId);
+}
+
+async function insertConversationMessage(
+  conversationId: string,
+  body: string,
+): Promise<{ success: true } | { error: string }> {
   const ctx = await requireActiveMembership();
+  const supabase = await createClient();
+
+  const { data: conversation } = await supabase
+    .from("conversations")
+    .select("id, context_type, title, participant_a, participant_b")
+    .eq("id", conversationId)
+    .maybeSingle();
+
+  if (!conversation) return { error: "Conversation inaccessible" };
+
+  const recipientUserId =
+    conversation.participant_a === ctx.userId
+      ? conversation.participant_b
+      : conversation.participant_a;
+
+  if (!recipientUserId) return { error: "Conversation invalide" };
+
+  const { error } = await supabase.from("messages").insert({
+    conversation_id: conversationId,
+    sender_id: ctx.userId,
+    body,
+  });
+  if (error) return { error: error.message };
+
+  // Mark sender's last_read_at — their own message counts as read.
+  await supabase
+    .from("conversation_participants")
+    .update({ last_read_at: new Date().toISOString(), archived_at: null })
+    .eq("conversation_id", conversationId)
+    .eq("user_id", ctx.userId);
+
+  // Notify recipient if their preferences allow.
+  const allowed = await shouldNotifyMessage(
+    supabase,
+    recipientUserId,
+    conversation.context_type as ConversationContextType | null,
+  );
+  if (allowed) {
+    const senderName = ctx.profile.display_name ?? "Un·e voisin·e";
+    const preview = body.slice(0, 140);
+    await notifyUser(recipientUserId, {
+      title: `Nouveau message — ${senderName}`,
+      body: conversation.title
+        ? `${conversation.title} · ${preview}`
+        : preview,
+      url: ROUTES.messages.detail(conversationId),
+      tag: `conv:${conversationId}`,
+      payloadJson: {
+        conversation_id: conversationId,
+        context_type: conversation.context_type,
+      },
+    });
+  }
+
+  revalidatePath(ROUTES.messages.list);
+  revalidatePath(ROUTES.messages.detail(conversationId));
+  return { success: true };
+}
+
+export async function sendConversationMessage(formData: FormData) {
   const conversationId = formData.get("conversationId") as string;
   const body = formData.get("body") as string;
 
   const parsed = messageSchema.safeParse({ body });
   if (!parsed.success) return { error: "Message invalide" };
 
+  return insertConversationMessage(conversationId, parsed.data.body);
+}
+
+const CONTEXT_TYPES: ConversationContextType[] = [
+  "announcement",
+  "initiative",
+  "event",
+];
+
+/** Ensure a context conversation exists, then send the first (or next) message. */
+export async function sendContextMessage(formData: FormData) {
+  const contextType = formData.get("contextType") as ConversationContextType;
+  const contextId = formData.get("contextId") as string;
+  const body = formData.get("body") as string;
+
+  if (!CONTEXT_TYPES.includes(contextType)) {
+    return { error: "Contexte invalide", conversationId: null };
+  }
+  if (!contextId) {
+    return { error: "Élément introuvable", conversationId: null };
+  }
+
+  const parsed = messageSchema.safeParse({ body });
+  if (!parsed.success) {
+    return { error: "Message invalide", conversationId: null };
+  }
+
+  const ensured = await ensureConversation(contextType, contextId);
+  if (!ensured.conversationId) {
+    return { error: ensured.error ?? "Erreur", conversationId: null };
+  }
+
+  const sent = await insertConversationMessage(
+    ensured.conversationId,
+    parsed.data.body,
+  );
+  if ("error" in sent) {
+    return { error: sent.error, conversationId: null };
+  }
+
+  return { success: true as const, conversationId: ensured.conversationId };
+}
+
+/** Mark a conversation as read for the current user (touches last_read_at). */
+export async function markConversationRead(conversationId: string) {
+  const ctx = await requireActiveMembership();
   const supabase = await createClient();
-
-  const { data: participant } = await supabase
-    .from("conversation_participants")
-    .select("conversation_id")
-    .eq("conversation_id", conversationId)
-    .eq("user_id", ctx.userId)
-    .maybeSingle();
-
-  if (!participant) return { error: "Conversation inaccessible" };
-
-  const { error } = await supabase.from("messages").insert({
-    conversation_id: conversationId,
-    sender_id: ctx.userId,
-    body: parsed.data.body,
-  });
-
-  if (error) return { error: error.message };
-
   await supabase
-    .from("conversations")
-    .update({ updated_at: new Date().toISOString() })
-    .eq("id", conversationId);
+    .from("conversation_participants")
+    .update({ last_read_at: new Date().toISOString() })
+    .eq("conversation_id", conversationId)
+    .eq("user_id", ctx.userId);
+  revalidatePath(ROUTES.messages.list);
+  return { success: true };
+}
 
+/** Soft-delete: archive the conversation for the current user only (30-day trash). */
+export async function archiveConversation(conversationId: string) {
+  const ctx = await requireActiveMembership();
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("conversation_participants")
+    .update({ archived_at: new Date().toISOString() })
+    .eq("conversation_id", conversationId)
+    .eq("user_id", ctx.userId);
+  if (error) return { error: error.message };
+  revalidatePath(ROUTES.messages.list);
+  revalidatePath(ROUTES.messages.detail(conversationId));
+  return { success: true };
+}
+
+/** Restore an archived conversation from the trash for the current user. */
+export async function restoreConversation(conversationId: string) {
+  const ctx = await requireActiveMembership();
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("conversation_participants")
+    .update({ archived_at: null })
+    .eq("conversation_id", conversationId)
+    .eq("user_id", ctx.userId);
+  if (error) return { error: error.message };
   revalidatePath(ROUTES.messages.list);
   revalidatePath(ROUTES.messages.detail(conversationId));
   return { success: true };

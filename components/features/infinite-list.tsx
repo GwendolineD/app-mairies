@@ -8,7 +8,12 @@ import { AnnouncementCard } from "@/components/features/announcement-card";
 type Props = {
   initialItems: AnnouncementWithAuthor[];
   initialCursor: string | null;
-  filters: { type?: string; categorie?: string };
+  filters: {
+    type?: string;
+    categories?: string[];
+    date?: string;
+    dateValue?: string;
+  };
 };
 
 export function AnnouncementsInfiniteList({
@@ -21,10 +26,18 @@ export function AnnouncementsInfiniteList({
   const [pending, startTransition] = useTransition();
   const sentinelRef = useRef<HTMLDivElement>(null);
 
+  const categoriesKey = filters.categories?.join(",") ?? "";
   useEffect(() => {
     setItems(initialItems);
     setCursor(initialCursor);
-  }, [initialItems, initialCursor, filters.type, filters.categorie]);
+  }, [
+    initialItems,
+    initialCursor,
+    filters.type,
+    categoriesKey,
+    filters.date,
+    filters.dateValue,
+  ]);
 
   useEffect(() => {
     if (!cursor) return;
