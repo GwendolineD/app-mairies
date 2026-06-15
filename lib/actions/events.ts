@@ -31,7 +31,7 @@ export async function createEvent(formData: FormData): Promise<void> {
     description: parsed.data.description ?? null,
     starts_at: new Date(parsed.data.startsAt).toISOString(),
     ends_at: new Date(parsed.data.endsAt).toISOString(),
-    address_label: parsed.data.addressLabel ?? membership.address_label,
+    address_label: parsed.data.addressLabel ?? null,
     address_lat: membership.address_lat,
     address_lng: membership.address_lng,
     status: EVENT_STATUS.active,
