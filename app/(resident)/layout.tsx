@@ -3,6 +3,8 @@ import { ResidentSidebar } from "@/components/features/resident-sidebar";
 import { ResidentHeader } from "@/components/features/resident-header";
 import { ResidentShellClient } from "@/components/features/resident-shell-client";
 import { requireActiveMembership } from "@/lib/auth/session";
+import { countUnreadMessages } from "@/lib/queries/messages";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function ResidentRootLayout({
   children,
@@ -10,6 +12,11 @@ export default async function ResidentRootLayout({
   children: React.ReactNode;
 }) {
   const ctx = await requireActiveMembership();
+  const supabase = await createClient();
+  const unreadMessages = await countUnreadMessages(
+    supabase,
+    ctx.activeMembership!.commune_id,
+  );
 
   return (
     <div className="flex h-dvh w-full flex-col overflow-hidden bg-background text-text">
@@ -22,7 +29,7 @@ export default async function ResidentRootLayout({
       />
 
       <div className="flex min-h-0 w-full flex-1">
-        <ResidentSidebar />
+        <ResidentSidebar unreadMessages={unreadMessages} />
 
         <main className="min-w-0 flex-1 overflow-y-auto bg-surface px-4 py-4 pb-28 md:px-6 md:py-6 md:pb-6 lg:px-8">
           <ResidentShellClient communeId={ctx.activeMembership!.commune_id}>
@@ -31,7 +38,7 @@ export default async function ResidentRootLayout({
         </main>
       </div>
 
-      <BottomNav />
+      <BottomNav unreadMessages={unreadMessages} />
     </div>
   );
 }

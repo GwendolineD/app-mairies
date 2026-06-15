@@ -69,7 +69,7 @@ export function ConversationThread({
     formRef.current?.reset();
     startSending(async () => {
       const result = await sendConversationMessage(formData);
-      if (result?.error) {
+      if (result && "error" in result) {
         setError(result.error);
         setOptimistic((prev) => prev.filter((m) => m.id !== optimisticMsg.id));
       } else {

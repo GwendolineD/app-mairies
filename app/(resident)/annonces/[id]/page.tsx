@@ -1,4 +1,3 @@
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -18,16 +17,12 @@ import { BackLink } from "@/components/ui/back-link";
 import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CarteAnnoncesMap } from "@/components/features/carte-preview-map";
 import { ContactAnnouncementButton } from "@/components/features/contact-announcement-button";
 import { ReportButton } from "@/components/features/report-button";
 import { formatRelativeTime } from "@/lib/utils/date";
 import type { Announcement } from "@/lib/types";
 import { PageStack } from "@/components/ui/page-stack";
-
-const MapViewCommune = dynamic(
-  () => import("@/components/features/map-view").then((m) => m.MapViewCommune),
-  { loading: () => <div className="h-48 animate-pulse rounded-3xl bg-warm" /> },
-);
 
 export default async function AnnonceDetailPage(props: {
   params: Promise<{ id: string }>;
@@ -133,11 +128,10 @@ export default async function AnnonceDetailPage(props: {
               {authorLocation}
             </p>
             {ann.address_lat != null && ann.address_lng != null ? (
-              <MapViewCommune
+              <CarteAnnoncesMap
                 latitude={ann.address_lat}
                 longitude={ann.address_lng}
                 communeName={ann.title}
-                zoom={15}
                 className="h-48 rounded-2xl overflow-hidden border border-border/70"
               />
             ) : null}

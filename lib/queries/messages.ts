@@ -32,7 +32,11 @@ export async function listMyConversations(
     p_archived: options.archived ?? false,
   });
   if (error) {
-    console.error("[messages] list_my_conversations failed", error);
+    console.error("[messages] list_my_conversations failed", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+    });
     return [];
   }
   return (data ?? []) as ConversationInboxItem[];
@@ -52,6 +56,22 @@ export async function listConversationMessages(
     .limit(limit);
   if (error) return [];
   return ((data ?? []) as MessageRow[]).reverse();
+}
+
+/** Total unread messages across all active (non-archived) conversations for a commune. */
+export async function countUnreadMessages(
+  supabase: SupabaseClient,
+  communeId: string,
+): Promise<number> {
+  const { data, error } = await supabase.rpc("list_my_conversations", {
+    p_commune_id: communeId,
+    p_archived: false,
+  });
+  if (error || !data) return 0;
+  return (data as ConversationInboxItem[]).reduce(
+    (sum, c) => sum + (c.unread_count ?? 0),
+    0,
+  );
 }
 
 /** Fetches preferences for the current user — falls back to defaults if no row yet. */

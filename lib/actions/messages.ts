@@ -138,14 +138,11 @@ export async function ensureEventConversation(eventId: string) {
   return ensureConversation("event", eventId);
 }
 
-export async function sendConversationMessage(formData: FormData) {
+async function insertConversationMessage(
+  conversationId: string,
+  body: string,
+): Promise<{ success: true } | { error: string }> {
   const ctx = await requireActiveMembership();
-  const conversationId = formData.get("conversationId") as string;
-  const body = formData.get("body") as string;
-
-  const parsed = messageSchema.safeParse({ body });
-  if (!parsed.success) return { error: "Message invalide" };
-
   const supabase = await createClient();
 
   const { data: conversation } = await supabase
@@ -166,7 +163,7 @@ export async function sendConversationMessage(formData: FormData) {
   const { error } = await supabase.from("messages").insert({
     conversation_id: conversationId,
     sender_id: ctx.userId,
-    body: parsed.data.body,
+    body,
   });
   if (error) return { error: error.message };
 
@@ -185,7 +182,7 @@ export async function sendConversationMessage(formData: FormData) {
   );
   if (allowed) {
     const senderName = ctx.profile.display_name ?? "Un·e voisin·e";
-    const preview = parsed.data.body.slice(0, 140);
+    const preview = body.slice(0, 140);
     await notifyUser(recipientUserId, {
       title: `Nouveau message — ${senderName}`,
       body: conversation.title
@@ -203,6 +200,56 @@ export async function sendConversationMessage(formData: FormData) {
   revalidatePath(ROUTES.messages.list);
   revalidatePath(ROUTES.messages.detail(conversationId));
   return { success: true };
+}
+
+export async function sendConversationMessage(formData: FormData) {
+  const conversationId = formData.get("conversationId") as string;
+  const body = formData.get("body") as string;
+
+  const parsed = messageSchema.safeParse({ body });
+  if (!parsed.success) return { error: "Message invalide" };
+
+  return insertConversationMessage(conversationId, parsed.data.body);
+}
+
+const CONTEXT_TYPES: ConversationContextType[] = [
+  "announcement",
+  "initiative",
+  "event",
+];
+
+/** Ensure a context conversation exists, then send the first (or next) message. */
+export async function sendContextMessage(formData: FormData) {
+  const contextType = formData.get("contextType") as ConversationContextType;
+  const contextId = formData.get("contextId") as string;
+  const body = formData.get("body") as string;
+
+  if (!CONTEXT_TYPES.includes(contextType)) {
+    return { error: "Contexte invalide", conversationId: null };
+  }
+  if (!contextId) {
+    return { error: "Élément introuvable", conversationId: null };
+  }
+
+  const parsed = messageSchema.safeParse({ body });
+  if (!parsed.success) {
+    return { error: "Message invalide", conversationId: null };
+  }
+
+  const ensured = await ensureConversation(contextType, contextId);
+  if (!ensured.conversationId) {
+    return { error: ensured.error ?? "Erreur", conversationId: null };
+  }
+
+  const sent = await insertConversationMessage(
+    ensured.conversationId,
+    parsed.data.body,
+  );
+  if ("error" in sent) {
+    return { error: sent.error, conversationId: null };
+  }
+
+  return { success: true as const, conversationId: ensured.conversationId };
 }
 
 /** Mark a conversation as read for the current user (touches last_read_at). */
