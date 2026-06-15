@@ -28,12 +28,15 @@ export function CreationModalHost({ communeId }: Props) {
   const stripCreateFromUrl = useCallback(() => {
     const create = searchParams.get("create");
     if (!create) return;
+    const catParam = searchParams.get("cat") ?? searchParams.get("categorie");
     const next = buildAnnouncementListQuery({
       vue: searchParams.get("vue") === "carte" ? "carte" : "liste",
       type: isAnnouncementType(searchParams.get("type") ?? "")
         ? (searchParams.get("type") as "demande" | "offre")
         : undefined,
-      categorie: searchParams.get("categorie") ?? undefined,
+      categories: catParam
+        ? catParam.split(",").map((s) => s.trim()).filter(Boolean)
+        : [],
       page: Number.parseInt(searchParams.get("page") ?? "1", 10) || 1,
     });
     const path =

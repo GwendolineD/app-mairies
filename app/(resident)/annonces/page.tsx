@@ -1,11 +1,11 @@
 import { requireActiveMembership } from "@/lib/auth/session";
 import {
-  listAnnouncementMarkers,
+  countAnnouncements,
+  listAnnouncementMapItems,
   listAnnouncementsPage,
   ANNOUNCEMENTS_PAGE_SIZE,
 } from "@/lib/queries/announcements";
 import { createClient } from "@/lib/supabase/server";
-import { announcementMarkersToMap } from "@/lib/utils/map-markers";
 import { parseAnnouncementListParams } from "@/lib/utils/search-params";
 import { AnnoncesPageClient } from "@/components/features/annonces-page-client";
 
@@ -21,8 +21,43 @@ export default async function AnnoncesListePage(props: {
   const filters = {
     communeId,
     type: params.type,
-    categorie: params.categorie,
+    categories: params.categories,
+    date: params.date,
+    dateValue: params.dateValue,
   };
+
+  const userLat =
+    ctx.activeMembership!.address_lat ??
+    ctx.activeMembership!.commune?.centroid_lat ??
+    48.8566;
+  const userLng =
+    ctx.activeMembership!.address_lng ??
+    ctx.activeMembership!.commune?.centroid_lng ??
+    2.3522;
+  const hasUserAddress =
+    ctx.activeMembership!.address_lat != null &&
+    ctx.activeMembership!.address_lng != null;
+
+  // Map view fetches ALL geo-located items at once (bounded per tenant);
+  // list view fetches only the requested page + total count.
+  if (params.vue === "carte") {
+    const [mapItems, totalCount] = await Promise.all([
+      listAnnouncementMapItems(supabase, filters),
+      countAnnouncements(supabase, filters),
+    ]);
+
+    return (
+      <AnnoncesPageClient
+        params={params}
+        items={[]}
+        nextCursor={null}
+        totalCount={totalCount}
+        mapItems={mapItems}
+        userPosition={[userLat, userLng]}
+        hasUserAddress={hasUserAddress}
+      />
+    );
+  }
 
   const offset = (params.page - 1) * ANNOUNCEMENTS_PAGE_SIZE;
   const { items, nextCursor, totalCount } = await listAnnouncementsPage(
@@ -31,26 +66,15 @@ export default async function AnnoncesListePage(props: {
     { offset, limit: ANNOUNCEMENTS_PAGE_SIZE },
   );
 
-  const rawMarkers = await listAnnouncementMarkers(supabase, filters);
-  const mapMarkers = announcementMarkersToMap(rawMarkers);
-
-  const lat =
-    ctx.activeMembership!.address_lat ??
-    ctx.activeMembership!.commune?.centroid_lat ??
-    48.8566;
-  const lng =
-    ctx.activeMembership!.address_lng ??
-    ctx.activeMembership!.commune?.centroid_lng ??
-    2.3522;
-
   return (
     <AnnoncesPageClient
       params={params}
       items={items}
       nextCursor={nextCursor}
       totalCount={totalCount}
-      mapMarkers={mapMarkers}
-      mapCenter={[lat, lng]}
+      mapItems={[]}
+      userPosition={[userLat, userLng]}
+      hasUserAddress={hasUserAddress}
     />
   );
 }

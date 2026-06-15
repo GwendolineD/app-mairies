@@ -201,6 +201,20 @@ body {
   box-shadow: 0 12px 32px rgba(37, 38, 48, 0.1);
 }
 
+/* Leaflet popup overrides for the announcement map view. */
+.leaflet-popup.vl-map-popup .leaflet-popup-content-wrapper {
+  border-radius: 16px;
+  padding: 12px;
+  box-shadow: 0 12px 32px rgba(37, 38, 48, 0.12);
+}
+.leaflet-popup.vl-map-popup .leaflet-popup-content {
+  margin: 0;
+  width: auto !important;
+}
+.leaflet-popup.vl-map-popup .leaflet-popup-tip {
+  box-shadow: 0 4px 12px rgba(37, 38, 48, 0.08);
+}
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);

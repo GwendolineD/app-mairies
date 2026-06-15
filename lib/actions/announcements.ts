@@ -111,13 +111,32 @@ export async function deleteAnnouncement(id: string) {
 
 export async function fetchAnnouncementsPage(
   cursor: string | null,
-  filters: { type?: string; categorie?: string },
+  filters: {
+    type?: string;
+    categories?: string[];
+    date?: string;
+    dateValue?: string;
+  },
 ) {
   const ctx = await requireActiveMembership();
+  const dateRaw = filters.date;
+  const date =
+    dateRaw === "today" ||
+    dateRaw === "next7days" ||
+    dateRaw === "none" ||
+    dateRaw === "custom"
+      ? dateRaw
+      : undefined;
+
   const listFilters: AnnouncementListFilters = {
     communeId: ctx.activeMembership!.commune_id,
-    type: isAnnouncementType(filters.type ?? "") ? filters.type as AnnouncementType : undefined,
-    categorie: filters.categorie || undefined,
+    type: isAnnouncementType(filters.type ?? "")
+      ? (filters.type as AnnouncementType)
+      : undefined,
+    categories: filters.categories?.filter(Boolean),
+    date,
+    dateValue:
+      date === "custom" && filters.dateValue ? filters.dateValue : undefined,
   };
 
   const supabase = await createClient();
