@@ -22,6 +22,8 @@ export function CreationModalHost({ communeId, membershipAddress }: Props) {
     announcementOpen,
     initiativeOpen,
     announcementPresetType,
+    announcementEditId,
+    announcementInitialData,
     openAnnouncementModal,
     openInitiativeModal,
     closeModals,
@@ -72,6 +74,8 @@ export function CreationModalHost({ communeId, membershipAddress }: Props) {
         communeId={communeId}
         membershipAddress={membershipAddress}
         presetType={announcementPresetType}
+        editId={announcementEditId}
+        initialData={announcementInitialData}
       />
       <CreateInitiativeModal
         open={initiativeOpen}

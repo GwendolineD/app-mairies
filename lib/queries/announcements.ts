@@ -21,7 +21,10 @@ export type AnnouncementWithAuthor = Announcement & {
     Membership,
     "address_street" | "address_city" | "address_lat" | "address_lng"
   > & {
-    profiles: Pick<Profile, "first_name" | "display_name"> | null;
+    profiles: Pick<
+      Profile,
+      "first_name" | "last_name" | "display_name" | "avatar_url"
+    > | null;
   }) | null;
 };
 
@@ -121,7 +124,7 @@ export async function listAnnouncementsPage(
   let query = supabase
     .from("announcements")
     .select(
-      "*, author_membership:memberships!announcements_author_membership_id_fkey(address_street, address_city, address_lat, address_lng, profiles:profiles!memberships_profiles_user_id_fkey(first_name, display_name))",
+      "*, author_membership:memberships!announcements_author_membership_id_fkey(address_street, address_city, address_lat, address_lng, profiles:profiles!memberships_profiles_user_id_fkey(first_name, last_name, display_name, avatar_url))",
     )
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
@@ -178,7 +181,7 @@ export async function listAnnouncementMapItems(
   let query = supabase
     .from("announcements")
     .select(
-      "*, author_membership:memberships!announcements_author_membership_id_fkey(address_street, address_city, address_lat, address_lng, profiles:profiles!memberships_profiles_user_id_fkey(first_name, display_name))",
+      "*, author_membership:memberships!announcements_author_membership_id_fkey(address_street, address_city, address_lat, address_lng, profiles:profiles!memberships_profiles_user_id_fkey(first_name, last_name, display_name, avatar_url))",
     )
     .not("address_lat", "is", null)
     .not("address_lng", "is", null)
@@ -212,10 +215,12 @@ export async function listSimilarAnnouncements(
   categorySlug: string,
   excludeId: string,
   limit = 3,
-): Promise<Announcement[]> {
+): Promise<AnnouncementWithAuthor[]> {
   const { data } = await supabase
     .from("announcements")
-    .select("*")
+    .select(
+      "*, author_membership:memberships!announcements_author_membership_id_fkey(address_street, address_city, address_lat, address_lng, profiles:profiles!memberships_profiles_user_id_fkey(first_name, last_name, display_name, avatar_url))",
+    )
     .eq("commune_id", communeId)
     .eq("category_slug", categorySlug)
     .neq("id", excludeId)
@@ -223,5 +228,5 @@ export async function listSimilarAnnouncements(
     .order("created_at", { ascending: false })
     .limit(limit);
 
-  return (data ?? []) as Announcement[];
+  return (data ?? []) as AnnouncementWithAuthor[];
 }

@@ -96,6 +96,21 @@ export type Announcement = {
   author?: { display_name: string | null };
 };
 
+export type AnnouncementEditData = {
+  type: AnnouncementType;
+  categorySlug: string;
+  title: string;
+  description: string;
+  targetDate: string;
+  photoUrl: string;
+  addressStreet: string;
+  addressCity: string;
+  addressCitycode: string;
+  addressPostcode: string;
+  addressLat: number;
+  addressLng: number;
+};
+
 export type InitiativeRecord = {
   id: string;
   commune_id: string;

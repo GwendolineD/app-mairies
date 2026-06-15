@@ -9,6 +9,7 @@ import type { AnnouncementWithAuthor } from "@/lib/queries/announcements";
 import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";
 import { cn } from "@/lib/utils/cn";
+import { formatDisplayName } from "@/lib/utils/display-name";
 import { formatRelativeTime } from "@/lib/utils/date";
 
 type Props = {
@@ -17,6 +18,29 @@ type Props = {
   /** Visually highlights the card (eg. selected map marker). */
   highlighted?: boolean;
 };
+
+type AuthorProfile = {
+  first_name?: string | null;
+  last_name?: string | null;
+  display_name?: string | null;
+  avatar_url?: string | null;
+} | null;
+
+function resolveAuthorName(profiles: AuthorProfile): string {
+  if (profiles?.first_name && profiles?.last_name) {
+    return formatDisplayName(profiles.first_name, profiles.last_name);
+  }
+  return profiles?.display_name ?? profiles?.first_name ?? "Anonyme";
+}
+
+function resolveAuthorInitials(profiles: AuthorProfile): string {
+  const first = profiles?.first_name?.trim().charAt(0).toUpperCase();
+  const last = profiles?.last_name?.trim().charAt(0).toUpperCase();
+  if (first && last) return `${first}${last}`;
+  if (first) return first;
+  const fromDisplay = profiles?.display_name?.trim().charAt(0).toUpperCase();
+  return fromDisplay ?? "?";
+}
 
 /** Coloured pill identifying offer vs request — overlays the card photo. */
 function TypePastille({
@@ -103,7 +127,7 @@ export function AnnouncementCard({
     <Link href={ROUTES.annonces.detail(a.id)} className="h-full">
       <Card
         className={cn(
-          "flex h-full flex-col gap-2 p-3 transition hover:border-purple/45",
+          "flex h-full flex-col p-3 transition hover:border-purple/45",
           highlightRing,
         )}
       >
@@ -122,18 +146,39 @@ export function AnnouncementCard({
           )}
           <TypePastille type={a.type} className="absolute left-2 top-2" />
         </div>
-        <div className="px-1">
+
+        <div className="flex flex-1 flex-col gap-1.5 px-1 pt-3">
           <CategoryTag
             label={getCategoryLabel(a.category_slug)}
             colorHex={getCategoryColorHex(a.category_slug)}
           />
+
+          <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug text-text">
+            {a.title}
+          </h3>
+
+          <div className="flex items-center gap-2">
+            {a.author_membership?.profiles?.avatar_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={a.author_membership.profiles.avatar_url}
+                alt=""
+                className="size-6 shrink-0 rounded-full object-cover"
+              />
+            ) : (
+              <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-warm text-[10px] font-bold text-muted">
+                {resolveAuthorInitials(a.author_membership?.profiles ?? null)}
+              </div>
+            )}
+            <span className="truncate text-sm font-medium text-text">
+              {resolveAuthorName(a.author_membership?.profiles ?? null)}
+            </span>
+          </div>
+
+          <p className="mt-auto pb-0.5 text-[11px] font-medium text-subtle">
+            {street} · {formatRelativeTime(a.created_at)}
+          </p>
         </div>
-        <h3 className="px-1 line-clamp-2 text-sm font-semibold leading-5 text-text md:text-base md:leading-6">
-          {a.title}
-        </h3>
-        <p className="mt-auto px-1 pb-1 text-[11px] font-medium text-subtle">
-          {street} · {formatRelativeTime(a.created_at)}
-        </p>
       </Card>
     </Link>
   );

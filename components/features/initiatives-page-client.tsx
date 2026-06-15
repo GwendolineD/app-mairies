@@ -17,7 +17,7 @@ import { ListGrid, PageStack } from "@/components/ui/page-stack";
 import { PageHeading } from "@/components/ui/page-heading";
 import { Button } from "@/components/ui/button";
 import { useCreationModals } from "@/components/features/creation-modal-context";
-import { formatRelativeTime } from "@/lib/utils/date";
+import { RelativeTime } from "@/components/ui/relative-time";
 import { INITIATIVE_CATEGORIES } from "@/lib/constants/initiative-categories";
 import { cn } from "@/lib/utils/cn";
 import dynamic from "next/dynamic";
@@ -116,7 +116,7 @@ export function InitiativesPageClient({
                     : (item.author_membership?.address_street ??
                       item.author_membership?.address_city ??
                       "Adresse non renseignée")}{" "}
-                  · {formatRelativeTime(item.created_at)}
+                  · <RelativeTime iso={item.created_at} />
                 </p>
               </Card>
             </Link>

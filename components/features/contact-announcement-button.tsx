@@ -16,6 +16,7 @@ type Props = {
   contextType?: ConversationContextType;
   /** Backwards-compatible alias for callers using the old API. */
   announcementId?: string;
+  icon?: React.ReactNode;
 };
 
 export function ContactAnnouncementButton({
@@ -23,6 +24,7 @@ export function ContactAnnouncementButton({
   announcementId,
   contextType = "announcement",
   label,
+  icon,
 }: Props) {
   const formRef = useRef<HTMLFormElement>(null);
   const [open, setOpen] = useState(false);
@@ -78,6 +80,7 @@ export function ContactAnnouncementButton({
         className="w-full"
         onClick={handleOpen}
       >
+        {icon}
         {label}
       </GradientButton>
 

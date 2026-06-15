@@ -103,6 +103,107 @@ export async function createAnnouncement(formData: FormData): Promise<{ id: stri
   return { id: created.id };
 }
 
+export async function updateAnnouncement(
+  id: string,
+  formData: FormData,
+): Promise<{ success: true } | { error: string }> {
+  const ctx = await requireActiveMembership();
+  const supabase = await createClient();
+
+  const auth = await assertAuthorMembership(
+    supabase,
+    "announcements",
+    id,
+    ctx.activeMembership!.id,
+  );
+  if (auth.error) return auth;
+
+  const raw = {
+    type: formData.get("type") as string,
+    categorySlug: formData.get("categorySlug") as string,
+    title: formData.get("title") as string,
+    description: (formData.get("description") as string) || undefined,
+    targetDate: (formData.get("targetDate") as string) || undefined,
+    photoUrl: (formData.get("photoUrl") as string) || "",
+    addressStreet: formData.get("addressStreet") as string,
+    addressCity: formData.get("addressCity") as string,
+    addressCitycode: formData.get("addressCitycode") as string,
+    addressPostcode: formData.get("addressPostcode") as string,
+    addressLat: Number(formData.get("addressLat")),
+    addressLng: Number(formData.get("addressLng")),
+  };
+
+  const parsed = announcementSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { error: firstZodIssueMessage(parsed.error.issues) };
+  }
+
+  const photoUrl =
+    parsed.data.photoUrl ||
+    getCategoryDefaultPhotoUrl(parsed.data.categorySlug);
+
+  const { error } = await supabase
+    .from("announcements")
+    .update({
+      type: parsed.data.type,
+      category_slug: parsed.data.categorySlug,
+      title: parsed.data.title,
+      description: parsed.data.description ?? null,
+      target_date: parsed.data.targetDate || null,
+      photo_url: photoUrl,
+      address_street: parsed.data.addressStreet,
+      address_city: parsed.data.addressCity,
+      address_citycode: parsed.data.addressCitycode,
+      address_postcode: parsed.data.addressPostcode,
+      address_lat: parsed.data.addressLat,
+      address_lng: parsed.data.addressLng,
+    })
+    .eq("id", id);
+
+  if (error) {
+    return {
+      error: formatPostgrestError(
+        error,
+        "Impossible de modifier l'annonce. Réessayez.",
+      ),
+    };
+  }
+
+  revalidatePath(ROUTES.annonces.list);
+  revalidatePath(ROUTES.annonces.detail(id));
+  revalidatePath(ROUTES.accueil);
+  return { success: true };
+}
+
+export async function softDeleteAnnouncement(
+  id: string,
+): Promise<{ success: true } | { error: string }> {
+  const ctx = await requireActiveMembership();
+  const supabase = await createClient();
+
+  const auth = await assertAuthorMembership(
+    supabase,
+    "announcements",
+    id,
+    ctx.activeMembership!.id,
+  );
+  if (auth.error) return auth;
+
+  const { error } = await supabase
+    .from("announcements")
+    .update({
+      status: ANNOUNCEMENT_STATUS.archivee,
+      archived_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+
+  if (error) return { error: error.message };
+  revalidatePath(ROUTES.annonces.list);
+  revalidatePath(ROUTES.annonces.detail(id));
+  revalidatePath(ROUTES.accueil);
+  return { success: true };
+}
+
 export async function updateAnnouncementStatus(
   id: string,
   status: AnnouncementStatusUpdate,

@@ -32,6 +32,14 @@ export function formatEventDetail(start: string, end: string): string {
   }
 }
 
+export function formatShortDate(iso: string): string {
+  try {
+    return formatFr(new Date(iso), { dateStyle: "medium" });
+  } catch {
+    return "";
+  }
+}
+
 export function formatRelativeTime(iso: string): string {
   try {
     const date = new Date(iso);
@@ -62,6 +70,16 @@ export function formatEventAccueilDate(iso: string): { day: number; month: strin
     .replace(".", "")
     .toUpperCase();
   return { day: date.getDate(), month };
+}
+
+export function formatMemberSince(iso: string): string {
+  try {
+    const date = new Date(iso);
+    const month = new Intl.DateTimeFormat("fr-FR", { month: "long" }).format(date);
+    return `Membre depuis ${month} ${date.getFullYear()}`;
+  } catch {
+    return "Membre";
+  }
 }
 
 export function formatEventAccueilSchedule(iso: string): string {

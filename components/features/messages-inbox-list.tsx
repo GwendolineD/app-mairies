@@ -14,7 +14,7 @@ import type {
   ConversationInboxItem,
 } from "@/lib/types";
 import { cn } from "@/lib/utils/cn";
-import { formatRelativeTime } from "@/lib/utils/date";
+import { RelativeTime } from "@/components/ui/relative-time";
 
 const CONTEXT_ICON: Record<ConversationContextType, typeof MessageCircle> = {
   announcement: Megaphone,
@@ -125,9 +125,11 @@ export function MessagesInboxList({
                             {otherName}
                           </p>
                           <span className="shrink-0 text-[11px] font-medium text-muted">
-                            {conv.last_message_at
-                              ? formatRelativeTime(conv.last_message_at)
-                              : ""}
+                            {conv.last_message_at ? (
+                              <RelativeTime iso={conv.last_message_at} />
+                            ) : (
+                              ""
+                            )}
                           </span>
                         </div>
                         <div className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-purple">

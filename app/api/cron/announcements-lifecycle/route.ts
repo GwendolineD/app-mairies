@@ -73,11 +73,27 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: staleRes.error.message }, { status: 500 });
   }
 
+  /* Purge: hard-delete archived announcements older than 30 days (bounded batch) */
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const purgeRes = await service
+    .from("announcements")
+    .delete()
+    .eq("status", "archivee")
+    .not("archived_at", "is", null)
+    .lt("archived_at", thirtyDaysAgo)
+    .limit(500)
+    .select("id");
+
+  if (purgeRes.error) {
+    return NextResponse.json({ error: purgeRes.error.message }, { status: 500 });
+  }
+
   return NextResponse.json({
     ok: true,
     expired: expiredRes.data?.length ?? 0,
     expiringSoon: expiringSoonRes.data?.length ?? 0,
     stale: staleRes.data?.length ?? 0,
+    purged: purgeRes.data?.length ?? 0,
     at: now.toISOString(),
   });
 }

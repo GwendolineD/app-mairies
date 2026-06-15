@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, HandHeart, Loader2, MapPin, Plus } from "lucide-react";
-import { createAnnouncement } from "@/lib/actions/announcements";
+import { createAnnouncement, updateAnnouncement } from "@/lib/actions/announcements";
 import { searchAddresses, type BanFeature } from "@/lib/ban/client";
 import { formatStreetDisplay } from "@/lib/ban/display";
 import {
@@ -34,7 +34,7 @@ import { Modal } from "@/components/ui/modal";
 import { ImageDropzone } from "@/components/features/image-dropzone";
 import { BanAutocomplete } from "@/components/features/ban-autocomplete";
 import { cn } from "@/lib/utils/cn";
-import type { MembershipAddress } from "@/lib/types";
+import type { AnnouncementEditData, MembershipAddress } from "@/lib/types";
 
 const TITLE_MAX = 70;
 const DESCRIPTION_MAX = 1000;
@@ -63,6 +63,8 @@ type Props = {
   communeId: string;
   membershipAddress: MembershipAddress;
   presetType?: AnnouncementType;
+  editId?: string;
+  initialData?: AnnouncementEditData;
 };
 
 function getInitialAddressState(
@@ -119,20 +121,36 @@ export function CreateAnnouncementModal({
   communeId,
   membershipAddress,
   presetType = "demande",
+  editId,
+  initialData,
 }: Props) {
   const router = useRouter();
-  const draftKey = `announcement:${communeId}`;
+  const isEditMode = Boolean(editId);
+  const draftKey = isEditMode ? null : `announcement:${communeId}`;
   const initialAddress = useMemo(
-    () => getInitialAddressState(membershipAddress),
-    [membershipAddress],
+    () =>
+      initialData
+        ? {
+            addressData: {
+              street: initialData.addressStreet,
+              city: initialData.addressCity,
+              citycode: initialData.addressCitycode,
+              postcode: initialData.addressPostcode,
+              lat: initialData.addressLat as number | null,
+              lng: initialData.addressLng as number | null,
+            },
+            addressConfirmed: true,
+          }
+        : getInitialAddressState(membershipAddress),
+    [membershipAddress, initialData],
   );
-  const [type, setType] = useState<AnnouncementType>(presetType);
+  const [type, setType] = useState<AnnouncementType>(initialData?.type ?? presetType);
   const [categorySlug, setCategorySlug] = useState<AnnouncementCategorySlug>(
-    ANNOUNCEMENT_CATEGORIES[0].slug,
+    (initialData?.categorySlug as AnnouncementCategorySlug) ?? ANNOUNCEMENT_CATEGORIES[0].slug,
   );
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [targetDate, setTargetDate] = useState("");
+  const [title, setTitle] = useState(initialData?.title ?? "");
+  const [description, setDescription] = useState(initialData?.description ?? "");
+  const [targetDate, setTargetDate] = useState(initialData?.targetDate ?? "");
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [addressData, setAddressData] = useState<AddressFormState>(
     initialAddress.addressData,
@@ -153,21 +171,40 @@ export function CreateAnnouncementModal({
   );
 
   const resetForm = useCallback(() => {
-    const initial = getInitialFormState(presetType);
-    const address = getInitialAddressState(membershipAddress);
-    setType(initial.type);
-    setCategorySlug(initial.categorySlug);
-    setTitle(initial.title);
-    setDescription(initial.description);
-    setTargetDate(initial.targetDate);
-    setPendingFile(initial.pendingFile);
-    setAddressData(address.addressData);
-    setAddressConfirmed(address.addressConfirmed);
+    if (initialData) {
+      setType(initialData.type);
+      setCategorySlug(initialData.categorySlug as AnnouncementCategorySlug);
+      setTitle(initialData.title);
+      setDescription(initialData.description);
+      setTargetDate(initialData.targetDate);
+      setPendingFile(null);
+      const addr = {
+        street: initialData.addressStreet,
+        city: initialData.addressCity,
+        citycode: initialData.addressCitycode,
+        postcode: initialData.addressPostcode,
+        lat: initialData.addressLat as number | null,
+        lng: initialData.addressLng as number | null,
+      };
+      setAddressData(addr);
+      setAddressConfirmed(true);
+    } else {
+      const initial = getInitialFormState(presetType);
+      const address = getInitialAddressState(membershipAddress);
+      setType(initial.type);
+      setCategorySlug(initial.categorySlug);
+      setTitle(initial.title);
+      setDescription(initial.description);
+      setTargetDate(initial.targetDate);
+      setPendingFile(initial.pendingFile);
+      setAddressData(address.addressData);
+      setAddressConfirmed(address.addressConfirmed);
+    }
     setAddressStreetError(null);
     setFormError(null);
     setSubmitting(false);
     setSubmitPhase("idle");
-  }, [presetType, membershipAddress]);
+  }, [presetType, membershipAddress, initialData]);
 
   useEffect(() => {
     if (!open) return;
@@ -177,7 +214,7 @@ export function CreateAnnouncementModal({
   const handleAbandon = useCallback(() => {
     if (submitting) return;
     resetForm();
-    clearFormDraft(draftKey);
+    if (draftKey) clearFormDraft(draftKey);
     onClose();
   }, [submitting, resetForm, draftKey, onClose]);
 
@@ -260,19 +297,34 @@ export function CreateAnnouncementModal({
       fd.set("title", title);
       fd.set("description", description);
       fd.set("targetDate", targetDate);
-      fd.set("photoUrl", photoUrl);
+      fd.set("photoUrl", photoUrl || (initialData?.photoUrl ?? ""));
       fd.set("addressStreet", addressData.street.trim());
       fd.set("addressCity", addressData.city.trim());
       fd.set("addressCitycode", addressData.citycode.trim());
       fd.set("addressPostcode", addressData.postcode.trim());
       fd.set("addressLat", String(addressData.lat));
       fd.set("addressLng", String(addressData.lng));
-      const { id } = await createAnnouncement(fd);
-      clearFormDraft(draftKey);
-      setSubmitting(false);
-      setSubmitPhase("idle");
-      onClose();
-      router.push(ROUTES.annonces.detail(id));
+
+      if (editId) {
+        const result = await updateAnnouncement(editId, fd);
+        if ("error" in result) {
+          setFormError(result.error);
+          setSubmitting(false);
+          setSubmitPhase("idle");
+          return;
+        }
+        setSubmitting(false);
+        setSubmitPhase("idle");
+        onClose();
+        router.refresh();
+      } else {
+        const { id } = await createAnnouncement(fd);
+        if (draftKey) clearFormDraft(draftKey);
+        setSubmitting(false);
+        setSubmitPhase("idle");
+        onClose();
+        router.push(ROUTES.annonces.detail(id));
+      }
     } catch (error) {
       if (error instanceof CloudinaryUploadError) {
         if (error.errorType === "virus_detected") {
@@ -297,7 +349,7 @@ export function CreateAnnouncementModal({
       open={open}
       onClose={handleAbandon}
       closeDisabled={submitting}
-      title="Créer une nouvelle annonce"
+      title={isEditMode ? "Modifier votre annonce" : "Créer une nouvelle annonce"}
       size="xl"
       showCloseButton
       className="sm:max-w-3xl"
@@ -525,10 +577,10 @@ export function CreateAnnouncementModal({
             {submitting ? (
               <>
                 <Loader2 className="size-4 animate-spin" aria-hidden />
-                {submitPhase === "uploading" ? "Envoi de la photo…" : "Publication…"}
+                {submitPhase === "uploading" ? "Envoi de la photo…" : isEditMode ? "Enregistrement…" : "Publication…"}
               </>
             ) : (
-              "Publier mon annonce"
+              isEditMode ? "Enregistrer les modifications" : "Publier mon annonce"
             )}
           </GradientButton>
         </div>

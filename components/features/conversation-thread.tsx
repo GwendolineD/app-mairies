@@ -12,7 +12,7 @@ import { FormField, Textarea } from "@/components/ui/form-field";
 import { ROUTES } from "@/lib/constants/routes";
 import type { MessageRow } from "@/lib/types";
 import { cn } from "@/lib/utils/cn";
-import { formatRelativeTime } from "@/lib/utils/date";
+import { RelativeTime } from "@/components/ui/relative-time";
 
 type Props = {
   conversationId: string;
@@ -123,7 +123,7 @@ export function ConversationThread({
                       mine ? "text-white/70" : "text-muted",
                     )}
                   >
-                    {formatRelativeTime(m.created_at)}
+                    <RelativeTime iso={m.created_at} />
                   </p>
                 </div>
               </li>
