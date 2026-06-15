@@ -1,4 +1,3 @@
-import dynamic from "next/dynamic";
 import { notFound } from "next/navigation";
 import { submitArchiveEvent, submitDeleteEvent } from "@/lib/actions/events";
 import { requireActiveMembership } from "@/lib/auth/session";
@@ -13,11 +12,7 @@ import { ContentTypeTag } from "@/components/ui/content-type-tag";
 import { ReportButton } from "@/components/features/report-button";
 import type { AgendaEventRecord } from "@/lib/types";
 import { PageStack } from "@/components/ui/page-stack";
-
-const MapViewCommune = dynamic(
-  () => import("@/components/features/map-view").then((m) => m.MapViewCommune),
-  { loading: () => <div className="h-48 animate-pulse rounded-3xl bg-warm" /> },
-);
+import { CarteAnnoncesMap } from "@/components/features/carte-preview-map";
 
 export default async function EvenementDetailPage(props: {
   params: Promise<{ id: string }>;
@@ -88,11 +83,10 @@ export default async function EvenementDetailPage(props: {
         {event.address_lat != null && event.address_lng != null ? (
           <Card className="p-4">
             <h2 className="mb-2 text-lg font-semibold text-text">Carte</h2>
-            <MapViewCommune
+            <CarteAnnoncesMap
               latitude={event.address_lat}
               longitude={event.address_lng}
               communeName={event.title}
-              zoom={15}
               className="h-48 rounded-2xl overflow-hidden border border-border/70"
             />
           </Card>

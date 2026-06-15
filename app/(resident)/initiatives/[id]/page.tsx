@@ -1,4 +1,3 @@
-import dynamic from "next/dynamic";
 import { notFound } from "next/navigation";
 import {
   submitArchiveInitiative,
@@ -17,11 +16,7 @@ import { InitiativeDetailTabs } from "@/components/features/initiative-detail-ta
 import { ReportButton } from "@/components/features/report-button";
 import type { InitiativeRecord } from "@/lib/types";
 import { PageStack } from "@/components/ui/page-stack";
-
-const MapViewCommune = dynamic(
-  () => import("@/components/features/map-view").then((m) => m.MapViewCommune),
-  { loading: () => <div className="h-48 animate-pulse rounded-3xl bg-warm" /> },
-);
+import { CarteAnnoncesMap } from "@/components/features/carte-preview-map";
 
 export default async function InitiativeDetailPage(props: {
   params: Promise<{ id: string }>;
@@ -92,11 +87,10 @@ export default async function InitiativeDetailPage(props: {
           {initiative.address_lat != null && initiative.address_lng != null ? (
             <Card className="p-4">
               <h2 className="mb-2 text-lg font-semibold text-text">Où ?</h2>
-              <MapViewCommune
+              <CarteAnnoncesMap
                 latitude={initiative.address_lat}
                 longitude={initiative.address_lng}
                 communeName={initiative.title}
-                zoom={15}
                 className="h-48 rounded-2xl overflow-hidden border border-border/70"
               />
             </Card>

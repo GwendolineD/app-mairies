@@ -95,6 +95,22 @@ export const messageSchema = z.object({
   body: z.string().min(1).max(5000),
 });
 
+export const notificationPreferencesSchema = z.object({
+  notify_message_announcement: z.boolean(),
+  notify_message_initiative: z.boolean(),
+  notify_message_event: z.boolean(),
+  notify_new_announcement: z.boolean(),
+  notify_new_initiative: z.boolean(),
+  notify_new_event: z.boolean(),
+});
+
+export const pushSubscriptionSchema = z.object({
+  endpoint: z.string().url(),
+  p256dh: z.string().min(1),
+  auth: z.string().min(1),
+  userAgent: z.string().max(500).optional(),
+});
+
 export const reportSchema = z.object({
   contextType: z.enum(["announcement", "initiative", "event"]),
   contextId: z.string().uuid(),

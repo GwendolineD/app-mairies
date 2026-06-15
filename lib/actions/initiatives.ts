@@ -9,6 +9,7 @@ import { INITIATIVE_STATUS } from "@/lib/constants/statuses";
 import { createClient } from "@/lib/supabase/server";
 import { parseFormId } from "@/lib/utils/form-data";
 import { initiativeSchema } from "@/lib/validations/schemas";
+import { fanoutNewContentNotification } from "@/lib/services/notification-fanout";
 
 export async function createInitiative(formData: FormData): Promise<void> {
   const ctx = await requireActiveMembership();
@@ -46,23 +47,37 @@ export async function createInitiative(formData: FormData): Promise<void> {
   const addressLat = hasCustomAddress ? null : membership.address_lat;
   const addressLng = hasCustomAddress ? null : membership.address_lng;
 
-  const { error } = await supabase.from("initiatives").insert({
-    commune_id: membership.commune_id,
-    author_membership_id: membership.id,
-    category_slug: parsed.data.categorySlug,
+  const { data: created, error } = await supabase
+    .from("initiatives")
+    .insert({
+      commune_id: membership.commune_id,
+      author_membership_id: membership.id,
+      category_slug: parsed.data.categorySlug,
+      title: parsed.data.title,
+      description: parsed.data.description ?? null,
+      date_mode: parsed.data.dateMode,
+      single_starts_at: singleStartsAt,
+      single_ends_at: singleEndsAt,
+      address_label: addressLabel,
+      address_lat: addressLat,
+      address_lng: addressLng,
+      status: INITIATIVE_STATUS.active,
+    })
+    .select("id")
+    .single();
+
+  if (error || !created) return;
+  revalidatePath(ROUTES.initiatives.list);
+
+  void fanoutNewContentNotification({
+    contextType: "initiative",
+    contextId: created.id,
+    communeId: membership.commune_id,
+    authorUserId: ctx.userId,
     title: parsed.data.title,
-    description: parsed.data.description ?? null,
-    date_mode: parsed.data.dateMode,
-    single_starts_at: singleStartsAt,
-    single_ends_at: singleEndsAt,
-    address_label: addressLabel,
-    address_lat: addressLat,
-    address_lng: addressLng,
-    status: INITIATIVE_STATUS.active,
+    authorDisplayName: ctx.profile.display_name,
   });
 
-  if (error) return;
-  revalidatePath(ROUTES.initiatives.list);
   redirect(ROUTES.initiatives.list);
 }
 

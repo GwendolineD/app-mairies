@@ -15,6 +15,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { announcementSchema } from "@/lib/validations/schemas";
 import { isAnnouncementType, type AnnouncementType } from "@/lib/constants/announcement-types";
+import { fanoutNewContentNotification } from "@/lib/services/notification-fanout";
 
 type AnnouncementStatusUpdate = Extract<
   AnnouncementStatusValue,
@@ -62,6 +63,17 @@ export async function createAnnouncement(formData: FormData): Promise<{ id: stri
   revalidatePath(ROUTES.annonces.list);
   revalidatePath(ROUTES.accueil);
   revalidatePath(ROUTES.annonces.detail(created.id));
+
+  // Fanout "new announcement" notification to opted-in commune members (best-effort).
+  void fanoutNewContentNotification({
+    contextType: "announcement",
+    contextId: created.id,
+    communeId: membership.commune_id,
+    authorUserId: ctx.userId,
+    title: parsed.data.title,
+    authorDisplayName: ctx.profile.display_name,
+  });
+
   return { id: created.id };
 }
 

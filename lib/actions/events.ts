@@ -9,6 +9,7 @@ import { EVENT_STATUS } from "@/lib/constants/statuses";
 import { createClient } from "@/lib/supabase/server";
 import { parseFormId } from "@/lib/utils/form-data";
 import { eventSchema } from "@/lib/validations/schemas";
+import { fanoutNewContentNotification } from "@/lib/services/notification-fanout";
 
 export async function createEvent(formData: FormData): Promise<void> {
   const ctx = await requireActiveMembership();
@@ -24,21 +25,38 @@ export async function createEvent(formData: FormData): Promise<void> {
 
   const membership = ctx.activeMembership!;
   const supabase = await createClient();
-  const { error } = await supabase.from("events").insert({
-    commune_id: membership.commune_id,
-    author_membership_id: membership.id,
+  const { data: created, error } = await supabase
+    .from("events")
+    .insert({
+      commune_id: membership.commune_id,
+      author_membership_id: membership.id,
+      title: parsed.data.title,
+      description: parsed.data.description ?? null,
+      starts_at: new Date(parsed.data.startsAt).toISOString(),
+      ends_at: new Date(parsed.data.endsAt).toISOString(),
+      address_label:
+        parsed.data.addressLabel ??
+        (membership as { address_label?: string | null }).address_label ??
+        null,
+      address_lat: membership.address_lat,
+      address_lng: membership.address_lng,
+      status: EVENT_STATUS.active,
+    })
+    .select("id")
+    .single();
+
+  if (error || !created) return;
+  revalidatePath(ROUTES.evenements.list);
+
+  void fanoutNewContentNotification({
+    contextType: "event",
+    contextId: created.id,
+    communeId: membership.commune_id,
+    authorUserId: ctx.userId,
     title: parsed.data.title,
-    description: parsed.data.description ?? null,
-    starts_at: new Date(parsed.data.startsAt).toISOString(),
-    ends_at: new Date(parsed.data.endsAt).toISOString(),
-    address_label: parsed.data.addressLabel ?? null,
-    address_lat: membership.address_lat,
-    address_lng: membership.address_lng,
-    status: EVENT_STATUS.active,
+    authorDisplayName: ctx.profile.display_name,
   });
 
-  if (error) return;
-  revalidatePath(ROUTES.evenements.list);
   redirect(ROUTES.evenements.list);
 }
 

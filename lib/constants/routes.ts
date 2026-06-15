@@ -16,6 +16,7 @@ export const ROUTES = {
   profil: "/profil",
   messages: {
     list: "/messages",
+    trash: "/messages?vue=corbeille",
     detail: (id: string) => `/messages/${id}`,
   },
   annonces: {
