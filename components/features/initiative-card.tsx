@@ -79,9 +79,9 @@ function resolveAddress(initiative: InitiativeCardData): string {
 
 function LinkedEventDate({ startsAt }: { startsAt: string }) {
   return (
-    <p className="flex items-center gap-1 text-[11px] font-medium text-subtle">
+    <p className="flex min-w-0 items-center gap-1 text-[11px] font-medium text-subtle">
       <CalendarDays className="size-3.5 shrink-0" aria-hidden />
-      <time dateTime={startsAt}>
+      <time dateTime={startsAt} className="truncate">
         Événement le {formatShortDate(startsAt)}
       </time>
     </p>

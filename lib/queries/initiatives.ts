@@ -139,6 +139,48 @@ export async function listInitiativesPage(
   return { items, nextCursor, totalCount: count ?? 0 };
 }
 
+export async function getTrendingInitiativeForAccueil(
+  supabase: SupabaseClient,
+  communeId: string,
+): Promise<InitiativeWithAuthor | null> {
+  const { data } = await supabase
+    .from("initiatives")
+    .select(
+      "*, author_membership:memberships!initiatives_author_membership_id_fkey(address_street, address_city, profiles(first_name, last_name, display_name, avatar_url))",
+    )
+    .eq("commune_id", communeId)
+    .eq("status", INITIATIVE_STATUS.active)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!data) return null;
+
+  const initiative = data as InitiativeWithAuthor;
+
+  const [{ count }, { data: linkedEvent }] = await Promise.all([
+    supabase
+      .from("initiative_responses")
+      .select("id", { count: "exact", head: true })
+      .eq("initiative_id", initiative.id)
+      .eq("response_type", "support"),
+    supabase
+      .from("events")
+      .select("id, starts_at")
+      .eq("source_initiative_id", initiative.id)
+      .eq("status", EVENT_STATUS.active)
+      .maybeSingle(),
+  ]);
+
+  initiative.support_count = count ?? 0;
+  initiative.linked_event =
+    linkedEvent?.starts_at != null
+      ? { id: linkedEvent.id, starts_at: linkedEvent.starts_at }
+      : null;
+
+  return initiative;
+}
+
 export async function listInitiativeMarkers(
   supabase: SupabaseClient,
   filters: InitiativeListFilters,
