@@ -9,13 +9,13 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: "gradient-hero text-white hover:opacity-95",
+        primary: "border-0 gradient-hero text-white hover:opacity-95",
         secondary:
           "border-border bg-surface text-text hover:bg-warm aria-expanded:bg-warm",
         ghost:
           "text-text hover:bg-warm aria-expanded:bg-warm dark:hover:bg-warm/80",
         danger: "border-coral bg-coral text-white hover:opacity-95",
-        default: "gradient-hero text-white hover:opacity-95",
+        default: "border-0 gradient-hero text-white hover:opacity-95",
         outline:
           "border-border bg-surface text-text hover:bg-warm aria-expanded:bg-warm",
         destructive:
@@ -23,9 +23,9 @@ const buttonVariants = cva(
         link: "text-purple underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-auto gap-2 px-5 py-2.5",
+        default: "h-auto gap-2 px-5 py-2",
         xs: "h-6 gap-1 rounded-sm px-2 text-xs [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-auto gap-1.5 px-4 py-2 text-[0.8rem] [&_svg:not([class*='size-'])]:size-3.5",
+        sm: "h-auto gap-1.5 px-4 py-1.5 text-sm [&_svg:not([class*='size-'])]:size-3.5",
         lg: "h-auto gap-2 px-6 py-3 text-base",
         icon: "size-8 p-0",
         "icon-xs": "size-6 rounded-sm p-0 [&_svg:not([class*='size-'])]:size-3",

@@ -9,9 +9,12 @@ import {
   type ReactNode,
 } from "react";
 import type { AnnouncementType } from "@/lib/constants/announcement-types";
+import type { AnnouncementEditData } from "@/lib/types";
 
 type OpenAnnouncementOptions = {
   presetType?: AnnouncementType;
+  editId?: string;
+  initialData?: AnnouncementEditData;
 };
 
 type CreationModalContextValue = {
@@ -21,6 +24,8 @@ type CreationModalContextValue = {
   announcementOpen: boolean;
   initiativeOpen: boolean;
   announcementPresetType: AnnouncementType;
+  announcementEditId: string | undefined;
+  announcementInitialData: AnnouncementEditData | undefined;
 };
 
 const CreationModalContext = createContext<CreationModalContextValue | null>(
@@ -32,10 +37,14 @@ export function CreationModalProvider({ children }: { children: ReactNode }) {
   const [initiativeOpen, setInitiativeOpen] = useState(false);
   const [announcementPresetType, setAnnouncementPresetType] =
     useState<AnnouncementType>("demande");
+  const [announcementEditId, setAnnouncementEditId] = useState<string | undefined>();
+  const [announcementInitialData, setAnnouncementInitialData] = useState<AnnouncementEditData | undefined>();
 
   const openAnnouncementModal = useCallback(
     (options?: OpenAnnouncementOptions) => {
       setAnnouncementPresetType(options?.presetType ?? "demande");
+      setAnnouncementEditId(options?.editId);
+      setAnnouncementInitialData(options?.initialData);
       setInitiativeOpen(false);
       setAnnouncementOpen(true);
     },
@@ -50,6 +59,8 @@ export function CreationModalProvider({ children }: { children: ReactNode }) {
   const closeModals = useCallback(() => {
     setAnnouncementOpen(false);
     setInitiativeOpen(false);
+    setAnnouncementEditId(undefined);
+    setAnnouncementInitialData(undefined);
   }, []);
 
   const value = useMemo(
@@ -60,6 +71,8 @@ export function CreationModalProvider({ children }: { children: ReactNode }) {
       announcementOpen,
       initiativeOpen,
       announcementPresetType,
+      announcementEditId,
+      announcementInitialData,
     }),
     [
       openAnnouncementModal,
@@ -68,6 +81,8 @@ export function CreationModalProvider({ children }: { children: ReactNode }) {
       announcementOpen,
       initiativeOpen,
       announcementPresetType,
+      announcementEditId,
+      announcementInitialData,
     ],
   );
 

@@ -12,8 +12,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";
 import { PageHeading } from "@/components/ui/page-heading";
+<<<<<<< HEAD
 import { HabitantActions } from "@/components/features/mairie/habitant-actions";
 import type { Membership, MembershipStatus, Profile } from "@/lib/types";
+=======
+import { PageStack } from "@/components/ui/page-stack";
+>>>>>>> preprod
 
 const PAGE_SIZE = 25;
 
@@ -98,6 +102,7 @@ export default async function MairieHabitantsPage(props: {
   }
 
   return (
+<<<<<<< HEAD
     <div className="space-y-4">
       <Card className="space-y-4 p-6">
         <PageHeading
@@ -121,6 +126,13 @@ export default async function MairieHabitantsPage(props: {
           {totalPages}
         </p>
       </Card>
+=======
+    <PageStack>
+      <PageHeading
+        title="Habitant·es suivis localement"
+        subtitle="Les profils nominatifs sont visibles depuis les politiques RLS — cet écran liste l'essentiel : statuts d'adhésion et adresses approximatives."
+      />
+>>>>>>> preprod
 
       <div className="space-y-2">
         {memberships.length === 0 ? (
@@ -179,6 +191,7 @@ export default async function MairieHabitantsPage(props: {
           })
         )}
       </div>
+<<<<<<< HEAD
 
       {totalPages > 1 ? (
         <div className="flex items-center justify-between">
@@ -207,5 +220,8 @@ export default async function MairieHabitantsPage(props: {
         </div>
       ) : null}
     </div>
+=======
+    </PageStack>
+>>>>>>> preprod
   );
 }

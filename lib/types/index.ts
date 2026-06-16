@@ -1,11 +1,16 @@
 import type { AnnouncementType } from "@/lib/constants/announcement-types";
 
+<<<<<<< HEAD
 export type UserRole = "resident" | "municipality_staff" | "platform_admin";
 export type SubscriptionStatus =
   | "inactive"
   | "trial"
   | "active"
   | "suspended";
+=======
+export type MembershipRole = "member" | "staff" | "mayor";
+export type AccessStatus = "inactive" | "trial" | "active";
+>>>>>>> preprod
 export type MembershipStatus = "active" | "suspended" | "left";
 export type CommunePlan = "free" | "standard" | "premium";
 export type PaymentStatus = "paid" | "pending" | "failed" | "refunded";
@@ -18,6 +23,7 @@ export type Commune = {
   department: string | null;
   centroid_lat: number | null;
   centroid_lng: number | null;
+<<<<<<< HEAD
   subscription_status: SubscriptionStatus;
   subscription_started_at: string | null;
   subscription_ends_at: string | null;
@@ -29,6 +35,9 @@ export type Commune = {
   suspension_reason: string | null;
   created_at?: string;
   updated_at?: string;
+=======
+  access_status: AccessStatus;
+>>>>>>> preprod
   settings: CommuneSettings;
 };
 
@@ -139,6 +148,7 @@ export type Membership = {
   user_id: string;
   commune_id: string;
   address_street: string | null;
+  address_lieu_dit: string | null;
   address_city: string | null;
   address_citycode: string | null;
   address_postcode: string | null;
@@ -153,6 +163,7 @@ export type Membership = {
   commune?: Commune;
 };
 
+<<<<<<< HEAD
 export type ProfileNotificationPreferences = {
   user_id: string;
   message_notifications_enabled: boolean;
@@ -161,6 +172,28 @@ export type ProfileNotificationPreferences = {
   updated_at: string;
 };
 
+=======
+export type MembershipAddress = {
+  street: string | null;
+  city: string | null;
+  citycode: string | null;
+  postcode: string | null;
+  lat: number | null;
+  lng: number | null;
+};
+
+export function membershipToAddress(membership: Membership): MembershipAddress {
+  return {
+    street: membership.address_street,
+    city: membership.address_city,
+    citycode: membership.address_citycode,
+    postcode: membership.address_postcode,
+    lat: membership.address_lat,
+    lng: membership.address_lng,
+  };
+}
+
+>>>>>>> preprod
 export type Announcement = {
   id: string;
   commune_id: string;
@@ -172,10 +205,29 @@ export type Announcement = {
   photo_url: string | null;
   target_date: string | null;
   status: "ouverte" | "pourvue" | "archivee" | "expiree";
+  address_street: string | null;
+  address_city: string | null;
+  address_citycode: string | null;
+  address_postcode: string | null;
   address_lat: number | null;
   address_lng: number | null;
   created_at: string;
   author?: { display_name: string | null };
+};
+
+export type AnnouncementEditData = {
+  type: AnnouncementType;
+  categorySlug: string;
+  title: string;
+  description: string;
+  targetDate: string;
+  photoUrl: string;
+  addressStreet: string;
+  addressCity: string;
+  addressCitycode: string;
+  addressPostcode: string;
+  addressLat: number;
+  addressLng: number;
 };
 
 export type InitiativeRecord = {
@@ -228,7 +280,11 @@ export type AgendaEventRecord = {
   updated_at: string;
 };
 
+<<<<<<< HEAD
 export type ContextType = "announcement" | "initiative" | "event";
+=======
+export type ConversationContextType = "announcement" | "initiative" | "event";
+>>>>>>> preprod
 
 export type MessageRow = {
   id: string;
@@ -239,12 +295,41 @@ export type MessageRow = {
   edited_at: string | null;
 };
 
-export type ConversationPreview = {
+export type ConversationRow = {
   id: string;
+  commune_id: string;
+  created_by_user_id: string;
+  context_type: ConversationContextType | null;
+  context_id: string | null;
   title: string | null;
+  participant_a: string | null;
+  participant_b: string | null;
+  created_at: string;
   updated_at: string;
+  last_message_at: string | null;
+  last_message_preview: string | null;
+  last_message_sender_id: string | null;
 };
 
+/** Returned by the `list_my_conversations` RPC — one row per conversation for the current user. */
+export type ConversationInboxItem = {
+  conversation_id: string;
+  context_type: ConversationContextType | null;
+  context_id: string | null;
+  title: string | null;
+  updated_at: string;
+  last_message_at: string | null;
+  last_message_preview: string | null;
+  last_message_sender_id: string | null;
+  archived_at: string | null;
+  last_read_at: string | null;
+  other_user_id: string | null;
+  other_display_name: string | null;
+  other_avatar_url: string | null;
+  unread_count: number;
+};
+
+<<<<<<< HEAD
 /** Lightweight profile slice used to render participants in the messaging UI. */
 export type ParticipantProfile = {
   user_id: string;
@@ -285,3 +370,24 @@ export type NotificationRow = {
   read_at: string | null;
   created_at: string;
 };
+=======
+export type NotificationPreferenceKey =
+  | "notify_message_announcement"
+  | "notify_message_initiative"
+  | "notify_message_event"
+  | "notify_new_announcement"
+  | "notify_new_initiative"
+  | "notify_new_event";
+
+export type NotificationPreferences = Record<NotificationPreferenceKey, boolean>;
+
+export interface AnnouncementCategoryRow {
+  slug: string;
+  label: string;
+  sort_order: number;
+  icon_name: string | null;
+  color_hex: string;
+  map_pin_url: string | null;
+  default_image_url: string | null;
+}
+>>>>>>> preprod

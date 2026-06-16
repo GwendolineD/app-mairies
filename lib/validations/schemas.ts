@@ -33,6 +33,11 @@ export const signupSchema = z.object({
   firstName: z.string().min(1, "Prénom requis"),
   lastName: z.string().min(1, "Nom requis"),
   inseeCode: z.string().min(1),
+  addressStreet: z.string().min(1, "Rue requise"),
+  addressLieuDit: z
+    .string()
+    .optional()
+    .transform((v) => (v?.trim() ? v.trim() : undefined)),
   addressCity: z.string().min(1, "Ville requise"),
   addressCitycode: z.string().min(1),
   addressPostcode: z.string().min(4),
@@ -54,11 +59,40 @@ export const joinCommuneSchema = z.object({
 
 export const announcementSchema = z.object({
   type: z.enum(ANNOUNCEMENT_TYPE_SLUGS),
+<<<<<<< HEAD
   categorySlug: z.enum(categorySlugs),
   title: z.string().min(3).max(120),
   description: z.string().max(2000).optional(),
   targetDate: z.string().optional(),
+=======
+  categorySlug: z.enum(ANNOUNCEMENT_CATEGORY_SLUGS),
+  title: z.string().trim().min(1, "Titre requis").max(70, "Titre trop long (70 caractères max.)"),
+  description: z
+    .string()
+    .max(1000, "Description trop longue (1000 caractères max.)")
+    .transform((value) => value.trim())
+    .pipe(
+      z
+        .string()
+        .min(1, "Description requise")
+        .max(1000, "Description trop longue (1000 caractères max.)"),
+    ),
+  targetDate: z
+    .string()
+    .optional()
+    .transform((v) => (v?.trim() ? v : undefined)),
+>>>>>>> preprod
   photoUrl: z.string().url().optional().or(z.literal("")),
+  addressStreet: z.string().trim().min(1, "Rue requise"),
+  addressCity: z.string().trim().min(1, "Ville requise"),
+  addressCitycode: z.string().trim().min(1, "Commune invalide"),
+  addressPostcode: z.string().trim().min(4, "Code postal invalide"),
+  addressLat: z
+    .number({ error: "Localisation invalide : sélectionnez une adresse dans la liste." })
+    .finite("Localisation invalide : sélectionnez une adresse dans la liste."),
+  addressLng: z
+    .number({ error: "Localisation invalide : sélectionnez une adresse dans la liste." })
+    .finite("Localisation invalide : sélectionnez une adresse dans la liste."),
 });
 
 export const initiativeSchema = z.object({
@@ -90,15 +124,32 @@ export const messageSchema = z.object({
   body: z.string().min(1).max(5000),
 });
 
+<<<<<<< HEAD
 export const userReportSchema = z.object({
   reportedUserId: z.string().uuid(),
   reason: z.string().min(10).max(1000),
+=======
+export const notificationPreferencesSchema = z.object({
+  notify_message_announcement: z.boolean(),
+  notify_message_initiative: z.boolean(),
+  notify_message_event: z.boolean(),
+  notify_new_announcement: z.boolean(),
+  notify_new_initiative: z.boolean(),
+  notify_new_event: z.boolean(),
+});
+
+export const pushSubscriptionSchema = z.object({
+  endpoint: z.string().url(),
+  p256dh: z.string().min(1),
+  auth: z.string().min(1),
+  userAgent: z.string().max(500).optional(),
+>>>>>>> preprod
 });
 
 export const reportSchema = z.object({
   contextType: z.enum(["announcement", "initiative", "event"]),
   contextId: z.string().uuid(),
-  reason: z.string().min(10).max(1000),
+  reason: z.string().min(10).max(400),
 });
 
 export const appealSchema = z.object({
@@ -145,4 +196,17 @@ export const communeSettingsSchema = z.object({
   neighborInvitePreheader: z.string().max(280).optional(),
   neighborInviteBodyMarkdown: z.string().min(20).max(4000),
   neighborInviteCtaLabel: z.string().min(2).max(80),
+});
+
+export const createPilotCommuneSchema = z.object({
+  inseeCode: z.string().min(1, "Code INSEE requis"),
+  name: z.string().min(1, "Nom requis"),
+  postcode: z
+    .string()
+    .optional()
+    .transform((value) => (value?.trim() ? value.trim() : undefined)),
+  centroidLat: z.number(),
+  centroidLng: z.number(),
+  accessStatus: z.enum(["inactive", "trial", "active"]),
+  mairieAddress: z.string().trim().min(3, "Adresse mairie requise"),
 });

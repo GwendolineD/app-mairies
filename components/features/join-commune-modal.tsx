@@ -84,7 +84,7 @@ export function JoinCommuneModal({
       const row = json.commune ?? null;
       setLookupCommune(row);
 
-      if (!row || row.subscription_status !== "active") {
+      if (!row || row.access_status !== "active") {
         setStep("interest");
         setInterestOpen(true);
         return;

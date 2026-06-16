@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { BottomNav, ResidentSidebarNav } from "@/components/features/resident-nav";
 import { CommuneSwitcher } from "@/components/features/commune-switcher";
 import { MessagingProvider } from "@/components/features/messaging/messaging-provider";
@@ -7,6 +8,19 @@ import { getUnreadCount } from "@/lib/data/messages";
 import { signOut } from "@/lib/actions/auth";
 import { ROUTES } from "@/lib/constants/routes";
 import { Button } from "@/components/ui/button";
+=======
+import { BottomNav } from "@/components/features/resident-nav";
+import { ResidentSidebar } from "@/components/features/resident-sidebar";
+import { ResidentHeader } from "@/components/features/resident-header";
+import { ResidentShellClient } from "@/components/features/resident-shell-client";
+import { getResidentBackofficeNav } from "@/lib/auth/permissions";
+import { requireActiveMembership } from "@/lib/auth/session";
+import { membershipToAddress } from "@/lib/types";
+import { countUnreadMessages } from "@/lib/queries/messages";
+import { createClient } from "@/lib/supabase/server";
+import { getAnnouncementCategories } from "@/lib/queries/announcement-categories";
+import { initCategories } from "@/lib/constants/announcement-categories";
+>>>>>>> preprod
 
 export default async function ResidentRootLayout({
   children,
@@ -14,6 +28,7 @@ export default async function ResidentRootLayout({
   children: React.ReactNode;
 }) {
   const ctx = await requireActiveMembership();
+<<<<<<< HEAD
   const communeId = ctx.activeMembership!.commune_id;
   const communeName =
     ctx.activeMembership?.commune?.name ??
@@ -79,5 +94,43 @@ export default async function ResidentRootLayout({
       </div>
       <PushRegistrar />
     </MessagingProvider>
+=======
+  const backofficeLinks = getResidentBackofficeNav(ctx);
+  const supabase = await createClient();
+
+  const [unreadMessages, categoryRows] = await Promise.all([
+    countUnreadMessages(supabase, ctx.activeMembership!.commune_id),
+    getAnnouncementCategories(),
+  ]);
+
+  initCategories(categoryRows);
+
+  return (
+    <div className="flex h-dvh w-full flex-col overflow-hidden bg-background text-text">
+      <ResidentHeader
+        profile={ctx.profile}
+        memberships={ctx.memberships}
+        activeCommuneId={
+          ctx.profile.active_commune_id ?? ctx.activeMembership?.commune_id
+        }
+        backofficeLinks={backofficeLinks}
+      />
+
+      <div className="flex min-h-0 w-full flex-1">
+        <ResidentSidebar unreadMessages={unreadMessages} />
+
+        <main className="min-w-0 flex-1 overflow-y-auto bg-surface px-4 py-4 pb-28 md:px-6 md:py-6 md:pb-6 lg:px-8">
+          <ResidentShellClient
+            communeId={ctx.activeMembership!.commune_id}
+            membershipAddress={membershipToAddress(ctx.activeMembership!)}
+          >
+            {children}
+          </ResidentShellClient>
+        </main>
+      </div>
+
+      <BottomNav unreadMessages={unreadMessages} />
+    </div>
+>>>>>>> preprod
   );
 }

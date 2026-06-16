@@ -1,7 +1,18 @@
+<<<<<<< HEAD
 import { NavLink } from "@/components/ui/nav-link";
 import { requireRole } from "@/lib/auth/session";
 import { MUNICIPALITY_NAV, ROUTES } from "@/lib/constants/routes";
 import { USER_ROLES } from "@/lib/constants/roles";
+=======
+import { AdminShell } from "@/components/features/admin-shell/admin-shell";
+import { requireCommuneStaff } from "@/lib/auth/session";
+import {
+  MUNICIPALITY_NAV,
+  MUNICIPALITY_SIDEBAR_STORAGE_KEY,
+} from "@/lib/constants/routes";
+import { getAnnouncementCategories } from "@/lib/queries/announcement-categories";
+import { initCategories } from "@/lib/constants/announcement-categories";
+>>>>>>> preprod
 
 export default async function MunicipalityDashboardLayout({
   children,
@@ -10,6 +21,7 @@ export default async function MunicipalityDashboardLayout({
 }) {
   await requireRole([USER_ROLES.municipalityStaff]);
 
+<<<<<<< HEAD
   return (
     <div className="min-h-dvh bg-warm">
       <div className="mx-auto flex min-h-dvh w-full max-w-7xl">
@@ -54,5 +66,18 @@ export default async function MunicipalityDashboardLayout({
         </div>
       </div>
     </div>
+=======
+  const categoryRows = await getAnnouncementCategories();
+  initCategories(categoryRows);
+
+  return (
+    <AdminShell
+      navItems={MUNICIPALITY_NAV}
+      storageKey={MUNICIPALITY_SIDEBAR_STORAGE_KEY}
+      sidebarTitle="Espace Mairie"
+    >
+      {children}
+    </AdminShell>
+>>>>>>> preprod
   );
 }

@@ -5,11 +5,12 @@ import { GradientButton } from "@/components/ui/gradient-button";
 import { Card } from "@/components/ui/card";
 import { FormField, Input, Textarea } from "@/components/ui/form-field";
 import { PageHeading } from "@/components/ui/page-heading";
+import { PageStack } from "@/components/ui/page-stack";
 
 export default function MairieNouveauEvenementPage() {
   return (
-    <div className="space-y-5">
-      <BackLink href={ROUTES.mairie.dashboard}>← Dashboard</BackLink>
+    <PageStack gap="5">
+      <BackLink href={ROUTES.mairie.dashboard}>← Tableau de bord</BackLink>
       <PageHeading title="Ajouter un événement officiel commun" />
       <Card className="space-y-3 p-6">
         <form action={createEvent} className="space-y-3">
@@ -39,6 +40,6 @@ export default function MairieNouveauEvenementPage() {
         le verront depuis l&apos;application résidentielle classique lorsque vos autorisations de
         rôle correspondent.
       </p>
-    </div>
+    </PageStack>
   );
 }

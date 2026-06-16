@@ -1,5 +1,6 @@
 "use client";
 
+<<<<<<< HEAD
 import dynamic from "next/dynamic";
 import { useState } from "react";
 import { Maximize2 } from "lucide-react";
@@ -13,10 +14,19 @@ const DynamicMap = dynamic(
     ssr: false,
   },
 );
+=======
+import { Suspense } from "react";
+import { AnnouncementAddressLines } from "@/components/features/announcement-address-lines";
+import { CarteAnnoncesMap } from "@/components/features/carte-preview-map";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { AddressLines } from "@/lib/utils/format-address";
+import { cn } from "@/lib/utils/cn";
+>>>>>>> preprod
 
 type Props = {
   latitude: number;
   longitude: number;
+<<<<<<< HEAD
   label: string;
   /** True when coordinates fall back to the commune centroid (approximate location). */
   approximate?: boolean;
@@ -83,5 +93,46 @@ export function AnnouncementLocationMap({
         ) : null}
       </Modal>
     </>
+=======
+  announcementTitle: string;
+  addressLines: AddressLines;
+  categorySlug: string;
+  mapPinUrl?: string | null;
+  colorHex?: string;
+  mapClassName?: string;
+};
+
+const MAP_PREVIEW_CLASS =
+  "h-48 overflow-hidden rounded-lg border border-border/70";
+
+export function AnnouncementLocationMap({
+  latitude,
+  longitude,
+  announcementTitle,
+  addressLines,
+  categorySlug,
+  mapPinUrl,
+  colorHex,
+  mapClassName = MAP_PREVIEW_CLASS,
+}: Props) {
+  return (
+    <div className="space-y-2">
+      <AnnouncementAddressLines {...addressLines} size="md" />
+
+      <div className="relative z-0">
+        <Suspense fallback={<Skeleton className={cn(mapClassName, "h-48")} />}>
+          <CarteAnnoncesMap
+            latitude={latitude}
+            longitude={longitude}
+            communeName={announcementTitle}
+            categorySlug={categorySlug}
+            mapPinUrl={mapPinUrl}
+            colorHex={colorHex}
+            className={mapClassName}
+          />
+        </Suspense>
+      </div>
+    </div>
+>>>>>>> preprod
   );
 }

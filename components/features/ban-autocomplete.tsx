@@ -11,6 +11,7 @@ type Props = {
   placeholder: string;
   fetchSuggestions: (query: string) => Promise<BanFeature[]>;
   onSelect: (feature: BanFeature) => void;
+  onInputChange?: (text: string) => void;
   value?: string;
   disabled?: boolean;
   inputClassName?: string;
@@ -32,6 +33,7 @@ export function BanAutocomplete({
   placeholder,
   fetchSuggestions,
   onSelect,
+  onInputChange,
   value,
   disabled,
   inputClassName,
@@ -47,6 +49,7 @@ export function BanAutocomplete({
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
+<<<<<<< HEAD
   const queryRef = useRef(value ?? "");
 
   useEffect(() => {
@@ -54,6 +57,13 @@ export function BanAutocomplete({
     queryRef.current = value;
     if (inputRef.current) {
       inputRef.current.value = value;
+=======
+  const isFocusedRef = useRef(false);
+
+  useEffect(() => {
+    if (value !== undefined && !isFocusedRef.current) {
+      setQuery(value);
+>>>>>>> preprod
     }
   }, [value]);
 
@@ -79,7 +89,12 @@ export function BanAutocomplete({
   }
 
   function handleChange(text: string) {
+<<<<<<< HEAD
     queryRef.current = text;
+=======
+    setQuery(text);
+    onInputChange?.(text);
+>>>>>>> preprod
     setActiveIndex(-1);
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
@@ -185,8 +200,17 @@ export function BanAutocomplete({
           placeholder={placeholder}
           defaultValue={value ?? ""}
           onChange={(e) => handleChange(e.target.value)}
-          onFocus={() => void handleFocus()}
-          onBlur={() => setTimeout(() => closeList(), 150)}
+          onFocus={() => {
+            isFocusedRef.current = true;
+            void handleFocus();
+          }}
+          onBlur={() => {
+            isFocusedRef.current = false;
+            if (value !== undefined && value !== query) {
+              setQuery(value);
+            }
+            setTimeout(() => closeList(), 150);
+          }}
           onKeyDown={handleKeyDown}
           className={cn(
             "w-full rounded-sm border border-border bg-surface py-2.5 text-sm text-text outline-none placeholder:text-subtle focus:border-purple disabled:cursor-not-allowed disabled:opacity-50 md:py-2",
@@ -207,26 +231,34 @@ export function BanAutocomplete({
           ref={listRef}
           id={listboxId}
           role="listbox"
-          className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-sm border border-border bg-surface shadow-elevated"
+          className="absolute z-1200 mt-1 max-h-56 w-full overflow-auto rounded-sm border border-border bg-surface shadow-elevated"
         >
           {suggestions.map((feature, index) => {
-            const text = suggestionLabel(feature, formatSuggestion);
+            const streetLine = suggestionLabel(feature, formatSuggestion);
+            const locationLine = [feature.postcode?.trim(), feature.city?.trim()]
+              .filter(Boolean)
+              .join(" ");
             const isActive = index === activeIndex;
             return (
-              <li key={`${feature.citycode}-${feature.label}`} role="presentation">
+              <li key={`${feature.citycode}-${feature.label}-${index}`} role="presentation">
                 <button
                   type="button"
                   id={`${listboxId}-option-${index}`}
                   role="option"
                   aria-selected={isActive}
                   className={cn(
-                    "w-full cursor-pointer px-4 py-2.5 text-left text-sm hover:bg-warm",
+                    "w-full cursor-pointer px-4 py-2.5 text-left hover:bg-warm",
                     isActive && "bg-warm",
                   )}
                   onMouseDown={() => selectSuggestion(feature)}
                   onMouseEnter={() => setActiveIndex(index)}
                 >
-                  {text}
+                  <span className="block text-sm font-medium text-text">{streetLine}</span>
+                  {locationLine ? (
+                    <span className="mt-0.5 block text-xs font-medium text-muted">
+                      {locationLine}
+                    </span>
+                  ) : null}
                 </button>
               </li>
             );

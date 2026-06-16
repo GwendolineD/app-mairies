@@ -1,17 +1,47 @@
 -- Fixed announcement categories (national list, all communes)
-insert into public.announcement_categories (slug, label, sort_order, icon_url, map_pin_url) values
-  ('bricolage', 'Bricolage', 1, null, null),
-  ('numerique', 'Numérique', 2, null, null),
-  ('transport', 'Transport', 3, null, null),
-  ('alimentaire', 'Alimentaire', 4, null, null),
-  ('garde-pontuelle', 'Garde ponctuelle', 5, null, null),
-  ('paperasse', 'Paperasse', 6, null, null),
-  ('animaux', 'Animaux', 7, null, null),
-  ('jardinage-exterieur', 'Jardinage & extérieur', 8, null, null),
-  ('pret-objet', 'Prêt d''objet', 9, null, null),
-  ('don-troc', 'Don & troc', 10, null, null),
-  ('loisirs', 'Loisirs', 11, null, null),
-  ('autre', 'Autre', 12, null, null)
-on conflict (slug) do update set
+-- Includes all columns: icon_name, color_hex, map_pin_url, default_image_url
+
+INSERT INTO public.announcement_categories (slug, label, sort_order, icon_name, color_hex, map_pin_url, default_image_url) VALUES
+  ('bricolage', 'Bricolage', 1, 'hammer', '#E85D3A',
+    'https://res.cloudinary.com/du3ko16j1/image/upload/v1781508550/app-mairies/illustrations/annonces-categories-pin/bricolage-small_dk2phc.png',
+    'https://res.cloudinary.com/du3ko16j1/image/upload/v1781280253/app-mairies/illustrations/annonce-categorie-image-default/bricolage_2_xgz7dd.png'),
+  ('numerique', 'Numérique', 2, 'monitor', '#5CBDB9',
+    'https://res.cloudinary.com/du3ko16j1/image/upload/v1781508553/app-mairies/illustrations/annonces-categories-pin/numerique-small_hpbzaf.png',
+    'https://res.cloudinary.com/du3ko16j1/image/upload/v1781280255/app-mairies/illustrations/annonce-categorie-image-default/numerique_2_bqxjvf.png'),
+  ('transport', 'Transport', 3, 'car', '#4A9FD4',
+    'https://res.cloudinary.com/du3ko16j1/image/upload/v1781508555/app-mairies/illustrations/annonces-categories-pin/transport-small_dgq6um.png',
+    'https://res.cloudinary.com/du3ko16j1/image/upload/v1781280256/app-mairies/illustrations/annonce-categorie-image-default/transport_2_thbebj.png'),
+  ('alimentaire', 'Alimentaire', 4, 'shopping-basket', '#F4A261',
+    'https://res.cloudinary.com/du3ko16j1/image/upload/v1781508549/app-mairies/illustrations/annonces-categories-pin/alimentation-small_govrc3.png',
+    'https://res.cloudinary.com/du3ko16j1/image/upload/v1781280252/app-mairies/illustrations/annonce-categorie-image-default/alimentaire_-_Moyenne_sjiy1u.png'),
+  ('garde-pontuelle', 'Garde ponctuelle', 5, 'users', '#E89AB8',
+    'https://res.cloudinary.com/du3ko16j1/image/upload/v1781508552/app-mairies/illustrations/annonces-categories-pin/garde-enfant-small_krbvcz.png',
+    'https://res.cloudinary.com/du3ko16j1/image/upload/v1781280254/app-mairies/illustrations/annonce-categorie-image-default/garde-enfants_2_ilgrha.png'),
+  ('paperasse', 'Paperasse', 6, 'file-text', '#E8C07A',
+    'https://res.cloudinary.com/du3ko16j1/image/upload/v1781508554/app-mairies/illustrations/annonces-categories-pin/paperasse-small_elhdlk.png',
+    'https://res.cloudinary.com/du3ko16j1/image/upload/v1781280256/app-mairies/illustrations/annonce-categorie-image-default/paperasse_2_jlabjc.png'),
+  ('animaux', 'Animaux', 7, 'paw-print', '#B58463',
+    'https://res.cloudinary.com/du3ko16j1/image/upload/v1781508550/app-mairies/illustrations/annonces-categories-pin/animaux-small_dyhb3o.png',
+    'https://res.cloudinary.com/du3ko16j1/image/upload/v1781280252/app-mairies/illustrations/annonce-categorie-image-default/animaux_-_Moyenne_grssuv.png'),
+  ('jardinage-exterieur', 'Jardinage & extérieur', 8, 'leaf', '#7BB661',
+    'https://res.cloudinary.com/du3ko16j1/image/upload/v1781508552/app-mairies/illustrations/annonces-categories-pin/jardinage-exterieur-small_xe5567.png',
+    'https://res.cloudinary.com/du3ko16j1/image/upload/v1781280254/app-mairies/illustrations/annonce-categorie-image-default/jardin-exterieur_2_etmein.png'),
+  ('pret-objet', 'Prêt d''objet', 9, 'package', '#8FA8C9',
+    'https://res.cloudinary.com/du3ko16j1/image/upload/v1781508555/app-mairies/illustrations/annonces-categories-pin/pret-objet-small_uyozmf.png',
+    'https://res.cloudinary.com/du3ko16j1/image/upload/v1781280256/app-mairies/illustrations/annonce-categorie-image-default/pret-objet_2_emrbqp.png'),
+  ('don-troc', 'Don & troc', 10, 'gift', '#B084CC',
+    'https://res.cloudinary.com/du3ko16j1/image/upload/v1781508551/app-mairies/illustrations/annonces-categories-pin/don-troc-small_r5eifr.png',
+    'https://res.cloudinary.com/du3ko16j1/image/upload/v1781280253/app-mairies/illustrations/annonce-categorie-image-default/don-troc_2_jeqxql.png'),
+  ('loisirs', 'Loisirs', 11, 'music', '#E8688F',
+    'https://res.cloudinary.com/du3ko16j1/image/upload/v1781508553/app-mairies/illustrations/annonces-categories-pin/loisirs-small_eiepsv.png',
+    'https://res.cloudinary.com/du3ko16j1/image/upload/v1781280255/app-mairies/illustrations/annonce-categorie-image-default/loisirs_2_hvzfoe.png'),
+  ('autre', 'Autre', 12, 'more-horizontal', '#A8A8A8',
+    'https://res.cloudinary.com/du3ko16j1/image/upload/v1781508550/app-mairies/illustrations/annonces-categories-pin/autre-small_kq7l8b.png',
+    'https://res.cloudinary.com/du3ko16j1/image/upload/v1781280253/app-mairies/illustrations/annonce-categorie-image-default/autre_2_s1dc51.png')
+ON CONFLICT (slug) DO UPDATE SET
   label = excluded.label,
-  sort_order = excluded.sort_order;
+  sort_order = excluded.sort_order,
+  icon_name = excluded.icon_name,
+  color_hex = excluded.color_hex,
+  map_pin_url = excluded.map_pin_url,
+  default_image_url = excluded.default_image_url;

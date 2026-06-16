@@ -13,10 +13,16 @@ const DynamicMap = dynamic(
   },
 );
 
+import type { AnnouncementPinSize } from "@/lib/utils/announcement-map-pin";
+
 type Props = {
   latitude: number;
   longitude: number;
   communeName: string;
+  categorySlug?: string;
+  mapPinUrl?: string | null;
+  colorHex?: string;
+  pinSize?: AnnouncementPinSize;
   className?: string;
 };
 
@@ -24,6 +30,10 @@ export function CarteAnnoncesMap({
   latitude,
   longitude,
   communeName,
+  categorySlug,
+  mapPinUrl,
+  colorHex,
+  pinSize = "default",
   className = "h-80 rounded-3xl overflow-hidden shadow-card border border-border/70 lg:h-[min(32rem,70vh)] lg:min-h-96",
 }: Props) {
   return (
@@ -31,6 +41,10 @@ export function CarteAnnoncesMap({
       communeName={communeName}
       latitude={latitude}
       longitude={longitude}
+      categorySlug={categorySlug}
+      mapPinUrl={mapPinUrl}
+      colorHex={colorHex}
+      pinSize={pinSize}
       zoom={14}
       className={className}
     />

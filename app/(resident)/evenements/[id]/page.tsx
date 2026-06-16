@@ -13,6 +13,10 @@ import { ContactButton } from "@/components/features/messaging/contact-button";
 import { ReportButton } from "@/components/features/report-button";
 import type { AgendaEventRecord } from "@/lib/types";
 import { PageStack } from "@/components/ui/page-stack";
+<<<<<<< HEAD
+=======
+import { CarteAnnoncesMap } from "@/components/features/carte-preview-map";
+>>>>>>> preprod
 
 export default async function EvenementDetailPage(props: {
   params: Promise<{ id: string }>;
@@ -81,9 +85,51 @@ export default async function EvenementDetailPage(props: {
               contextTitle={event.title}
               gradient="events"
             />
+<<<<<<< HEAD
           </div>
         )}
       </Card>
+=======
+          )}
+          <p className="rounded-2xl bg-warm px-4 py-3 text-sm font-medium text-muted">
+            {formatEventDetail(event.starts_at, event.ends_at)}
+          </p>
+          {event.address_label ? (
+            <p className="text-sm text-muted">Lieu : {event.address_label}</p>
+          ) : null}
+          <p className="whitespace-pre-line text-base font-medium leading-6 text-muted">
+            {event.description}
+          </p>
+          {isAuthor ? (
+            <div className="flex gap-2">
+              <form action={submitArchiveEvent}>
+                <input type="hidden" name="id" value={event.id} />
+                <Button type="submit" variant="secondary" className="text-xs">
+                  Archiver
+                </Button>
+              </form>
+              <form action={submitDeleteEvent}>
+                <input type="hidden" name="id" value={event.id} />
+                <Button type="submit" variant="danger" className="text-xs">
+                  Supprimer
+                </Button>
+              </form>
+            </div>
+          ) : null}
+        </Card>
+        {event.address_lat != null && event.address_lng != null ? (
+          <Card className="p-4">
+            <h2 className="mb-2 text-lg font-semibold text-text">Carte</h2>
+            <CarteAnnoncesMap
+              latitude={event.address_lat}
+              longitude={event.address_lng}
+              communeName={event.title}
+              className="h-48 rounded-2xl overflow-hidden border border-border/70"
+            />
+          </Card>
+        ) : null}
+      </div>
+>>>>>>> preprod
     </PageStack>
   );
 }

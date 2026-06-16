@@ -17,6 +17,7 @@ type Props = {
   onValueChange?: (value: string) => void;
   onValidityChange?: (valid: boolean) => void;
   showValidation?: boolean;
+  showLeadingIcon?: boolean;
 };
 
 export function PasswordField({
@@ -28,6 +29,7 @@ export function PasswordField({
   onValueChange,
   onValidityChange,
   showValidation = true,
+  showLeadingIcon = true,
 }: Props) {
   const id = useId();
   const [visible, setVisible] = useState(false);
@@ -53,10 +55,12 @@ export function PasswordField({
         Mot de passe
       </Label>
       <div className="relative">
-        <Lock
-          className="pointer-events-none absolute left-3.5 top-1/2 size-[18px] -translate-y-1/2 text-subtle"
-          aria-hidden
-        />
+        {showLeadingIcon ? (
+          <Lock
+            className="pointer-events-none absolute left-3.5 top-1/2 size-[18px] -translate-y-1/2 text-subtle"
+            aria-hidden
+          />
+        ) : null}
         <Input
           id={id}
           name={name}
@@ -66,11 +70,14 @@ export function PasswordField({
           placeholder={placeholder}
           value={inputValue}
           onChange={(e) => handleChange(e.target.value)}
-          className={cn("pl-10 pr-10 placeholder:text-subtle")}
+          className={cn(
+            "pr-10 placeholder:text-subtle",
+            showLeadingIcon ? "pl-10" : "pl-4",
+          )}
         />
         <button
           type="button"
-          className="absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer text-subtle hover:text-text"
+          className="absolute right-1 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center cursor-pointer text-subtle hover:text-text"
           onClick={() => setVisible((v) => !v)}
           aria-label={
             visible ? "Masquer le mot de passe" : "Afficher le mot de passe"

@@ -42,7 +42,7 @@ export function AuthHeroContent({ className }: Props) {
   return (
     <div
       className={cn(
-        "flex h-full min-h-0 flex-col px-8 pb-10 pt-5 md:px-10 md:pb-8 md:pt-6",
+        "flex h-full min-h-0 flex-col px-8 pb-12 pt-5 md:px-10 md:pb-16 md:pt-6",
         className,
       )}
     >

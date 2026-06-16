@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -12,10 +13,18 @@ import {
   UserRound,
 } from "lucide-react";
 import { AnnouncementTypeTag } from "@/components/ui/announcement-type-tag";
+=======
+import { requireActiveMembership } from "@/lib/auth/session";
+import { createNeighborInvite } from "@/lib/actions/messages";
+import { createClient } from "@/lib/supabase/server";
+import { getNotificationPreferences } from "@/lib/queries/messages";
+import { getPushPublicKey } from "@/lib/actions/notifications";
+>>>>>>> preprod
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";
 import { PageStack } from "@/components/ui/page-stack";
+<<<<<<< HEAD
 import { ProfileSkeleton } from "@/components/features/profile/profile-skeleton";
 import { ProfileTabs, isProfileTab, type ProfileTabKey } from "@/components/features/profile/profile-tabs";
 import { ProfileEmptyState } from "@/components/features/profile/profile-empty-state";
@@ -33,6 +42,11 @@ import type {
 } from "@/lib/types";
 import { normalizeNeighborInviteTemplate } from "@/lib/utils/email-template";
 import { ROUTES } from "@/lib/constants/routes";
+=======
+import { ProfilAddCommuneButton } from "@/components/features/profil-add-commune-button";
+import { ProfilClient } from "@/components/features/profil-client";
+import { NotificationPreferencesForm } from "@/components/features/notification-preferences-form";
+>>>>>>> preprod
 
 type SearchParams = Promise<{ tab?: string }> | undefined;
 
@@ -93,6 +107,7 @@ async function ProfilContent({ searchParams }: { searchParams?: SearchParams }) 
   const membershipId = membership.id;
 
   const supabase = await createClient();
+<<<<<<< HEAD
   const [
     announcementsResult,
     initiativesResult,
@@ -147,6 +162,32 @@ async function ProfilContent({ searchParams }: { searchParams?: SearchParams }) 
       .eq("template_key", NEIGHBOR_INVITE_TEMPLATE_KEY)
       .maybeSingle(),
   ]);
+=======
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("user_id", ctx.userId)
+    .single();
+
+  const [annCount, initCount, partCount, notificationPrefs, pushPublicKey] =
+    await Promise.all([
+      supabase
+        .from("announcements")
+        .select("id", { count: "exact", head: true })
+        .eq("author_membership_id", membership.id),
+      supabase
+        .from("initiatives")
+        .select("id", { count: "exact", head: true })
+        .eq("author_membership_id", membership.id),
+      supabase
+        .from("initiative_responses")
+        .select("id", { count: "exact", head: true })
+        .eq("membership_id", membership.id),
+      getNotificationPreferences(supabase, ctx.userId),
+      getPushPublicKey(),
+    ]);
+>>>>>>> preprod
 
   logQueryError("announcements", announcementsResult.error);
   logQueryError("initiatives", initiativesResult.error);
@@ -182,6 +223,7 @@ async function ProfilContent({ searchParams }: { searchParams?: SearchParams }) 
         }}
       />
 
+<<<<<<< HEAD
       <ProfileTabs activeTab={activeTab} />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.75fr)]">
@@ -210,6 +252,28 @@ async function ProfilContent({ searchParams }: { searchParams?: SearchParams }) 
           />
         </aside>
       </div>
+=======
+      <NotificationPreferencesForm
+        initial={notificationPrefs}
+        pushPublicKey={pushPublicKey}
+      />
+
+      <Card className="space-y-3 p-5">
+        <h2 className="text-xl font-semibold text-text">
+          Inviter un·e voisin·e proche par e-mail
+        </h2>
+        <form action={createNeighborInvite} className="space-y-2">
+          <Input type="email" name="email" required placeholder="voisin@mail.fr" />
+          <Button type="submit" className="w-full">
+            Envoyer l&apos;invitation
+          </Button>
+        </form>
+      </Card>
+
+      <Card className="space-y-3 p-5">
+        <ProfilAddCommuneButton memberships={ctx.memberships} />
+      </Card>
+>>>>>>> preprod
     </PageStack>
   );
 }

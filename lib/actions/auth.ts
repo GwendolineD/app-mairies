@@ -31,6 +31,8 @@ export async function signUp(formData: FormData) {
     firstName: formData.get("firstName") as string,
     lastName: formData.get("lastName") as string,
     inseeCode: formData.get("inseeCode") as string,
+    addressStreet: formData.get("addressStreet") as string,
+    addressLieuDit: (formData.get("addressLieuDit") as string) || undefined,
     addressCity: formData.get("addressCity") as string,
     addressCitycode: formData.get("addressCitycode") as string,
     addressPostcode: formData.get("addressPostcode") as string,
@@ -47,11 +49,11 @@ export async function signUp(formData: FormData) {
   const supabase = await createClient();
   const { data: commune } = await supabase
     .from("communes")
-    .select("id, subscription_status")
+    .select("id, access_status")
     .eq("insee_code", parsed.data.inseeCode)
     .single();
 
-  if (!commune || commune.subscription_status !== "active") {
+  if (!commune || commune.access_status !== "active") {
     return { error: { form: ["Cette commune n'est pas encore active."] } };
   }
 
@@ -91,7 +93,8 @@ export async function signUp(formData: FormData) {
   await supabase.from("memberships").insert({
     user_id: authData.user.id,
     commune_id: commune.id,
-    address_street: null,
+    address_street: parsed.data.addressStreet,
+    address_lieu_dit: parsed.data.addressLieuDit ?? null,
     address_city: parsed.data.addressCity,
     address_citycode: parsed.data.addressCitycode,
     address_postcode: parsed.data.addressPostcode,
@@ -316,11 +319,11 @@ export async function joinCommune(formData: FormData) {
 
   const { data: commune } = await supabase
     .from("communes")
-    .select("id, subscription_status")
+    .select("id, access_status")
     .eq("insee_code", parsed.data.inseeCode)
     .single();
 
-  if (!commune || commune.subscription_status !== "active") {
+  if (!commune || commune.access_status !== "active") {
     return { error: { form: ["Cette commune n'est pas encore active."] } };
   }
 

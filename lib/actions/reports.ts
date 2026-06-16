@@ -55,7 +55,7 @@ export async function submitUserReport(formData: FormData): Promise<void> {
 
   if (error) return;
   revalidatePath(ROUTES.mairie.signalements);
-  revalidatePath(ROUTES.platform.admin);
+  revalidatePath(ROUTES.backoffice.admin);
 }
 
 /** Stores structured appeal telemetry for moderator review using service_role. */

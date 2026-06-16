@@ -26,7 +26,7 @@ function writeCollapsedPreference(collapsed: boolean): void {
 }
 
 /** Desktop only — collapsible vertical sidebar (≥ md). */
-export function ResidentSidebar() {
+export function ResidentSidebar({ unreadMessages = 0 }: { unreadMessages?: number }) {
   const [collapsed, setCollapsed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
@@ -47,8 +47,8 @@ export function ResidentSidebar() {
     <aside
       className={cn(
         "group/sidebar relative hidden shrink-0 flex-col overflow-visible bg-sidebar py-6 transition-[width] duration-200 ease-in-out md:flex",
-        collapsed ? "px-2 md:w-16" : "px-4 md:w-56 lg:w-64",
-        !hydrated && "md:w-56 lg:w-64",
+        collapsed ? "px-2 md:w-16" : "px-3 md:w-44 lg:w-48",
+        !hydrated && "md:w-44 lg:w-48",
       )}
     >
       <button
@@ -68,7 +68,7 @@ export function ResidentSidebar() {
       </button>
 
       <div className={cn("min-w-0", collapsed && "overflow-hidden")}>
-        <ResidentSidebarNav collapsed={collapsed} />
+        <ResidentSidebarNav collapsed={collapsed} unreadMessages={unreadMessages} />
       </div>
     </aside>
   );

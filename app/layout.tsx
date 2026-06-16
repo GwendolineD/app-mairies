@@ -27,6 +27,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({
@@ -35,8 +36,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className={`${manrope.variable} h-full font-sans antialiased`}>
-      <body className="min-h-full flex flex-col bg-background text-text">
+    <html
+      lang="fr"
+      className={`${manrope.variable} h-full font-sans antialiased`}
+      suppressHydrationWarning
+    >
+      <body
+        className="min-h-full flex flex-col bg-background text-text"
+        suppressHydrationWarning
+      >
         {children}
       </body>
     </html>

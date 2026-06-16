@@ -8,18 +8,22 @@ import { buildAnnouncementListQuery } from "@/lib/utils/search-params";
 import { CreateAnnouncementModal } from "@/components/features/create-announcement-modal";
 import { CreateInitiativeModal } from "@/components/features/create-initiative-modal";
 import { useCreationModals } from "@/components/features/creation-modal-context";
+import type { MembershipAddress } from "@/lib/types";
 
 type Props = {
   communeId: string;
+  membershipAddress: MembershipAddress;
 };
 
-export function CreationModalHost({ communeId }: Props) {
+export function CreationModalHost({ communeId, membershipAddress }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const {
     announcementOpen,
     initiativeOpen,
     announcementPresetType,
+    announcementEditId,
+    announcementInitialData,
     openAnnouncementModal,
     openInitiativeModal,
     closeModals,
@@ -28,12 +32,15 @@ export function CreationModalHost({ communeId }: Props) {
   const stripCreateFromUrl = useCallback(() => {
     const create = searchParams.get("create");
     if (!create) return;
+    const catParam = searchParams.get("cat") ?? searchParams.get("categorie");
     const next = buildAnnouncementListQuery({
       vue: searchParams.get("vue") === "carte" ? "carte" : "liste",
       type: isAnnouncementType(searchParams.get("type") ?? "")
         ? (searchParams.get("type") as "demande" | "offre")
         : undefined,
-      categorie: searchParams.get("categorie") ?? undefined,
+      categories: catParam
+        ? catParam.split(",").map((s) => s.trim()).filter(Boolean)
+        : [],
       page: Number.parseInt(searchParams.get("page") ?? "1", 10) || 1,
     });
     const path =
@@ -65,7 +72,10 @@ export function CreationModalHost({ communeId }: Props) {
         open={announcementOpen}
         onClose={handleClose}
         communeId={communeId}
+        membershipAddress={membershipAddress}
         presetType={announcementPresetType}
+        editId={announcementEditId}
+        initialData={announcementInitialData}
       />
       <CreateInitiativeModal
         open={initiativeOpen}

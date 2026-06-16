@@ -1,7 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { CommuneSwitcher } from "@/components/features/commune-switcher";
+import { ResidentMobileHeaderMenu } from "@/components/features/resident-mobile-header-menu";
 import { ResidentUserMenu } from "@/components/features/resident-user-menu";
+import type { BackofficeNavLink } from "@/lib/auth/permissions";
 import { APP_NAME } from "@/lib/constants/app";
 import { ILLUSTRATIONS } from "@/lib/constants/illustrations";
 import { ROUTES } from "@/lib/constants/routes";
@@ -11,12 +13,14 @@ type Props = {
   profile: Profile;
   memberships: Membership[];
   activeCommuneId: string | null | undefined;
+  backofficeLinks?: BackofficeNavLink[];
 };
 
 export function ResidentHeader({
   profile,
   memberships,
   activeCommuneId,
+  backofficeLinks = [],
 }: Props) {
   const logo = ILLUSTRATIONS.resident.header.logoHorizontal;
 
@@ -40,11 +44,24 @@ export function ResidentHeader({
         </Link>
 
         <div className="flex min-w-0 items-center gap-2 md:gap-3">
-          <CommuneSwitcher
-            memberships={memberships}
-            activeCommuneId={activeCommuneId}
-          />
-          <ResidentUserMenu profile={profile} />
+          <div className="md:hidden">
+            <ResidentMobileHeaderMenu
+              profile={profile}
+              memberships={memberships}
+              activeCommuneId={activeCommuneId}
+              backofficeLinks={backofficeLinks}
+            />
+          </div>
+          <div className="hidden items-center gap-2 md:flex md:gap-3">
+            <CommuneSwitcher
+              memberships={memberships}
+              activeCommuneId={activeCommuneId}
+            />
+            <ResidentUserMenu
+              profile={profile}
+              backofficeLinks={backofficeLinks}
+            />
+          </div>
         </div>
       </div>
     </header>

@@ -27,10 +27,14 @@ BEGIN
     department,
     centroid_lat,
     centroid_lng,
+<<<<<<< HEAD
     subscription_status,
     subscription_started_at,
     subscription_ends_at,
     subscription_paid,
+=======
+    access_status,
+>>>>>>> preprod
     settings
   )
   VALUES (
@@ -56,10 +60,14 @@ BEGIN
     department = excluded.department,
     centroid_lat = excluded.centroid_lat,
     centroid_lng = excluded.centroid_lng,
+<<<<<<< HEAD
     subscription_status = excluded.subscription_status,
     subscription_started_at = excluded.subscription_started_at,
     subscription_ends_at = excluded.subscription_ends_at,
     subscription_paid = excluded.subscription_paid,
+=======
+    access_status = excluded.access_status,
+>>>>>>> preprod
     settings = excluded.settings;
 
   INSERT INTO public.commune_email_templates (

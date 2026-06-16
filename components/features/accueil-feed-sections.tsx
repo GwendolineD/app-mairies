@@ -3,20 +3,15 @@ import type { ReactNode } from "react";
 import { Clock, Heart, MapPin } from "lucide-react";
 import { formatStreetDisplay } from "@/lib/ban/display";
 import { ROUTES } from "@/lib/constants/routes";
-import {
-  getCategoryColorHex,
-  getCategoryLabel,
-} from "@/lib/constants/announcement-categories";
 import type { AnnouncementWithAuthor } from "@/lib/queries/announcements";
 import type { AgendaEventRecord, InitiativeRecord } from "@/lib/types";
-import { resolveFirstName } from "@/lib/utils/display-name";
 import {
   formatEventAccueilDate,
   formatEventAccueilSchedule,
-  formatRelativeTimeAccueil,
 } from "@/lib/utils/date";
 import { cn } from "@/lib/utils";
 import { AccueilSectionLink } from "@/components/features/accueil-sections";
+import { AnnouncementCard } from "@/components/features/announcement-card";
 
 const feedCardClass =
   "overflow-hidden rounded-xl border border-border/60 bg-surface";
@@ -64,23 +59,6 @@ function AccueilFeedCard({
       {children}
     </div>
   );
-}
-
-function getAccueilCategoryBadge(type: string, categorySlug: string) {
-  const hex = getCategoryColorHex(categorySlug);
-  if (type === "demande" && categorySlug !== "don-troc" && categorySlug !== "pret-objet") {
-    return { label: "COUP DE MAIN", colorHex: hex };
-  }
-  return {
-    label: getCategoryLabel(categorySlug).toUpperCase(),
-    colorHex: hex,
-  };
-}
-
-function announcementAuthorName(announcement: AnnouncementWithAuthor): string {
-  const profile = announcement.author_membership?.profiles;
-  if (!profile) return "Un voisin";
-  return resolveFirstName(profile);
 }
 
 const EVENT_DATE_THEMES = [
@@ -173,61 +151,15 @@ export function AccueilRecentAnnouncements({ items }: RecentAnnouncementsProps) 
           Aucune annonce récente.
         </p>
       ) : (
-        <ul className="divide-y divide-border/60">
-          {items.map((announcement) => {
-            const category = getAccueilCategoryBadge(
-              announcement.type,
-              announcement.category_slug,
-            );
-            const location =
-              announcement.author_membership?.address_street ??
-              announcement.author_membership?.address_city ??
-              "Adresse non renseignée";
-
-            return (
-              <li key={announcement.id}>
-                <Link
-                  href={ROUTES.annonces.detail(announcement.id)}
-                  className="flex items-center gap-3 p-4 transition hover:bg-warm/40 md:gap-4 md:p-5"
-                >
-                  {announcement.photo_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={announcement.photo_url}
-                      alt=""
-                      className="size-14 shrink-0 rounded-md object-cover md:size-16"
-                    />
-                  ) : (
-                    <div className="flex size-14 shrink-0 items-center justify-center rounded-md bg-warm text-[10px] font-bold uppercase tracking-wide text-muted md:size-16">
-                      Annonce
-                    </div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <span
-                      className="inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide"
-                      style={{
-                        backgroundColor: `${category.colorHex}20`,
-                        color: category.colorHex,
-                      }}
-                    >
-                      {category.label}
-                    </span>
-                    <p className="mt-0.5 line-clamp-2 text-sm font-bold leading-snug text-text">
-                      {announcement.title}
-                    </p>
-                    <p className="mt-1 text-xs font-medium text-muted">
-                      {announcementAuthorName(announcement)} ·{" "}
-                      {formatRelativeTimeAccueil(announcement.created_at)}
-                    </p>
-                    <p className="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-muted">
-                      <MapPin className="size-3.5 shrink-0" aria-hidden />
-                      {location}
-                    </p>
-                  </div>
-                </Link>
-              </li>
-            );
-          })}
+        <ul className="space-y-3 px-4 pb-4 md:px-5 md:pb-5">
+          {items.map((announcement) => (
+            <li key={announcement.id}>
+              <AnnouncementCard
+                announcement={announcement}
+                layout="horizontal"
+              />
+            </li>
+          ))}
         </ul>
       )}
     </AccueilFeedCard>

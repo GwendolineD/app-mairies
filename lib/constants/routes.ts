@@ -14,8 +14,16 @@ export const ROUTES = {
   accueil: "/accueil",
   suspendu: "/suspendu",
   profil: "/profil",
+<<<<<<< HEAD
   messages: "/messages",
   messageThread: (id: string) => `/messages/${id}`,
+=======
+  messages: {
+    list: "/messages",
+    trash: "/messages?vue=corbeille",
+    detail: (id: string) => `/messages/${id}`,
+  },
+>>>>>>> preprod
   annonces: {
     list: "/annonces",
     map: "/annonces/carte",
@@ -46,7 +54,9 @@ export const ROUTES = {
     parametres: "/mairie/parametres",
     signalements: "/mairie/signalements",
     eventNew: "/mairie/evenements/nouveau",
+    abonnement: "/mairie/abonnement",
   },
+<<<<<<< HEAD
   platform: {
     admin: "/platform/admin",
     clients: "/platform/clients",
@@ -54,6 +64,16 @@ export const ROUTES = {
     clientNew: "/platform/clients/nouveau",
     leads: "/platform/leads",
     stats: "/platform/stats",
+=======
+  backoffice: {
+    admin: "/backoffice/admin",
+    communes: "/backoffice/communes",
+    communeDetail: (id: string) => `/backoffice/communes/${id}`,
+    userDetail: (id: string) => `/backoffice/users/${id}`,
+    leads: "/backoffice/leads",
+    emails: "/backoffice/emails",
+    categories: "/backoffice/categories",
+>>>>>>> preprod
   },
 } as const;
 
@@ -65,6 +85,7 @@ export const RESIDENT_BOTTOM_NAV = [
   { href: ROUTES.messages, label: "Messages" },
 ] as const;
 
+<<<<<<< HEAD
 export const MUNICIPALITY_NAV = [
   { href: ROUTES.mairie.dashboard, label: "Tableau de bord" },
   { href: ROUTES.mairie.habitants, label: "Habitant·es" },
@@ -82,3 +103,55 @@ export const PLATFORM_NAV = [
   { href: ROUTES.platform.stats, label: "Statistiques & revenus" },
   { href: ROUTES.platform.leads, label: "Leads pré-inscription" },
 ] as const;
+=======
+export const RESIDENT_BACKOFFICE_NAV = {
+  mairie: {
+    id: "mairie",
+    href: ROUTES.mairie.dashboard,
+    label: "Espace mairie",
+  },
+  backoffice: {
+    id: "backoffice",
+    href: ROUTES.backoffice.admin,
+    label: "Backoffice",
+  },
+} as const;
+
+export type AdminNavIcon =
+  | "layout-dashboard"
+  | "users"
+  | "settings"
+  | "flag"
+  | "calendar-plus"
+  | "building2"
+  | "mail"
+  | "flame"
+  | "credit-card"
+  | "tags";
+
+export type AdminNavItem = {
+  href: string;
+  label: string;
+  icon: AdminNavIcon;
+};
+
+export const MUNICIPALITY_SIDEBAR_STORAGE_KEY = "vl:municipality-sidebar-collapsed";
+export const BACKOFFICE_SIDEBAR_STORAGE_KEY = "vl:backoffice-sidebar-collapsed";
+
+export const MUNICIPALITY_NAV: readonly AdminNavItem[] = [
+  { href: ROUTES.mairie.dashboard, label: "Tableau mairie", icon: "layout-dashboard" },
+  { href: ROUTES.mairie.habitants, label: "Habitant·es", icon: "users" },
+  { href: ROUTES.mairie.parametres, label: "Paramètres", icon: "settings" },
+  { href: ROUTES.mairie.signalements, label: "Signalements", icon: "flag" },
+  { href: ROUTES.mairie.eventNew, label: "+ Événement", icon: "calendar-plus" },
+  { href: ROUTES.mairie.abonnement, label: "Abonnement", icon: "credit-card" },
+];
+
+export const BACKOFFICE_NAV: readonly AdminNavItem[] = [
+  { href: ROUTES.backoffice.admin, label: "Dashboard", icon: "layout-dashboard" },
+  { href: ROUTES.backoffice.communes, label: "Communes pilotées", icon: "building2" },
+  { href: ROUTES.backoffice.categories, label: "Catégories annonces", icon: "tags" },
+  { href: ROUTES.backoffice.leads, label: "Leads pré-inscription", icon: "flame" },
+  { href: ROUTES.backoffice.emails, label: "Templates email", icon: "mail" },
+];
+>>>>>>> preprod
