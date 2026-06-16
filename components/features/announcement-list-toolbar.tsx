@@ -66,18 +66,18 @@ export function AnnouncementListToolbar({
           <Button
             type="button"
             variant="primary"
-            className="px-4 py-2.5 text-sm md:px-5"
+            size="sm"
             onClick={onCreateClick}
           >
-            <span className="text-base leading-none">+</span>
+            <span className="text-sm leading-none">+</span>
             <span>Créer une annonce</span>
           </Button>
         ) : (
           <Button
             href={`${pathname}${buildAnnouncementListQuery({ ...params, create: "annonce" })}`}
-            className="px-4 py-2.5 text-sm md:px-5"
+            size="sm"
           >
-            <span className="text-base leading-none">+</span>
+            <span className="text-sm leading-none">+</span>
             <span>Créer une annonce</span>
           </Button>
         )}

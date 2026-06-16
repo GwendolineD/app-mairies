@@ -192,7 +192,10 @@ export function MapContentView({
 
           {markers.map((m) => {
             const isSelected = selectedId === m.id;
-            const icon = createAnnouncementPinIcon(m.categorySlug, isSelected);
+            const icon = createAnnouncementPinIcon(
+              { mapPinUrl: m.mapPinUrl, colorHex: m.colorHex },
+              isSelected,
+            );
             const richItem = itemMap.get(m.id);
             return (
               <Marker

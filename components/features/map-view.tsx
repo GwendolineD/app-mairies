@@ -13,7 +13,14 @@ import {
   LEAFLET_MARKER_ICONS,
   MAP_TILE_URL,
 } from "@/lib/constants/assets";
-import { createAnnouncementPinIcon, type AnnouncementPinSize } from "@/lib/utils/announcement-map-pin";
+import {
+  createAnnouncementPinIcon,
+  type AnnouncementPinSize,
+} from "@/lib/utils/announcement-map-pin";
+import {
+  getCategoryColorHex,
+  getCategoryMapPinUrl,
+} from "@/lib/constants/announcement-categories";
 
 type Props = {
   latitude: number;
@@ -44,7 +51,17 @@ export function MapViewCommune({
 
   const position: [number, number] = [latitude, longitude];
   const markerIcon = useMemo(
-    () => (categorySlug ? createAnnouncementPinIcon(categorySlug, false, pinSize) : undefined),
+    () =>
+      categorySlug
+        ? createAnnouncementPinIcon(
+            {
+              mapPinUrl: getCategoryMapPinUrl(categorySlug),
+              colorHex: getCategoryColorHex(categorySlug),
+            },
+            false,
+            pinSize,
+          )
+        : undefined,
     [categorySlug, pinSize],
   );
 

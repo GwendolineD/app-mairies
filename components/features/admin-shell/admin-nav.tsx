@@ -21,6 +21,7 @@ import {
   LayoutDashboard,
   Mail,
   Settings,
+  Tags,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -35,6 +36,7 @@ const ADMIN_NAV_ICONS: Record<AdminNavItem["icon"], LucideIcon> = {
   mail: Mail,
   flame: Flame,
   "credit-card": CreditCard,
+  tags: Tags,
 };
 
 type NavLinkProps = {

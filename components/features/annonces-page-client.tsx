@@ -74,6 +74,8 @@ export function AnnoncesPageClient({
         categorySlug: it.category_slug,
         lat: it.address_lat,
         lng: it.address_lng,
+        mapPinUrl: it.announcement_categories?.map_pin_url ?? null,
+        colorHex: it.announcement_categories?.color_hex ?? "#A8A8A8",
       })),
     [mapItems],
   );

@@ -34,11 +34,21 @@ export type AnnouncementMarker = {
   category_slug: string;
   address_lat: number;
   address_lng: number;
+  /** Joined from announcement_categories */
+  announcement_categories: {
+    map_pin_url: string | null;
+    color_hex: string;
+  } | null;
 };
 
 export type AnnouncementMapItem = AnnouncementWithAuthor & {
   address_lat: number;
   address_lng: number;
+  /** Joined from announcement_categories */
+  announcement_categories: {
+    map_pin_url: string | null;
+    color_hex: string;
+  } | null;
 };
 
 export type PaginatedAnnouncements = {
@@ -160,7 +170,9 @@ export async function listAnnouncementMarkers(
 ): Promise<AnnouncementMarker[]> {
   let query = supabase
     .from("announcements")
-    .select("id, title, category_slug, address_lat, address_lng")
+    .select(
+      "id, title, category_slug, address_lat, address_lng, announcement_categories(map_pin_url, color_hex)",
+    )
     .not("address_lat", "is", null)
     .not("address_lng", "is", null);
 
@@ -181,7 +193,7 @@ export async function listAnnouncementMapItems(
   let query = supabase
     .from("announcements")
     .select(
-      "*, author_membership:memberships!announcements_author_membership_id_fkey(address_street, address_city, address_lat, address_lng, profiles:profiles!memberships_profiles_user_id_fkey(first_name, last_name, display_name, avatar_url))",
+      "*, author_membership:memberships!announcements_author_membership_id_fkey(address_street, address_city, address_lat, address_lng, profiles:profiles!memberships_profiles_user_id_fkey(first_name, last_name, display_name, avatar_url)), announcement_categories(map_pin_url, color_hex)",
     )
     .not("address_lat", "is", null)
     .not("address_lng", "is", null)

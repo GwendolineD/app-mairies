@@ -201,3 +201,13 @@ export type NotificationPreferenceKey =
   | "notify_new_event";
 
 export type NotificationPreferences = Record<NotificationPreferenceKey, boolean>;
+
+export interface AnnouncementCategoryRow {
+  slug: string;
+  label: string;
+  sort_order: number;
+  icon_name: string | null;
+  color_hex: string;
+  map_pin_url: string | null;
+  default_image_url: string | null;
+}

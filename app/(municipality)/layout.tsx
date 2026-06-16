@@ -4,6 +4,8 @@ import {
   MUNICIPALITY_NAV,
   MUNICIPALITY_SIDEBAR_STORAGE_KEY,
 } from "@/lib/constants/routes";
+import { getAnnouncementCategories } from "@/lib/queries/announcement-categories";
+import { initCategories } from "@/lib/constants/announcement-categories";
 
 export default async function MunicipalityDashboardLayout({
   children,
@@ -11,6 +13,9 @@ export default async function MunicipalityDashboardLayout({
   children: React.ReactNode;
 }) {
   await requireCommuneStaff();
+
+  const categoryRows = await getAnnouncementCategories();
+  initCategories(categoryRows);
 
   return (
     <AdminShell

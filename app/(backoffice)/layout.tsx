@@ -4,6 +4,8 @@ import {
   BACKOFFICE_NAV,
   BACKOFFICE_SIDEBAR_STORAGE_KEY,
 } from "@/lib/constants/routes";
+import { getAnnouncementCategories } from "@/lib/queries/announcement-categories";
+import { initCategories } from "@/lib/constants/announcement-categories";
 
 export default async function BackofficeLayout({
   children,
@@ -11,6 +13,9 @@ export default async function BackofficeLayout({
   children: React.ReactNode;
 }) {
   await requirePlatformAdmin();
+
+  const categoryRows = await getAnnouncementCategories();
+  initCategories(categoryRows);
 
   return (
     <AdminShell

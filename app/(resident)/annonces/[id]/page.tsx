@@ -13,7 +13,6 @@ import { BackLink } from "@/components/ui/back-link";
 import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";
 import { Skeleton } from "@/components/ui/skeleton";
-import { UserAvatar } from "@/components/ui/user-avatar";
 import {
   AnnouncementCard,
   TypePastille,
@@ -118,23 +117,20 @@ export default async function AnnonceDetailPage(props: {
         <Card className={`space-y-5 p-6 ${DETAIL_CARD_CLASS}`}>
           <div className="space-y-5">
             <header className="space-y-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <TypePastille type={ann.type} className="shadow-none" />
-                <CategoryTag
-                  label={getCategoryLabel(ann.category_slug)}
-                  colorHex={getCategoryColorHex(ann.category_slug)}
-                  className={DETAIL_TAG_CLASS}
-                />
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <TypePastille type={ann.type} className="shadow-none" />
+                  <CategoryTag
+                    label={getCategoryLabel(ann.category_slug)}
+                    colorHex={getCategoryColorHex(ann.category_slug)}
+                    className={DETAIL_TAG_CLASS}
+                  />
+                </div>
+                <p className="shrink-0 text-xs text-muted">
+                  {formatRelativeTime(ann.created_at)}
+                </p>
               </div>
               <h1 className="text-2xl font-bold leading-8 text-text">{ann.title}</h1>
-
-              <div className="flex items-center gap-3">
-                <UserAvatar name={authorName} url={authorAvatarUrl} size="sm" />
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-text">{authorName}</p>
-                  <p className="text-xs text-muted">{formatRelativeTime(ann.created_at)}</p>
-                </div>
-              </div>
             </header>
 
             {ann.photo_url ? (
