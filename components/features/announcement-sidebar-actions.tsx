@@ -49,8 +49,8 @@ export function AnnouncementSidebarActions({
         </Button>
         <Button
           type="button"
-          variant="danger"
-          className="w-full cursor-pointer"
+          variant="outline"
+          className="w-full cursor-pointer border-coral bg-surface text-coral hover:bg-coral/5"
           onClick={() => setDeleteOpen(true)}
         >
           <Trash2 className="size-4" aria-hidden />

@@ -1,7 +1,7 @@
 "use client";
 
 import L from "leaflet";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import {
   MapContainer,
   Marker,
@@ -13,11 +13,14 @@ import {
   LEAFLET_MARKER_ICONS,
   MAP_TILE_URL,
 } from "@/lib/constants/assets";
+import { createAnnouncementPinIcon, type AnnouncementPinSize } from "@/lib/utils/announcement-map-pin";
 
 type Props = {
   latitude: number;
   longitude: number;
   communeName?: string;
+  categorySlug?: string;
+  pinSize?: AnnouncementPinSize;
   zoom?: number;
   /** CSS height eg 320px or 40vh */
   className?: string;
@@ -28,6 +31,8 @@ export function MapViewCommune({
   latitude,
   longitude,
   communeName = "Centre communal",
+  categorySlug,
+  pinSize = "default",
   zoom = 13,
   className = "h-80 rounded-3xl overflow-hidden shadow-card border border-border/70",
 }: Props) {
@@ -38,6 +43,10 @@ export function MapViewCommune({
   }, []);
 
   const position: [number, number] = [latitude, longitude];
+  const markerIcon = useMemo(
+    () => (categorySlug ? createAnnouncementPinIcon(categorySlug, false, pinSize) : undefined),
+    [categorySlug, pinSize],
+  );
 
   return (
     <MapContainer
@@ -48,7 +57,7 @@ export function MapViewCommune({
       style={{ minHeight: 280 }}
     >
       <TileLayer url={MAP_TILE_URL} />
-      <Marker position={position}>
+      <Marker position={position} icon={markerIcon}>
         <Popup>{communeName}</Popup>
       </Marker>
     </MapContainer>

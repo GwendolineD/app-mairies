@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { MapPin } from "lucide-react";
 import { requireActiveMembership } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import { listSimilarAnnouncements } from "@/lib/queries/announcements";
@@ -19,11 +18,13 @@ import {
   AnnouncementCard,
   TypePastille,
 } from "@/components/features/announcement-card";
+import { AnnouncementAddressLines } from "@/components/features/announcement-address-lines";
 import { AnnouncementDetailMobileBar } from "@/components/features/announcement-detail-mobile-bar";
 import { AnnouncementLocationMap } from "@/components/features/announcement-location-map";
 import { AnnouncementSidebarActions } from "@/components/features/announcement-sidebar-actions";
 import { ReportButton } from "@/components/features/report-button";
 import { formatMemberSince, formatRelativeTime } from "@/lib/utils/date";
+import { formatAddressLines } from "@/lib/utils/format-address";
 import type { AnnouncementEditData } from "@/lib/types";
 import { PageStack } from "@/components/ui/page-stack";
 
@@ -83,10 +84,11 @@ export default async function AnnonceDetailPage(props: {
     ? formatMemberSince(ann.author_membership.created_at)
     : "Membre";
 
-  const authorLocation =
-    ann.author_membership?.address_street ??
-    ann.author_membership?.address_city ??
-    "Adresse non renseignée";
+  const addressLines = formatAddressLines(
+    ann.address_street,
+    ann.address_postcode,
+    ann.address_city,
+  );
 
   const isAuthor = ann.author_membership?.user_id === ctx.userId;
   const contactLabel =
@@ -114,49 +116,47 @@ export default async function AnnonceDetailPage(props: {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
         {/* --- Main card --- */}
         <Card className={`space-y-5 p-6 ${DETAIL_CARD_CLASS}`}>
-          <div className="grid gap-5 md:grid-cols-[1fr_min(260px,40%)]">
-            <div className="space-y-5">
-              <header className="space-y-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <TypePastille type={ann.type} className="shadow-none" />
-                  <CategoryTag
-                    label={getCategoryLabel(ann.category_slug)}
-                    colorHex={getCategoryColorHex(ann.category_slug)}
-                    className={DETAIL_TAG_CLASS}
-                  />
+          <div className="space-y-5">
+            <header className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <TypePastille type={ann.type} className="shadow-none" />
+                <CategoryTag
+                  label={getCategoryLabel(ann.category_slug)}
+                  colorHex={getCategoryColorHex(ann.category_slug)}
+                  className={DETAIL_TAG_CLASS}
+                />
+              </div>
+              <h1 className="text-2xl font-bold leading-8 text-text">{ann.title}</h1>
+
+              <div className="flex items-center gap-3">
+                <UserAvatar name={authorName} url={authorAvatarUrl} size="sm" />
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-text">{authorName}</p>
+                  <p className="text-xs text-muted">{formatRelativeTime(ann.created_at)}</p>
                 </div>
-                <h1 className="text-[28px] font-bold leading-9 text-text">{ann.title}</h1>
-
-                <div className="flex items-center gap-3">
-                  <UserAvatar name={authorName} url={authorAvatarUrl} size="sm" />
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-text">{authorName}</p>
-                    <p className="text-sm text-muted">{formatRelativeTime(ann.created_at)}</p>
-                  </div>
-                </div>
-              </header>
-
-              {ann.description ? (
-                <p className="scrollbar-hover max-h-64 overflow-y-auto whitespace-pre-line text-base font-medium leading-6 text-muted">
-                  {ann.description}
-                </p>
-              ) : (
-                <p className="text-base font-medium italic text-muted">
-                  Pas de détail complémentaire.
-                </p>
-              )}
-
-              <ReportButton contextType="announcement" contextId={ann.id} />
-            </div>
+              </div>
+            </header>
 
             {ann.photo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={ann.photo_url}
                 alt=""
-                className="h-fit w-full rounded-lg border border-border object-cover"
+                className="aspect-[16/10] w-full rounded-lg border border-border object-cover"
               />
             ) : null}
+
+            {ann.description ? (
+              <p className="scrollbar-hover max-h-64 overflow-y-auto whitespace-pre-line text-base font-medium leading-6 text-muted">
+                {ann.description}
+              </p>
+            ) : (
+              <p className="text-base font-medium italic text-muted">
+                Pas de détail complémentaire.
+              </p>
+            )}
+
+            <ReportButton contextType="announcement" contextId={ann.id} />
           </div>
         </Card>
 
@@ -174,20 +174,19 @@ export default async function AnnonceDetailPage(props: {
           />
 
           {/* Location card */}
-          <Card className={`space-y-3 p-5 ${DETAIL_CARD_CLASS}`}>
+          <Card className={`space-y-2 p-5 ${DETAIL_CARD_CLASS}`}>
             <h2 className="text-lg font-semibold text-text">Localisation</h2>
             {ann.address_lat != null && ann.address_lng != null ? (
               <AnnouncementLocationMap
                 latitude={ann.address_lat}
                 longitude={ann.address_lng}
                 announcementTitle={ann.title}
-                addressLabel={authorLocation}
+                announcementType={ann.type}
+                addressLines={addressLines}
+                categorySlug={ann.category_slug}
               />
             ) : (
-              <p className="inline-flex items-center gap-1.5 text-sm text-muted">
-                <MapPin className="size-3.5 shrink-0 text-subtle" aria-hidden />
-                {authorLocation}
-              </p>
+              <AnnouncementAddressLines {...addressLines} />
             )}
           </Card>
 

@@ -12,10 +12,7 @@ import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { Locate } from "lucide-react";
 import { MAP_TILE_URL } from "@/lib/constants/assets";
-import {
-  getAnnouncementPinHex,
-  getAnnouncementPinImage,
-} from "@/lib/constants/map-pins";
+import { createAnnouncementPinIcon } from "@/lib/utils/announcement-map-pin";
 import {
   AnnouncementCard,
   AnnouncementMapCard,
@@ -47,27 +44,6 @@ type Props = {
   /** Optional fallback for legacy callers (no rich popover). */
   carouselItems?: AnnouncementWithAuthor[];
 };
-
-function createPinIcon(categorySlug: string, selected: boolean): L.DivIcon {
-  const color = getAnnouncementPinHex(categorySlug);
-  const image = getAnnouncementPinImage(categorySlug);
-  const size = selected ? 44 : 36;
-  const ring = selected ? "0 0 0 4px rgba(154,82,255,0.35)" : "0 2px 8px rgba(37,38,48,0.22)";
-  // Image pin with onerror fallback to the legacy color circle.
-  const fallbackHtml = `<div style="background:${color};width:${size - 8}px;height:${size - 8}px;border-radius:50%;border:3px solid white;box-shadow:${ring};"></div>`;
-  const html = image
-    ? `<div style="position:relative;width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:white;box-shadow:${ring};border:2px solid white;overflow:hidden;">
-         <img src="${image}" alt="" width="${size - 4}" height="${size - 4}" style="width:${size - 4}px;height:${size - 4}px;object-fit:contain;" onerror="this.parentElement.innerHTML=${JSON.stringify(fallbackHtml)};" />
-       </div>`
-    : fallbackHtml;
-
-  return L.divIcon({
-    className: "vl-map-pin",
-    html,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-  });
-}
 
 function createUserIcon(): L.DivIcon {
   return L.divIcon({
@@ -216,7 +192,7 @@ export function MapContentView({
 
           {markers.map((m) => {
             const isSelected = selectedId === m.id;
-            const icon = createPinIcon(m.categorySlug, isSelected);
+            const icon = createAnnouncementPinIcon(m.categorySlug, isSelected);
             const richItem = itemMap.get(m.id);
             return (
               <Marker
