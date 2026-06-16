@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AnnouncementType } from "@/lib/constants/announcement-types";
 import { ANNOUNCEMENT_STATUS } from "@/lib/constants/statuses";
 import type { Announcement, Membership, Profile } from "@/lib/types";
-import type { AnnouncementDateFilter } from "@/lib/utils/search-params";
+import type { AnnouncementDateFilter, SortMode } from "@/lib/utils/search-params";
 
 export const ANNOUNCEMENTS_PAGE_SIZE = 20;
 
@@ -126,9 +126,11 @@ export async function countAnnouncements(
 export async function listAnnouncementsPage(
   supabase: SupabaseClient,
   filters: AnnouncementListFilters,
-  options: { cursor?: string | null; limit?: number; offset?: number },
+  options: { cursor?: string | null; limit?: number; offset?: number; sortMode?: SortMode },
 ): Promise<PaginatedAnnouncements> {
   const limit = options.limit ?? ANNOUNCEMENTS_PAGE_SIZE;
+  const sortMode = options.sortMode ?? "recent";
+  const ascending = sortMode === "oldest";
   const totalCount = await countAnnouncements(supabase, filters);
 
   let query = supabase
@@ -136,8 +138,8 @@ export async function listAnnouncementsPage(
     .select(
       "*, author_membership:memberships!announcements_author_membership_id_fkey(address_street, address_city, address_lat, address_lng, profiles:profiles!memberships_profiles_user_id_fkey(first_name, last_name, display_name, avatar_url))",
     )
-    .order("created_at", { ascending: false })
-    .order("id", { ascending: false })
+    .order("created_at", { ascending })
+    .order("id", { ascending })
     .limit(limit);
 
   query = applyAnnouncementFilters(query, filters);
@@ -147,8 +149,9 @@ export async function listAnnouncementsPage(
   } else if (options.cursor) {
     const decoded = decodeCursor(options.cursor);
     if (decoded) {
+      const op = ascending ? "gt" : "lt";
       query = query.or(
-        `created_at.lt.${decoded.createdAt},and(created_at.eq.${decoded.createdAt},id.lt.${decoded.id})`,
+        `created_at.${op}.${decoded.createdAt},and(created_at.eq.${decoded.createdAt},id.${op}.${decoded.id})`,
       );
     }
   }

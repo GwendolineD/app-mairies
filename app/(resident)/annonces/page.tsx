@@ -63,7 +63,7 @@ export default async function AnnoncesListePage(props: {
   const { items, nextCursor, totalCount } = await listAnnouncementsPage(
     supabase,
     filters,
-    { offset, limit: ANNOUNCEMENTS_PAGE_SIZE },
+    { offset, limit: ANNOUNCEMENTS_PAGE_SIZE, sortMode: params.tri },
   );
 
   return (

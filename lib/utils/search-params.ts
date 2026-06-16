@@ -4,7 +4,11 @@ import { ANNOUNCEMENT_CATEGORY_SLUGS } from "@/lib/constants/announcement-catego
 
 export type ListViewMode = "liste" | "carte";
 export type CreateModalKind = "annonce" | "initiative";
-export type SortMode = "recent";
+export type SortMode = "recent" | "oldest";
+
+export function isSortMode(value: string | undefined): value is SortMode {
+  return value === "recent" || value === "oldest";
+}
 
 export const ANNOUNCEMENT_DATE_FILTERS = [
   "today",
@@ -86,6 +90,7 @@ export function parseAnnouncementListParams(
   const createRaw = raw("create");
   const dateRaw = raw("date");
   const dateValueRaw = raw("dateValue");
+  const triRaw = raw("tri");
   const date = isAnnouncementDateFilter(dateRaw) ? dateRaw : undefined;
 
   return {
@@ -97,7 +102,7 @@ export function parseAnnouncementListParams(
     date,
     dateValue:
       date === "custom" && isIsoDate(dateValueRaw) ? dateValueRaw : undefined,
-    tri: "recent",
+    tri: isSortMode(triRaw) ? triRaw : "recent",
     page: Math.max(1, Number.parseInt(raw("page") ?? "1", 10) || 1),
     create:
       createRaw === "annonce" || createRaw === "initiative"
@@ -130,6 +135,12 @@ export function buildAnnouncementListQuery(
   if (params.createType) sp.set("createType", params.createType);
   const qs = sp.toString();
   return qs ? `?${qs}` : "";
+}
+
+export function hasActiveAnnouncementFilters(
+  params: Pick<AnnouncementListParams, "type" | "categories" | "date">,
+): boolean {
+  return !!(params.type || params.categories.length > 0 || params.date);
 }
 
 export type InitiativeListParams = {

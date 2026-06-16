@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, HandHeart, Sparkles } from "lucide-react";
+import { ArrowRight, HandHeart, MapPin, Sparkles } from "lucide-react";
 import { ROUTES } from "@/lib/constants/routes";
 import {
   getCategoryColorHex,
@@ -11,6 +11,7 @@ import { CategoryTag } from "@/components/ui/category-tag";
 import { cn } from "@/lib/utils/cn";
 import { formatDisplayName } from "@/lib/utils/display-name";
 import { formatRelativeTime } from "@/lib/utils/date";
+import { formatAddressLines } from "@/lib/utils/format-address";
 
 type Props = {
   announcement: AnnouncementWithAuthor;
@@ -42,7 +43,33 @@ function resolveAuthorInitials(profiles: AuthorProfile): string {
   return fromDisplay ?? "?";
 }
 
-/** Coloured pill identifying offer vs request — overlays the card photo. */
+function AnnouncementCardAddress({
+  street,
+  postcode,
+  city,
+}: {
+  street: string | null | undefined;
+  postcode: string | null | undefined;
+  city: string | null | undefined;
+}) {
+  const { streetLine, cityLine, fallback } = formatAddressLines(
+    street,
+    postcode,
+    city,
+  );
+
+  const singleLine = fallback
+    ? fallback
+    : [streetLine, cityLine].filter(Boolean).join(", ");
+
+  return (
+    <div className="my-1 flex items-center gap-1 text-[11px] font-medium leading-snug text-subtle">
+      <MapPin className="size-3.5 shrink-0" aria-hidden />
+      <span className="min-w-0 truncate">{singleLine}</span>
+    </div>
+  );
+}
+
 export function TypePastille({
   type,
   className,
@@ -89,7 +116,7 @@ export function AnnouncementCard({
       <Link href={ROUTES.annonces.detail(a.id)} className="block">
         <Card
           className={cn(
-            "flex gap-3 p-3 transition hover:border-purple/45",
+            "flex gap-3 rounded-xl p-3 transition hover:border-purple/45",
             highlightRing,
           )}
         >
@@ -127,7 +154,7 @@ export function AnnouncementCard({
     <Link href={ROUTES.annonces.detail(a.id)} className="h-full">
       <Card
         className={cn(
-          "flex h-full flex-col p-3 transition hover:border-purple/45",
+          "flex h-full flex-col gap-0 rounded-xl p-0 transition hover:border-purple/45",
           highlightRing,
         )}
       >
@@ -137,27 +164,42 @@ export function AnnouncementCard({
             <img
               src={a.photo_url}
               alt=""
-              className="aspect-[4/3] w-full rounded-2xl object-cover"
+              className="aspect-[16/10] w-full object-cover"
             />
           ) : (
-            <div className="flex aspect-[4/3] w-full items-center justify-center rounded-2xl bg-warm text-xs font-semibold text-muted">
+            <div className="flex aspect-[16/10] w-full items-center justify-center bg-warm text-[11px] font-semibold text-muted">
               Annonce
             </div>
           )}
           <TypePastille type={a.type} className="absolute left-2 top-2" />
         </div>
 
-        <div className="flex flex-1 flex-col gap-1.5 px-1 pt-3">
-          <CategoryTag
-            label={getCategoryLabel(a.category_slug)}
-            colorHex={getCategoryColorHex(a.category_slug)}
-          />
+        <div className="flex flex-1 flex-col gap-1 px-2.5 pt-2.5 pb-2.5">
+          <div className="flex items-center justify-between gap-2">
+            <CategoryTag
+              label={getCategoryLabel(a.category_slug)}
+              colorHex={getCategoryColorHex(a.category_slug)}
+              className="w-fit shrink-0"
+            />
+            <time
+              className="shrink-0 text-[10px] font-medium text-subtle"
+              dateTime={a.created_at}
+            >
+              {formatRelativeTime(a.created_at)}
+            </time>
+          </div>
 
-          <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug text-text">
+          <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-text">
             {a.title}
           </h3>
 
-          <div className="flex items-center gap-2">
+          <AnnouncementCardAddress
+            street={a.address_street}
+            postcode={a.address_postcode}
+            city={a.address_city}
+          />
+
+          <div className="mt-auto flex items-center justify-end gap-2">
             {a.author_membership?.profiles?.avatar_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -170,14 +212,10 @@ export function AnnouncementCard({
                 {resolveAuthorInitials(a.author_membership?.profiles ?? null)}
               </div>
             )}
-            <span className="truncate text-sm font-medium text-text">
+            <span className="truncate text-xs font-medium text-text">
               {resolveAuthorName(a.author_membership?.profiles ?? null)}
             </span>
           </div>
-
-          <p className="mt-auto pb-0.5 text-[11px] font-medium text-subtle">
-            {street} · {formatRelativeTime(a.created_at)}
-          </p>
         </div>
       </Card>
     </Link>

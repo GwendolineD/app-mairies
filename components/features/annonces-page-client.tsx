@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useMemo } from "react";
+import { usePathname } from "next/navigation";
 import { AnnouncementCard } from "@/components/features/announcement-card";
 import {
   AnnouncementListToolbar,
@@ -10,13 +11,17 @@ import {
 import { AnnouncementsInfiniteList } from "@/components/features/infinite-list";
 import { useCreationModals } from "@/components/features/creation-modal-context";
 import type { AnnouncementListParams } from "@/lib/utils/search-params";
+import {
+  buildAnnouncementListQuery,
+  hasActiveAnnouncementFilters,
+} from "@/lib/utils/search-params";
 import type {
   AnnouncementMapItem,
   AnnouncementWithAuthor,
 } from "@/lib/queries/announcements";
 import { ANNOUNCEMENTS_PAGE_SIZE } from "@/lib/queries/announcements";
+import { AnnouncementsEmptyState } from "@/components/features/announcements-empty-state";
 import { ListGrid, PageStack } from "@/components/ui/page-stack";
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const MapContentView = dynamic(
@@ -31,7 +36,7 @@ const MapContentView = dynamic(
         <Skeleton className="h-[420px] w-full rounded-3xl md:h-[520px]" />
         <div className="flex gap-3 overflow-hidden">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-56 w-64 shrink-0 rounded-3xl md:w-72" />
+            <Skeleton key={i} className="h-52 w-52 shrink-0 rounded-xl md:w-56" />
           ))}
         </div>
       </div>
@@ -58,12 +63,14 @@ export function AnnoncesPageClient({
   userPosition,
   hasUserAddress,
 }: Props) {
+  const pathname = usePathname();
   const { openAnnouncementModal } = useCreationModals();
   const filters = {
     type: params.type,
     categories: params.categories,
     date: params.date,
     dateValue: params.dateValue,
+    sortMode: params.tri,
   };
 
   const mapMarkers = useMemo(
@@ -79,6 +86,13 @@ export function AnnoncesPageClient({
       })),
     [mapItems],
   );
+
+  const hasFilters = hasActiveAnnouncementFilters(params);
+  const clearFiltersHref = `${pathname}${buildAnnouncementListQuery({
+    vue: params.vue,
+    tri: params.tri,
+    page: 1,
+  })}`;
 
   return (
     <PageStack>
@@ -96,12 +110,13 @@ export function AnnoncesPageClient({
           showUserPin={hasUserAddress}
         />
       ) : items.length === 0 ? (
-        <Card className="p-5 text-center text-sm font-medium text-muted">
-          Soyez les premiers voisin·es à publier un besoin ou une petite aide.
-        </Card>
+        <AnnouncementsEmptyState
+          hasFilters={hasFilters}
+          clearFiltersHref={hasFilters ? clearFiltersHref : undefined}
+        />
       ) : (
         <>
-          <ListGrid className="hidden md:grid">
+          <ListGrid className="hidden gap-2 md:grid lg:grid-cols-4">
             {items.map((a) => (
               <AnnouncementCard key={a.id} announcement={a} layout="vertical" />
             ))}

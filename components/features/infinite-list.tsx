@@ -13,6 +13,7 @@ type Props = {
     categories?: string[];
     date?: string;
     dateValue?: string;
+    sortMode?: "recent" | "oldest";
   };
 };
 
@@ -37,6 +38,7 @@ export function AnnouncementsInfiniteList({
     categoriesKey,
     filters.date,
     filters.dateValue,
+    filters.sortMode,
   ]);
 
   useEffect(() => {

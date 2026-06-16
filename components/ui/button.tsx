@@ -9,13 +9,13 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: "gradient-hero text-white hover:opacity-95",
+        primary: "border-0 gradient-hero text-white hover:opacity-95",
         secondary:
           "border-border bg-surface text-text hover:bg-warm aria-expanded:bg-warm",
         ghost:
           "text-text hover:bg-warm aria-expanded:bg-warm dark:hover:bg-warm/80",
         danger: "border-coral bg-coral text-white hover:opacity-95",
-        default: "gradient-hero text-white hover:opacity-95",
+        default: "border-0 gradient-hero text-white hover:opacity-95",
         outline:
           "border-border bg-surface text-text hover:bg-warm aria-expanded:bg-warm",
         destructive:

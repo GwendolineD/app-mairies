@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { requireActiveMembership } from "@/lib/auth/session";
-import { ROUTES } from "@/lib/constants/routes";
 import { listSimilarAnnouncements } from "@/lib/queries/announcements";
 import type { AnnouncementWithAuthor } from "@/lib/queries/announcements";
 import { createClient } from "@/lib/supabase/server";
@@ -9,7 +8,7 @@ import {
   getCategoryColorHex,
   getCategoryLabel,
 } from "@/lib/constants/announcement-categories";
-import { BackLink } from "@/components/ui/back-link";
+import { HistoryBackLink } from "@/components/ui/history-back-link";
 import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,7 +27,7 @@ import type { AnnouncementEditData } from "@/lib/types";
 import { PageStack } from "@/components/ui/page-stack";
 
 const DETAIL_CARD_CLASS = "rounded-xl";
-const DETAIL_TAG_CLASS = "rounded-sm px-2.5 py-0.5 text-xs";
+const DETAIL_TAG_CLASS = "w-fit";
 
 export default async function AnnonceDetailPage(props: {
   params: Promise<{ id: string }>;
@@ -110,7 +109,7 @@ export default async function AnnonceDetailPage(props: {
 
   return (
     <PageStack gap="5" className="pb-28 md:pb-0">
-      <BackLink href={ROUTES.annonces.list}>Retour aux annonces</BackLink>
+      <HistoryBackLink label="Retour aux annonces" />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
         {/* --- Main card --- */}

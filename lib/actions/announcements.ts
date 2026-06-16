@@ -255,6 +255,7 @@ export async function fetchAnnouncementsPage(
     categories?: string[];
     date?: string;
     dateValue?: string;
+    sortMode?: "recent" | "oldest";
   },
 ) {
   const ctx = await requireActiveMembership();
@@ -279,5 +280,5 @@ export async function fetchAnnouncementsPage(
   };
 
   const supabase = await createClient();
-  return listAnnouncementsPage(supabase, listFilters, { cursor });
+  return listAnnouncementsPage(supabase, listFilters, { cursor, sortMode: filters.sortMode });
 }

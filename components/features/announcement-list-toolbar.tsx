@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Calendar as CalendarIcon, List, Map, SlidersHorizontal, X } from "lucide-react";
+import { ArrowUpDown, Calendar as CalendarIcon, ChevronDown, List, Map, SlidersHorizontal, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { format, isValid, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -12,6 +12,7 @@ import {
   buildAnnouncementListQuery,
   type AnnouncementDateFilter,
   type AnnouncementListParams,
+  type SortMode,
 } from "@/lib/utils/search-params";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -58,7 +59,7 @@ export function AnnouncementListToolbar({
           <h1 className="text-2xl font-bold leading-9 text-text md:text-[28px]">
             Toutes les annonces
           </h1>
-          <p className="text-sm font-medium text-muted">
+          <p className="text-xs font-medium text-muted">
             {totalCount} annonce{totalCount !== 1 ? "s" : ""} près de chez vous
           </p>
         </div>
@@ -84,21 +85,24 @@ export function AnnouncementListToolbar({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex rounded-sm border border-border bg-surface p-1">
+        <div className="inline-flex rounded-sm border border-border bg-surface p-0.5">
           <ViewToggle
             active={params.vue === "liste"}
             onClick={() => navigate({ vue: "liste" })}
-            icon={<List className="size-4" aria-hidden />}
+            icon={<List className="size-3.5" aria-hidden />}
             label="Vue liste"
           />
           <ViewToggle
             active={params.vue === "carte"}
             onClick={() => navigate({ vue: "carte" })}
-            icon={<Map className="size-4" aria-hidden />}
+            icon={<Map className="size-3.5" aria-hidden />}
             label="Vue carte"
           />
         </div>
-        <FiltersPopover params={params} navigate={navigate} count={filterCount} />
+        <div className="flex items-center gap-2">
+          <SortPopover params={params} navigate={navigate} />
+          <FiltersPopover params={params} navigate={navigate} count={filterCount} />
+        </div>
       </div>
     </div>
   );
@@ -120,7 +124,7 @@ function ViewToggle({
       type="button"
       onClick={onClick}
       className={cn(
-        "inline-flex cursor-pointer items-center gap-2 rounded-sm px-3 py-2 text-sm font-semibold transition md:px-4 md:py-2",
+        "inline-flex cursor-pointer items-center gap-1.5 rounded-sm px-2.5 py-1.5 text-xs font-semibold transition",
         active
           ? "bg-soft-pink text-purple"
           : "text-muted hover:text-text",
@@ -129,6 +133,65 @@ function ViewToggle({
       {icon}
       <span>{label}</span>
     </button>
+  );
+}
+
+const SORT_OPTIONS: { value: SortMode; label: string }[] = [
+  { value: "recent", label: "Les plus récentes" },
+  { value: "oldest", label: "Les plus anciennes" },
+];
+
+function SortPopover({
+  params,
+  navigate,
+}: {
+  params: AnnouncementListParams;
+  navigate: (partial: Partial<AnnouncementListParams>) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const currentLabel =
+    SORT_OPTIONS.find((o) => o.value === params.tri)?.label ?? "Trier par";
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        render={
+          <button
+            type="button"
+            className="relative inline-flex cursor-pointer items-center gap-1.5 rounded-sm border border-border bg-surface px-2.5 py-1.5 text-xs font-semibold text-muted transition hover:border-purple/30"
+          >
+            <ArrowUpDown className="size-3.5" aria-hidden />
+            <span>{currentLabel}</span>
+            <ChevronDown className="size-3.5" aria-hidden />
+          </button>
+        }
+      />
+      <PopoverContent
+        side="bottom"
+        align="start"
+        sideOffset={6}
+        className="z-1200 w-48 rounded-sm border border-border bg-surface p-1 shadow-card"
+      >
+        {SORT_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => {
+              navigate({ tri: opt.value });
+              setOpen(false);
+            }}
+            className={cn(
+              "flex w-full cursor-pointer items-center rounded-sm px-3 py-2 text-xs font-medium transition",
+              params.tri === opt.value
+                ? "bg-soft-pink text-purple"
+                : "text-text hover:bg-warm",
+            )}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -154,14 +217,14 @@ function FiltersPopover({
           <button
             type="button"
             className={cn(
-              "relative inline-flex cursor-pointer items-center gap-2 rounded-sm border bg-surface px-4 py-2 text-sm font-semibold text-text transition hover:border-purple/30 md:px-4 md:py-2",
+              "relative inline-flex cursor-pointer items-center gap-1.5 rounded-sm border bg-surface px-2.5 py-1.5 text-xs font-semibold transition hover:border-purple/30",
               count > 0 ? "border-purple/40 text-purple" : "border-border text-muted",
             )}
           >
-            <SlidersHorizontal className="size-4" aria-hidden />
+            <SlidersHorizontal className="size-3.5" aria-hidden />
             <span>Filtres</span>
             {count > 0 ? (
-              <span className="inline-flex size-5 items-center justify-center rounded-full bg-purple text-[11px] font-bold text-white">
+              <span className="inline-flex size-4 items-center justify-center rounded-full bg-purple text-[10px] font-bold text-white">
                 {count}
               </span>
             ) : null}
