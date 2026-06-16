@@ -185,10 +185,6 @@ export default async function AnnonceDetailPage(props: {
                 Pas de détail complémentaire.
               </p>
             )}
-
-            <div className="hidden md:block">
-              <ReportButton contextType="announcement" contextId={ann.id} />
-            </div>
           </div>
         </Card>
 
@@ -206,7 +202,10 @@ export default async function AnnonceDetailPage(props: {
           />
 
           {/* Location card */}
-          <Card className={`space-y-2 md:p-5 ${DETAIL_CARD_CLASS}`}>
+          <Card className={`space-y-2 md:space-y-4 md:p-5 ${DETAIL_CARD_CLASS}`}>
+            <h2 className="hidden text-lg font-semibold text-text md:block">
+              Localisation
+            </h2>
             {ann.address_lat != null && ann.address_lng != null ? (
               <AnnouncementLocationMap
                 latitude={ann.address_lat}
@@ -224,6 +223,15 @@ export default async function AnnonceDetailPage(props: {
               <AnnouncementAddressLines {...addressLines} size="md" />
             )}
           </Card>
+
+          <div className="hidden md:flex md:justify-center">
+            <ReportButton
+              contextType="announcement"
+              contextId={ann.id}
+              showIcon
+              className="text-sm font-medium text-muted"
+            />
+          </div>
 
           {/* Similar announcements */}
           <Suspense fallback={<SimilarAnnouncementsSkeleton />}>
