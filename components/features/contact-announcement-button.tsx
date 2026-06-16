@@ -8,6 +8,7 @@ import { FormField, Textarea } from "@/components/ui/form-field";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { Modal } from "@/components/ui/modal";
 import type { ConversationContextType } from "@/lib/types";
+import { cn } from "@/lib/utils/cn";
 
 type Props = {
   /** Id of the announcement / initiative / event to start the conversation about. */
@@ -17,6 +18,7 @@ type Props = {
   /** Backwards-compatible alias for callers using the old API. */
   announcementId?: string;
   icon?: React.ReactNode;
+  className?: string;
 };
 
 export function ContactAnnouncementButton({
@@ -25,6 +27,7 @@ export function ContactAnnouncementButton({
   contextType = "announcement",
   label,
   icon,
+  className,
 }: Props) {
   const formRef = useRef<HTMLFormElement>(null);
   const [open, setOpen] = useState(false);
@@ -77,7 +80,7 @@ export function ContactAnnouncementButton({
       <GradientButton
         type="button"
         gradient="hero"
-        className="w-full"
+        className={cn("w-full", className)}
         onClick={handleOpen}
       >
         {icon}

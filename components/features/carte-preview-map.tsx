@@ -20,6 +20,8 @@ type Props = {
   longitude: number;
   communeName: string;
   categorySlug?: string;
+  mapPinUrl?: string | null;
+  colorHex?: string;
   pinSize?: AnnouncementPinSize;
   className?: string;
 };
@@ -29,6 +31,8 @@ export function CarteAnnoncesMap({
   longitude,
   communeName,
   categorySlug,
+  mapPinUrl,
+  colorHex,
   pinSize = "default",
   className = "h-80 rounded-3xl overflow-hidden shadow-card border border-border/70 lg:h-[min(32rem,70vh)] lg:min-h-96",
 }: Props) {
@@ -38,6 +42,8 @@ export function CarteAnnoncesMap({
       latitude={latitude}
       longitude={longitude}
       categorySlug={categorySlug}
+      mapPinUrl={mapPinUrl}
+      colorHex={colorHex}
       pinSize={pinSize}
       zoom={14}
       className={className}

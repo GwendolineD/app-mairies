@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useVisualViewportBottomSheet } from "@/lib/hooks/use-visual-viewport-bottom-sheet";
 import { cn } from "@/lib/utils";
 import { XIcon } from "lucide-react";
 
@@ -31,6 +32,10 @@ type Props = {
   closeDisabled?: boolean;
   /** Content rendered above the title in the header (eg. category tags). */
   headerPrefix?: React.ReactNode;
+  /** Intro text between header and scrollable body. */
+  description?: React.ReactNode;
+  /** Fixed footer below the scrollable body (eg. modal actions). */
+  footer?: React.ReactNode;
   /** Override padding/spacing on the scrollable body (eg. `p-0` for full-bleed content). */
   contentClassName?: string;
 };
@@ -45,8 +50,12 @@ export function Modal({
   showCloseButton = false,
   closeDisabled = false,
   headerPrefix,
+  description,
+  footer,
   contentClassName,
 }: Props) {
+  const viewportStyle = useVisualViewportBottomSheet(open);
+
   return (
     <Dialog
       open={open}
@@ -56,6 +65,7 @@ export function Modal({
     >
       <DialogContent
         showCloseButton={false}
+        style={viewportStyle}
         className={cn(
           "top-auto inset-x-0 bottom-0 flex max-h-[90dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none rounded-t-3xl border-0 border-t border-border/60 bg-surface p-0 shadow-elevated ring-0 sm:top-1/2 sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:max-h-[min(90dvh,calc(100%-2rem))] sm:w-full sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:ring-1 sm:ring-foreground/10",
           SIZE_CLASS[size],
@@ -84,6 +94,11 @@ export function Modal({
             </DialogClose>
           ) : null}
         </DialogHeader>
+        {description ? (
+          <p className="flex shrink-0 items-center px-6 py-3 text-sm font-medium leading-5 text-muted">
+            {description}
+          </p>
+        ) : null}
         <div
           className={cn(
             "min-h-0 flex-1 overflow-y-auto px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-4",
@@ -92,6 +107,11 @@ export function Modal({
         >
           {children}
         </div>
+        {footer ? (
+          <div className="shrink-0 border-t border-border/60 px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-4">
+            {footer}
+          </div>
+        ) : null}
       </DialogContent>
     </Dialog>
   );

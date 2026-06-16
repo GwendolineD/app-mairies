@@ -27,6 +27,8 @@ type Props = {
   longitude: number;
   communeName?: string;
   categorySlug?: string;
+  mapPinUrl?: string | null;
+  colorHex?: string;
   pinSize?: AnnouncementPinSize;
   zoom?: number;
   /** CSS height eg 320px or 40vh */
@@ -39,6 +41,8 @@ export function MapViewCommune({
   longitude,
   communeName = "Centre communal",
   categorySlug,
+  mapPinUrl,
+  colorHex,
   pinSize = "default",
   zoom = 13,
   className = "h-80 rounded-3xl overflow-hidden shadow-card border border-border/70",
@@ -50,20 +54,25 @@ export function MapViewCommune({
   }, []);
 
   const position: [number, number] = [latitude, longitude];
-  const markerIcon = useMemo(
-    () =>
-      categorySlug
-        ? createAnnouncementPinIcon(
-            {
-              mapPinUrl: getCategoryMapPinUrl(categorySlug),
-              colorHex: getCategoryColorHex(categorySlug),
-            },
-            false,
-            pinSize,
-          )
-        : undefined,
-    [categorySlug, pinSize],
-  );
+  const markerIcon = useMemo(() => {
+    const resolvedMapPinUrl =
+      mapPinUrl ?? (categorySlug ? getCategoryMapPinUrl(categorySlug) : null);
+    const resolvedColorHex =
+      colorHex ?? (categorySlug ? getCategoryColorHex(categorySlug) : "#A8A8A8");
+
+    if (!categorySlug && mapPinUrl == null && colorHex == null) {
+      return undefined;
+    }
+
+    return createAnnouncementPinIcon(
+      {
+        mapPinUrl: resolvedMapPinUrl,
+        colorHex: resolvedColorHex,
+      },
+      false,
+      pinSize,
+    );
+  }, [categorySlug, colorHex, mapPinUrl, pinSize]);
 
   return (
     <MapContainer

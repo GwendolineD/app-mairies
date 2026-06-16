@@ -17,17 +17,23 @@ import {
   TypePastille,
 } from "@/components/features/announcement-card";
 import { AnnouncementAddressLines } from "@/components/features/announcement-address-lines";
-import { AnnouncementDetailMobileBar } from "@/components/features/announcement-detail-mobile-bar";
 import { AnnouncementLocationMap } from "@/components/features/announcement-location-map";
 import { AnnouncementSidebarActions } from "@/components/features/announcement-sidebar-actions";
 import { ReportButton } from "@/components/features/report-button";
+import { UserAvatar } from "@/components/ui/user-avatar";
+import { LinkifiedText } from "@/components/ui/linkified-text";
 import { formatMemberSince, formatRelativeTime } from "@/lib/utils/date";
+import { formatDisplayName } from "@/lib/utils/display-name";
 import { formatAddressLines } from "@/lib/utils/format-address";
 import type { AnnouncementEditData } from "@/lib/types";
 import { PageStack } from "@/components/ui/page-stack";
 
-const DETAIL_CARD_CLASS = "rounded-xl";
-const DETAIL_TAG_CLASS = "w-fit";
+const DETAIL_CARD_CLASS =
+  "rounded-none border-0 bg-transparent p-0 !shadow-none md:rounded-xl md:border md:border-border/60 md:bg-surface";
+const DETAIL_BADGE_CLASS =
+  "h-[22px] px-2.5 py-0 text-[10px] leading-none";
+const DETAIL_TYPE_PASTILLE_CLASS = `${DETAIL_BADGE_CLASS} gap-1 shadow-none [&_svg]:size-3`;
+const DETAIL_CATEGORY_TAG_CLASS = `${DETAIL_BADGE_CLASS} w-fit font-semibold`;
 
 export default async function AnnonceDetailPage(props: {
   params: Promise<{ id: string }>;
@@ -39,7 +45,8 @@ export default async function AnnonceDetailPage(props: {
   const { data } = await supabase
     .from("announcements")
     .select(
-      `*, author_membership:memberships!announcements_author_membership_id_fkey(
+      `*, announcement_categories(map_pin_url, color_hex),
+      author_membership:memberships!announcements_author_membership_id_fkey(
         created_at,
         address_street,
         address_city,
@@ -56,6 +63,10 @@ export default async function AnnonceDetailPage(props: {
   if (!data) notFound();
 
   type EnrichedAnnouncement = typeof data & {
+    announcement_categories: {
+      map_pin_url: string | null;
+      color_hex: string | null;
+    } | null;
     author_membership: {
       created_at: string;
       address_street: string | null;
@@ -77,6 +88,10 @@ export default async function AnnonceDetailPage(props: {
     (authorProfile?.display_name ??
       [authorProfile?.first_name, authorProfile?.last_name].filter(Boolean).join(" ")) ||
     "Voisin·e";
+  const authorDisplayName =
+    authorProfile?.first_name && authorProfile?.last_name
+      ? formatDisplayName(authorProfile.first_name, authorProfile.last_name)
+      : authorName;
   const authorAvatarUrl = authorProfile?.avatar_url ?? null;
   const memberSince = ann.author_membership?.created_at
     ? formatMemberSince(ann.author_membership.created_at)
@@ -108,28 +123,47 @@ export default async function AnnonceDetailPage(props: {
   };
 
   return (
-    <PageStack gap="5" className="pb-28 md:pb-0">
+    <PageStack gap="5">
       <HistoryBackLink label="Retour aux annonces" />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
         {/* --- Main card --- */}
-        <Card className={`space-y-5 p-6 ${DETAIL_CARD_CLASS}`}>
+        <Card className={`space-y-5 md:p-6 ${DETAIL_CARD_CLASS}`}>
           <div className="space-y-5">
             <header className="space-y-3">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-2">
-                  <TypePastille type={ann.type} className="shadow-none" />
+                  <TypePastille
+                    type={ann.type}
+                    className={DETAIL_TYPE_PASTILLE_CLASS}
+                  />
                   <CategoryTag
                     label={getCategoryLabel(ann.category_slug)}
                     colorHex={getCategoryColorHex(ann.category_slug)}
-                    className={DETAIL_TAG_CLASS}
+                    className={DETAIL_CATEGORY_TAG_CLASS}
+                    borderMatchBackground
                   />
                 </div>
-                <p className="shrink-0 text-xs text-muted">
+                <p className="hidden shrink-0 text-xs text-muted md:block">
                   {formatRelativeTime(ann.created_at)}
                 </p>
               </div>
               <h1 className="text-2xl font-bold leading-8 text-text">{ann.title}</h1>
+              <div className="flex items-center gap-3 md:hidden">
+                <UserAvatar
+                  name={authorName}
+                  url={authorAvatarUrl}
+                  size="sm"
+                />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-text">
+                    {authorDisplayName}
+                  </p>
+                  <p className="text-[10px] leading-4 text-muted">
+                    {formatRelativeTime(ann.created_at)}
+                  </p>
+                </div>
+              </div>
             </header>
 
             {ann.photo_url ? (
@@ -142,16 +176,19 @@ export default async function AnnonceDetailPage(props: {
             ) : null}
 
             {ann.description ? (
-              <p className="scrollbar-hover max-h-64 overflow-y-auto whitespace-pre-line text-base font-medium leading-6 text-muted">
-                {ann.description}
-              </p>
+              <LinkifiedText
+                text={ann.description}
+                className="scrollbar-hover max-h-64 overflow-y-auto whitespace-pre-line text-base font-medium leading-6 text-muted"
+              />
             ) : (
               <p className="text-base font-medium italic text-muted">
                 Pas de détail complémentaire.
               </p>
             )}
 
-            <ReportButton contextType="announcement" contextId={ann.id} />
+            <div className="hidden md:block">
+              <ReportButton contextType="announcement" contextId={ann.id} />
+            </div>
           </div>
         </Card>
 
@@ -169,19 +206,22 @@ export default async function AnnonceDetailPage(props: {
           />
 
           {/* Location card */}
-          <Card className={`space-y-2 p-5 ${DETAIL_CARD_CLASS}`}>
-            <h2 className="text-lg font-semibold text-text">Localisation</h2>
+          <Card className={`space-y-2 md:p-5 ${DETAIL_CARD_CLASS}`}>
             {ann.address_lat != null && ann.address_lng != null ? (
               <AnnouncementLocationMap
                 latitude={ann.address_lat}
                 longitude={ann.address_lng}
                 announcementTitle={ann.title}
-                announcementType={ann.type}
                 addressLines={addressLines}
                 categorySlug={ann.category_slug}
+                mapPinUrl={ann.announcement_categories?.map_pin_url ?? null}
+                colorHex={
+                  ann.announcement_categories?.color_hex ??
+                  getCategoryColorHex(ann.category_slug)
+                }
               />
             ) : (
-              <AnnouncementAddressLines {...addressLines} />
+              <AnnouncementAddressLines {...addressLines} size="md" />
             )}
           </Card>
 
@@ -196,14 +236,14 @@ export default async function AnnonceDetailPage(props: {
         </aside>
       </div>
 
-      {/* Mobile sticky bar */}
-      <AnnouncementDetailMobileBar
-        isAuthor={isAuthor}
-        announcementId={ann.id}
-        addressCity={ann.address_city}
-        contactLabel={contactLabel}
-        editData={editData}
-      />
+      <div className="flex justify-center pb-2 md:hidden">
+        <ReportButton
+          contextType="announcement"
+          contextId={ann.id}
+          showIcon
+          className="text-sm font-medium text-muted"
+        />
+      </div>
     </PageStack>
   );
 }

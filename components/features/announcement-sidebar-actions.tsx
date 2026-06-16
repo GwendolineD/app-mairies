@@ -37,7 +37,7 @@ export function AnnouncementSidebarActions({
 
   if (isAuthor) {
     return (
-      <Card className={cn("space-y-4 p-5", className)}>
+      <Card className={cn("space-y-4 md:p-5", className)}>
         <h2 className="text-lg font-semibold text-text">Votre annonce</h2>
         <Button
           type="button"
@@ -66,20 +66,30 @@ export function AnnouncementSidebarActions({
   }
 
   return (
-    <Card className={cn("space-y-4 p-5", className)}>
-      <h2 className="text-lg font-semibold text-text">Contact</h2>
-      <div className="flex items-center gap-3">
-        <UserAvatar name={authorName} url={authorAvatarUrl} />
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-text">{authorName}</p>
-          <p className="text-xs text-muted">{memberSince}</p>
-        </div>
+    <>
+      <div className="md:hidden">
+        <ContactAnnouncementButton
+          contextId={announcementId}
+          label={contactLabel}
+          icon={<MessageCircle className="size-4" aria-hidden />}
+          className="py-4"
+        />
       </div>
-      <ContactAnnouncementButton
-        contextId={announcementId}
-        label={contactLabel}
-        icon={<MessageCircle className="size-4" aria-hidden />}
-      />
-    </Card>
+      <Card className={cn("hidden space-y-4 md:block md:p-5", className)}>
+        <h2 className="text-lg font-semibold text-text">Contact</h2>
+        <div className="flex items-center gap-3">
+          <UserAvatar name={authorName} url={authorAvatarUrl} />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-text">{authorName}</p>
+            <p className="text-xs text-muted">{memberSince}</p>
+          </div>
+        </div>
+        <ContactAnnouncementButton
+          contextId={announcementId}
+          label={contactLabel}
+          icon={<MessageCircle className="size-4" aria-hidden />}
+        />
+      </Card>
+    </>
   );
 }

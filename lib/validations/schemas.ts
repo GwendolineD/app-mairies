@@ -138,7 +138,7 @@ export const pushSubscriptionSchema = z.object({
 export const reportSchema = z.object({
   contextType: z.enum(["announcement", "initiative", "event"]),
   contextId: z.string().uuid(),
-  reason: z.string().min(10).max(1000),
+  reason: z.string().min(10).max(400),
 });
 
 export const appealSchema = z.object({
