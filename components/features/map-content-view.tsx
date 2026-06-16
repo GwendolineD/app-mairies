@@ -144,7 +144,7 @@ function ClusterPopup({
 
   return (
     <div className="flex w-[200px] flex-col gap-2">
-      <div className="flex items-center justify-end gap-2">
+      <div className="flex items-center justify-end gap-4 md:gap-2">
         <span className="text-xs font-semibold text-muted">
           {currentIndex + 1}/{items.length}
         </span>
@@ -156,14 +156,14 @@ function ClusterPopup({
           }}
           disabled={!canGoPrev}
           className={cn(
-            "inline-flex size-5 cursor-pointer items-center justify-center rounded-full transition",
+            "inline-flex size-8 cursor-pointer items-center justify-center rounded-full transition md:size-5",
             canGoPrev
               ? "bg-warm text-text hover:bg-border"
               : "cursor-not-allowed text-subtle opacity-40",
           )}
           aria-label="Annonce précédente"
         >
-          <ChevronLeft className="size-3.5" aria-hidden />
+          <ChevronLeft className="size-4 md:size-3.5" aria-hidden />
         </button>
         <button
           type="button"
@@ -173,14 +173,14 @@ function ClusterPopup({
           }}
           disabled={!canGoNext}
           className={cn(
-            "inline-flex size-5 cursor-pointer items-center justify-center rounded-full transition",
+            "inline-flex size-8 cursor-pointer items-center justify-center rounded-full transition md:size-5",
             canGoNext
               ? "bg-warm text-text hover:bg-border"
               : "cursor-not-allowed text-subtle opacity-40",
           )}
           aria-label="Annonce suivante"
         >
-          <ChevronRight className="size-3.5" aria-hidden />
+          <ChevronRight className="size-4 md:size-3.5" aria-hidden />
         </button>
       </div>
       <div

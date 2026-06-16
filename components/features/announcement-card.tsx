@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, HandHeart, MapPin, Sparkles } from "lucide-react";
+import { ArrowRight, Calendar, HandHeart, MapPin, Sparkles } from "lucide-react";
 import { ROUTES } from "@/lib/constants/routes";
 import {
   getCategoryColorHex,
@@ -11,6 +11,7 @@ import { CategoryTag } from "@/components/ui/category-tag";
 import { cn } from "@/lib/utils/cn";
 import { formatDisplayName } from "@/lib/utils/display-name";
 import { formatRelativeTime } from "@/lib/utils/date";
+import { formatShortDate } from "@/lib/utils/format-date";
 import { formatAddressLabel, formatAddressLines } from "@/lib/utils/format-address";
 
 type Props = {
@@ -41,6 +42,30 @@ function resolveAuthorInitials(profiles: AuthorProfile): string {
   if (first) return first;
   const fromDisplay = profiles?.display_name?.trim().charAt(0).toUpperCase();
   return fromDisplay ?? "?";
+}
+
+function AnnouncementTargetDate({
+  targetDate,
+  className,
+}: {
+  targetDate: string | null | undefined;
+  className?: string;
+}) {
+  if (!targetDate) return null;
+
+  return (
+    <p
+      className={cn(
+        "flex items-center gap-1 text-[11px] font-medium leading-snug text-subtle",
+        className,
+      )}
+    >
+      <Calendar className="size-3.5 shrink-0" aria-hidden />
+      <time dateTime={targetDate} className="min-w-0 truncate">
+        Échéance le {formatShortDate(targetDate)}
+      </time>
+    </p>
+  );
 }
 
 function AnnouncementCardAddress({
@@ -150,6 +175,10 @@ export function AnnouncementCard({
             <h3 className="my-1 truncate text-sm font-semibold leading-5 text-text">
               {a.title}
             </h3>
+            <AnnouncementTargetDate
+              targetDate={a.target_date}
+              className="text-[10px] leading-4"
+            />
             <p className="flex items-center gap-1 truncate text-[10px] font-medium leading-4 text-subtle">
               <MapPin className="size-3 shrink-0" aria-hidden />
               <span className="truncate">{fullAddress}</span>
@@ -227,6 +256,8 @@ export function AnnouncementCard({
           <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-text">
             {a.title}
           </h3>
+
+          <AnnouncementTargetDate targetDate={a.target_date} />
 
           <AnnouncementCardAddress
             street={a.address_street}

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { Calendar } from "lucide-react";
 import { requireActiveMembership } from "@/lib/auth/session";
 import { listSimilarAnnouncements } from "@/lib/queries/announcements";
 import type { AnnouncementWithAuthor } from "@/lib/queries/announcements";
@@ -24,6 +25,7 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { LinkifiedText } from "@/components/ui/linkified-text";
 import { formatMemberSince, formatRelativeTime } from "@/lib/utils/date";
 import { formatDisplayName } from "@/lib/utils/display-name";
+import { formatShortDate } from "@/lib/utils/format-date";
 import { formatAddressLines } from "@/lib/utils/format-address";
 import type { AnnouncementEditData } from "@/lib/types";
 import { PageStack } from "@/components/ui/page-stack";
@@ -149,6 +151,14 @@ export default async function AnnonceDetailPage(props: {
                 </p>
               </div>
               <h1 className="text-2xl font-bold leading-8 text-text">{ann.title}</h1>
+              {ann.target_date ? (
+                <p className="flex items-center gap-1.5 text-sm font-medium text-muted">
+                  <Calendar className="size-4 shrink-0 text-subtle" aria-hidden />
+                  <time dateTime={ann.target_date}>
+                    Échéance le {formatShortDate(ann.target_date)}
+                  </time>
+                </p>
+              ) : null}
               <div className="flex items-center gap-3 md:hidden">
                 <UserAvatar
                   name={authorName}
@@ -202,8 +212,8 @@ export default async function AnnonceDetailPage(props: {
           />
 
           {/* Location card */}
-          <Card className={`space-y-2 md:space-y-4 md:p-5 ${DETAIL_CARD_CLASS}`}>
-            <h2 className="hidden text-lg font-semibold text-text md:block">
+          <Card className={`gap-2 md:p-5 ${DETAIL_CARD_CLASS}`}>
+            <h2 className="hidden text-lg font-semibold leading-7 text-text md:block">
               Localisation
             </h2>
             {ann.address_lat != null && ann.address_lng != null ? (
