@@ -376,7 +376,7 @@ export function MapContentView({
           </h3>
           <div
             ref={carouselRef}
-            className="-mx-4 flex snap-x snap-mandatory gap-2 overflow-x-auto p-1 pl-5 px-4 pb-2 md:mx-0 md:pl-1 md:px-0"
+            className="flex snap-x snap-mandatory gap-2 overflow-x-auto pb-2 md:pl-1"
           >
             {sortedItems.map((a) => (
               <div

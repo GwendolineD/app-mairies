@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowUpDown, Calendar as CalendarIcon, ChevronDown, List, Map, SlidersHorizontal, X } from "lucide-react";
+import { ArrowUpDown, Calendar as CalendarIcon, ChevronDown, List, Map, Plus, SlidersHorizontal, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { format, isValid, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -52,58 +52,108 @@ export function AnnouncementListToolbar({
 
   const filterCount = activeFilterCount(params);
 
+  const countLabel = `${totalCount} annonce${totalCount !== 1 ? "s" : ""} près de chez vous`;
+
+  const createButtonMobile = onCreateClick ? (
+    <Button
+      type="button"
+      variant="primary"
+      size="icon-sm"
+      onClick={onCreateClick}
+      aria-label="Créer une annonce"
+      className="size-[34px] shrink-0 p-0 md:hidden"
+    >
+      <Plus aria-hidden />
+    </Button>
+  ) : (
+    <Button
+      href={`${pathname}${buildAnnouncementListQuery({ ...params, create: "annonce" })}`}
+      size="icon-sm"
+      aria-label="Créer une annonce"
+      className="size-[34px] shrink-0 p-0 md:hidden"
+    >
+      <Plus aria-hidden />
+    </Button>
+  );
+
+  const createButtonDesktop = onCreateClick ? (
+    <Button
+      type="button"
+      variant="primary"
+      size="sm"
+      onClick={onCreateClick}
+    >
+      <span className="text-sm leading-none">+</span>
+      <span>Créer une annonce</span>
+    </Button>
+  ) : (
+    <Button
+      href={`${pathname}${buildAnnouncementListQuery({ ...params, create: "annonce" })}`}
+      size="sm"
+    >
+      <span className="text-sm leading-none">+</span>
+      <span>Créer une annonce</span>
+    </Button>
+  );
+
+  const viewToggle = (
+    <div className="inline-flex rounded-sm border border-border bg-surface p-0.5">
+      <ViewToggle
+        active={params.vue === "liste"}
+        onClick={() => navigate({ vue: "liste" })}
+        icon={<List className="size-3.5" aria-hidden />}
+        label="Vue liste"
+      />
+      <ViewToggle
+        active={params.vue === "carte"}
+        onClick={() => navigate({ vue: "carte" })}
+        icon={<Map className="size-3.5" aria-hidden />}
+        label="Vue carte"
+      />
+    </div>
+  );
+
+  const sortAndFilters = (
+    <div className="flex items-center gap-2">
+      <SortPopover params={params} navigate={navigate} />
+      <FiltersPopover params={params} navigate={navigate} count={filterCount} />
+    </div>
+  );
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      {/* Mobile: title only */}
+      <h1 className="text-xl font-bold leading-7 text-text md:hidden">
+        Toutes les annonces
+      </h1>
+
+      {/* Desktop: title, subtitle and full create button */}
+      <div className="hidden flex-wrap items-start justify-between gap-3 md:flex">
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold leading-9 text-text md:text-[28px]">
+          <h1 className="text-[28px] font-bold leading-9 text-text">
             Toutes les annonces
           </h1>
-          <p className="text-xs font-medium text-muted">
-            {totalCount} annonce{totalCount !== 1 ? "s" : ""} près de chez vous
-          </p>
+          <p className="text-xs font-medium text-muted">{countLabel}</p>
         </div>
-        {onCreateClick ? (
-          <Button
-            type="button"
-            variant="primary"
-            size="sm"
-            onClick={onCreateClick}
-          >
-            <span className="text-sm leading-none">+</span>
-            <span>Créer une annonce</span>
-          </Button>
-        ) : (
-          <Button
-            href={`${pathname}${buildAnnouncementListQuery({ ...params, create: "annonce" })}`}
-            size="sm"
-          >
-            <span className="text-sm leading-none">+</span>
-            <span>Créer une annonce</span>
-          </Button>
-        )}
+        {createButtonDesktop}
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex rounded-sm border border-border bg-surface p-0.5">
-          <ViewToggle
-            active={params.vue === "liste"}
-            onClick={() => navigate({ vue: "liste" })}
-            icon={<List className="size-3.5" aria-hidden />}
-            label="Vue liste"
-          />
-          <ViewToggle
-            active={params.vue === "carte"}
-            onClick={() => navigate({ vue: "carte" })}
-            icon={<Map className="size-3.5" aria-hidden />}
-            label="Vue carte"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <SortPopover params={params} navigate={navigate} />
-          <FiltersPopover params={params} navigate={navigate} count={filterCount} />
-        </div>
+      {/* Mobile: view toggle + create button */}
+      <div className="flex items-center justify-between gap-3 md:hidden">
+        {viewToggle}
+        {createButtonMobile}
       </div>
+
+      {/* Desktop: view toggle + sort/filters on one row */}
+      <div className="hidden flex-wrap items-center justify-between gap-3 md:flex">
+        {viewToggle}
+        {sortAndFilters}
+      </div>
+
+      {/* Mobile: sort/filters aligned right */}
+      <div className="flex justify-end md:hidden">{sortAndFilters}</div>
+
+      <p className="text-xs font-medium text-muted md:hidden">{countLabel}</p>
     </div>
   );
 }

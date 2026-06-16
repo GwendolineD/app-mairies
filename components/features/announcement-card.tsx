@@ -11,7 +11,7 @@ import { CategoryTag } from "@/components/ui/category-tag";
 import { cn } from "@/lib/utils/cn";
 import { formatDisplayName } from "@/lib/utils/display-name";
 import { formatRelativeTime } from "@/lib/utils/date";
-import { formatAddressLines } from "@/lib/utils/format-address";
+import { formatAddressLabel, formatAddressLines } from "@/lib/utils/format-address";
 
 type Props = {
   announcement: AnnouncementWithAuthor;
@@ -102,48 +102,83 @@ export function AnnouncementCard({
   layout = "vertical",
   highlighted = false,
 }: Props) {
-  const street =
-    a.author_membership?.address_street ??
-    a.author_membership?.address_city ??
-    "Adresse non renseignée";
-
   const highlightRing = highlighted
     ? "border-purple ring-2 ring-purple/35 shadow-[0_12px_32px_rgba(154,82,255,0.15)]"
     : "";
 
   if (layout === "horizontal") {
+    const fullAddress = formatAddressLabel(
+      a.address_street,
+      a.address_postcode,
+      a.address_city,
+    );
+
     return (
       <Link href={ROUTES.annonces.detail(a.id)} className="block">
         <Card
           className={cn(
-            "flex gap-3 rounded-xl p-3 transition hover:border-purple/45",
+            "flex h-28 flex-row items-stretch gap-0 overflow-hidden rounded-lg p-0 transition hover:border-purple/45",
             highlightRing,
           )}
         >
-          <div className="relative shrink-0">
+          <div className="relative size-28 shrink-0 overflow-hidden">
             {a.photo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={a.photo_url}
                 alt=""
-                className="h-20 w-20 rounded-2xl object-cover"
+                className="size-full object-cover"
               />
             ) : (
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-warm text-[10px] font-semibold text-muted">
+              <div className="flex size-full items-center justify-center bg-warm text-[10px] font-semibold text-muted">
                 Annonce
               </div>
             )}
-            <TypePastille type={a.type} className="absolute left-1 top-1 px-1.5 py-0.5 text-[9px]" />
           </div>
-          <div className="min-w-0 flex-1 space-y-1">
-            <CategoryTag
-              label={getCategoryLabel(a.category_slug)}
-              colorHex={getCategoryColorHex(a.category_slug)}
-            />
-            <h3 className="line-clamp-2 text-base font-semibold text-text">{a.title}</h3>
-            <p className="text-xs text-muted">
-              {street} · {formatRelativeTime(a.created_at)}
+          <div className="relative flex min-h-0 min-w-0 flex-1 flex-col p-2">
+            <div className="flex items-center gap-1">
+              <TypePastille
+                type={a.type}
+                className="h-4 gap-0.5 px-1.5 py-0 text-[10px] font-semibold leading-4 shadow-none [&_svg]:size-2.5"
+              />
+              <CategoryTag
+                label={getCategoryLabel(a.category_slug)}
+                colorHex={getCategoryColorHex(a.category_slug)}
+                className="h-4 w-fit shrink-0 px-1.5 py-0 text-[10px] font-semibold leading-4"
+              />
+            </div>
+            <h3 className="my-1 truncate text-sm font-semibold leading-5 text-text">
+              {a.title}
+            </h3>
+            <p className="flex items-center gap-1 truncate text-[10px] font-medium leading-4 text-subtle">
+              <MapPin className="size-3 shrink-0" aria-hidden />
+              <span className="truncate">{fullAddress}</span>
             </p>
+            <div className="mt-auto flex items-center justify-between gap-1">
+              <time
+                className="shrink-0 text-[10px] leading-4 text-muted"
+                dateTime={a.created_at}
+              >
+                {formatRelativeTime(a.created_at)}
+              </time>
+              <div className="flex min-w-0 items-center gap-1">
+                {a.author_membership?.profiles?.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={a.author_membership.profiles.avatar_url}
+                    alt=""
+                    className="size-4 shrink-0 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="flex size-4 shrink-0 items-center justify-center rounded-full bg-warm text-[8px] font-bold text-muted">
+                    {resolveAuthorInitials(a.author_membership?.profiles ?? null)}
+                  </div>
+                )}
+                <span className="truncate text-[10px] font-medium leading-4 text-muted">
+                  {resolveAuthorName(a.author_membership?.profiles ?? null)}
+                </span>
+              </div>
+            </div>
           </div>
         </Card>
       </Link>

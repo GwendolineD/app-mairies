@@ -77,7 +77,7 @@ export function PasswordField({
         />
         <button
           type="button"
-          className="absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer text-subtle hover:text-text"
+          className="absolute right-1 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center cursor-pointer text-subtle hover:text-text"
           onClick={() => setVisible((v) => !v)}
           aria-label={
             visible ? "Masquer le mot de passe" : "Afficher le mot de passe"

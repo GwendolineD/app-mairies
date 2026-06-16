@@ -50,7 +50,7 @@ export default async function ResidentRootLayout({
         </main>
       </div>
 
-      <BottomNav backofficeLinks={backofficeLinks} unreadMessages={unreadMessages} />
+      <BottomNav unreadMessages={unreadMessages} />
     </div>
   );
 }
