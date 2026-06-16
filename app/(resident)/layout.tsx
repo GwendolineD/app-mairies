@@ -9,6 +9,8 @@ import { countUnreadMessages } from "@/lib/queries/messages";
 import { createClient } from "@/lib/supabase/server";
 import { getAnnouncementCategories } from "@/lib/queries/announcement-categories";
 import { initCategories } from "@/lib/constants/announcement-categories";
+import { getInitiativeEventCategories } from "@/lib/queries/initiative-event-categories";
+import { initInitiativeEventCategories } from "@/lib/constants/initiative-categories";
 
 export default async function ResidentRootLayout({
   children,
@@ -19,12 +21,14 @@ export default async function ResidentRootLayout({
   const backofficeLinks = getResidentBackofficeNav(ctx);
   const supabase = await createClient();
 
-  const [unreadMessages, categoryRows] = await Promise.all([
+  const [unreadMessages, categoryRows, initiativeCategoryRows] = await Promise.all([
     countUnreadMessages(supabase, ctx.activeMembership!.commune_id),
     getAnnouncementCategories(),
+    getInitiativeEventCategories(),
   ]);
 
   initCategories(categoryRows);
+  initInitiativeEventCategories(initiativeCategoryRows);
 
   return (
     <div className="flex h-dvh w-full flex-col overflow-hidden bg-background text-text">

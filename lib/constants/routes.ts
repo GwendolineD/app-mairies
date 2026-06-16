@@ -53,6 +53,7 @@ export const ROUTES = {
     leads: "/backoffice/leads",
     emails: "/backoffice/emails",
     categories: "/backoffice/categories",
+    categoriesInitiatives: "/backoffice/categories-initiatives",
   },
 } as const;
 
@@ -87,7 +88,8 @@ export type AdminNavIcon =
   | "mail"
   | "flame"
   | "credit-card"
-  | "tags";
+  | "tags"
+  | "sparkles";
 
 export type AdminNavItem = {
   href: string;
@@ -111,6 +113,7 @@ export const BACKOFFICE_NAV: readonly AdminNavItem[] = [
   { href: ROUTES.backoffice.admin, label: "Dashboard", icon: "layout-dashboard" },
   { href: ROUTES.backoffice.communes, label: "Communes pilotées", icon: "building2" },
   { href: ROUTES.backoffice.categories, label: "Catégories annonces", icon: "tags" },
+  { href: ROUTES.backoffice.categoriesInitiatives, label: "Catégories initiatives", icon: "sparkles" },
   { href: ROUTES.backoffice.leads, label: "Leads pré-inscription", icon: "flame" },
   { href: ROUTES.backoffice.emails, label: "Templates email", icon: "mail" },
 ];

@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import type { AnnouncementType } from "@/lib/constants/announcement-types";
-import type { AnnouncementEditData } from "@/lib/types";
+import type { AnnouncementEditData, InitiativeEditData } from "@/lib/types";
 
 type OpenAnnouncementOptions = {
   presetType?: AnnouncementType;
@@ -17,15 +17,22 @@ type OpenAnnouncementOptions = {
   initialData?: AnnouncementEditData;
 };
 
+type OpenInitiativeOptions = {
+  editId?: string;
+  initialData?: InitiativeEditData;
+};
+
 type CreationModalContextValue = {
   openAnnouncementModal: (options?: OpenAnnouncementOptions) => void;
-  openInitiativeModal: () => void;
+  openInitiativeModal: (options?: OpenInitiativeOptions) => void;
   closeModals: () => void;
   announcementOpen: boolean;
   initiativeOpen: boolean;
   announcementPresetType: AnnouncementType;
   announcementEditId: string | undefined;
   announcementInitialData: AnnouncementEditData | undefined;
+  initiativeEditId: string | undefined;
+  initiativeInitialData: InitiativeEditData | undefined;
 };
 
 const CreationModalContext = createContext<CreationModalContextValue | null>(
@@ -39,6 +46,8 @@ export function CreationModalProvider({ children }: { children: ReactNode }) {
     useState<AnnouncementType>("demande");
   const [announcementEditId, setAnnouncementEditId] = useState<string | undefined>();
   const [announcementInitialData, setAnnouncementInitialData] = useState<AnnouncementEditData | undefined>();
+  const [initiativeEditId, setInitiativeEditId] = useState<string | undefined>();
+  const [initiativeInitialData, setInitiativeInitialData] = useState<InitiativeEditData | undefined>();
 
   const openAnnouncementModal = useCallback(
     (options?: OpenAnnouncementOptions) => {
@@ -46,13 +55,19 @@ export function CreationModalProvider({ children }: { children: ReactNode }) {
       setAnnouncementEditId(options?.editId);
       setAnnouncementInitialData(options?.initialData);
       setInitiativeOpen(false);
+      setInitiativeEditId(undefined);
+      setInitiativeInitialData(undefined);
       setAnnouncementOpen(true);
     },
     [],
   );
 
-  const openInitiativeModal = useCallback(() => {
+  const openInitiativeModal = useCallback((options?: OpenInitiativeOptions) => {
     setAnnouncementOpen(false);
+    setAnnouncementEditId(undefined);
+    setAnnouncementInitialData(undefined);
+    setInitiativeEditId(options?.editId);
+    setInitiativeInitialData(options?.initialData);
     setInitiativeOpen(true);
   }, []);
 
@@ -61,6 +76,8 @@ export function CreationModalProvider({ children }: { children: ReactNode }) {
     setInitiativeOpen(false);
     setAnnouncementEditId(undefined);
     setAnnouncementInitialData(undefined);
+    setInitiativeEditId(undefined);
+    setInitiativeInitialData(undefined);
   }, []);
 
   const value = useMemo(
@@ -73,6 +90,8 @@ export function CreationModalProvider({ children }: { children: ReactNode }) {
       announcementPresetType,
       announcementEditId,
       announcementInitialData,
+      initiativeEditId,
+      initiativeInitialData,
     }),
     [
       openAnnouncementModal,
@@ -83,6 +102,8 @@ export function CreationModalProvider({ children }: { children: ReactNode }) {
       announcementPresetType,
       announcementEditId,
       announcementInitialData,
+      initiativeEditId,
+      initiativeInitialData,
     ],
   );
 

@@ -139,20 +139,22 @@ export function ContactAnnouncementButton({
               ) : null}
               <div className="flex gap-2">
                 <Button
-                  type="submit"
-                  className="flex-1 py-2 text-sm"
-                  disabled={sending}
-                >
-                  {sending ? "Envoi…" : "Envoyer"}
-                </Button>
-                <Button
                   type="button"
-                  variant="secondary"
-                  className="py-2 text-sm"
+                  variant="ghost"
+                  size="sm"
                   disabled={sending}
                   onClick={handleClose}
                 >
                   Annuler
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="sm"
+                  className="flex-1"
+                  disabled={sending}
+                >
+                  {sending ? "Envoi…" : "Envoyer"}
                 </Button>
               </div>
             </form>

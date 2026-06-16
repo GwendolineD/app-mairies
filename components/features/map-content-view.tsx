@@ -212,7 +212,7 @@ export function MapContentView({
   zoom,
   initialRadiusMeters = DEFAULT_INITIAL_RADIUS_METERS,
   showUserPin = false,
-  className = "h-[420px] md:h-[520px] rounded-3xl overflow-hidden border border-border/70 shadow-card",
+  className = "h-[420px] md:h-[520px] rounded-lg overflow-hidden border border-border/70 shadow-card",
   carouselItems,
 }: Props) {
   // Rich items take priority when provided; legacy `carouselItems` kept for back-compat.

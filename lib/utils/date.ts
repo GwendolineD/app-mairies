@@ -40,6 +40,20 @@ export function formatShortDate(iso: string): string {
   }
 }
 
+export function formatLinkedEventDateTime(iso: string): string {
+  try {
+    return formatFr(new Date(iso), {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
+}
+
 export function formatRelativeTime(iso: string): string {
   try {
     const date = new Date(iso);

@@ -111,6 +111,19 @@ export type AnnouncementEditData = {
   addressLng: number;
 };
 
+export type InitiativeEditData = {
+  categorySlug: string;
+  title: string;
+  description: string;
+  photoUrl: string;
+  addressStreet: string;
+  addressCity: string;
+  addressCitycode: string;
+  addressPostcode: string;
+  addressLat: number;
+  addressLng: number;
+};
+
 export type InitiativeRecord = {
   id: string;
   commune_id: string;
@@ -118,6 +131,7 @@ export type InitiativeRecord = {
   category_slug: string | null;
   title: string;
   description: string | null;
+  photo_url: string | null;
   date_mode: "none" | "once" | "recurring";
   single_starts_at: string | null;
   single_ends_at: string | null;
@@ -134,6 +148,9 @@ export type AgendaEventRecord = {
   id: string;
   commune_id: string;
   author_membership_id: string;
+  category_slug: string | null;
+  source_initiative_id: string | null;
+  volunteers_needed: number | null;
   title: string;
   description: string | null;
   starts_at: string;
@@ -203,6 +220,16 @@ export type NotificationPreferenceKey =
 export type NotificationPreferences = Record<NotificationPreferenceKey, boolean>;
 
 export interface AnnouncementCategoryRow {
+  slug: string;
+  label: string;
+  sort_order: number;
+  icon_name: string | null;
+  color_hex: string;
+  map_pin_url: string | null;
+  default_image_url: string | null;
+}
+
+export interface InitiativeEventCategoryRow {
   slug: string;
   label: string;
   sort_order: number;

@@ -33,7 +33,7 @@ const MapContentView = dynamic(
     ssr: false,
     loading: () => (
       <div className="space-y-4">
-        <Skeleton className="h-[420px] w-full rounded-3xl md:h-[520px]" />
+        <Skeleton className="h-[420px] w-full rounded-lg md:h-[520px]" />
         <div className="flex gap-3 overflow-hidden">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-52 w-52 shrink-0 rounded-xl md:w-56" />

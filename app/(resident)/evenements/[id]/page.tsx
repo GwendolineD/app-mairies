@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
+import { Sparkles } from "lucide-react";
 import { submitArchiveEvent, submitDeleteEvent } from "@/lib/actions/events";
 import { requireActiveMembership } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
@@ -13,6 +15,10 @@ import { ReportButton } from "@/components/features/report-button";
 import type { AgendaEventRecord } from "@/lib/types";
 import { PageStack } from "@/components/ui/page-stack";
 import { CarteAnnoncesMap } from "@/components/features/carte-preview-map";
+import {
+  getInitiativeCategoryColorHex,
+  getInitiativeCategoryMapPinUrl,
+} from "@/lib/constants/initiative-categories";
 
 export default async function EvenementDetailPage(props: {
   params: Promise<{ id: string }>;
@@ -32,6 +38,17 @@ export default async function EvenementDetailPage(props: {
   const event = data as AgendaEventRecord;
   const isAuthor = event.author_membership_id === ctx.activeMembership?.id;
 
+  // Fetch source initiative if linked
+  let sourceInitiative: { id: string; title: string } | null = null;
+  if (event.source_initiative_id) {
+    const { data: initiative } = await supabase
+      .from("initiatives")
+      .select("id, title")
+      .eq("id", event.source_initiative_id)
+      .maybeSingle();
+    sourceInitiative = initiative;
+  }
+
   return (
     <PageStack gap="5">
       <BackLink href={ROUTES.evenements.list}>← Événements</BackLink>
@@ -44,6 +61,21 @@ export default async function EvenementDetailPage(props: {
             </div>
             <ReportButton contextType="event" contextId={event.id} />
           </div>
+
+          {sourceInitiative ? (
+            <div className="rounded-lg border border-mint/30 bg-mint/5 p-3">
+              <p className="flex items-center gap-1 text-xs font-semibold text-mint">
+                <Sparkles className="size-3.5" aria-hidden />
+                Issue de l&apos;initiative
+              </p>
+              <Link
+                href={ROUTES.initiatives.detail(sourceInitiative.id)}
+                className="text-sm font-semibold text-text hover:underline"
+              >
+                {sourceInitiative.title}
+              </Link>
+            </div>
+          ) : null}
           {event.photo_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={event.photo_url} alt="" className="rounded-2xl border border-border" />
@@ -87,6 +119,17 @@ export default async function EvenementDetailPage(props: {
               latitude={event.address_lat}
               longitude={event.address_lng}
               communeName={event.title}
+              categorySlug={event.category_slug ?? undefined}
+              mapPinUrl={
+                event.category_slug
+                  ? getInitiativeCategoryMapPinUrl(event.category_slug)
+                  : null
+              }
+              colorHex={
+                event.category_slug
+                  ? getInitiativeCategoryColorHex(event.category_slug)
+                  : undefined
+              }
               className="h-48 rounded-2xl overflow-hidden border border-border/70"
             />
           </Card>

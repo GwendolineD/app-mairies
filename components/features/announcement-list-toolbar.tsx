@@ -15,12 +15,14 @@ import {
   type SortMode,
 } from "@/lib/utils/search-params";
 import { Button } from "@/components/ui/button";
+import { CategoryIconBadge } from "@/components/ui/category-icon-badge";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import type { LucideIcon } from "@/lib/utils/lucide-icon-map";
 import { cn } from "@/lib/utils/cn";
 
 type Props = {
@@ -429,6 +431,7 @@ function FiltersPopover({
                   key={c.slug}
                   checked={checked}
                   colorHex={c.colorHex}
+                  icon={c.Icon}
                   onCheckboxToggle={() => {
                     const next = checked
                       ? params.categories.filter((s) => s !== c.slug)
@@ -478,12 +481,14 @@ function FilterRow({
   onRowSelect,
   label,
   colorHex,
+  icon: Icon,
 }: {
   checked: boolean;
   onCheckboxToggle: () => void;
   onRowSelect: () => void;
   label: string;
   colorHex?: string;
+  icon?: LucideIcon;
 }) {
   return (
     <div className="flex w-full items-center gap-3 px-4 py-2.5 transition hover:bg-warm/60 md:py-2">
@@ -510,12 +515,8 @@ function FilterRow({
         onClick={onRowSelect}
         className="flex flex-1 cursor-pointer items-center gap-2 text-left text-sm font-medium text-text"
       >
-        {colorHex ? (
-          <span
-            aria-hidden
-            className="inline-block size-2.5 shrink-0 rounded-full"
-            style={{ backgroundColor: colorHex }}
-          />
+        {Icon && colorHex ? (
+          <CategoryIconBadge colorHex={colorHex} Icon={Icon} />
         ) : null}
         <span className="flex-1 truncate">{label}</span>
       </button>

@@ -86,12 +86,22 @@ import { INITIATIVE_CATEGORY_SLUGS } from "@/lib/constants/initiative-categories
 
 export const initiativeSchema = z.object({
   categorySlug: z.enum(INITIATIVE_CATEGORY_SLUGS),
-  title: z.string().min(3).max(120),
-  description: z.string().max(3000).optional(),
-  dateMode: z.enum(["none", "once", "recurring"]),
-  singleStartsAt: z.string().optional(),
-  singleEndsAt: z.string().optional(),
-  addressLabel: z.string().max(500).optional(),
+  title: z.string().min(3).max(70),
+  description: z.string().max(1000).optional(),
+  photoUrl: z.string().url().optional().or(z.literal("")),
+  addressStreet: z.string().max(500).optional(),
+  addressCity: z.string().max(200).optional(),
+  addressPostcode: z.string().max(10).optional(),
+  addressCitycode: z.string().max(10).optional(),
+  addressLat: z.coerce.number().optional(),
+  addressLng: z.coerce.number().optional(),
+});
+
+export const createEventFromInitiativeSchema = z.object({
+  initiativeId: z.string().uuid(),
+  startsAt: z.string().min(1, "Date de début requise"),
+  endsAt: z.string().min(1, "Date de fin requise"),
+  volunteersNeeded: z.coerce.number().int().min(0).optional(),
 });
 
 export const eventSchema = z.object({

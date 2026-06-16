@@ -171,6 +171,12 @@ export function parseInitiativeListParams(
   };
 }
 
+export function hasActiveInitiativeFilters(
+  params: Pick<InitiativeListParams, "categorie">,
+): boolean {
+  return !!params.categorie;
+}
+
 export function buildInitiativeListQuery(
   params: Partial<InitiativeListParams>,
 ): string {

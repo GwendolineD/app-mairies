@@ -24,6 +24,8 @@ export function CreationModalHost({ communeId, membershipAddress }: Props) {
     announcementPresetType,
     announcementEditId,
     announcementInitialData,
+    initiativeEditId,
+    initiativeInitialData,
     openAnnouncementModal,
     openInitiativeModal,
     closeModals,
@@ -81,6 +83,9 @@ export function CreationModalHost({ communeId, membershipAddress }: Props) {
         open={initiativeOpen}
         onClose={handleClose}
         communeId={communeId}
+        membershipAddress={membershipAddress}
+        editId={initiativeEditId}
+        initialData={initiativeInitialData}
       />
     </>
   );
