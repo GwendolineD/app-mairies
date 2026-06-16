@@ -149,7 +149,9 @@ export function CreateAnnouncementModal({
     (initialData?.categorySlug as AnnouncementCategorySlug) ?? ANNOUNCEMENT_CATEGORIES[0].slug,
   );
   const [title, setTitle] = useState(initialData?.title ?? "");
-  const [description, setDescription] = useState(initialData?.description ?? "");
+  const [description, setDescription] = useState(
+    () => (initialData?.description ?? "").slice(0, DESCRIPTION_MAX),
+  );
   const [targetDate, setTargetDate] = useState(initialData?.targetDate ?? "");
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [addressData, setAddressData] = useState<AddressFormState>(
@@ -166,8 +168,8 @@ export function CreateAnnouncementModal({
   const [formError, setFormError] = useState<string | null>(null);
 
   const fetchStreetSuggestions = useCallback(
-    (query: string) => searchAddresses(query, addressData.citycode),
-    [addressData.citycode],
+    (query: string) => searchAddresses(query),
+    [],
   );
 
   const resetForm = useCallback(() => {
@@ -175,7 +177,7 @@ export function CreateAnnouncementModal({
       setType(initialData.type);
       setCategorySlug(initialData.categorySlug as AnnouncementCategorySlug);
       setTitle(initialData.title);
-      setDescription(initialData.description);
+      setDescription((initialData.description ?? "").slice(0, DESCRIPTION_MAX));
       setTargetDate(initialData.targetDate);
       setPendingFile(null);
       const addr = {
@@ -295,7 +297,7 @@ export function CreateAnnouncementModal({
       fd.set("type", type);
       fd.set("categorySlug", categorySlug);
       fd.set("title", title);
-      fd.set("description", description);
+      fd.set("description", description.trim());
       fd.set("targetDate", targetDate);
       fd.set("photoUrl", photoUrl || (initialData?.photoUrl ?? ""));
       fd.set("addressStreet", addressData.street.trim());
@@ -462,7 +464,12 @@ export function CreateAnnouncementModal({
                 rows={7}
                 maxLength={DESCRIPTION_MAX}
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  if (next.length <= DESCRIPTION_MAX) {
+                    setDescription(next);
+                  }
+                }}
                 placeholder="Décrivez votre besoin, le contexte, ce que vous recherchez…"
                 className="max-h-96 overflow-y-auto pb-8 field-sizing-fixed resize-none"
               />
@@ -485,7 +492,6 @@ export function CreateAnnouncementModal({
               onInputChange={handleStreetInputChange}
               value={addressData.street || undefined}
               formatSuggestion={(feature) => formatStreetDisplay(feature.label)}
-              disabled={!addressData.citycode}
               leadingIcon={MapPin}
             />
             {addressStreetError ? (
@@ -494,8 +500,7 @@ export function CreateAnnouncementModal({
               </p>
             ) : (
               <p className="mt-1.5 text-xs font-medium text-subtle">
-                Préremplie avec votre adresse. Modifiez-la si l&apos;annonce se
-                situe ailleurs dans la commune.
+                Préremplie avec votre adresse. Modifiez-la si l&apos;annonce se situe ailleurs.
               </p>
             )}
           </FormField>

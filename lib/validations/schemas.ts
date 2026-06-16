@@ -57,9 +57,14 @@ export const announcementSchema = z.object({
   title: z.string().trim().min(1, "Titre requis").max(70, "Titre trop long (70 caractères max.)"),
   description: z
     .string()
-    .trim()
-    .min(1, "Description requise")
-    .max(1000, "Description trop longue (1000 caractères max.)"),
+    .max(1000, "Description trop longue (1000 caractères max.)")
+    .transform((value) => value.trim())
+    .pipe(
+      z
+        .string()
+        .min(1, "Description requise")
+        .max(1000, "Description trop longue (1000 caractères max.)"),
+    ),
   targetDate: z
     .string()
     .optional()

@@ -61,15 +61,17 @@ export async function searchMunicipalities(
 
 export async function searchAddresses(
   query: string,
-  citycode: string,
+  citycode?: string,
   limit = 8,
 ): Promise<BanFeature[]> {
   if (query.trim().length < 3) return [];
   const params = new URLSearchParams({
     q: query,
-    citycode,
     limit: String(limit),
   });
+  if (citycode?.trim()) {
+    params.set("citycode", citycode.trim());
+  }
   const res = await fetch(`${BAN_BASE}/search/?${params}`);
   if (!res.ok) return [];
   const data = (await res.json()) as BanResponse;

@@ -201,6 +201,29 @@ body {
   box-shadow: 0 12px 32px rgba(37, 38, 48, 0.1);
 }
 
+/* Scrollbar visible on hover only (Firefox + WebKit). */
+.scrollbar-hover {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.scrollbar-hover:hover {
+  scrollbar-color: var(--color-border) transparent;
+}
+
+.scrollbar-hover::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-hover::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 9999px;
+}
+
+.scrollbar-hover:hover::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+}
+
 /* Leaflet popup overrides for the announcement map view. */
 .leaflet-popup.vl-map-popup .leaflet-popup-content-wrapper {
   border-radius: 16px;

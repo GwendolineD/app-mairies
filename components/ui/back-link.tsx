@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 type Props = {
@@ -16,10 +17,11 @@ export function BackLink({
     <Link
       href={href}
       className={cn(
-        "text-xs font-semibold text-purple underline",
+        "inline-flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-purple underline",
         className,
       )}
     >
+      <ArrowLeft className="size-3.5 shrink-0" aria-hidden />
       {children}
     </Link>
   );

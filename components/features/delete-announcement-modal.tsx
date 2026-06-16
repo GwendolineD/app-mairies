@@ -42,24 +42,25 @@ export function DeleteAnnouncementModal({ announcementId, open, onClose }: Props
 
         {error ? <p className="text-xs text-coral">{error}</p> : null}
 
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="danger"
-            className="flex-1 py-2 text-sm"
-            disabled={pending}
-            onClick={handleConfirm}
-          >
-            {pending ? "Suppression…" : "Supprimer l'annonce"}
-          </Button>
+        <div className="flex justify-end gap-2">
           <Button
             type="button"
             variant="ghost"
-            className="py-2 text-sm"
+            size="sm"
             disabled={pending}
             onClick={onClose}
           >
             Annuler
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            size="sm"
+            className="w-fit shrink-0"
+            disabled={pending}
+            onClick={handleConfirm}
+          >
+            {pending ? "Suppression…" : "Supprimer l'annonce"}
           </Button>
         </div>
       </div>

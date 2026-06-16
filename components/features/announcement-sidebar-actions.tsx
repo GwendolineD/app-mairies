@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import type { AnnouncementEditData } from "@/lib/types";
+import { cn } from "@/lib/utils/cn";
 
 type Props = {
   isAuthor: boolean;
@@ -18,6 +19,7 @@ type Props = {
   memberSince: string;
   contactLabel: string;
   editData?: AnnouncementEditData;
+  className?: string;
 };
 
 export function AnnouncementSidebarActions({
@@ -28,13 +30,14 @@ export function AnnouncementSidebarActions({
   memberSince,
   contactLabel,
   editData,
+  className,
 }: Props) {
   const { openAnnouncementModal } = useCreationModals();
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   if (isAuthor) {
     return (
-      <Card className="space-y-4 p-5">
+      <Card className={cn("space-y-4 p-5", className)}>
         <h2 className="text-lg font-semibold text-text">Votre annonce</h2>
         <Button
           type="button"
@@ -63,7 +66,7 @@ export function AnnouncementSidebarActions({
   }
 
   return (
-    <Card className="space-y-4 p-5">
+    <Card className={cn("space-y-4 p-5", className)}>
       <h2 className="text-lg font-semibold text-text">Contact</h2>
       <div className="flex items-center gap-3">
         <UserAvatar name={authorName} url={authorAvatarUrl} />

@@ -50,9 +50,12 @@ export function BanAutocomplete({
   const [activeIndex, setActiveIndex] = useState(-1);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const listRef = useRef<HTMLUListElement>(null);
+  const isFocusedRef = useRef(false);
 
   useEffect(() => {
-    if (value !== undefined) setQuery(value);
+    if (value !== undefined && !isFocusedRef.current) {
+      setQuery(value);
+    }
   }, [value]);
 
   useEffect(() => {
@@ -178,8 +181,17 @@ export function BanAutocomplete({
           placeholder={placeholder}
           value={query}
           onChange={(e) => handleChange(e.target.value)}
-          onFocus={() => void handleFocus()}
-          onBlur={() => setTimeout(() => closeList(), 150)}
+          onFocus={() => {
+            isFocusedRef.current = true;
+            void handleFocus();
+          }}
+          onBlur={() => {
+            isFocusedRef.current = false;
+            if (value !== undefined && value !== query) {
+              setQuery(value);
+            }
+            setTimeout(() => closeList(), 150);
+          }}
           onKeyDown={handleKeyDown}
           className={cn(
             LeadingIcon ? "pl-10" : undefined,
@@ -199,26 +211,34 @@ export function BanAutocomplete({
           ref={listRef}
           id={listboxId}
           role="listbox"
-          className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-sm border border-border bg-surface shadow-elevated"
+          className="absolute z-1200 mt-1 max-h-56 w-full overflow-auto rounded-sm border border-border bg-surface shadow-elevated"
         >
           {suggestions.map((feature, index) => {
-            const text = suggestionLabel(feature, formatSuggestion);
+            const streetLine = suggestionLabel(feature, formatSuggestion);
+            const locationLine = [feature.postcode?.trim(), feature.city?.trim()]
+              .filter(Boolean)
+              .join(" ");
             const isActive = index === activeIndex;
             return (
-              <li key={`${feature.citycode}-${feature.label}`} role="presentation">
+              <li key={`${feature.citycode}-${feature.label}-${index}`} role="presentation">
                 <button
                   type="button"
                   id={`${listboxId}-option-${index}`}
                   role="option"
                   aria-selected={isActive}
                   className={cn(
-                    "w-full cursor-pointer px-4 py-2.5 text-left text-sm hover:bg-warm",
+                    "w-full cursor-pointer px-4 py-2.5 text-left hover:bg-warm",
                     isActive && "bg-warm",
                   )}
                   onMouseDown={() => selectSuggestion(feature)}
                   onMouseEnter={() => setActiveIndex(index)}
                 >
-                  {text}
+                  <span className="block text-sm font-medium text-text">{streetLine}</span>
+                  {locationLine ? (
+                    <span className="mt-0.5 block text-xs font-medium text-muted">
+                      {locationLine}
+                    </span>
+                  ) : null}
                 </button>
               </li>
             );

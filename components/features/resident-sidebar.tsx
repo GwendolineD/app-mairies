@@ -47,8 +47,8 @@ export function ResidentSidebar({ unreadMessages = 0 }: { unreadMessages?: numbe
     <aside
       className={cn(
         "group/sidebar relative hidden shrink-0 flex-col overflow-visible bg-sidebar py-6 transition-[width] duration-200 ease-in-out md:flex",
-        collapsed ? "px-2 md:w-16" : "px-4 md:w-56 lg:w-64",
-        !hydrated && "md:w-56 lg:w-64",
+        collapsed ? "px-2 md:w-16" : "px-3 md:w-44 lg:w-48",
+        !hydrated && "md:w-44 lg:w-48",
       )}
     >
       <button

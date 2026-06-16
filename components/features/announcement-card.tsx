@@ -43,7 +43,7 @@ function resolveAuthorInitials(profiles: AuthorProfile): string {
 }
 
 /** Coloured pill identifying offer vs request — overlays the card photo. */
-function TypePastille({
+export function TypePastille({
   type,
   className,
 }: {
