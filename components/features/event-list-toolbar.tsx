@@ -10,8 +10,8 @@ import {
 } from "@/lib/constants/initiative-categories";
 import type { LucideIcon } from "@/lib/utils/lucide-icon-map";
 import {
-  buildInitiativeListQuery,
-  type InitiativeListParams,
+  buildEventListQuery,
+  type EventListParams,
   type SortMode,
 } from "@/lib/utils/search-params";
 import { Button } from "@/components/ui/button";
@@ -24,12 +24,12 @@ import {
 import { cn } from "@/lib/utils/cn";
 
 type Props = {
-  params: InitiativeListParams;
+  params: EventListParams;
   totalCount: number;
   onCreateClick?: () => void;
 };
 
-export function InitiativeListToolbar({
+export function EventListToolbar({
   params,
   totalCount,
   onCreateClick,
@@ -37,13 +37,13 @@ export function InitiativeListToolbar({
   const router = useRouter();
   const pathname = usePathname();
 
-  function navigate(partial: Partial<InitiativeListParams>) {
+  function navigate(partial: Partial<EventListParams>) {
     const next = { ...params, ...partial, page: partial.page ?? 1 };
-    router.push(`${pathname}${buildInitiativeListQuery(next)}`);
+    router.push(`${pathname}${buildEventListQuery(next)}`);
   }
 
   const filterCount = params.categorie ? 1 : 0;
-  const countLabel = `${totalCount} initiative${totalCount !== 1 ? "s" : ""} près de chez vous`;
+  const countLabel = `${totalCount} événement${totalCount !== 1 ? "s" : ""} à venir`;
 
   const createButtonMobile = onCreateClick ? (
     <Button
@@ -51,16 +51,16 @@ export function InitiativeListToolbar({
       variant="primary"
       size="icon-sm"
       onClick={onCreateClick}
-      aria-label="Lancer une initiative"
+      aria-label="Créer un événement"
       className="size-[34px] shrink-0 p-0 md:hidden"
     >
       <Plus aria-hidden />
     </Button>
   ) : (
     <Button
-      href={`${pathname}${buildInitiativeListQuery({ ...params, create: "initiative" })}`}
+      href={`${pathname}${buildEventListQuery({ ...params, create: "event" })}`}
       size="icon-sm"
-      aria-label="Lancer une initiative"
+      aria-label="Créer un événement"
       className="size-[34px] shrink-0 p-0 md:hidden"
     >
       <Plus aria-hidden />
@@ -70,15 +70,15 @@ export function InitiativeListToolbar({
   const createButtonDesktop = onCreateClick ? (
     <Button type="button" variant="primary" size="sm" onClick={onCreateClick}>
       <span className="text-sm leading-none">+</span>
-      <span>Lancer une initiative</span>
+      <span>Créer un événement</span>
     </Button>
   ) : (
     <Button
-      href={`${pathname}${buildInitiativeListQuery({ ...params, create: "initiative" })}`}
+      href={`${pathname}${buildEventListQuery({ ...params, create: "event" })}`}
       size="sm"
     >
       <span className="text-sm leading-none">+</span>
-      <span>Lancer une initiative</span>
+      <span>Créer un événement</span>
     </Button>
   );
 
@@ -102,16 +102,16 @@ export function InitiativeListToolbar({
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold leading-7 text-text md:hidden">
-        Toutes les initiatives
+        Événements
       </h1>
 
       <div className="hidden flex-wrap items-start justify-between gap-3 md:flex">
         <div className="space-y-1">
           <h1 className="text-[28px] font-bold leading-9 text-text">
-            Toutes les initiatives
+            Événements
           </h1>
           <p className="text-sm font-medium leading-5 text-muted">
-            Découvrez les idées proposées par les habitants pour faire évoluer la commune.
+            Fêtes, ateliers, rencontres, chantiers participatifs… retrouvez les événements près de chez vous.
           </p>
         </div>
         {createButtonDesktop}
@@ -179,16 +179,16 @@ function ViewToggle({
 }
 
 const SORT_OPTIONS: { value: SortMode; label: string }[] = [
-  { value: "recent", label: "Les plus récentes" },
-  { value: "oldest", label: "Les plus anciennes" },
+  { value: "recent", label: "Prochainement" },
+  { value: "oldest", label: "Plus tard" },
 ];
 
 function SortPopover({
   params,
   navigate,
 }: {
-  params: InitiativeListParams;
-  navigate: (partial: Partial<InitiativeListParams>) => void;
+  params: EventListParams;
+  navigate: (partial: Partial<EventListParams>) => void;
 }) {
   const [open, setOpen] = useState(false);
   const currentLabel =
@@ -242,8 +242,8 @@ function CategoryFiltersPopover({
   navigate,
   count,
 }: {
-  params: InitiativeListParams;
-  navigate: (partial: Partial<InitiativeListParams>) => void;
+  params: EventListParams;
+  navigate: (partial: Partial<EventListParams>) => void;
   count: number;
 }) {
   const [open, setOpen] = useState(false);
@@ -407,12 +407,12 @@ function CheckGlyph() {
   );
 }
 
-export function InitiativePagination({
+export function EventPagination({
   params,
   totalCount,
   pageSize,
 }: {
-  params: InitiativeListParams;
+  params: EventListParams;
   totalCount: number;
   pageSize: number;
 }) {
@@ -425,7 +425,7 @@ export function InitiativePagination({
       {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
         <Link
           key={page}
-          href={`${pathname}${buildInitiativeListQuery({ ...params, page })}`}
+          href={`${pathname}${buildEventListQuery({ ...params, page })}`}
           className={cn(
             "cursor-pointer rounded-sm px-3 py-1.5 text-sm font-semibold",
             page === params.page

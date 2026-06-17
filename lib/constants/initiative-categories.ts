@@ -19,7 +19,8 @@ export type InitiativeEventCategory = {
 export type InitiativeCategorySlug = string;
 
 // ---------------------------------------------------------------------------
-// Module-level cache, populated by initInitiativeEventCategories() in layouts
+// Module-level cache, populated by initInitiativeEventCategories() in server
+// layouts and ResidentShellClient (client components cannot read server init).
 // ---------------------------------------------------------------------------
 
 let _categories: InitiativeEventCategoryRow[] = [];

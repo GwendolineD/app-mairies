@@ -48,6 +48,8 @@ export default async function ResidentRootLayout({
           <ResidentShellClient
             communeId={ctx.activeMembership!.commune_id}
             membershipAddress={membershipToAddress(ctx.activeMembership!)}
+            announcementCategoryRows={categoryRows}
+            initiativeCategoryRows={initiativeCategoryRows}
           >
             {children}
           </ResidentShellClient>

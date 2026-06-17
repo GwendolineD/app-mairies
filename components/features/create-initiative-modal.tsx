@@ -41,10 +41,11 @@ const TITLE_MAX = 70;
 const DESCRIPTION_MAX = 1000;
 
 const INITIATIVE_TIPS = [
-  "Choisissez un titre clair qui résume votre idée",
-  "Expliquez pourquoi cette initiative compte pour la commune",
-  "Indiquez comment les voisin·es peuvent s'engager",
-  "Restez positif·ve et inclusif·ve dans votre message",
+  "Expliquez votre idée en quelques phrases.",
+  "Dites pourquoi elle serait utile à la commune.",
+  "Soyez ouvert aux suggestions.",
+  "Plus votre idée est claire, plus elle pourra rassembler.",
+  "Quand elle sera prête, vous pourrez la transformer en événement 🤩.",
 ] as const;
 
 type SubmitPhase = "idle" | "uploading" | "publishing";
@@ -62,11 +63,6 @@ type Draft = {
   categorySlug: string;
   title: string;
   description: string;
-  createEvent: boolean;
-  eventDate: string;
-  eventStartTime: string;
-  eventEndTime: string;
-  volunteersNeeded: string;
 };
 
 type Props = {
@@ -165,11 +161,6 @@ export function CreateInitiativeModal({
   const [addressStreetError, setAddressStreetError] = useState<string | null>(
     null,
   );
-  const [createEvent, setCreateEvent] = useState(false);
-  const [eventDate, setEventDate] = useState("");
-  const [eventStartTime, setEventStartTime] = useState("");
-  const [eventEndTime, setEventEndTime] = useState("");
-  const [volunteersNeeded, setVolunteersNeeded] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitPhase, setSubmitPhase] = useState<SubmitPhase>("idle");
   const [formError, setFormError] = useState<string | null>(null);
@@ -197,11 +188,6 @@ export function CreateInitiativeModal({
       setAddressData(address.addressData);
       setAddressConfirmed(address.addressConfirmed);
     }
-    setCreateEvent(false);
-    setEventDate("");
-    setEventStartTime("");
-    setEventEndTime("");
-    setVolunteersNeeded("");
     setAddressStreetError(null);
     setFormError(null);
     setSubmitting(false);
@@ -217,11 +203,6 @@ export function CreateInitiativeModal({
         setCategorySlug(saved.categorySlug);
         setTitle(saved.title);
         setDescription(saved.description);
-        setCreateEvent(saved.createEvent ?? false);
-        setEventDate(saved.eventDate ?? "");
-        setEventStartTime(saved.eventStartTime ?? "");
-        setEventEndTime(saved.eventEndTime ?? "");
-        setVolunteersNeeded(saved.volunteersNeeded ?? "");
       }
     } else {
       resetForm();
@@ -234,24 +215,8 @@ export function CreateInitiativeModal({
       categorySlug,
       title,
       description,
-      createEvent,
-      eventDate,
-      eventStartTime,
-      eventEndTime,
-      volunteersNeeded,
     });
-  }, [
-    open,
-    draftKey,
-    categorySlug,
-    title,
-    description,
-    createEvent,
-    eventDate,
-    eventStartTime,
-    eventEndTime,
-    volunteersNeeded,
-  ]);
+  }, [open, draftKey, categorySlug, title, description]);
 
   const handleAbandon = useCallback(() => {
     if (submitting) return;
@@ -269,8 +234,7 @@ export function CreateInitiativeModal({
     addressData.citycode.trim().length > 0 &&
     addressData.postcode.trim().length >= 4 &&
     addressData.lat != null &&
-    addressData.lng != null &&
-    (!createEvent || (eventDate && eventStartTime && eventEndTime));
+    addressData.lng != null;
 
   function invalidateAddressCoords(
     patch: Partial<Pick<AddressFormState, "street" | "city" | "postcode">>,
@@ -362,12 +326,6 @@ export function CreateInitiativeModal({
         return;
       }
 
-      if (createEvent && eventDate && eventStartTime && eventEndTime) {
-        fd.set("eventStartsAt", `${eventDate}T${eventStartTime}`);
-        fd.set("eventEndsAt", `${eventDate}T${eventEndTime}`);
-        if (volunteersNeeded) fd.set("eventVolunteersNeeded", volunteersNeeded);
-      }
-
       const { id } = await createInitiative(fd);
       if (draftKey) clearFormDraft(draftKey);
       setSubmitting(false);
@@ -410,6 +368,24 @@ export function CreateInitiativeModal({
           submitting && "pointer-events-none opacity-70",
         )}
       >
+        <div className="rounded-xl border border-mint/30 bg-mint/5 px-4 py-3">
+          <p className="text-sm font-bold text-text">
+            Conseils pour une initiative réussie{" "}
+            <Sparkles className="inline size-4 text-mint" aria-hidden />
+          </p>
+          <ul className="mt-2 space-y-1.5">
+            {INITIATIVE_TIPS.map((tip) => (
+              <li
+                key={tip}
+                className="flex items-start gap-2 text-sm font-medium text-muted"
+              >
+                <Check className="mt-0.5 size-4 shrink-0 text-mint" aria-hidden />
+                {tip}
+              </li>
+            ))}
+          </ul>
+        </div>
+
         <section className="space-y-3">
           <SectionHeading number={1} title="Choisissez une catégorie" />
           <CategorySelectMobile
@@ -516,8 +492,8 @@ export function CreateInitiativeModal({
               </p>
             ) : (
               <p className="mt-1.5 text-xs font-medium text-subtle">
-                Préremplie avec votre adresse. Modifiez-la si l&apos;initiative se
-                situe ailleurs.
+                Lieu de l&apos;initiative / lieu du départ, si l&apos;initiative amène
+                à se déplacer / votre adresse si lieu est encore inconnu
               </p>
             )}
           </FormField>
@@ -547,95 +523,12 @@ export function CreateInitiativeModal({
         </section>
 
         <section className="space-y-4">
-          <SectionHeading number={4} title="Photo & conseils" />
-          <div className="grid gap-4 md:grid-cols-2 md:items-stretch">
-            <ImageDropzone
-              file={pendingFile}
-              onFileChange={setPendingFile}
-              isUploading={submitPhase === "uploading"}
-              className="h-full min-h-0"
-            />
-            <div className="rounded-xl border border-mint/30 bg-mint/5 px-4 py-3">
-              <p className="text-sm font-bold text-text">
-                Conseils pour une initiative réussie{" "}
-                <Sparkles className="inline size-4 text-mint" aria-hidden />
-              </p>
-              <ul className="mt-2 space-y-1.5">
-                {INITIATIVE_TIPS.map((tip) => (
-                  <li
-                    key={tip}
-                    className="flex items-start gap-2 text-sm font-medium text-muted"
-                  >
-                    <Check className="mt-0.5 size-4 shrink-0 text-mint" aria-hidden />
-                    {tip}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        {!isEditMode ? (
-        <section className="space-y-4">
-          <SectionHeading
-            number={5}
-            title="Créer un événement (optionnel)"
+          <ImageDropzone
+            file={pendingFile}
+            onFileChange={setPendingFile}
+            isUploading={submitPhase === "uploading"}
           />
-          <div className="rounded-lg border border-border p-4">
-            <label className="flex cursor-pointer items-center gap-3">
-              <input
-                type="checkbox"
-                checked={createEvent}
-                onChange={(e) => setCreateEvent(e.target.checked)}
-                className="size-4 cursor-pointer rounded-sm border-border accent-purple"
-              />
-              <span className="text-sm font-semibold text-text">
-                Créer un événement à partir de cette initiative
-              </span>
-            </label>
-
-            {createEvent ? (
-              <div className="mt-3 space-y-3 border-t border-border pt-3">
-                <FormField label="Date de l'événement">
-                  <Input
-                    type="date"
-                    required={createEvent}
-                    value={eventDate}
-                    onChange={(e) => setEventDate(e.target.value)}
-                  />
-                </FormField>
-                <div className="grid grid-cols-2 gap-3">
-                  <FormField label="Heure de début">
-                    <Input
-                      type="time"
-                      required={createEvent}
-                      value={eventStartTime}
-                      onChange={(e) => setEventStartTime(e.target.value)}
-                    />
-                  </FormField>
-                  <FormField label="Heure de fin">
-                    <Input
-                      type="time"
-                      required={createEvent}
-                      value={eventEndTime}
-                      onChange={(e) => setEventEndTime(e.target.value)}
-                    />
-                  </FormField>
-                </div>
-                <FormField label="Nombre de bénévoles recherchés (optionnel)">
-                  <Input
-                    type="number"
-                    min={0}
-                    value={volunteersNeeded}
-                    onChange={(e) => setVolunteersNeeded(e.target.value)}
-                    placeholder="Ex : 5"
-                  />
-                </FormField>
-              </div>
-            ) : null}
-          </div>
         </section>
-        ) : null}
 
         {formError ? (
           <p className="text-sm font-medium text-coral" role="alert">

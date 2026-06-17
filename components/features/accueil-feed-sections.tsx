@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Clock, Heart, MapPin } from "lucide-react";
+import { Clock, MapPin } from "lucide-react";
 import { formatStreetDisplay } from "@/lib/ban/display";
 import { ROUTES } from "@/lib/constants/routes";
 import type { AnnouncementWithAuthor } from "@/lib/queries/announcements";
@@ -98,9 +98,6 @@ type TrendingInitiativeProps = {
 export function AccueilTrendingInitiative({
   initiative,
 }: TrendingInitiativeProps) {
-  const supportCount = initiative?.support_count ?? 0;
-  const progress = Math.min(100, Math.round((supportCount / 50) * 100));
-
   return (
     <AccueilFeedCard
       emoji="🔥"
@@ -108,48 +105,9 @@ export function AccueilTrendingInitiative({
       href={ROUTES.initiatives.list}
     >
       {initiative ? (
-        <>
-          <div className="md:hidden">
-            <InitiativeCard initiative={initiative} layout="horizontal" />
-          </div>
-          <Link
-            href={ROUTES.initiatives.detail(initiative.id)}
-            className="hidden transition hover:bg-warm/40 md:block md:p-6"
-          >
-            <p className="text-[11px] font-bold uppercase tracking-wide text-coral">
-              Tendance
-            </p>
-            <div className="mt-3 flex gap-3">
-              <span className="text-3xl leading-none" aria-hidden>
-                🎲
-              </span>
-              <div className="min-w-0 flex-1 space-y-1">
-                <p className="text-base font-bold leading-snug text-text">
-                  {initiative.title}
-                </p>
-                {initiative.description ? (
-                  <p className="line-clamp-2 text-sm font-medium leading-5 text-muted">
-                    {initiative.description}
-                  </p>
-                ) : null}
-              </div>
-            </div>
-            <div className="mt-4 flex items-center gap-3">
-              <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-border">
-                <div
-                  className="h-full rounded-full bg-coral transition-all"
-                  style={{
-                    width: `${Math.max(progress, supportCount > 0 ? 8 : 0)}%`,
-                  }}
-                />
-              </div>
-              <span className="flex shrink-0 items-center gap-1 text-sm font-bold text-coral">
-                {supportCount}
-                <Heart className="size-3.5 fill-coral text-coral" aria-hidden />
-              </span>
-            </div>
-          </Link>
-        </>
+        <div className="md:px-5 md:pb-5">
+          <InitiativeCard initiative={initiative} layout="horizontal" />
+        </div>
       ) : (
         <p className="text-sm font-medium text-muted md:p-6">
           Aucune initiative pour le moment.
@@ -209,7 +167,7 @@ function EventVolunteerGauge({
   );
 
   return (
-    <div className="mt-2 flex items-center gap-3 md:hidden">
+    <div className="mt-2 flex items-center gap-3">
       <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-border">
         <div
           className="h-full rounded-full bg-orange transition-all"
@@ -256,7 +214,7 @@ export function AccueilUpcomingEvents({
               <li key={event.id}>
                 <Link
                   href={ROUTES.evenements.detail(event.id)}
-                  className="flex items-center gap-3 transition hover:bg-warm/40 md:items-start md:gap-4 md:p-5"
+                  className="flex items-center gap-3 transition hover:bg-warm/40 md:gap-4 md:p-5"
                 >
                   <div
                     className={cn(

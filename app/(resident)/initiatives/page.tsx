@@ -1,6 +1,6 @@
 import { requireActiveMembership } from "@/lib/auth/session";
 import {
-  listInitiativeMarkers,
+  listInitiativeMapItems,
   listInitiativesPage,
   INITIATIVES_PAGE_SIZE,
 } from "@/lib/queries/initiatives";
@@ -9,6 +9,23 @@ import { parseInitiativeListParams } from "@/lib/utils/search-params";
 import { InitiativesPageClient } from "@/components/features/initiatives-page-client";
 import { getInitiativeCategoryMapPinUrl } from "@/lib/constants/initiative-categories";
 import { getInitiativePinHex } from "@/lib/constants/map-pins";
+
+function buildInitiativeMapMarkers(
+  mapItems: Awaited<ReturnType<typeof listInitiativeMapItems>>,
+) {
+  return mapItems
+    .filter((m) => m.address_lat != null && m.address_lng != null)
+    .map((m) => ({
+      id: m.id,
+      title: m.title,
+      categorySlug: m.category_slug ?? "solidarite",
+      lat: m.address_lat!,
+      lng: m.address_lng!,
+      mapPinUrl: getInitiativeCategoryMapPinUrl(m.category_slug ?? "solidarite"),
+      pinColor: getInitiativePinHex(m.category_slug ?? "solidarite"),
+      colorHex: getInitiativePinHex(m.category_slug ?? "solidarite"),
+    }));
+}
 
 export default async function InitiativesListePage(props: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -34,23 +51,11 @@ export default async function InitiativesListePage(props: {
     ctx.activeMembership!.address_lng != null;
 
   if (params.vue === "carte") {
-    const rawMarkers = await listInitiativeMarkers(supabase, filters);
-    const mapMarkers = rawMarkers
-      .filter((m) => m.address_lat != null && m.address_lng != null)
-      .map((m) => ({
-        id: m.id,
-        title: m.title,
-        categorySlug: m.category_slug ?? "solidarite",
-        lat: m.address_lat,
-        lng: m.address_lng,
-        mapPinUrl: getInitiativeCategoryMapPinUrl(m.category_slug ?? "solidarite"),
-        pinColor: getInitiativePinHex(m.category_slug ?? "solidarite"),
-        colorHex: getInitiativePinHex(m.category_slug ?? "solidarite"),
-      }));
-
-    const { totalCount } = await listInitiativesPage(supabase, filters, {
-      limit: 1,
-    });
+    const [mapItems, { totalCount }] = await Promise.all([
+      listInitiativeMapItems(supabase, filters),
+      listInitiativesPage(supabase, filters, { limit: 1, sortMode: params.tri }),
+    ]);
+    const mapMarkers = buildInitiativeMapMarkers(mapItems);
 
     return (
       <InitiativesPageClient
@@ -59,6 +64,7 @@ export default async function InitiativesListePage(props: {
         nextCursor={null}
         totalCount={totalCount}
         mapCenter={[userLat, userLng]}
+        mapItems={mapItems}
         mapMarkers={mapMarkers}
         hasUserAddress={hasUserAddress}
       />
@@ -69,7 +75,7 @@ export default async function InitiativesListePage(props: {
   const { items, nextCursor, totalCount } = await listInitiativesPage(
     supabase,
     filters,
-    { offset, limit: INITIATIVES_PAGE_SIZE },
+    { offset, limit: INITIATIVES_PAGE_SIZE, sortMode: params.tri },
   );
 
   return (
@@ -79,6 +85,7 @@ export default async function InitiativesListePage(props: {
       nextCursor={nextCursor}
       totalCount={totalCount}
       mapCenter={[userLat, userLng]}
+      mapItems={[]}
       mapMarkers={[]}
       hasUserAddress={hasUserAddress}
     />

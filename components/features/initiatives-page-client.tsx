@@ -47,6 +47,7 @@ type Props = {
   nextCursor: string | null;
   totalCount: number;
   mapCenter: [number, number];
+  mapItems: InitiativeWithAuthor[];
   mapMarkers: MapMarker[];
   hasUserAddress: boolean;
 };
@@ -57,6 +58,7 @@ export function InitiativesPageClient({
   nextCursor,
   totalCount,
   mapCenter,
+  mapItems,
   mapMarkers,
   hasUserAddress,
 }: Props) {
@@ -81,8 +83,10 @@ export function InitiativesPageClient({
       {params.vue === "carte" ? (
         <MapContentView
           markers={mapMarkers}
+          initiativeItems={mapItems}
           center={mapCenter}
           showUserPin={hasUserAddress}
+          carouselTitle="Initiatives autour de vous"
         />
       ) : items.length === 0 ? (
         <InitiativesEmptyState

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, CalendarDays, MessageCircle, Pencil, Trash2 } from "lucide-react";
+import { ArrowUpRight, CalendarDays, CalendarPlus, MessageCircle, Pencil, Trash2 } from "lucide-react";
 import { useCreationModals } from "@/components/features/creation-modal-context";
 import { ContactAnnouncementButton } from "@/components/features/contact-announcement-button";
 import { DeleteInitiativeModal } from "@/components/features/delete-initiative-modal";
@@ -11,9 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { ROUTES } from "@/lib/constants/routes";
-import type { InitiativeEditData } from "@/lib/types";
+import type { EventEditData, InitiativeEditData } from "@/lib/types";
+import type { InitiativeSupporter } from "@/lib/queries/initiatives";
 import { formatLinkedEventDateTime } from "@/lib/utils/date";
 import { cn } from "@/lib/utils/cn";
+import { SupportersAvatarRow } from "@/components/features/initiative-supporters-list";
 
 type LinkedEvent = {
   id: string;
@@ -29,6 +31,7 @@ type Props = {
   memberSince: string;
   initialSupported: boolean;
   initialSupportCount: number;
+  supporters: InitiativeSupporter[];
   editData?: InitiativeEditData;
   linkedEvent?: LinkedEvent | null;
   className?: string;
@@ -79,20 +82,43 @@ function InitiativeLinkedEventCard({
 function AuthorActionsCard({
   initiativeId,
   editData,
+  linkedEvent,
   className,
 }: {
   initiativeId: string;
   editData?: InitiativeEditData;
+  linkedEvent?: LinkedEvent | null;
   className?: string;
 }) {
-  const { openInitiativeModal } = useCreationModals();
+  const { openInitiativeModal, openEventModal } = useCreationModals();
   const [deleteOpen, setDeleteOpen] = useState(false);
+
+  function handleTransformToEvent() {
+    if (!editData) return;
+    const eventData: EventEditData = {
+      categorySlug: editData.categorySlug,
+      title: editData.title,
+      description: editData.description,
+      photoUrl: editData.photoUrl,
+      startsAt: "",
+      endsAt: "",
+      volunteersNeeded: null,
+      addressStreet: editData.addressStreet,
+      addressCity: editData.addressCity,
+      addressCitycode: editData.addressCitycode,
+      addressPostcode: editData.addressPostcode,
+      addressLat: editData.addressLat,
+      addressLng: editData.addressLng,
+      sourceInitiativeId: initiativeId,
+    };
+    openEventModal({ initialData: eventData });
+  }
 
   return (
     <Card className={cn("space-y-4 md:p-5", className)}>
-      <h2 className="text-lg font-semibold text-text">Votre initiative</h2>
+      <h2 className="text-lg font-semibold text-text">Gérez votre initiative</h2>
       <p className="text-sm font-medium text-muted">
-        Gérez votre idée et suivez l&apos;engagement des voisin·es.
+        Suivez l&apos;engagement des voisin·es et faites évoluer votre idée.
       </p>
       <Button
         type="button"
@@ -104,6 +130,17 @@ function AuthorActionsCard({
         <Pencil className="size-4" aria-hidden />
         Modifier l&apos;initiative
       </Button>
+      {!linkedEvent ? (
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full cursor-pointer border-orange bg-surface text-orange hover:bg-orange/5"
+          onClick={handleTransformToEvent}
+        >
+          <CalendarPlus className="size-4" aria-hidden />
+          Transformer en événement
+        </Button>
+      ) : null}
       <Button
         type="button"
         variant="outline"
@@ -127,12 +164,14 @@ function SupportCard({
   initiativeId,
   initialSupported,
   initialSupportCount,
+  supporters,
   className,
 }: {
   isAuthor: boolean;
   initiativeId: string;
   initialSupported: boolean;
   initialSupportCount: number;
+  supporters: InitiativeSupporter[];
   className?: string;
 }) {
   if (isAuthor) {
@@ -143,6 +182,13 @@ function SupportCard({
           Des habitants trouvent votre idée intéressante pour la commune.
         </p>
         <SupportCountLabel count={initialSupportCount} />
+        {supporters.length > 0 ? (
+          <SupportersAvatarRow
+            supporters={supporters}
+            initiativeId={initiativeId}
+            isAuthor={isAuthor}
+          />
+        ) : null}
       </Card>
     );
   }
@@ -172,6 +218,7 @@ export function InitiativeSidebarActions({
   memberSince,
   initialSupported,
   initialSupportCount,
+  supporters,
   editData,
   linkedEvent,
   className,
@@ -184,6 +231,7 @@ export function InitiativeSidebarActions({
         <AuthorActionsCard
           initiativeId={initiativeId}
           editData={editData}
+          linkedEvent={linkedEvent}
           className={className}
         />
       ) : (
@@ -236,6 +284,7 @@ export function InitiativeSidebarActions({
         initiativeId={initiativeId}
         initialSupported={initialSupported}
         initialSupportCount={initialSupportCount}
+        supporters={supporters}
         className={className}
       />
 

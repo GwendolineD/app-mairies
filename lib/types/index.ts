@@ -124,6 +124,23 @@ export type InitiativeEditData = {
   addressLng: number;
 };
 
+export type EventEditData = {
+  categorySlug: string;
+  title: string;
+  description: string;
+  photoUrl: string;
+  startsAt: string;
+  endsAt: string;
+  volunteersNeeded: number | null;
+  addressStreet: string;
+  addressCity: string;
+  addressCitycode: string;
+  addressPostcode: string;
+  addressLat: number;
+  addressLng: number;
+  sourceInitiativeId?: string;
+};
+
 export type InitiativeRecord = {
   id: string;
   commune_id: string;

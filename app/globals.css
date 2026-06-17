@@ -224,10 +224,11 @@ body {
   background-color: var(--color-border);
 }
 
-/* Leaflet popup overrides for the announcement map view. */
+/* Leaflet popup overrides for the map content view. */
 .leaflet-popup.vl-map-popup .leaflet-popup-content-wrapper {
   border-radius: 16px;
-  padding: 12px;
+  padding: 0;
+  overflow: hidden;
   box-shadow: 0 12px 32px rgba(37, 38, 48, 0.12);
 }
 .leaflet-popup.vl-map-popup .leaflet-popup-content {

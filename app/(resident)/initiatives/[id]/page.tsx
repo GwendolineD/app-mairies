@@ -6,6 +6,7 @@ import {
   getInitiativeCategoryColorHex,
   getInitiativeCategoryMapPinUrl,
 } from "@/lib/constants/initiative-categories";
+import { listInitiativeSupporters } from "@/lib/queries/initiatives";
 import { createClient } from "@/lib/supabase/server";
 import { HistoryBackLink } from "@/components/ui/history-back-link";
 import { Card } from "@/components/ui/card";
@@ -22,8 +23,12 @@ import { formatMemberSince, formatRelativeTime } from "@/lib/utils/date";
 import { formatDisplayName } from "@/lib/utils/display-name";
 import { formatAddressLines } from "@/lib/utils/format-address";
 
+const MAIN_DETAIL_CARD_CLASS =
+  "rounded-none border-0 bg-transparent p-0 !shadow-none";
 const DETAIL_CARD_CLASS =
   "rounded-none border-0 bg-transparent p-0 !shadow-none md:rounded-xl md:border md:border-border/60 md:bg-surface";
+const DESCRIPTION_SECTION_CLASS =
+  "rounded-md border border-border/60 p-4";
 const DETAIL_BADGE_CLASS =
   "h-[22px] px-2.5 py-0 text-[10px] leading-none";
 const DETAIL_CATEGORY_TAG_CLASS = `${DETAIL_BADGE_CLASS} w-fit font-semibold`;
@@ -132,12 +137,15 @@ export default async function InitiativeDetailPage(props: {
     ? formatMemberSince(authorData.created_at)
     : "Membre";
 
-  const { data: linkedEvent } = await supabase
-    .from("events")
-    .select("id, title, starts_at")
-    .eq("source_initiative_id", id)
-    .eq("status", "active")
-    .maybeSingle();
+  const [{ data: linkedEvent }, supporters] = await Promise.all([
+    supabase
+      .from("events")
+      .select("id, title, starts_at")
+      .eq("source_initiative_id", id)
+      .eq("status", "active")
+      .maybeSingle(),
+    listInitiativeSupporters(supabase, id),
+  ]);
 
   const editData = isAuthor
     ? buildInitiativeEditData(initiative, membership)
@@ -160,7 +168,7 @@ export default async function InitiativeDetailPage(props: {
       <HistoryBackLink label="Retour aux initiatives" />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
-        <Card className={`space-y-5 md:p-6 ${DETAIL_CARD_CLASS}`}>
+        <Card className={`space-y-5 ${MAIN_DETAIL_CARD_CLASS}`}>
           <div className="space-y-5">
             <header className="space-y-3">
               <div className="flex items-center justify-between gap-3">
@@ -209,16 +217,21 @@ export default async function InitiativeDetailPage(props: {
               />
             ) : null}
 
-            {initiative.description ? (
-              <LinkifiedText
-                text={initiative.description}
-                className="scrollbar-hover max-h-64 overflow-y-auto whitespace-pre-line text-base font-medium leading-6 text-muted"
-              />
-            ) : (
-              <p className="text-base font-medium italic text-muted">
-                Pas de détail complémentaire.
-              </p>
-            )}
+            <section className={DESCRIPTION_SECTION_CLASS}>
+              <h2 className="mb-2 text-sm font-semibold leading-5 text-text">
+                Description
+              </h2>
+              {initiative.description ? (
+                <LinkifiedText
+                  text={initiative.description}
+                  className="scrollbar-hover max-h-64 overflow-y-auto whitespace-pre-line text-base font-medium leading-6 text-muted"
+                />
+              ) : (
+                <p className="text-base font-medium italic text-muted">
+                  Pas de détail complémentaire.
+                </p>
+              )}
+            </section>
           </div>
         </Card>
 
@@ -231,6 +244,7 @@ export default async function InitiativeDetailPage(props: {
             memberSince={memberSince}
             initialSupported={!!userSupport}
             initialSupportCount={supportCount ?? 0}
+            supporters={supporters}
             editData={editData}
             linkedEvent={linkedEvent}
             className={DETAIL_CARD_CLASS}

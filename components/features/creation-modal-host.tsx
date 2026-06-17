@@ -4,9 +4,10 @@ import { useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { isAnnouncementType, type AnnouncementType } from "@/lib/constants/announcement-types";
 import { ROUTES } from "@/lib/constants/routes";
-import { buildAnnouncementListQuery } from "@/lib/utils/search-params";
+import { buildAnnouncementListQuery, buildEventListQuery, buildInitiativeListQuery } from "@/lib/utils/search-params";
 import { CreateAnnouncementModal } from "@/components/features/create-announcement-modal";
 import { CreateInitiativeModal } from "@/components/features/create-initiative-modal";
+import { CreateEventModal } from "@/components/features/create-event-modal";
 import { useCreationModals } from "@/components/features/creation-modal-context";
 import type { MembershipAddress } from "@/lib/types";
 
@@ -21,13 +22,18 @@ export function CreationModalHost({ communeId, membershipAddress }: Props) {
   const {
     announcementOpen,
     initiativeOpen,
+    eventOpen,
     announcementPresetType,
     announcementEditId,
     announcementInitialData,
     initiativeEditId,
     initiativeInitialData,
+    eventEditId,
+    eventInitialData,
+    eventDuplicateMode,
     openAnnouncementModal,
     openInitiativeModal,
+    openEventModal,
     closeModals,
   } = useCreationModals();
 
@@ -35,21 +41,32 @@ export function CreationModalHost({ communeId, membershipAddress }: Props) {
     const create = searchParams.get("create");
     if (!create) return;
     const catParam = searchParams.get("cat") ?? searchParams.get("categorie");
+    const vue = searchParams.get("vue") === "carte" ? "carte" : "liste";
+    const page = Number.parseInt(searchParams.get("page") ?? "1", 10) || 1;
+
+    if (create === "event") {
+      const next = buildEventListQuery({ vue, page, categorie: catParam || undefined });
+      router.replace(`${ROUTES.evenements.list}${next}`);
+      return;
+    }
+
+    if (create === "initiative") {
+      const next = buildInitiativeListQuery({ vue, page, categorie: catParam || undefined });
+      router.replace(`${ROUTES.initiatives.list}${next}`);
+      return;
+    }
+
     const next = buildAnnouncementListQuery({
-      vue: searchParams.get("vue") === "carte" ? "carte" : "liste",
+      vue,
       type: isAnnouncementType(searchParams.get("type") ?? "")
         ? (searchParams.get("type") as "demande" | "offre")
         : undefined,
       categories: catParam
         ? catParam.split(",").map((s) => s.trim()).filter(Boolean)
         : [],
-      page: Number.parseInt(searchParams.get("page") ?? "1", 10) || 1,
+      page,
     });
-    const path =
-      searchParams.get("create") === "initiative"
-        ? `${ROUTES.initiatives.list}${next}`
-        : `${ROUTES.annonces.list}${next}`;
-    router.replace(path);
+    router.replace(`${ROUTES.annonces.list}${next}`);
   }, [router, searchParams]);
 
   const handleClose = useCallback(() => {
@@ -65,8 +82,10 @@ export function CreationModalHost({ communeId, membershipAddress }: Props) {
       openAnnouncementModal({ presetType: preset });
     } else if (create === "initiative") {
       openInitiativeModal();
+    } else if (create === "event") {
+      openEventModal();
     }
-  }, [searchParams, openAnnouncementModal, openInitiativeModal]);
+  }, [searchParams, openAnnouncementModal, openInitiativeModal, openEventModal]);
 
   return (
     <>
@@ -86,6 +105,15 @@ export function CreationModalHost({ communeId, membershipAddress }: Props) {
         membershipAddress={membershipAddress}
         editId={initiativeEditId}
         initialData={initiativeInitialData}
+      />
+      <CreateEventModal
+        open={eventOpen}
+        onClose={handleClose}
+        communeId={communeId}
+        membershipAddress={membershipAddress}
+        editId={eventEditId}
+        initialData={eventInitialData}
+        duplicateMode={eventDuplicateMode}
       />
     </>
   );

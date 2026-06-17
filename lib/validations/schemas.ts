@@ -114,6 +114,23 @@ export const eventSchema = z.object({
   addressLng: z.number().optional(),
 });
 
+export const eventModalSchema = z.object({
+  categorySlug: z.enum(INITIATIVE_CATEGORY_SLUGS),
+  title: z.string().trim().min(3, "Titre requis (3 caractères min.)").max(120, "Titre trop long (120 caractères max.)"),
+  description: z.string().max(3000, "Description trop longue (3000 caractères max.)").optional(),
+  photoUrl: z.string().url().optional().or(z.literal("")),
+  startsAt: z.string().min(1, "Date et heure de début requises"),
+  endsAt: z.string().min(1, "Date et heure de fin requises"),
+  volunteersNeeded: z.coerce.number().int().min(0).nullable().optional(),
+  addressStreet: z.string().max(500).optional(),
+  addressCity: z.string().max(200).optional(),
+  addressPostcode: z.string().max(10).optional(),
+  addressCitycode: z.string().max(10).optional(),
+  addressLat: z.coerce.number().optional(),
+  addressLng: z.coerce.number().optional(),
+  sourceInitiativeId: z.string().uuid().optional(),
+});
+
 export const userReportSchema = z.object({
   reportedUserId: z.string().uuid(),
   reason: z.string().min(10).max(1000),

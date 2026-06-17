@@ -135,7 +135,9 @@ export function AnnouncementListToolbar({
           <h1 className="text-[28px] font-bold leading-9 text-text">
             Toutes les annonces
           </h1>
-          <p className="text-xs font-medium text-muted">{countLabel}</p>
+          <p className="text-sm font-medium leading-5 text-muted">
+            Retrouvez toutes les demandes et propositions d&apos;entraide près de chez vous
+          </p>
         </div>
         {createButtonDesktop}
       </div>
@@ -151,6 +153,8 @@ export function AnnouncementListToolbar({
         {viewToggle}
         {sortAndFilters}
       </div>
+
+      <p className="hidden text-xs font-medium text-muted md:block">{countLabel}</p>
 
       {/* Mobile: sort/filters aligned right */}
       <div className="flex justify-end md:hidden">{sortAndFilters}</div>
