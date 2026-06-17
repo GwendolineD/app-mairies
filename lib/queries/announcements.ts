@@ -94,7 +94,8 @@ function applyAnnouncementFilters<T extends { eq: Function; in: Function; gte: F
 ): T {
   let q = query
     .eq("commune_id", filters.communeId)
-    .in("status", [ANNOUNCEMENT_STATUS.ouverte, ANNOUNCEMENT_STATUS.pourvue]);
+    .in("status", [ANNOUNCEMENT_STATUS.ouverte, ANNOUNCEMENT_STATUS.pourvue])
+    .is("suspended_at", null);
   if (filters.type) q = q.eq("type", filters.type);
   if (filters.categories && filters.categories.length > 0) {
     q = q.in("category_slug", filters.categories);
@@ -219,7 +220,8 @@ export async function countOpenDemandsToday(
     .eq("commune_id", communeId)
     .eq("type", "demande")
     .eq("status", ANNOUNCEMENT_STATUS.ouverte)
-    .eq("target_date", today);
+    .eq("target_date", today)
+    .is("suspended_at", null);
 
   return count ?? 0;
 }
@@ -240,6 +242,7 @@ export async function listSimilarAnnouncements(
     .eq("category_slug", categorySlug)
     .neq("id", excludeId)
     .in("status", [ANNOUNCEMENT_STATUS.ouverte, ANNOUNCEMENT_STATUS.pourvue])
+    .is("suspended_at", null)
     .order("created_at", { ascending: false })
     .limit(limit);
 

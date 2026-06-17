@@ -53,7 +53,10 @@ function applyFilters<T extends { eq: Function; in: Function }>(
   query: T,
   filters: InitiativeListFilters,
 ) {
-  let q = query.eq("commune_id", filters.communeId).eq("status", INITIATIVE_STATUS.active);
+  let q = query
+    .eq("commune_id", filters.communeId)
+    .eq("status", INITIATIVE_STATUS.active)
+    .is("suspended_at", null);
   if (filters.categorie) q = q.eq("category_slug", filters.categorie);
   return q;
 }
@@ -116,6 +119,7 @@ export async function getTrendingInitiativeForAccueil(
     )
     .eq("commune_id", communeId)
     .eq("status", INITIATIVE_STATUS.active)
+    .is("suspended_at", null)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();

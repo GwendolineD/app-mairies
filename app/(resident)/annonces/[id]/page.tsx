@@ -69,6 +69,40 @@ export default async function AnnonceDetailPage(props: {
 
   if (!data) notFound();
 
+  // If the content is suspended, show appropriate screen
+  if (data.suspended_at) {
+    const isAuthorOfSuspended =
+      data.author_membership_id === ctx.activeMembership!.id;
+    const isStaff =
+      ctx.profile.is_platform_admin ||
+      (ctx.activeMembership!.role === "staff" || ctx.activeMembership!.role === "mayor");
+
+    if (!isStaff) {
+      return (
+        <PageStack gap="5">
+          <HistoryBackLink label="Retour aux annonces" />
+          <Card className="mx-auto max-w-lg space-y-4 p-8 text-center">
+            <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-coral/10">
+              <span className="text-2xl">⚠️</span>
+            </div>
+            <h1 className="text-xl font-bold text-text">Annonce suspendue</h1>
+            {isAuthorOfSuspended ? (
+              <p className="text-sm text-muted">
+                Votre annonce a été suspendue par la modération. Si vous pensez
+                qu&apos;il s&apos;agit d&apos;une erreur, veuillez contacter
+                l&apos;assistance.
+              </p>
+            ) : (
+              <p className="text-sm text-muted">
+                Ce contenu a été suspendu et n&apos;est plus disponible.
+              </p>
+            )}
+          </Card>
+        </PageStack>
+      );
+    }
+  }
+
   type EnrichedAnnouncement = typeof data & {
     announcement_categories: {
       map_pin_url: string | null;
