@@ -51,7 +51,8 @@ export function EvenementsPageClient({
     categorySlug: "event",
     lat: m.lat,
     lng: m.lng,
-    pinColor: getEventPinHex(),
+    mapPinUrl: null as string | null,
+    colorHex: getEventPinHex(),
   }));
 
   return (

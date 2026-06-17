@@ -54,7 +54,8 @@ export function InitiativesPageClient({
 
   const markers = mapMarkers.map((m) => ({
     ...m,
-    pinColor: getInitiativePinHex(m.categorySlug),
+    mapPinUrl: null as string | null,
+    colorHex: getInitiativePinHex(m.categorySlug),
   }));
 
   return (

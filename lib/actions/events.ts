@@ -54,17 +54,7 @@ export async function createEvent(formData: FormData): Promise<void> {
     communeId: membership.commune_id,
     authorUserId: ctx.userId,
     title: parsed.data.title,
-<<<<<<< HEAD
-    description: parsed.data.description ?? null,
-    starts_at: new Date(parsed.data.startsAt).toISOString(),
-    ends_at: new Date(parsed.data.endsAt).toISOString(),
-    address_label: parsed.data.addressLabel ?? membership.address_street ?? membership.address_city,
-    address_lat: membership.address_lat,
-    address_lng: membership.address_lng,
-    status: EVENT_STATUS.active,
-=======
     authorDisplayName: ctx.profile.display_name,
->>>>>>> preprod
   });
 
   redirect(ROUTES.evenements.list);

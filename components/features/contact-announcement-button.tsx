@@ -1,13 +1,7 @@
 "use client";
 
-<<<<<<< HEAD
-import { useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { ensureContextConversation } from "@/lib/actions/messages";
-=======
 import { useRef, useState, useTransition } from "react";
 import { sendContextMessage } from "@/lib/actions/messages";
->>>>>>> preprod
 import { ROUTES } from "@/lib/constants/routes";
 import { Button } from "@/components/ui/button";
 import { FormField, Textarea } from "@/components/ui/form-field";
@@ -17,11 +11,9 @@ import type { ConversationContextType } from "@/lib/types";
 import { cn } from "@/lib/utils/cn";
 
 type Props = {
-  /** Id of the announcement / initiative / event to start the conversation about. */
   contextId: string;
   label: string;
   contextType?: ConversationContextType;
-  /** Backwards-compatible alias for callers using the old API. */
   announcementId?: string;
   icon?: React.ReactNode;
   className?: string;
@@ -43,13 +35,6 @@ export function ContactAnnouncementButton({
   );
   const [sending, startSending] = useTransition();
 
-<<<<<<< HEAD
-  function handleContact() {
-    startTransition(async () => {
-      const result = await ensureContextConversation("announcement", announcementId);
-      if (result.ok) {
-        router.push(ROUTES.messageThread(result.conversationId));
-=======
   const id = contextId ?? announcementId;
 
   function handleOpen() {
@@ -80,7 +65,6 @@ export function ContactAnnouncementButton({
       if (result.conversationId) {
         setSentConversationId(result.conversationId);
         formRef.current?.reset();
->>>>>>> preprod
       }
     });
   }

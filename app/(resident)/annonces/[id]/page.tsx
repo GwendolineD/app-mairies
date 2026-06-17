@@ -1,25 +1,7 @@
-<<<<<<< HEAD
-=======
 import { notFound } from "next/navigation";
->>>>>>> preprod
 import { Suspense } from "react";
 import { Calendar } from "lucide-react";
 import { requireActiveMembership } from "@/lib/auth/session";
-<<<<<<< HEAD
-import { ROUTES } from "@/lib/constants/routes";
-import { BackLink } from "@/components/ui/back-link";
-import { PageStack } from "@/components/ui/page-stack";
-import { AnnouncementMain } from "./_components/announcement-main";
-import { AnnouncementContact } from "./_components/announcement-contact";
-import { AnnouncementLocation } from "./_components/announcement-location";
-import { SimilarAnnouncements } from "./_components/similar-announcements";
-import {
-  AnnouncementContactSkeleton,
-  AnnouncementLocationSkeleton,
-  AnnouncementMainSkeleton,
-  SimilarAnnouncementsSkeleton,
-} from "./_components/skeletons";
-=======
 import { listSimilarAnnouncements } from "@/lib/queries/announcements";
 import type { AnnouncementWithAuthor } from "@/lib/queries/announcements";
 import { createClient } from "@/lib/supabase/server";
@@ -54,20 +36,12 @@ const DETAIL_BADGE_CLASS =
   "h-[22px] px-2.5 py-0 text-[10px] leading-none";
 const DETAIL_TYPE_PASTILLE_CLASS = `${DETAIL_BADGE_CLASS} gap-1 shadow-none [&_svg]:size-3`;
 const DETAIL_CATEGORY_TAG_CLASS = `${DETAIL_BADGE_CLASS} w-fit font-semibold`;
->>>>>>> preprod
 
 export default async function AnnonceDetailPage(props: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await props.params;
   const ctx = await requireActiveMembership();
-<<<<<<< HEAD
-  const membership = ctx.activeMembership!;
-  const communeId = membership.commune_id;
-  const communeName = membership.commune?.name ?? "Votre commune";
-  const fallbackLat = membership.commune?.centroid_lat ?? 46;
-  const fallbackLng = membership.commune?.centroid_lng ?? 2.3;
-=======
   const supabase = await createClient();
 
   const { data } = await supabase
@@ -134,7 +108,6 @@ export default async function AnnonceDetailPage(props: {
   const isAuthor = ann.author_membership?.user_id === ctx.userId;
   const contactLabel =
     ann.type === "demande" ? "Je peux aider !" : `Contacter ${authorName.split(" ")[0]}`;
->>>>>>> preprod
 
   const editData: AnnouncementEditData = {
     type: ann.type,
@@ -153,36 +126,9 @@ export default async function AnnonceDetailPage(props: {
 
   return (
     <PageStack gap="5">
-<<<<<<< HEAD
-      <BackLink href={ROUTES.annonces.list}>← Retour aux annonces</BackLink>
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="min-w-0">
-          <Suspense fallback={<AnnouncementMainSkeleton />}>
-            <AnnouncementMain id={id} communeId={communeId} />
-          </Suspense>
-        </div>
-        <aside className="flex flex-col gap-5">
-          <Suspense fallback={<AnnouncementContactSkeleton />}>
-            <AnnouncementContact
-              id={id}
-              communeId={communeId}
-              viewerMembershipId={membership.id}
-            />
-          </Suspense>
-          <Suspense fallback={<AnnouncementLocationSkeleton />}>
-            <AnnouncementLocation
-              id={id}
-              communeId={communeId}
-              communeName={communeName}
-              fallbackLat={fallbackLat}
-              fallbackLng={fallbackLng}
-            />
-          </Suspense>
-=======
       <HistoryBackLink label="Retour aux annonces" />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
-        {/* --- Main card --- */}
         <Card className={`space-y-5 md:p-6 ${DETAIL_CARD_CLASS}`}>
           <div className="space-y-5">
             <header className="space-y-3">
@@ -251,7 +197,6 @@ export default async function AnnonceDetailPage(props: {
           </div>
         </Card>
 
-        {/* --- Sidebar --- */}
         <aside className="space-y-4">
           <AnnouncementSidebarActions
             isAuthor={isAuthor}
@@ -264,7 +209,6 @@ export default async function AnnonceDetailPage(props: {
             className={DETAIL_CARD_CLASS}
           />
 
-          {/* Location card */}
           <Card className={`gap-2 md:p-5 ${DETAIL_CARD_CLASS}`}>
             <h2 className="hidden text-lg font-semibold leading-7 text-text md:block">
               Localisation
@@ -296,10 +240,12 @@ export default async function AnnonceDetailPage(props: {
             />
           </div>
 
-          {/* Similar announcements */}
->>>>>>> preprod
           <Suspense fallback={<SimilarAnnouncementsSkeleton />}>
-            <SimilarAnnouncements id={id} communeId={communeId} />
+            <SimilarAnnouncements
+              communeId={ctx.activeMembership!.commune_id}
+              categorySlug={ann.category_slug}
+              excludeId={id}
+            />
           </Suspense>
         </aside>
       </div>
@@ -315,8 +261,6 @@ export default async function AnnonceDetailPage(props: {
     </PageStack>
   );
 }
-<<<<<<< HEAD
-=======
 
 async function SimilarAnnouncements({
   communeId,
@@ -362,4 +306,3 @@ function SimilarAnnouncementsSkeleton() {
     </Card>
   );
 }
->>>>>>> preprod

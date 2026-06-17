@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatMonthShort } from "@/lib/utils/date";
 import { Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
-<<<<<<< HEAD
+import { PageStack } from "@/components/ui/page-stack";
 import { StatCard } from "@/components/ui/stat-card";
 import {
   AreaTrendChart,
@@ -14,9 +14,6 @@ import {
 } from "@/components/features/dashboard/charts";
 import { SubscriptionCard } from "@/components/features/dashboard/subscription-card";
 import type { Commune } from "@/lib/types";
-=======
-import { PageStack } from "@/components/ui/page-stack";
->>>>>>> preprod
 
 type MonthlyRow = {
   month: string;
@@ -80,7 +77,6 @@ export default async function MairieDashboardPage() {
 
   const rows = (monthly.data ?? []) as MonthlyRow[];
 
-  // Cumulative residents per month (signup progression).
   const residentsTrend = rows.map((r, idx) => ({
     label: formatMonthShort(r.month),
     value: rows
@@ -117,8 +113,7 @@ export default async function MairieDashboardPage() {
   ];
 
   return (
-<<<<<<< HEAD
-    <div className="space-y-6">
+    <PageStack>
       <PageHeading
         title="Tableau de bord"
         subtitle="Vue d'ensemble de la vie locale de votre commune : habitant·es, contributions et abonnement."
@@ -195,40 +190,6 @@ export default async function MairieDashboardPage() {
             Pas encore de données à afficher.
           </p>
         )}
-=======
-    <PageStack>
-      <PageHeading title="Tableau de bord" />
-
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Card className="space-y-1 p-4">
-          <p className="text-[10px] font-semibold uppercase text-muted">Annonces</p>
-          <p className="text-5xl font-bold text-purple">{announces ?? 0}</p>
-        </Card>
-        <Card className="space-y-1 p-4">
-          <p className="text-[10px] font-semibold uppercase text-muted">Alertes ouvertes</p>
-          <p className="text-5xl font-bold text-coral">{reportsPending ?? 0}</p>
-        </Card>
-        <Card className="space-y-1 p-4">
-          <p className="text-[10px] font-semibold uppercase text-muted">
-            Resident·es actifs
-          </p>
-          <p className="text-5xl font-bold text-text">{residents ?? 0}</p>
-        </Card>
-      </div>
-
-      <Card className="space-y-2 p-6">
-        <h2 className="text-[28px] font-bold leading-9 text-text">Pilotage équipe</h2>
-        <p className="text-base font-medium leading-6 text-muted">
-          Gardez le sourire même dans vos modérations&nbsp;: vos voisin·es repèrent vite quand une
-          collectivité se montre précise et empathique simultanément.
-        </p>
-        <Link
-          href={ROUTES.mairie.signalements}
-          className="inline-flex text-sm font-semibold text-purple underline"
-        >
-          Voir les signalements →
-        </Link>
->>>>>>> preprod
       </Card>
     </PageStack>
   );

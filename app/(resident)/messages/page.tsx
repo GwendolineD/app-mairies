@@ -1,11 +1,5 @@
 import { Suspense } from "react";
 import { requireActiveMembership } from "@/lib/auth/session";
-<<<<<<< HEAD
-import { PageStack } from "@/components/ui/page-stack";
-import { PageHeading } from "@/components/ui/page-heading";
-import { ConversationList } from "@/components/features/messaging/conversation-list";
-import { ConversationListSkeleton } from "@/components/features/messaging/conversation-list-skeleton";
-=======
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
 import { MessagesShell } from "@/components/features/messages-shell";
@@ -14,7 +8,6 @@ import {
   ConversationEmptyState,
   MessagesInboxSkeleton,
 } from "@/components/features/messages-skeletons";
->>>>>>> preprod
 
 export default async function MessagesListePage(props: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -31,13 +24,6 @@ export default async function MessagesListePage(props: {
     <PageStack gap="4">
       <PageHeading
         title="Messages"
-<<<<<<< HEAD
-        subtitle="Vos échanges avec les voisin·es de votre commune."
-      />
-      <Suspense fallback={<ConversationListSkeleton />}>
-        <ConversationList communeId={communeId} currentUserId={ctx.userId} />
-      </Suspense>
-=======
         subtitle="Vos échanges autour des annonces, initiatives et événements."
       />
       <MessagesShell
@@ -53,7 +39,6 @@ export default async function MessagesListePage(props: {
         }
         pane={<ConversationEmptyState />}
       />
->>>>>>> preprod
     </PageStack>
   );
 }

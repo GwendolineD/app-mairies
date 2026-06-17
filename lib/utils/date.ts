@@ -32,9 +32,14 @@ export function formatEventDetail(start: string, end: string): string {
   }
 }
 
-<<<<<<< HEAD
-// Community content is scheduled and displayed in French local time,
-// regardless of the server timezone (which is UTC in production/CI).
+export function formatShortDate(iso: string): string {
+  try {
+    return formatFr(new Date(iso), { dateStyle: "medium" });
+  } catch {
+    return "";
+  }
+}
+
 const PARIS_TZ = "Europe/Paris";
 
 const WEEKDAY_DATE: Intl.DateTimeFormatOptions = {
@@ -51,17 +56,6 @@ function capitalize(value: string): string {
 
 /** "Samedi 15 juin 2025" */
 export function formatLongDateFr(value: string): string | null {
-=======
-export function formatShortDate(iso: string): string {
-  try {
-    return formatFr(new Date(iso), { dateStyle: "medium" });
-  } catch {
-    return "";
-  }
-}
-
-export function formatRelativeTime(iso: string): string {
->>>>>>> preprod
   try {
     return capitalize(formatFr(new Date(value), WEEKDAY_DATE));
   } catch {

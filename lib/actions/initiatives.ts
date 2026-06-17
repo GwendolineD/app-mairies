@@ -40,26 +40,15 @@ export async function createInitiative(formData: FormData): Promise<void> {
       : null;
   }
 
-<<<<<<< HEAD
-  const { error } = await supabase.from("initiatives").insert({
-    commune_id: ctx.activeMembership!.commune_id,
-    author_membership_id: ctx.activeMembership!.id,
-    category_slug: parsed.data.categorySlug,
-    title: parsed.data.title,
-    description: parsed.data.description ?? null,
-    date_mode: parsed.data.dateMode,
-    single_starts_at: singleStartsAt,
-    single_ends_at: singleEndsAt,
-    location_label: parsed.data.locationLabel ?? null,
-    photo_url: parsed.data.photoUrl || null,
-    status: INITIATIVE_STATUS.active,
-=======
-  const hasCustomAddress = !!parsed.data.addressLabel?.trim();
+  const membership = ctx.activeMembership!;
+  const hasCustomAddress = !!parsed.data.locationLabel?.trim();
   const addressLabel = hasCustomAddress
-    ? parsed.data.addressLabel!.trim()
+    ? parsed.data.locationLabel!.trim()
     : (membership.address_street ?? membership.address_city);
   const addressLat = hasCustomAddress ? null : membership.address_lat;
   const addressLng = hasCustomAddress ? null : membership.address_lng;
+
+  const photoUrl = parsed.data.photoUrl || null;
 
   const { data: created, error } = await supabase
     .from("initiatives")
@@ -72,6 +61,7 @@ export async function createInitiative(formData: FormData): Promise<void> {
       date_mode: parsed.data.dateMode,
       single_starts_at: singleStartsAt,
       single_ends_at: singleEndsAt,
+      photo_url: photoUrl,
       address_label: addressLabel,
       address_lat: addressLat,
       address_lng: addressLng,
@@ -90,7 +80,6 @@ export async function createInitiative(formData: FormData): Promise<void> {
     authorUserId: ctx.userId,
     title: parsed.data.title,
     authorDisplayName: ctx.profile.display_name,
->>>>>>> preprod
   });
 
   redirect(ROUTES.initiatives.list);

@@ -4,7 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ensureContextConversation,
-  sendConversationMessage,
+  sendDirectMessage,
 } from "@/lib/actions/messages";
 import { ROUTES } from "@/lib/constants/routes";
 import { Button } from "@/components/ui/button";
@@ -64,14 +64,14 @@ export function ContactButton({
       return;
     }
 
-    const sent = await sendConversationMessage(ensured.conversationId, message);
+    const sent = await sendDirectMessage(ensured.conversationId, message);
     if (!sent.ok) {
       setSending(false);
       setError(sent.error);
       return;
     }
 
-    router.push(ROUTES.messageThread(ensured.conversationId));
+    router.push(ROUTES.messages.detail(ensured.conversationId));
   }, [body, sending, contextType, contextId, router]);
 
   return (

@@ -20,15 +20,11 @@ import { ReportButton } from "@/components/features/report-button";
 import { InitiativeLocationMap } from "@/components/features/initiatives/initiative-location-map";
 import { ParticipateButton } from "@/components/features/initiatives/participate-button";
 import { PageStack } from "@/components/ui/page-stack";
-<<<<<<< HEAD
+import { CarteAnnoncesMap } from "@/components/features/carte-preview-map";
 import type { InitiativeAuthor } from "@/lib/types";
 
-// Continental France fallback when no coordinates are available.
 const FALLBACK_LAT = 46.6;
 const FALLBACK_LNG = 2.3;
-=======
-import { CarteAnnoncesMap } from "@/components/features/carte-preview-map";
->>>>>>> preprod
 
 export default async function InitiativeDetailPage(props: {
   params: Promise<{ id: string }>;
@@ -145,7 +141,6 @@ export default async function InitiativeDetailPage(props: {
 
           <OrganizerCard author={author} fallbackName={authorName} />
 
-<<<<<<< HEAD
           {!isAuthor ? (
             <Card className="space-y-3 p-6">
               <p className="text-sm font-semibold leading-5 text-text">
@@ -156,11 +151,10 @@ export default async function InitiativeDetailPage(props: {
                 contextId={initiative.id}
                 contextTitle={initiative.title}
                 gradient="initiative"
-=======
-          {isAuthor ? <AuthorActions initiativeId={initiative.id} /> : null}
-        </Card>
+              />
+            </Card>
+          ) : null}
 
-        <aside>
           {initiative.address_lat != null && initiative.address_lng != null ? (
             <Card className="p-4">
               <h2 className="mb-2 text-lg font-semibold text-text">Où ?</h2>
@@ -169,7 +163,6 @@ export default async function InitiativeDetailPage(props: {
                 longitude={initiative.address_lng}
                 communeName={initiative.title}
                 className="h-48 rounded-2xl overflow-hidden border border-border/70"
->>>>>>> preprod
               />
             </Card>
           ) : null}

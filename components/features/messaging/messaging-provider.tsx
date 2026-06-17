@@ -137,7 +137,7 @@ export function MessagingProvider({
               type="button"
               onClick={() => {
                 dismissToast(toast.id);
-                router.push(ROUTES.messageThread(toast.conversationId));
+                router.push(ROUTES.messages.detail(toast.conversationId));
               }}
               className="w-full max-w-sm cursor-pointer rounded-2xl border border-border/60 bg-surface p-4 text-left shadow-elevated transition hover:bg-warm/60"
             >

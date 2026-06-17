@@ -116,7 +116,7 @@ export async function updateAnnouncement(
     id,
     ctx.activeMembership!.id,
   );
-  if (auth.error) return auth;
+  if (auth.error) return { error: auth.error };
 
   const raw = {
     type: formData.get("type") as string,
@@ -187,7 +187,7 @@ export async function softDeleteAnnouncement(
     id,
     ctx.activeMembership!.id,
   );
-  if (auth.error) return auth;
+  if (auth.error) return { error: auth.error };
 
   const { error } = await supabase
     .from("announcements")
@@ -217,7 +217,7 @@ export async function updateAnnouncementStatus(
     id,
     ctx.activeMembership!.id,
   );
-  if (auth.error) return auth;
+  if (auth.error) return { error: auth.error };
 
   const { error } = await supabase
     .from("announcements")
@@ -240,7 +240,7 @@ export async function deleteAnnouncement(id: string) {
     id,
     ctx.activeMembership!.id,
   );
-  if (auth.error) return auth;
+  if (auth.error) return { error: auth.error };
 
   const { error } = await supabase.from("announcements").delete().eq("id", id);
   if (error) return { error: error.message };

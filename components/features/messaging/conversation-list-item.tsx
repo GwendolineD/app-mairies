@@ -25,7 +25,7 @@ export function ConversationListItem({ entry, currentUserId }: Props) {
   );
 
   return (
-    <Link href={ROUTES.messageThread(entry.id)} className="block">
+    <Link href={ROUTES.messages.detail(entry.id)} className="block">
       <Card
         className={cn(
           "flex items-center gap-3 p-4 transition hover:bg-warm/60",

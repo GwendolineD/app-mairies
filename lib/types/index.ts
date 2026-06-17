@@ -1,16 +1,13 @@
 import type { AnnouncementType } from "@/lib/constants/announcement-types";
 
-<<<<<<< HEAD
 export type UserRole = "resident" | "municipality_staff" | "platform_admin";
+export type MembershipRole = "member" | "staff" | "mayor";
+export type AccessStatus = "inactive" | "trial" | "active";
 export type SubscriptionStatus =
   | "inactive"
   | "trial"
   | "active"
   | "suspended";
-=======
-export type MembershipRole = "member" | "staff" | "mayor";
-export type AccessStatus = "inactive" | "trial" | "active";
->>>>>>> preprod
 export type MembershipStatus = "active" | "suspended" | "left";
 export type CommunePlan = "free" | "standard" | "premium";
 export type PaymentStatus = "paid" | "pending" | "failed" | "refunded";
@@ -23,11 +20,12 @@ export type Commune = {
   department: string | null;
   centroid_lat: number | null;
   centroid_lng: number | null;
-<<<<<<< HEAD
+  access_status: AccessStatus;
   subscription_status: SubscriptionStatus;
   subscription_started_at: string | null;
   subscription_ends_at: string | null;
   subscription_paid: boolean;
+  subscribed_since: string | null;
   plan: CommunePlan;
   monthly_amount_cents: number;
   billing_email: string | null;
@@ -35,9 +33,6 @@ export type Commune = {
   suspension_reason: string | null;
   created_at?: string;
   updated_at?: string;
-=======
-  access_status: AccessStatus;
->>>>>>> preprod
   settings: CommuneSettings;
 };
 
@@ -139,6 +134,7 @@ export type Profile = {
   avatar_url: string | null;
   active_commune_id: string | null;
   role: UserRole;
+  is_platform_admin: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -147,6 +143,7 @@ export type Membership = {
   id: string;
   user_id: string;
   commune_id: string;
+  role: MembershipRole;
   address_street: string | null;
   address_lieu_dit: string | null;
   address_city: string | null;
@@ -163,16 +160,6 @@ export type Membership = {
   commune?: Commune;
 };
 
-<<<<<<< HEAD
-export type ProfileNotificationPreferences = {
-  user_id: string;
-  message_notifications_enabled: boolean;
-  announcement_notifications_enabled: boolean;
-  initiative_notifications_enabled: boolean;
-  updated_at: string;
-};
-
-=======
 export type MembershipAddress = {
   street: string | null;
   city: string | null;
@@ -193,7 +180,14 @@ export function membershipToAddress(membership: Membership): MembershipAddress {
   };
 }
 
->>>>>>> preprod
+export type ProfileNotificationPreferences = {
+  user_id: string;
+  message_notifications_enabled: boolean;
+  announcement_notifications_enabled: boolean;
+  initiative_notifications_enabled: boolean;
+  updated_at: string;
+};
+
 export type Announcement = {
   id: string;
   commune_id: string;
@@ -280,11 +274,8 @@ export type AgendaEventRecord = {
   updated_at: string;
 };
 
-<<<<<<< HEAD
 export type ContextType = "announcement" | "initiative" | "event";
-=======
 export type ConversationContextType = "announcement" | "initiative" | "event";
->>>>>>> preprod
 
 export type MessageRow = {
   id: string;
@@ -329,7 +320,6 @@ export type ConversationInboxItem = {
   unread_count: number;
 };
 
-<<<<<<< HEAD
 /** Lightweight profile slice used to render participants in the messaging UI. */
 export type ParticipantProfile = {
   user_id: string;
@@ -346,7 +336,6 @@ export type ConversationListEntry = {
   context_type: ContextType | null;
   context_id: string | null;
   updated_at: string;
-  /** The other participant (1:1 threads); null if not resolvable. */
   otherParticipant: ParticipantProfile | null;
   lastMessage: {
     body: string;
@@ -370,7 +359,7 @@ export type NotificationRow = {
   read_at: string | null;
   created_at: string;
 };
-=======
+
 export type NotificationPreferenceKey =
   | "notify_message_announcement"
   | "notify_message_initiative"
@@ -390,4 +379,3 @@ export interface AnnouncementCategoryRow {
   map_pin_url: string | null;
   default_image_url: string | null;
 }
->>>>>>> preprod

@@ -42,7 +42,8 @@ export const LUCIDE_ICON_MAP: Record<string, LucideIcon> = {
  * Falls back to MoreHorizontal if name is null or not in the map.
  */
 export function resolveIcon(name: string | null): LucideIcon {
-  return (name && LUCIDE_ICON_MAP[name]) ?? MoreHorizontal;
+  if (!name) return MoreHorizontal;
+  return LUCIDE_ICON_MAP[name] ?? MoreHorizontal;
 }
 
 /** List of allowed icon names for the backoffice picker. */

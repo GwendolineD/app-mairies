@@ -1,32 +1,13 @@
-import { BackLink } from "@/components/ui/back-link";
+import { Card } from "@/components/ui/card";
 import { PageStack } from "@/components/ui/page-stack";
-import { ROUTES } from "@/lib/constants/routes";
-import {
-  AnnouncementContactSkeleton,
-  AnnouncementLocationSkeleton,
-  AnnouncementMainSkeleton,
-  SimilarAnnouncementsSkeleton,
-} from "./_components/skeletons";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Loading() {
   return (
-<<<<<<< HEAD
-    <PageStack gap="5">
-      <BackLink href={ROUTES.annonces.list}>← Retour aux annonces</BackLink>
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="min-w-0">
-          <AnnouncementMainSkeleton />
-        </div>
-        <aside className="flex flex-col gap-5">
-          <AnnouncementContactSkeleton />
-          <AnnouncementLocationSkeleton />
-          <SimilarAnnouncementsSkeleton />
-=======
     <PageStack gap="5" className="pb-28 md:pb-0">
       <Skeleton className="h-5 w-44" />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
-        {/* Main card skeleton */}
         <Card className="space-y-5 p-6">
           <header className="space-y-3">
             <Skeleton className="h-6 w-28 rounded-full" />
@@ -48,9 +29,7 @@ export default function Loading() {
           </div>
         </Card>
 
-        {/* Sidebar skeleton */}
         <aside className="space-y-4">
-          {/* Contact card */}
           <Card className="space-y-4 p-5">
             <Skeleton className="h-6 w-24" />
             <div className="flex items-center gap-3">
@@ -63,14 +42,12 @@ export default function Loading() {
             <Skeleton className="h-11 w-full rounded-sm" />
           </Card>
 
-          {/* Location card */}
           <Card className="space-y-3 p-5">
             <Skeleton className="h-6 w-32" />
             <Skeleton className="h-4 w-40" />
             <Skeleton className="h-48 w-full rounded-2xl" />
           </Card>
 
-          {/* Similar announcements */}
           <Card className="space-y-3 p-5">
             <Skeleton className="h-6 w-40" />
             <div className="space-y-3">
@@ -85,7 +62,6 @@ export default function Loading() {
               ))}
             </div>
           </Card>
->>>>>>> preprod
         </aside>
       </div>
     </PageStack>

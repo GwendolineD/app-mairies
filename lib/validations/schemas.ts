@@ -59,13 +59,7 @@ export const joinCommuneSchema = z.object({
 
 export const announcementSchema = z.object({
   type: z.enum(ANNOUNCEMENT_TYPE_SLUGS),
-<<<<<<< HEAD
   categorySlug: z.enum(categorySlugs),
-  title: z.string().min(3).max(120),
-  description: z.string().max(2000).optional(),
-  targetDate: z.string().optional(),
-=======
-  categorySlug: z.enum(ANNOUNCEMENT_CATEGORY_SLUGS),
   title: z.string().trim().min(1, "Titre requis").max(70, "Titre trop long (70 caractères max.)"),
   description: z
     .string()
@@ -81,7 +75,6 @@ export const announcementSchema = z.object({
     .string()
     .optional()
     .transform((v) => (v?.trim() ? v : undefined)),
->>>>>>> preprod
   photoUrl: z.string().url().optional().or(z.literal("")),
   addressStreet: z.string().trim().min(1, "Rue requise"),
   addressCity: z.string().trim().min(1, "Ville requise"),
@@ -124,11 +117,11 @@ export const messageSchema = z.object({
   body: z.string().min(1).max(5000),
 });
 
-<<<<<<< HEAD
 export const userReportSchema = z.object({
   reportedUserId: z.string().uuid(),
   reason: z.string().min(10).max(1000),
-=======
+});
+
 export const notificationPreferencesSchema = z.object({
   notify_message_announcement: z.boolean(),
   notify_message_initiative: z.boolean(),
@@ -143,7 +136,6 @@ export const pushSubscriptionSchema = z.object({
   p256dh: z.string().min(1),
   auth: z.string().min(1),
   userAgent: z.string().max(500).optional(),
->>>>>>> preprod
 });
 
 export const reportSchema = z.object({

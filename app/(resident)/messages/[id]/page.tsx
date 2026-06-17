@@ -1,10 +1,5 @@
 import { Suspense } from "react";
 import { requireActiveMembership } from "@/lib/auth/session";
-<<<<<<< HEAD
-import { PageStack } from "@/components/ui/page-stack";
-import { MessageThread } from "@/components/features/messaging/message-thread";
-import { MessageThreadSkeleton } from "@/components/features/messaging/message-thread-skeleton";
-=======
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
 import { MessagesShell } from "@/components/features/messages-shell";
@@ -14,7 +9,6 @@ import {
   ConversationPaneSkeleton,
   MessagesInboxSkeleton,
 } from "@/components/features/messages-skeletons";
->>>>>>> preprod
 
 export default async function MessageThreadPage(props: {
   params: Promise<{ id: string }>;
@@ -25,14 +19,6 @@ export default async function MessageThreadPage(props: {
   const view = sp.vue === "corbeille" ? "archived" : "active";
 
   const ctx = await requireActiveMembership();
-<<<<<<< HEAD
-
-  return (
-    <PageStack gap="4">
-      <Suspense fallback={<MessageThreadSkeleton />}>
-        <MessageThread conversationId={id} currentUserId={ctx.userId} />
-      </Suspense>
-=======
   const communeId = ctx.activeMembership!.commune_id;
 
   return (
@@ -63,7 +49,6 @@ export default async function MessageThreadPage(props: {
           </Suspense>
         }
       />
->>>>>>> preprod
     </PageStack>
   );
 }

@@ -1,7 +1,7 @@
 import type { SessionContext } from "@/lib/auth/session";
-import { COMMUNE_STAFF_ROLES } from "@/lib/constants/roles";
 import { RESIDENT_BACKOFFICE_NAV } from "@/lib/constants/routes";
-import type { MembershipRole } from "@/lib/types";
+
+const COMMUNE_STAFF_MEMBERSHIP_ROLES: string[] = ["staff", "mayor"];
 
 export type BackofficeNavLink = {
   href: string;
@@ -18,10 +18,7 @@ export function canAccessCommuneStaff(ctx: SessionContext): boolean {
   }
 
   const m = ctx.activeMembership;
-  return (
-    !!m &&
-    (COMMUNE_STAFF_ROLES as readonly MembershipRole[]).includes(m.role)
-  );
+  return !!m && COMMUNE_STAFF_MEMBERSHIP_ROLES.includes(m.role);
 }
 
 /**

@@ -14,3 +14,5 @@ export const STAFF_ROLES: StaffRole[] = [
   USER_ROLES.municipalityStaff,
   USER_ROLES.platformAdmin,
 ];
+
+export const COMMUNE_STAFF_ROLES: StaffRole[] = STAFF_ROLES;

@@ -10,7 +10,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import {
   markConversationRead,
-  sendConversationMessage,
+  sendDirectMessage,
 } from "@/lib/actions/messages";
 import { Avatar } from "@/components/ui/avatar";
 import { BackLink } from "@/components/ui/back-link";
@@ -175,7 +175,7 @@ export function MessageThreadClient({
     setError(null);
     setSending(true);
 
-    const result = await sendConversationMessage(conversationId, body);
+    const result = await sendDirectMessage(conversationId, body);
     setSending(false);
 
     if (!result.ok) {
@@ -195,7 +195,7 @@ export function MessageThreadClient({
   return (
     <div className="flex h-[calc(100dvh-13rem)] min-h-[28rem] flex-col gap-3 md:h-[calc(100dvh-12rem)]">
       <div className="flex items-center justify-between gap-2">
-        <BackLink href={ROUTES.messages}>← Conversations</BackLink>
+        <BackLink href={ROUTES.messages.list}>← Conversations</BackLink>
       </div>
 
       <Card className="flex items-center gap-3 p-4">

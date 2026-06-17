@@ -19,7 +19,6 @@ type Props = {
   messages: MessageRow[];
   currentUserId: string;
   isArchived?: boolean;
-  /** If true, the current viewer wrote the original announcement / initiative / event. */
   readOnly?: boolean;
 };
 
@@ -44,7 +43,6 @@ export function ConversationThread({
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [all.length]);
 
-  // Clear optimistic items when the canonical server list catches up.
   useEffect(() => {
     if (optimistic.length === 0) return;
     const known = new Set(messages.map((m) => m.body + m.created_at.slice(0, 16)));
@@ -54,11 +52,6 @@ export function ConversationThread({
   }, [messages, optimistic.length]);
 
   async function handleSubmit(formData: FormData) {
-<<<<<<< HEAD
-    const body = formData.get("body") as string;
-    if (!body?.trim()) return;
-    await sendConversationMessage(conversationId, body);
-=======
     setError(null);
     const body = (formData.get("body") as string | null)?.trim();
     if (!body) return;
@@ -71,7 +64,6 @@ export function ConversationThread({
       edited_at: null,
     };
     setOptimistic((prev) => [...prev, optimisticMsg]);
->>>>>>> preprod
     formRef.current?.reset();
     startSending(async () => {
       const result = await sendConversationMessage(formData);

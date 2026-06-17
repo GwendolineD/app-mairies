@@ -46,24 +46,15 @@ export function BanAutocomplete({
   const [suggestions, setSuggestions] = useState<BanFeature[]>([]);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [query, setQuery] = useState(value ?? "");
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
-<<<<<<< HEAD
-  const queryRef = useRef(value ?? "");
-
-  useEffect(() => {
-    if (value === undefined) return;
-    queryRef.current = value;
-    if (inputRef.current) {
-      inputRef.current.value = value;
-=======
   const isFocusedRef = useRef(false);
 
   useEffect(() => {
     if (value !== undefined && !isFocusedRef.current) {
       setQuery(value);
->>>>>>> preprod
     }
   }, [value]);
 
@@ -80,21 +71,14 @@ export function BanAutocomplete({
 
   function selectSuggestion(feature: BanFeature) {
     const nextQuery = suggestionLabel(feature, formatSuggestion);
-    queryRef.current = nextQuery;
-    if (inputRef.current) {
-      inputRef.current.value = nextQuery;
-    }
+    setQuery(nextQuery);
     onSelect(feature);
     closeList();
   }
 
   function handleChange(text: string) {
-<<<<<<< HEAD
-    queryRef.current = text;
-=======
     setQuery(text);
     onInputChange?.(text);
->>>>>>> preprod
     setActiveIndex(-1);
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
@@ -106,7 +90,7 @@ export function BanAutocomplete({
   }
 
   async function handleFocus() {
-    const query = queryRef.current;
+    isFocusedRef.current = true;
     if (query.trim().length >= 2) {
       const results = await fetchSuggestions(query);
       setSuggestions(results);
@@ -198,10 +182,9 @@ export function BanAutocomplete({
           aria-activedescendant={activeOptionId}
           disabled={disabled}
           placeholder={placeholder}
-          defaultValue={value ?? ""}
+          value={query}
           onChange={(e) => handleChange(e.target.value)}
           onFocus={() => {
-            isFocusedRef.current = true;
             void handleFocus();
           }}
           onBlur={() => {

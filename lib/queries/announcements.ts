@@ -181,7 +181,7 @@ export async function listAnnouncementMarkers(
 
   query = applyAnnouncementFilters(query, filters);
   const { data } = await query;
-  return (data ?? []) as AnnouncementMarker[];
+  return (data ?? []) as unknown as AnnouncementMarker[];
 }
 
 /**

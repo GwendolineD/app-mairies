@@ -27,14 +27,7 @@ BEGIN
     department,
     centroid_lat,
     centroid_lng,
-<<<<<<< HEAD
-    subscription_status,
-    subscription_started_at,
-    subscription_ends_at,
-    subscription_paid,
-=======
     access_status,
->>>>>>> preprod
     settings
   )
   VALUES (
@@ -46,9 +39,6 @@ BEGIN
     48.8978,
     1.2338,
     'active',
-    now() - interval '8 months',
-    now() + interval '4 months',
-    true,
     jsonb_build_object(
       'welcomeMessage',
       'Bienvenue sur Vie Locale Les Authieux — découvrir, partager, s''entraider.'
@@ -60,14 +50,7 @@ BEGIN
     department = excluded.department,
     centroid_lat = excluded.centroid_lat,
     centroid_lng = excluded.centroid_lng,
-<<<<<<< HEAD
-    subscription_status = excluded.subscription_status,
-    subscription_started_at = excluded.subscription_started_at,
-    subscription_ends_at = excluded.subscription_ends_at,
-    subscription_paid = excluded.subscription_paid,
-=======
     access_status = excluded.access_status,
->>>>>>> preprod
     settings = excluded.settings;
 
   INSERT INTO public.commune_email_templates (
@@ -320,9 +303,7 @@ En quelques minutes, vous pourrez voir les annonces utiles, les initiatives loca
 END $$;
 
 -- =============================================================================
--- Backoffice demo data: extra client communes, residents, content & payments
--- Lets the platform backoffice show realistic clients / users / revenue.
--- Idempotent: fixed UUIDs + ON CONFLICT guards.
+-- Pilot commune demo content: initiatives
 -- =============================================================================
 
 DO $$
@@ -407,6 +388,16 @@ BEGIN
     location_label = excluded.location_label,
     photo_url = excluded.photo_url,
     status = excluded.status;
+END $$;
+
+-- =============================================================================
+-- Backoffice demo data: extra client communes, residents, content & payments
+-- Lets the platform backoffice show realistic clients / users / revenue.
+-- Idempotent: fixed UUIDs + ON CONFLICT guards.
+-- =============================================================================
+
+DO $$
+DECLARE
   v_pilot uuid := '27027000-0000-4000-8000-000000000001';
   v_c2 uuid := '27027000-0000-4000-8000-000000000002';
   v_c3 uuid := '27027000-0000-4000-8000-000000000003';
@@ -420,24 +411,16 @@ BEGIN
   v_cats text[] := ARRAY['bricolage','jardinage','numerique','covoiturage','animaux','alimentaire'];
 BEGIN
   -- Extra client communes (varied plans / subscription states)
-  INSERT INTO public.communes (id, insee_code, name, postcode, department, centroid_lat, centroid_lng, subscription_status, plan, monthly_amount_cents, billing_email, settings)
+  INSERT INTO public.communes (id, insee_code, name, postcode, department, centroid_lat, centroid_lng, access_status, settings)
   VALUES
-    (v_c2, '27681', 'Verneuil-sur-Avre', '27130', 'Eure', 48.7372, 0.9258, 'active', 'premium', 9900, 'compta@verneuil.fr', '{}'::jsonb),
-    (v_c3, '27053', 'Brionne', '27800', 'Eure', 49.1936, 0.7178, 'trial', 'standard', 4900, 'mairie@brionne.fr', '{}'::jsonb),
-    (v_c4, '27375', 'Pacy-sur-Eure', '27120', 'Eure', 49.0142, 1.3819, 'inactive', 'free', 0, NULL, '{}'::jsonb)
+    (v_c2, '27681', 'Verneuil-sur-Avre', '27130', 'Eure', 48.7372, 0.9258, 'active', '{}'::jsonb),
+    (v_c3, '27053', 'Brionne', '27800', 'Eure', 49.1936, 0.7178, 'trial', '{}'::jsonb),
+    (v_c4, '27375', 'Pacy-sur-Eure', '27120', 'Eure', 49.0142, 1.3819, 'inactive', '{}'::jsonb)
   ON CONFLICT (id) DO UPDATE SET
     name = excluded.name,
     postcode = excluded.postcode,
     department = excluded.department,
-    subscription_status = excluded.subscription_status,
-    plan = excluded.plan,
-    monthly_amount_cents = excluded.monthly_amount_cents,
-    billing_email = excluded.billing_email;
-
-  -- Set billing on the pilot commune so revenue is visible there too
-  UPDATE public.communes
-  SET plan = 'standard', monthly_amount_cents = 4900, billing_email = 'mairie@les-authieux.fr'
-  WHERE id = v_pilot AND monthly_amount_cents = 0;
+    access_status = excluded.access_status;
 
   -- Resident demo accounts: 1..4 -> Verneuil (v_c2), 5..6 -> pilot
   FOR i IN 1..6 LOOP
@@ -506,16 +489,5 @@ BEGIN
       ON CONFLICT (id) DO NOTHING;
     END IF;
   END LOOP;
-
-  -- Payments / revenue history
-  INSERT INTO public.commune_payments (id, commune_id, amount_cents, status, period_start, period_end, paid_at, note)
-  VALUES
-    (('27027000-0000-4d00-8000-000000000001')::uuid, v_c2, 9900, 'paid', current_date - 90, current_date - 60, now() - interval '85 days', 'Abonnement Premium'),
-    (('27027000-0000-4d00-8000-000000000002')::uuid, v_c2, 9900, 'paid', current_date - 60, current_date - 30, now() - interval '55 days', 'Abonnement Premium'),
-    (('27027000-0000-4d00-8000-000000000003')::uuid, v_c2, 9900, 'paid', current_date - 30, current_date, now() - interval '20 days', 'Abonnement Premium'),
-    (('27027000-0000-4d00-8000-000000000004')::uuid, v_c2, 9900, 'pending', current_date, current_date + 30, NULL, 'Abonnement Premium'),
-    (('27027000-0000-4d00-8000-000000000005')::uuid, v_pilot, 4900, 'paid', current_date - 30, current_date, now() - interval '15 days', 'Abonnement Standard'),
-    (('27027000-0000-4d00-8000-000000000006')::uuid, v_c3, 4900, 'pending', current_date, current_date + 30, NULL, 'Essai Standard')
-  ON CONFLICT (id) DO NOTHING;
 
 END $$;

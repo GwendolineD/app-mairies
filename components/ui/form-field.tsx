@@ -53,15 +53,26 @@ export function FormField({
   label,
   children,
   className,
+  error,
+  required,
 }: {
   label: string;
   children: React.ReactNode;
   className?: string;
+  name?: string;
+  error?: string;
+  required?: boolean;
 }) {
   return (
     <div className={cn("space-y-1.5", className)}>
-      <Label className="font-medium text-text">{label}</Label>
+      <Label className="font-medium text-text">
+        {label}
+        {required && <span className="ml-0.5 text-coral">*</span>}
+      </Label>
       {children}
+      {error && (
+        <p className="text-xs font-medium text-coral">{error}</p>
+      )}
     </div>
   );
 }

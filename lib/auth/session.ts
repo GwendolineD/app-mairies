@@ -84,4 +84,26 @@ export async function requireRole(roles: StaffRole[]) {
   return ctx;
 }
 
+const COMMUNE_STAFF_MEMBERSHIP_ROLES: string[] = ["staff", "mayor"];
+
+export async function requireCommuneStaff() {
+  const ctx = await requireAuth();
+  if (ctx.profile.is_platform_admin && ctx.activeCommuneId) {
+    return ctx;
+  }
+  const m = ctx.activeMembership;
+  if (!m || !COMMUNE_STAFF_MEMBERSHIP_ROLES.includes(m.role)) {
+    redirect(ROUTES.home);
+  }
+  return ctx;
+}
+
+export async function requirePlatformAdmin() {
+  const ctx = await requireAuth();
+  if (!ctx.profile.is_platform_admin) {
+    redirect(ROUTES.home);
+  }
+  return ctx;
+}
+
 export { STAFF_ROLES };

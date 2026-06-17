@@ -4,8 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAuth, requireActiveMembership } from "@/lib/auth/session";
 import { NEIGHBOR_INVITE_TEMPLATE_KEY } from "@/lib/constants/email-templates";
 import { ROUTES } from "@/lib/constants/routes";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { sendPushToUsers } from "@/lib/push/send";
+import { createClient } from "@/lib/supabase/server";
 import { getAppUrl } from "@/lib/utils/app-url";
 import {
   buildMailtoHref,
@@ -13,15 +12,11 @@ import {
   renderNeighborInviteTemplate,
 } from "@/lib/utils/email-template";
 import { messageSchema } from "@/lib/validations/schemas";
-<<<<<<< HEAD
-import type { ContextType } from "@/lib/types";
-=======
 import {
   notifyUser,
   shouldNotifyMessage,
 } from "@/lib/services/push-notifications";
 import type { ConversationContextType } from "@/lib/types";
->>>>>>> preprod
 
 export type NeighborInviteState = {
   success?: boolean;
@@ -34,44 +29,9 @@ export type NeighborInviteState = {
 
 type ActionResult<T> = ({ ok: true } & T) | { ok: false; error: string };
 
-function mapConversationError(message?: string | null): string {
-  const text = message ?? "";
-  if (text.includes("CANNOT_CONTACT_SELF")) {
-    return "Vous êtes l'auteur·e de ce contenu : pas besoin de vous écrire.";
-  }
-  if (text.includes("CONTENT_NOT_FOUND")) {
-    return "Ce contenu n'existe plus.";
-  }
-  if (text.includes("NOT_AUTHORIZED")) {
-    return "Vous n'avez pas accès à cette commune.";
-  }
-  return "Impossible d'ouvrir la conversation pour le moment.";
+function normalizePair(a: string, b: string): [string, string] {
+  return a < b ? [a, b] : [b, a];
 }
-
-<<<<<<< HEAD
-/**
- * Idempotently resolve the 1:1 thread for a given content item and the current
- * user. One conversation per neighbour AND per announcement/initiative/event.
- */
-export async function ensureContextConversation(
-  contextType: ContextType,
-  contextId: string,
-): Promise<ActionResult<{ conversationId: string }>> {
-  await requireActiveMembership();
-  const supabase = await createClient();
-
-  const { data, error } = await supabase.rpc(
-    "get_or_create_context_conversation",
-    { p_context_type: contextType, p_context_id: contextId },
-  );
-
-  if (error || !data) {
-    return { ok: false, error: mapConversationError(error?.message) };
-=======
-type EnsureResult = {
-  conversationId: string | null;
-  error: string | null;
-};
 
 type ContextRow = {
   id: string;
@@ -86,12 +46,11 @@ const CONTEXT_TABLES: Record<ConversationContextType, string> = {
   event: "events",
 };
 
-/**
- * Generic helper: ensure a 1:1 conversation exists between the current user and
- * the author of a given context (announcement | initiative | event), scoped to
- * the active commune. Idempotent thanks to the partial unique index
- * (commune_id, context_type, context_id, participant_a, participant_b).
- */
+type EnsureResult = {
+  conversationId: string | null;
+  error: string | null;
+};
+
 async function ensureConversation(
   contextType: ConversationContextType,
   contextId: string,
@@ -110,73 +69,20 @@ async function ensureConversation(
 
   if (ctxError || !row) {
     return { error: "Élément introuvable", conversationId: null };
->>>>>>> preprod
   }
   const context = row as ContextRow;
 
-  revalidatePath(ROUTES.messages);
-  return { ok: true, conversationId: data as string };
-}
-
-async function notifyRecipients(
-  conversationId: string,
-  senderId: string,
-  body: string,
-): Promise<void> {
-  const service = await createServiceClient();
-
-  const { data: participants } = await service
-    .from("conversation_participants")
+  const { data: authorMembership } = await supabase
+    .from("memberships")
     .select("user_id")
-<<<<<<< HEAD
-    .eq("conversation_id", conversationId)
-    .neq("user_id", senderId);
-
-  const recipientIds = (participants ?? []).map((p) => p.user_id as string);
-  if (recipientIds.length === 0) return;
-
-  const { data: sender } = await service
-    .from("profiles")
-    .select("display_name, first_name, last_name")
-    .eq("user_id", senderId)
-=======
     .eq("id", context.author_membership_id)
->>>>>>> preprod
     .single();
 
-  const senderName =
-    sender?.display_name ||
-    [sender?.first_name, sender?.last_name].filter(Boolean).join(" ").trim() ||
-    "Un·e voisin·e";
-
-  await sendPushToUsers(recipientIds, {
-    title: senderName,
-    body: body.slice(0, 140),
-    url: ROUTES.messageThread(conversationId),
-    tag: `conv-${conversationId}`,
-  });
-}
-
-export async function sendConversationMessage(
-  conversationId: string,
-  body: string,
-): Promise<ActionResult<{ messageId: string }>> {
-  const ctx = await requireActiveMembership();
-
-  const parsed = messageSchema.safeParse({ body });
-  if (!parsed.success) {
-    return { ok: false, error: "Message vide ou trop long (5000 caractères max)." };
+  const authorUserId = authorMembership?.user_id;
+  if (!authorUserId) {
+    return { error: "Auteur introuvable", conversationId: null };
   }
-<<<<<<< HEAD
 
-  const supabase = await createClient();
-  const { data: inserted, error } = await supabase
-    .from("messages")
-    .insert({
-      conversation_id: conversationId,
-      sender_id: ctx.userId,
-      body: parsed.data.body,
-=======
   if (authorUserId === ctx.userId) {
     return {
       error: "Vous ne pouvez pas vous contacter vous-même",
@@ -197,7 +103,6 @@ export async function sendConversationMessage(
     .maybeSingle();
 
   if (existing) {
-    // Restore from archive if the requester had soft-deleted this conversation
     await supabase
       .from("conversation_participants")
       .update({ archived_at: null })
@@ -216,35 +121,18 @@ export async function sendConversationMessage(
       title: context.title,
       participant_a: participantA,
       participant_b: participantB,
->>>>>>> preprod
     })
     .select("id")
     .single();
 
-  if (error || !inserted) {
-    return { ok: false, error: "Envoi impossible. Réessayez." };
+  if (error || !conv) {
+    return { error: error?.message ?? "Impossible de créer la conversation.", conversationId: null };
   }
 
-  // The author of a message has implicitly read everything up to now.
-  await supabase
-    .from("conversation_participants")
-    .update({ last_read_at: new Date().toISOString() })
-    .eq("conversation_id", conversationId)
-    .eq("user_id", ctx.userId);
-
-  await notifyRecipients(conversationId, ctx.userId, parsed.data.body);
-
-  revalidatePath(ROUTES.messageThread(conversationId));
-  revalidatePath(ROUTES.messages);
-  return { ok: true, messageId: inserted.id as string };
+  revalidatePath(ROUTES.messages.list);
+  return { conversationId: conv.id, error: null };
 }
 
-<<<<<<< HEAD
-export async function markConversationRead(conversationId: string): Promise<void> {
-  const ctx = await requireActiveMembership();
-  const supabase = await createClient();
-
-=======
 export async function ensureAnnouncementConversation(announcementId: string) {
   return ensureConversation("announcement", announcementId);
 }
@@ -257,10 +145,24 @@ export async function ensureEventConversation(eventId: string) {
   return ensureConversation("event", eventId);
 }
 
+/**
+ * @deprecated Use ensureConversation directly. Kept for backward compat.
+ */
+export async function ensureContextConversation(
+  contextType: ConversationContextType,
+  contextId: string,
+): Promise<ActionResult<{ conversationId: string }>> {
+  const result = await ensureConversation(contextType, contextId);
+  if (result.conversationId) {
+    return { ok: true, conversationId: result.conversationId };
+  }
+  return { ok: false, error: result.error ?? "Impossible d'ouvrir la conversation." };
+}
+
 async function insertConversationMessage(
   conversationId: string,
   body: string,
-): Promise<{ success: true } | { error: string }> {
+): Promise<{ success: true; messageId: string } | { error: string }> {
   const ctx = await requireActiveMembership();
   const supabase = await createClient();
 
@@ -279,21 +181,23 @@ async function insertConversationMessage(
 
   if (!recipientUserId) return { error: "Conversation invalide" };
 
-  const { error } = await supabase.from("messages").insert({
-    conversation_id: conversationId,
-    sender_id: ctx.userId,
-    body,
-  });
-  if (error) return { error: error.message };
+  const { data: inserted, error } = await supabase
+    .from("messages")
+    .insert({
+      conversation_id: conversationId,
+      sender_id: ctx.userId,
+      body,
+    })
+    .select("id")
+    .single();
+  if (error || !inserted) return { error: error?.message ?? "Erreur insertion" };
 
-  // Mark sender's last_read_at — their own message counts as read.
   await supabase
     .from("conversation_participants")
     .update({ last_read_at: new Date().toISOString(), archived_at: null })
     .eq("conversation_id", conversationId)
     .eq("user_id", ctx.userId);
 
-  // Notify recipient if their preferences allow.
   const allowed = await shouldNotifyMessage(
     supabase,
     recipientUserId,
@@ -318,7 +222,7 @@ async function insertConversationMessage(
 
   revalidatePath(ROUTES.messages.list);
   revalidatePath(ROUTES.messages.detail(conversationId));
-  return { success: true };
+  return { success: true, messageId: inserted.id };
 }
 
 export async function sendConversationMessage(formData: FormData) {
@@ -331,13 +235,24 @@ export async function sendConversationMessage(formData: FormData) {
   return insertConversationMessage(conversationId, parsed.data.body);
 }
 
+export async function sendDirectMessage(
+  conversationId: string,
+  body: string,
+): Promise<{ ok: true; messageId: string } | { ok: false; error: string }> {
+  const parsed = messageSchema.safeParse({ body });
+  if (!parsed.success) return { ok: false, error: "Message invalide" };
+
+  const result = await insertConversationMessage(conversationId, parsed.data.body);
+  if ("error" in result) return { ok: false, error: result.error };
+  return { ok: true, messageId: result.messageId };
+}
+
 const CONTEXT_TYPES: ConversationContextType[] = [
   "announcement",
   "initiative",
   "event",
 ];
 
-/** Ensure a context conversation exists, then send the first (or next) message. */
 export async function sendContextMessage(formData: FormData) {
   const contextType = formData.get("contextType") as ConversationContextType;
   const contextId = formData.get("contextId") as string;
@@ -371,25 +286,18 @@ export async function sendContextMessage(formData: FormData) {
   return { success: true as const, conversationId: ensured.conversationId };
 }
 
-/** Mark a conversation as read for the current user (touches last_read_at). */
 export async function markConversationRead(conversationId: string) {
   const ctx = await requireActiveMembership();
   const supabase = await createClient();
->>>>>>> preprod
   await supabase
     .from("conversation_participants")
     .update({ last_read_at: new Date().toISOString() })
     .eq("conversation_id", conversationId)
     .eq("user_id", ctx.userId);
-<<<<<<< HEAD
-
-  revalidatePath(ROUTES.messages);
-=======
   revalidatePath(ROUTES.messages.list);
   return { success: true };
 }
 
-/** Soft-delete: archive the conversation for the current user only (30-day trash). */
 export async function archiveConversation(conversationId: string) {
   const ctx = await requireActiveMembership();
   const supabase = await createClient();
@@ -404,7 +312,6 @@ export async function archiveConversation(conversationId: string) {
   return { success: true };
 }
 
-/** Restore an archived conversation from the trash for the current user. */
 export async function restoreConversation(conversationId: string) {
   const ctx = await requireActiveMembership();
   const supabase = await createClient();
@@ -417,7 +324,6 @@ export async function restoreConversation(conversationId: string) {
   revalidatePath(ROUTES.messages.list);
   revalidatePath(ROUTES.messages.detail(conversationId));
   return { success: true };
->>>>>>> preprod
 }
 
 export async function savePushSubscription(input: {
