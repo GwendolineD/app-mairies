@@ -29,7 +29,7 @@ export function HabitantActions({
     setError(null);
     startTransition(async () => {
       const res = await suspendAction(formData);
-      if (res?.error) {
+      if (res && !res.success) {
         setError(res.error);
       } else {
         setOpen(false);
@@ -41,7 +41,7 @@ export function HabitantActions({
     setError(null);
     startTransition(async () => {
       const res = await reactivateAction(formData);
-      if (res?.error) setError(res.error);
+      if (res && !res.success) setError(res.error);
     });
   }
 

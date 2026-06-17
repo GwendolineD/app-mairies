@@ -24,6 +24,7 @@ type Props = {
   colorHex?: string;
   pinSize?: AnnouncementPinSize;
   className?: string;
+  zoom?: number;
 };
 
 export function CarteAnnoncesMap({
@@ -35,6 +36,7 @@ export function CarteAnnoncesMap({
   colorHex,
   pinSize = "default",
   className = "h-80 rounded-3xl overflow-hidden shadow-card border border-border/70 lg:h-[min(32rem,70vh)] lg:min-h-96",
+  zoom = 16,
 }: Props) {
   return (
     <DynamicMap
@@ -45,7 +47,7 @@ export function CarteAnnoncesMap({
       mapPinUrl={mapPinUrl}
       colorHex={colorHex}
       pinSize={pinSize}
-      zoom={14}
+      zoom={zoom}
       className={className}
     />
   );

@@ -20,7 +20,7 @@ export function MessagesShell({
   mode: "list" | "pane";
 }) {
   return (
-    <div className="grid h-[calc(100dvh-12rem)] min-h-[420px] w-full grid-cols-1 overflow-hidden rounded-3xl border border-border/60 bg-surface shadow-card md:h-[calc(100dvh-9rem)] md:grid-cols-[340px_minmax(0,1fr)] lg:grid-cols-[380px_minmax(0,1fr)]">
+    <div className="grid h-[calc(100dvh-13rem)] min-h-[420px] w-full grid-cols-1 overflow-hidden rounded-md border border-border/60 bg-surface shadow-card md:h-[calc(100dvh-10rem)] md:grid-cols-[340px_minmax(0,1fr)] lg:grid-cols-[380px_minmax(0,1fr)]">
       <aside
         className={cn(
           "min-h-0 min-w-0 border-border/60 md:flex md:flex-col md:border-r",

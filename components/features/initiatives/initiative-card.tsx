@@ -26,7 +26,7 @@ export function InitiativeCard({ initiative }: { initiative: InitiativeRecord })
         />
         <div className="flex flex-1 flex-col gap-2 p-5">
           <CategoryTag
-            label={getContentCategoryLabel(initiative.category_slug)}
+            label={getContentCategoryLabel(initiative.category_slug ?? "")}
             className="self-start bg-mint/10 text-mint"
           />
           <h3 className="text-xl font-semibold leading-7 text-text">

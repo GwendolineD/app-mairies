@@ -74,7 +74,7 @@ export async function updateEventStatus(
     id,
     ctx.activeMembership!.id,
   );
-  if (auth.error) return auth;
+  if (auth.error) return { error: auth.error };
 
   const { error } = await supabase.from("events").update({ status }).eq("id", id);
   if (error) return { error: error.message };
@@ -93,7 +93,7 @@ export async function deleteEvent(id: string) {
     id,
     ctx.activeMembership!.id,
   );
-  if (auth.error) return auth;
+  if (auth.error) return { error: auth.error };
 
   const { error } = await supabase.from("events").delete().eq("id", id);
   if (error) return { error: error.message };
@@ -136,7 +136,7 @@ export async function createEventFromModal(
   const ctx = await requireActiveMembership();
   const parsed = eventModalSchema.safeParse(input);
   if (!parsed.success) {
-    const firstError = parsed.error.errors[0];
+    const firstError = parsed.error.issues[0];
     return { error: firstError?.message ?? "Données invalides" };
   }
 
@@ -199,11 +199,11 @@ export async function updateEvent(
     id,
     ctx.activeMembership!.id,
   );
-  if (auth.error) return auth;
+  if (auth.error) return { error: auth.error };
 
   const parsed = eventModalSchema.safeParse(input);
   if (!parsed.success) {
-    const firstError = parsed.error.errors[0];
+    const firstError = parsed.error.issues[0];
     return { error: firstError?.message ?? "Données invalides" };
   }
 

@@ -247,6 +247,19 @@ export interface AnnouncementCategoryRow {
   default_image_url: string | null;
 }
 
+/** Author identity resolved for an initiative detail view. */
+export type InitiativeAuthor = {
+  membershipId: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+};
+
+/** Participation snapshot for the current viewer on an initiative. */
+export type InitiativeParticipation = {
+  count: number;
+  isParticipating: boolean;
+};
+
 export interface InitiativeEventCategoryRow {
   slug: string;
   label: string;

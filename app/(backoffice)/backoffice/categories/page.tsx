@@ -12,7 +12,7 @@ export default async function BackofficeCategoriesPage() {
     <PageStack>
       <PageHeading
         title="Catégories d'annonces"
-        description="Gérez les catégories disponibles pour les annonces des résidents."
+        subtitle="Gérez les catégories disponibles pour les annonces des résidents."
       />
       <CategoriesGrid categories={categories} />
     </PageStack>

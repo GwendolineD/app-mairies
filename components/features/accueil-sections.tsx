@@ -59,7 +59,7 @@ export function AccueilHero({ userFirstName, demandCountToday }: Props) {
         </div>
         {hasDemandsToday ? (
           <Link
-            href={`${ROUTES.annonces.list}${buildAnnouncementListQuery({ type: "demande", tri: "recent" })}`}
+            href={`${ROUTES.annonces.list}${buildAnnouncementListQuery({ type: "demande", date: "today", tri: "recent" })}`}
             className={cn(heroCtaClass, "shrink-0 md:mt-3")}
           >
             <span>Je regarde</span>

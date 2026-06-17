@@ -1,13 +1,20 @@
 import {
+  Armchair,
+  Baby,
   Car,
+  Dumbbell,
   FileText,
   Gift,
   Hammer,
+  HeartHandshake,
+  Landmark,
   Leaf,
   Monitor,
   MoreHorizontal,
   Music,
   Package,
+  Palette,
+  PartyPopper,
   PawPrint,
   ShoppingBasket,
   Users,
@@ -19,7 +26,7 @@ export { MoreHorizontal };
 
 /**
  * Static map of allowed icon names to Lucide components.
- * Tree-shake friendly: only these 12 icons are bundled.
+ * Tree-shake friendly: only these icons are bundled.
  * Extend this map when adding new category icons in the backoffice.
  */
 export const LUCIDE_ICON_MAP: Record<string, LucideIcon> = {
@@ -35,6 +42,13 @@ export const LUCIDE_ICON_MAP: Record<string, LucideIcon> = {
   gift: Gift,
   music: Music,
   "more-horizontal": MoreHorizontal,
+  "heart-handshake": HeartHandshake,
+  palette: Palette,
+  "party-popper": PartyPopper,
+  dumbbell: Dumbbell,
+  baby: Baby,
+  armchair: Armchair,
+  landmark: Landmark,
 };
 
 /**
@@ -42,7 +56,8 @@ export const LUCIDE_ICON_MAP: Record<string, LucideIcon> = {
  * Falls back to MoreHorizontal if name is null or not in the map.
  */
 export function resolveIcon(name: string | null): LucideIcon {
-  return (name && LUCIDE_ICON_MAP[name]) ?? MoreHorizontal;
+  if (name && name in LUCIDE_ICON_MAP) return LUCIDE_ICON_MAP[name];
+  return MoreHorizontal;
 }
 
 /** List of allowed icon names for the backoffice picker. */

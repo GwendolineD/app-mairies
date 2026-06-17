@@ -18,9 +18,14 @@ import {
 } from "@/lib/utils/announcement-map-pin";
 import {
   AnnouncementCard,
-  AnnouncementMapCard,
 } from "@/components/features/announcement-card";
+import {
+  InitiativeCard,
+} from "@/components/features/initiative-card";
+import { EventCard } from "@/components/features/event-card";
 import type { AnnouncementWithAuthor } from "@/lib/queries/announcements";
+import type { InitiativeWithAuthor } from "@/lib/queries/initiatives";
+import type { AgendaEventRecord } from "@/lib/types";
 import type { MapMarker } from "@/lib/utils/map-markers";
 import {
   groupMarkersByLocation,
@@ -38,10 +43,20 @@ export type { MapMarker };
  */
 export const DEFAULT_INITIAL_RADIUS_METERS = 300;
 
+type MapGeoItem = {
+  id: string;
+  address_lat: number | null;
+  address_lng: number | null;
+};
+
 type Props = {
   markers: MapMarker[];
   /** Full announcement payload — when provided, used to render rich pin popovers + a synced carousel. */
   items?: AnnouncementWithAuthor[];
+  /** Full initiative payload — same role as `items` for the initiatives map view. */
+  initiativeItems?: InitiativeWithAuthor[];
+  /** Full event payload — same role as `items` for the events map view. */
+  eventItems?: AgendaEventRecord[];
   center: [number, number];
   zoom?: number;
   /** Initial radius (meters) used to compute zoom around `center`. */
@@ -51,6 +66,8 @@ type Props = {
   className?: string;
   /** Optional fallback for legacy callers (no rich popover). */
   carouselItems?: AnnouncementWithAuthor[];
+  /** Carousel section title — defaults to "Annonces autour de vous". */
+  carouselTitle?: string;
 };
 
 function createUserIcon(): L.DivIcon {
@@ -112,6 +129,186 @@ function CenterOnUserButton({ center }: { center: [number, number] }) {
     >
       <Locate className="size-4 md:size-5" aria-hidden />
     </button>
+  );
+}
+
+function EventClusterPopup({
+  items,
+  onItemClick,
+}: {
+  items: AgendaEventRecord[];
+  onItemClick: (id: string) => void;
+}) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const canGoPrev = currentIndex > 0;
+  const canGoNext = currentIndex < items.length - 1;
+
+  const scrollTo = (index: number) => {
+    const container = scrollRef.current;
+    if (!container) return;
+    container.scrollTo({ left: index * 200, behavior: "smooth" });
+    setCurrentIndex(index);
+  };
+
+  const handleScroll = () => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const newIndex = Math.round(container.scrollLeft / 200);
+    setCurrentIndex(Math.max(0, Math.min(newIndex, items.length - 1)));
+  };
+
+  return (
+    <div className="flex w-[200px] flex-col gap-2">
+      <div className="flex items-center justify-end gap-4 md:gap-2">
+        <span className="text-xs font-semibold text-muted">
+          {currentIndex + 1}/{items.length}
+        </span>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (canGoPrev) scrollTo(currentIndex - 1);
+          }}
+          disabled={!canGoPrev}
+          className={cn(
+            "inline-flex size-8 cursor-pointer items-center justify-center rounded-full transition md:size-5",
+            canGoPrev
+              ? "bg-warm text-text hover:bg-border"
+              : "cursor-not-allowed text-subtle opacity-40",
+          )}
+          aria-label="Événement précédent"
+        >
+          <ChevronLeft className="size-4 md:size-3.5" aria-hidden />
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (canGoNext) scrollTo(currentIndex + 1);
+          }}
+          disabled={!canGoNext}
+          className={cn(
+            "inline-flex size-8 cursor-pointer items-center justify-center rounded-full transition md:size-5",
+            canGoNext
+              ? "bg-warm text-text hover:bg-border"
+              : "cursor-not-allowed text-subtle opacity-40",
+          )}
+          aria-label="Événement suivant"
+        >
+          <ChevronRight className="size-4 md:size-3.5" aria-hidden />
+        </button>
+      </div>
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex snap-x snap-mandatory overflow-x-hidden"
+      >
+        {items.map((event) => (
+          <div
+            key={event.id}
+            className="w-[200px] shrink-0 snap-center"
+            onClick={(e) => {
+              e.stopPropagation();
+              onItemClick(event.id);
+            }}
+          >
+            <EventCard event={event} layout="vertical" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function InitiativeClusterPopup({
+  items,
+  onItemClick,
+}: {
+  items: InitiativeWithAuthor[];
+  onItemClick: (id: string) => void;
+}) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const canGoPrev = currentIndex > 0;
+  const canGoNext = currentIndex < items.length - 1;
+
+  const scrollTo = (index: number) => {
+    const container = scrollRef.current;
+    if (!container) return;
+    container.scrollTo({ left: index * 200, behavior: "smooth" });
+    setCurrentIndex(index);
+  };
+
+  const handleScroll = () => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const newIndex = Math.round(container.scrollLeft / 200);
+    setCurrentIndex(Math.max(0, Math.min(newIndex, items.length - 1)));
+  };
+
+  return (
+    <div className="flex w-[200px] flex-col gap-2">
+      <div className="flex items-center justify-end gap-4 md:gap-2">
+        <span className="text-xs font-semibold text-muted">
+          {currentIndex + 1}/{items.length}
+        </span>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (canGoPrev) scrollTo(currentIndex - 1);
+          }}
+          disabled={!canGoPrev}
+          className={cn(
+            "inline-flex size-8 cursor-pointer items-center justify-center rounded-full transition md:size-5",
+            canGoPrev
+              ? "bg-warm text-text hover:bg-border"
+              : "cursor-not-allowed text-subtle opacity-40",
+          )}
+          aria-label="Initiative précédente"
+        >
+          <ChevronLeft className="size-4 md:size-3.5" aria-hidden />
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (canGoNext) scrollTo(currentIndex + 1);
+          }}
+          disabled={!canGoNext}
+          className={cn(
+            "inline-flex size-8 cursor-pointer items-center justify-center rounded-full transition md:size-5",
+            canGoNext
+              ? "bg-warm text-text hover:bg-border"
+              : "cursor-not-allowed text-subtle opacity-40",
+          )}
+          aria-label="Initiative suivante"
+        >
+          <ChevronRight className="size-4 md:size-3.5" aria-hidden />
+        </button>
+      </div>
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex snap-x snap-mandatory overflow-x-hidden"
+      >
+        {items.map((initiative) => (
+          <div
+            key={initiative.id}
+            className="w-[200px] shrink-0 snap-center"
+            onClick={(e) => {
+              e.stopPropagation();
+              onItemClick(initiative.id);
+            }}
+          >
+            <InitiativeCard initiative={initiative} layout="vertical" />
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -208,18 +405,24 @@ function ClusterPopup({
 export function MapContentView({
   markers,
   items,
+  initiativeItems,
+  eventItems,
   center,
   zoom,
   initialRadiusMeters = DEFAULT_INITIAL_RADIUS_METERS,
   showUserPin = false,
-  className = "h-[420px] md:h-[520px] rounded-3xl overflow-hidden border border-border/70 shadow-card",
+  className = "h-[420px] md:h-[520px] rounded-lg overflow-hidden border border-border/70 shadow-card",
   carouselItems,
+  carouselTitle = "Annonces autour de vous",
 }: Props) {
+  const isEventMode = eventItems !== undefined;
+  const isInitiativeMode = !isEventMode && initiativeItems !== undefined;
+
   // Rich items take priority when provided; legacy `carouselItems` kept for back-compat.
   const richItems = useMemo(
-    () => items ?? carouselItems ?? [],
-    [items, carouselItems],
-  );
+    () => eventItems ?? initiativeItems ?? items ?? carouselItems ?? [],
+    [eventItems, initiativeItems, items, carouselItems],
+  ) as MapGeoItem[];
   const itemMap = useMemo(
     () => new Map(richItems.map((it) => [it.id, it])),
     [richItems],
@@ -331,7 +534,18 @@ export function MapContentView({
 
             const groupItems = group.markers
               .map((m) => itemMap.get(m.id))
-              .filter((item): item is AnnouncementWithAuthor => item != null);
+              .filter((item): item is MapGeoItem => item != null);
+
+            const groupAnnouncementItems =
+              isEventMode || isInitiativeMode
+                ? []
+                : (groupItems as AnnouncementWithAuthor[]);
+            const groupInitiativeItems = isInitiativeMode
+              ? (groupItems as InitiativeWithAuthor[])
+              : [];
+            const groupEventItems = isEventMode
+              ? (groupItems as AgendaEventRecord[])
+              : [];
 
             return (
               <Marker
@@ -347,13 +561,50 @@ export function MapContentView({
                   closeButton={false}
                   autoPan
                   className="vl-map-popup"
-                  minWidth={isCluster ? 220 : 260}
-                  maxWidth={isCluster ? 220 : 280}
+                  minWidth={isCluster ? 220 : 208}
+                  maxWidth={isCluster ? 220 : 224}
                 >
                   {isCluster ? (
-                    <ClusterPopup items={groupItems} onItemClick={handleMarkerClick} />
-                  ) : groupItems[0] ? (
-                    <AnnouncementMapCard announcement={groupItems[0]} />
+                    isEventMode ? (
+                      <EventClusterPopup
+                        items={groupEventItems}
+                        onItemClick={handleMarkerClick}
+                      />
+                    ) : isInitiativeMode ? (
+                      <InitiativeClusterPopup
+                        items={groupInitiativeItems}
+                        onItemClick={handleMarkerClick}
+                      />
+                    ) : (
+                      <ClusterPopup
+                        items={groupAnnouncementItems}
+                        onItemClick={handleMarkerClick}
+                      />
+                    )
+                  ) : isEventMode && groupEventItems[0] ? (
+                    <div className="w-52 md:w-56">
+                      <EventCard
+                        event={groupEventItems[0]}
+                        layout="vertical"
+                        highlighted={selectedId === groupEventItems[0].id}
+                      />
+                    </div>
+                  ) : isInitiativeMode && groupInitiativeItems[0] ? (
+                    <div className="w-52 md:w-56">
+                      <InitiativeCard
+                        initiative={groupInitiativeItems[0]}
+                        layout="vertical"
+                        highlighted={selectedId === groupInitiativeItems[0].id}
+                      />
+                    </div>
+                  ) : !isInitiativeMode && !isEventMode && groupAnnouncementItems[0] ? (
+                    <div className="w-52 md:w-56">
+                      <AnnouncementCard
+                        announcement={groupAnnouncementItems[0]}
+                        layout="vertical"
+                        highlighted={selectedId === groupAnnouncementItems[0].id}
+                      />
+                    </div>
                   ) : (
                     <div className="text-sm font-semibold text-text">
                       {group.markers[0]?.title}
@@ -371,31 +622,45 @@ export function MapContentView({
       {sortedItems.length > 0 ? (
         <section className="space-y-2">
           <h3 className="text-xs font-semibold text-text md:text-sm">
-            Annonces autour de vous{" "}
+            {carouselTitle}{" "}
             <span className="font-medium text-muted">({sortedItems.length})</span>
           </h3>
           <div
             ref={carouselRef}
-            className="flex snap-x snap-mandatory gap-2 overflow-x-auto pb-2 md:pl-1"
+            className="flex snap-x snap-mandatory gap-2 overflow-x-auto py-3 md:pl-1"
           >
-            {sortedItems.map((a) => (
+            {sortedItems.map((item) => (
               <div
-                key={a.id}
+                key={item.id}
                 ref={(node) => {
-                  if (node) cardRefs.current.set(a.id, node);
-                  else cardRefs.current.delete(a.id);
+                  if (node) cardRefs.current.set(item.id, node);
+                  else cardRefs.current.delete(item.id);
                 }}
                 className={cn(
                   "w-52 shrink-0 snap-start transition md:w-56",
-                  selectedId === a.id && "scale-[1.02]",
+                  selectedId === item.id && "scale-[1.02]",
                 )}
-                onClick={() => setSelectedId(a.id)}
+                onClick={() => setSelectedId(item.id)}
               >
-                <AnnouncementCard
-                  announcement={a}
-                  layout="vertical"
-                  highlighted={selectedId === a.id}
-                />
+                {isEventMode ? (
+                  <EventCard
+                    event={item as AgendaEventRecord}
+                    layout="vertical"
+                    highlighted={selectedId === item.id}
+                  />
+                ) : isInitiativeMode ? (
+                  <InitiativeCard
+                    initiative={item as InitiativeWithAuthor}
+                    layout="vertical"
+                    highlighted={selectedId === item.id}
+                  />
+                ) : (
+                  <AnnouncementCard
+                    announcement={item as AnnouncementWithAuthor}
+                    layout="vertical"
+                    highlighted={selectedId === item.id}
+                  />
+                )}
               </div>
             ))}
           </div>

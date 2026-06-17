@@ -1,10 +1,11 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Clock, Heart, MapPin } from "lucide-react";
+import { Clock, MapPin } from "lucide-react";
 import { formatStreetDisplay } from "@/lib/ban/display";
 import { ROUTES } from "@/lib/constants/routes";
 import type { AnnouncementWithAuthor } from "@/lib/queries/announcements";
-import type { AgendaEventRecord, InitiativeRecord } from "@/lib/types";
+import type { InitiativeWithAuthor } from "@/lib/queries/initiatives";
+import type { AgendaEventRecord } from "@/lib/types";
 import {
   formatEventAccueilDate,
   formatEventAccueilSchedule,
@@ -12,26 +13,36 @@ import {
 import { cn } from "@/lib/utils";
 import { AccueilSectionLink } from "@/components/features/accueil-sections";
 import { AnnouncementCard } from "@/components/features/announcement-card";
+import { InitiativeCard } from "@/components/features/initiative-card";
 
 const feedCardClass =
-  "overflow-hidden rounded-xl border border-border/60 bg-surface";
+  "md:overflow-hidden md:rounded-xl md:border md:border-border/60 md:bg-surface";
 
 function AccueilSectionHeader({
   emoji,
   title,
+  mobileTitle,
   href,
 }: {
   emoji: string;
   title: string;
+  mobileTitle?: string;
   href: string;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <h3 className="text-xs font-bold leading-snug text-text md:text-base">
+    <div className="mb-4 flex items-center justify-between gap-3 md:mb-0">
+      <h3 className="text-sm font-bold leading-5 text-text md:text-base md:leading-snug">
         <span aria-hidden className="mr-1.5">
           {emoji}
         </span>
-        {title}
+        {mobileTitle ? (
+          <>
+            <span className="md:hidden">{mobileTitle}</span>
+            <span className="hidden md:inline">{title}</span>
+          </>
+        ) : (
+          title
+        )}
       </h3>
       <AccueilSectionLink href={href} label="Tout voir" size="sm" />
     </div>
@@ -41,20 +52,27 @@ function AccueilSectionHeader({
 function AccueilFeedCard({
   emoji,
   title,
+  mobileTitle,
   href,
   children,
   className,
 }: {
   emoji: string;
   title: string;
+  mobileTitle?: string;
   href: string;
   children: ReactNode;
   className?: string;
 }) {
   return (
     <div className={cn(feedCardClass, className)}>
-      <div className="px-4 pt-4 pb-3 md:px-5">
-        <AccueilSectionHeader emoji={emoji} title={title} href={href} />
+      <div className="md:px-5 md:pt-4 md:pb-3">
+        <AccueilSectionHeader
+          emoji={emoji}
+          title={title}
+          mobileTitle={mobileTitle}
+          href={href}
+        />
       </div>
       {children}
     </div>
@@ -74,16 +92,12 @@ const EVENT_STATUS_LABELS = [
 ] as const;
 
 type TrendingInitiativeProps = {
-  initiative: InitiativeRecord | null;
-  participantCount: number;
+  initiative: InitiativeWithAuthor | null;
 };
 
 export function AccueilTrendingInitiative({
   initiative,
-  participantCount,
 }: TrendingInitiativeProps) {
-  const progress = Math.min(100, Math.round((participantCount / 50) * 100));
-
   return (
     <AccueilFeedCard
       emoji="🔥"
@@ -91,43 +105,11 @@ export function AccueilTrendingInitiative({
       href={ROUTES.initiatives.list}
     >
       {initiative ? (
-        <Link
-          href={ROUTES.initiatives.detail(initiative.id)}
-          className="block p-5 transition hover:bg-warm/40 md:p-6"
-        >
-          <p className="text-[11px] font-bold uppercase tracking-wide text-coral">
-            Tendance
-          </p>
-          <div className="mt-3 flex gap-3">
-            <span className="text-3xl leading-none" aria-hidden>
-              🎲
-            </span>
-            <div className="min-w-0 flex-1 space-y-1">
-              <p className="text-base font-bold leading-snug text-text">
-                {initiative.title}
-              </p>
-              {initiative.description ? (
-                <p className="line-clamp-2 text-sm font-medium leading-5 text-muted">
-                  {initiative.description}
-                </p>
-              ) : null}
-            </div>
-          </div>
-          <div className="mt-4 flex items-center gap-3">
-            <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-border">
-              <div
-                className="h-full rounded-full bg-coral transition-all"
-                style={{ width: `${Math.max(progress, participantCount > 0 ? 8 : 0)}%` }}
-              />
-            </div>
-            <span className="flex shrink-0 items-center gap-1 text-sm font-bold text-coral">
-              {participantCount}
-              <Heart className="size-3.5 fill-coral text-coral" aria-hidden />
-            </span>
-          </div>
-        </Link>
+        <div className="md:px-5 md:pb-5">
+          <InitiativeCard initiative={initiative} layout="horizontal" />
+        </div>
       ) : (
-        <p className="p-5 text-sm font-medium text-muted md:p-6">
+        <p className="text-sm font-medium text-muted md:p-6">
           Aucune initiative pour le moment.
         </p>
       )}
@@ -144,14 +126,15 @@ export function AccueilRecentAnnouncements({ items }: RecentAnnouncementsProps) 
     <AccueilFeedCard
       emoji="📢"
       title="Vos voisins ont posté"
+      mobileTitle="Annonces récentes"
       href={ROUTES.annonces.list}
     >
       {items.length === 0 ? (
-        <p className="p-5 text-sm font-medium text-muted md:p-6">
+        <p className="text-sm font-medium text-muted md:p-6">
           Aucune annonce récente.
         </p>
       ) : (
-        <ul className="space-y-3 px-4 pb-4 md:px-5 md:pb-5">
+        <ul className="space-y-3 md:px-5 md:pb-5">
           {items.map((announcement) => (
             <li key={announcement.id}>
               <AnnouncementCard
@@ -168,9 +151,42 @@ export function AccueilRecentAnnouncements({ items }: RecentAnnouncementsProps) 
 
 type UpcomingEventsProps = {
   events: AgendaEventRecord[];
+  volunteerCountByInitiativeId?: Record<string, number>;
 };
 
-export function AccueilUpcomingEvents({ events }: UpcomingEventsProps) {
+function EventVolunteerGauge({
+  registered,
+  needed,
+}: {
+  registered: number;
+  needed: number;
+}) {
+  const progress = Math.min(
+    100,
+    Math.round((registered / needed) * 100),
+  );
+
+  return (
+    <div className="mt-2 flex items-center gap-3">
+      <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-border">
+        <div
+          className="h-full rounded-full bg-orange transition-all"
+          style={{
+            width: `${Math.max(progress, registered > 0 ? 8 : 0)}%`,
+          }}
+        />
+      </div>
+      <span className="shrink-0 text-xs font-bold text-muted">
+        {registered}/{needed}
+      </span>
+    </div>
+  );
+}
+
+export function AccueilUpcomingEvents({
+  events,
+  volunteerCountByInitiativeId = {},
+}: UpcomingEventsProps) {
   return (
     <AccueilFeedCard
       emoji="📅"
@@ -179,7 +195,7 @@ export function AccueilUpcomingEvents({ events }: UpcomingEventsProps) {
       className="lg:h-full"
     >
       {events.length === 0 ? (
-        <p className="p-5 text-sm font-medium text-muted md:p-6">
+        <p className="text-sm font-medium text-muted md:p-6">
           Aucun événement à venir.
         </p>
       ) : (
@@ -189,12 +205,16 @@ export function AccueilUpcomingEvents({ events }: UpcomingEventsProps) {
             const status = EVENT_STATUS_LABELS[index % EVENT_STATUS_LABELS.length];
             const { day, month } = formatEventAccueilDate(event.starts_at);
             const location = formatStreetDisplay(event.address_label);
+            const volunteersNeeded = event.volunteers_needed ?? 0;
+            const volunteerCount = event.source_initiative_id
+              ? (volunteerCountByInitiativeId[event.source_initiative_id] ?? 0)
+              : 0;
 
             return (
               <li key={event.id}>
                 <Link
                   href={ROUTES.evenements.detail(event.id)}
-                  className="flex items-start gap-3 p-4 transition hover:bg-warm/40 md:gap-4 md:p-5"
+                  className="flex items-center gap-3 transition hover:bg-warm/40 md:gap-4 md:p-5"
                 >
                   <div
                     className={cn(
@@ -221,6 +241,12 @@ export function AccueilUpcomingEvents({ events }: UpcomingEventsProps) {
                       <MapPin className="size-3.5 shrink-0" aria-hidden />
                       {location}
                     </p>
+                    {volunteersNeeded > 0 ? (
+                      <EventVolunteerGauge
+                        registered={volunteerCount}
+                        needed={volunteersNeeded}
+                      />
+                    ) : null}
                   </div>
                   <span
                     className={cn(

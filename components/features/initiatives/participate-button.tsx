@@ -1,7 +1,7 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
-import { toggleInitiativeParticipation } from "@/lib/actions/initiatives";
+import { toggleInitiativeSupport } from "@/lib/actions/initiatives";
 import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
 
@@ -13,8 +13,7 @@ type Props = {
 /** Toggle the viewer's participation on an initiative (progressive enhancement). */
 export function ParticipateButton({ initiativeId, isParticipating }: Props) {
   return (
-    <form action={toggleInitiativeParticipation} className="w-full">
-      <input type="hidden" name="id" value={initiativeId} />
+    <form action={async () => { await toggleInitiativeSupport(initiativeId); }} className="w-full">
       <SubmitButton isParticipating={isParticipating} />
     </form>
   );

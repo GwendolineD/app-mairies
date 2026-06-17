@@ -1,174 +1,117 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { formatStreetDisplay } from "@/lib/ban/display";
-import { getInitiativeCategoryLabel } from "@/lib/constants/initiative-categories";
-import { ROUTES } from "@/lib/constants/routes";
+import dynamic from "next/dynamic";
+import { usePathname } from "next/navigation";
+import { InitiativeCard } from "@/components/features/initiative-card";
+import {
+  InitiativeListToolbar,
+  InitiativePagination,
+} from "@/components/features/initiative-list-toolbar";
+import { InitiativesInfiniteList } from "@/components/features/initiatives-infinite-list";
+import { InitiativesEmptyState } from "@/components/features/initiatives-empty-state";
+import { useCreationModals } from "@/components/features/creation-modal-context";
 import type { InitiativeWithAuthor } from "@/lib/queries/initiatives";
 import { INITIATIVES_PAGE_SIZE } from "@/lib/queries/initiatives";
 import {
   buildInitiativeListQuery,
+  hasActiveInitiativeFilters,
   type InitiativeListParams,
 } from "@/lib/utils/search-params";
-import { ContentTypeTag } from "@/components/ui/content-type-tag";
-import { Card } from "@/components/ui/card";
+import type { MapMarker } from "@/lib/utils/map-markers";
 import { ListGrid, PageStack } from "@/components/ui/page-stack";
-import { PageHeading } from "@/components/ui/page-heading";
-import { Button } from "@/components/ui/button";
-import { useCreationModals } from "@/components/features/creation-modal-context";
-import { RelativeTime } from "@/components/ui/relative-time";
-import { INITIATIVE_CATEGORIES } from "@/lib/constants/initiative-categories";
-import { cn } from "@/lib/utils/cn";
-import dynamic from "next/dynamic";
-import { getInitiativePinHex } from "@/lib/constants/map-pins";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const MapContentView = dynamic(
   () =>
-    import("@/components/features/map-content-view").then((m) => m.MapContentView),
-  { ssr: false, loading: () => <Card className="h-[420px] animate-pulse bg-warm" /> },
+    import("@/components/features/map-content-view").then(
+      (m) => m.MapContentView,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="space-y-4">
+        <Skeleton className="h-[420px] w-full rounded-lg md:h-[520px]" />
+        <div className="flex gap-3 overflow-hidden">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-52 w-52 shrink-0 rounded-xl md:w-56" />
+          ))}
+        </div>
+      </div>
+    ),
+  },
 );
 
 type Props = {
   params: InitiativeListParams;
   items: InitiativeWithAuthor[];
+  nextCursor: string | null;
   totalCount: number;
   mapCenter: [number, number];
-  mapMarkers: { id: string; title: string; categorySlug: string; lat: number; lng: number }[];
+  mapItems: InitiativeWithAuthor[];
+  mapMarkers: MapMarker[];
+  hasUserAddress: boolean;
 };
 
 export function InitiativesPageClient({
   params,
   items,
+  nextCursor,
   totalCount,
   mapCenter,
+  mapItems,
   mapMarkers,
+  hasUserAddress,
 }: Props) {
-  const router = useRouter();
+  const pathname = usePathname();
   const { openInitiativeModal } = useCreationModals();
-  const pathname = ROUTES.initiatives.list;
 
-  function navigate(partial: Partial<InitiativeListParams>) {
-    router.push(`${pathname}${buildInitiativeListQuery({ ...params, ...partial, page: 1 })}`);
-  }
-
-  const markers = mapMarkers.map((m) => ({
-    ...m,
-    pinColor: getInitiativePinHex(m.categorySlug),
-  }));
+  const filters = { categorie: params.categorie };
+  const hasFilters = hasActiveInitiativeFilters(params);
+  const clearFiltersHref = `${pathname}${buildInitiativeListQuery({
+    vue: params.vue,
+    page: 1,
+  })}`;
 
   return (
     <PageStack>
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <PageHeading
-          title="Toutes les initiatives"
-          subtitle="Projets civiques et coopérations locales."
-        />
-        <Button type="button" onClick={() => openInitiativeModal()}>
-          + Lancer une initiative
-        </Button>
-      </header>
-
-      <div className="flex flex-wrap gap-2">
-        <ViewToggle active={params.vue === "liste"} onClick={() => navigate({ vue: "liste" })} label="Liste" />
-        <ViewToggle active={params.vue === "carte"} onClick={() => navigate({ vue: "carte" })} label="Carte" />
-        <span className="self-center text-sm text-muted">
-          {totalCount} initiative{totalCount !== 1 ? "s" : ""}
-        </span>
-      </div>
-
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        <FilterChip active={!params.categorie} onClick={() => navigate({ categorie: undefined })} label="Toutes" />
-        {INITIATIVE_CATEGORIES.map((c) => (
-          <FilterChip
-            key={c.slug}
-            active={params.categorie === c.slug}
-            onClick={() =>
-              navigate({ categorie: params.categorie === c.slug ? undefined : c.slug })
-            }
-            label={c.label}
-          />
-        ))}
-      </div>
+      <InitiativeListToolbar
+        params={params}
+        totalCount={totalCount}
+        onCreateClick={() => openInitiativeModal()}
+      />
 
       {params.vue === "carte" ? (
-        <MapContentView markers={markers} center={mapCenter} carouselItems={[]} />
+        <MapContentView
+          markers={mapMarkers}
+          initiativeItems={mapItems}
+          center={mapCenter}
+          showUserPin={hasUserAddress}
+          carouselTitle="Initiatives autour de vous"
+        />
       ) : items.length === 0 ? (
-        <Card className="p-5 text-center text-sm text-muted">Aucune initiative pour le moment.</Card>
+        <InitiativesEmptyState
+          hasFilters={hasFilters}
+          clearFiltersHref={hasFilters ? clearFiltersHref : undefined}
+        />
       ) : (
-        <ListGrid>
-          {items.map((item) => (
-            <Link href={ROUTES.initiatives.detail(item.id)} key={item.id} className="h-full">
-              <Card className="flex h-full flex-col space-y-2 p-5 transition hover:border-purple/45">
-                <ContentTypeTag type="initiative" />
-                {item.category_slug ? (
-                  <p className="text-xs font-semibold text-mint">
-                    {getInitiativeCategoryLabel(item.category_slug)}
-                  </p>
-                ) : null}
-                <h3 className="text-xl font-semibold text-text">{item.title}</h3>
-                {item.description ? (
-                  <p className="line-clamp-2 text-sm text-muted">{item.description}</p>
-                ) : null}
-                <p className="mt-auto text-xs text-subtle">
-                  {item.location_label
-                    ? formatStreetDisplay(item.location_label)
-                    : (item.author_membership?.address_street ??
-                      item.author_membership?.address_city ??
-                      "Adresse non renseignée")}{" "}
-                  · <RelativeTime iso={item.created_at} />
-                </p>
-              </Card>
-            </Link>
-          ))}
-        </ListGrid>
+        <>
+          <ListGrid className="hidden gap-2 md:grid lg:grid-cols-4">
+            {items.map((item) => (
+              <InitiativeCard key={item.id} initiative={item} layout="vertical" />
+            ))}
+          </ListGrid>
+          <InitiativesInfiniteList
+            initialItems={items}
+            initialCursor={nextCursor}
+            filters={filters}
+          />
+          <InitiativePagination
+            params={params}
+            totalCount={totalCount}
+            pageSize={INITIATIVES_PAGE_SIZE}
+          />
+        </>
       )}
     </PageStack>
-  );
-}
-
-function ViewToggle({
-  active,
-  onClick,
-  label,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "cursor-pointer rounded-sm px-3 py-1.5 text-xs font-semibold",
-        active ? "bg-soft-pink text-purple" : "border border-border text-muted",
-      )}
-    >
-      {label}
-    </button>
-  );
-}
-
-function FilterChip({
-  active,
-  onClick,
-  label,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "shrink-0 cursor-pointer rounded-full px-3 py-1.5 text-xs font-semibold",
-        active ? "bg-soft-pink text-purple" : "border border-border text-muted",
-      )}
-    >
-      {label}
-    </button>
   );
 }

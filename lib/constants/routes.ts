@@ -40,6 +40,12 @@ export const ROUTES = {
   mairie: {
     dashboard: "/mairie",
     habitants: "/mairie/habitants",
+    annonces: "/mairie/annonces",
+    annonceDetail: (id: string) => `/mairie/annonces/${id}`,
+    initiatives: "/mairie/initiatives",
+    initiativeDetail: (id: string) => `/mairie/initiatives/${id}`,
+    evenements: "/mairie/evenements",
+    evenementDetail: (id: string) => `/mairie/evenements/${id}`,
     parametres: "/mairie/parametres",
     signalements: "/mairie/signalements",
     eventNew: "/mairie/evenements/nouveau",

@@ -1,6 +1,7 @@
 import { getAnnouncement } from "@/lib/data/announcements";
 import { Card } from "@/components/ui/card";
 import { AnnouncementLocationMap } from "@/components/features/announcement-location-map";
+import { formatAddressLines } from "@/lib/utils/format-address";
 
 type Props = {
   id: string;
@@ -20,7 +21,6 @@ export async function AnnouncementLocation({
   const ann = await getAnnouncement(id, communeId);
   if (!ann) return null;
 
-  const hasOwnCoords = ann.address_lat != null && ann.address_lng != null;
   const latitude = ann.address_lat ?? fallbackLat;
   const longitude = ann.address_lng ?? fallbackLng;
 
@@ -33,8 +33,9 @@ export async function AnnouncementLocation({
       <AnnouncementLocationMap
         latitude={latitude}
         longitude={longitude}
-        label={communeName}
-        approximate={!hasOwnCoords}
+        announcementTitle={ann.title}
+        addressLines={formatAddressLines(ann.address_street, ann.address_postcode, ann.address_city)}
+        categorySlug={ann.category_slug}
       />
     </Card>
   );

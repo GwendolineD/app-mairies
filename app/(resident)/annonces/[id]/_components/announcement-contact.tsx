@@ -5,7 +5,7 @@ import {
 import { formatMonthYear } from "@/lib/utils/date";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ContactButton } from "@/components/features/messaging/contact-button";
+import { ContactAnnouncementButton } from "@/components/features/contact-announcement-button";
 import { AuthorAvatar } from "./author-avatar";
 
 type Props = {
@@ -53,11 +53,9 @@ export async function AnnouncementContact({
           l&apos;onglet Messages.
         </p>
       ) : (
-        <ContactButton
-          contextType="announcement"
+        <ContactAnnouncementButton
           contextId={ann.id}
-          contextTitle={ann.title}
-          gradient={ann.type === "offre" ? "offre" : "demande"}
+          contextType="announcement"
           label={`Contacter ${displayName.split(/\s+/)[0]}`}
         />
       )}

@@ -1,41 +1,93 @@
 import { requireActiveMembership } from "@/lib/auth/session";
-import { ROUTES } from "@/lib/constants/routes";
-import { listActiveInitiatives } from "@/lib/data/initiatives";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { ListGrid, PageStack } from "@/components/ui/page-stack";
-import { PageHeading } from "@/components/ui/page-heading";
-import { InitiativeCard } from "@/components/features/initiatives/initiative-card";
+import {
+  listInitiativeMapItems,
+  listInitiativesPage,
+  INITIATIVES_PAGE_SIZE,
+} from "@/lib/queries/initiatives";
+import { createClient } from "@/lib/supabase/server";
+import { parseInitiativeListParams } from "@/lib/utils/search-params";
+import { InitiativesPageClient } from "@/components/features/initiatives-page-client";
+import { getInitiativeCategoryMapPinUrl } from "@/lib/constants/initiative-categories";
+import { getInitiativePinHex } from "@/lib/constants/map-pins";
 
-export default async function InitiativesListePage() {
+function buildInitiativeMapMarkers(
+  mapItems: Awaited<ReturnType<typeof listInitiativeMapItems>>,
+) {
+  return mapItems
+    .filter((m) => m.address_lat != null && m.address_lng != null)
+    .map((m) => ({
+      id: m.id,
+      title: m.title,
+      categorySlug: m.category_slug ?? "solidarite",
+      lat: m.address_lat!,
+      lng: m.address_lng!,
+      mapPinUrl: getInitiativeCategoryMapPinUrl(m.category_slug ?? "solidarite"),
+      pinColor: getInitiativePinHex(m.category_slug ?? "solidarite"),
+      colorHex: getInitiativePinHex(m.category_slug ?? "solidarite"),
+    }));
+}
+
+export default async function InitiativesListePage(props: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = (await props.searchParams) ?? {};
+  const params = parseInitiativeListParams(sp);
   const ctx = await requireActiveMembership();
-  const initiatives = await listActiveInitiatives(ctx.activeMembership!.commune_id);
+  const communeId = ctx.activeMembership!.commune_id;
+  const supabase = await createClient();
+
+  const filters = { communeId, categorie: params.categorie };
+
+  const userLat =
+    ctx.activeMembership!.address_lat ??
+    ctx.activeMembership!.commune?.centroid_lat ??
+    48.8566;
+  const userLng =
+    ctx.activeMembership!.address_lng ??
+    ctx.activeMembership!.commune?.centroid_lng ??
+    2.3522;
+  const hasUserAddress =
+    ctx.activeMembership!.address_lat != null &&
+    ctx.activeMembership!.address_lng != null;
+
+  if (params.vue === "carte") {
+    const [mapItems, { totalCount }] = await Promise.all([
+      listInitiativeMapItems(supabase, filters),
+      listInitiativesPage(supabase, filters, { limit: 1, sortMode: params.tri }),
+    ]);
+    const mapMarkers = buildInitiativeMapMarkers(mapItems);
+
+    return (
+      <InitiativesPageClient
+        params={params}
+        items={[]}
+        nextCursor={null}
+        totalCount={totalCount}
+        mapCenter={[userLat, userLng]}
+        mapItems={mapItems}
+        mapMarkers={mapMarkers}
+        hasUserAddress={hasUserAddress}
+      />
+    );
+  }
+
+  const offset = (params.page - 1) * INITIATIVES_PAGE_SIZE;
+  const { items, nextCursor, totalCount } = await listInitiativesPage(
+    supabase,
+    filters,
+    { offset, limit: INITIATIVES_PAGE_SIZE, sortMode: params.tri },
+  );
 
   return (
-    <PageStack>
-      <header className="flex flex-wrap items-start justify-between gap-3 md:items-center">
-        <PageHeading
-          title="Initiatives"
-          subtitle="Les projets collectifs qui font vivre votre commune : rejoignez ou lancez un élan d'entraide."
-        />
-        <Button
-          href={ROUTES.initiatives.new}
-          className="shrink-0 px-4 py-2 text-xs whitespace-nowrap"
-        >
-          Nouvelle initiative
-        </Button>
-      </header>
-      {initiatives.length === 0 ? (
-        <Card className="p-5 text-center text-sm font-medium text-muted">
-          Une première initiative pourrait faire un grand bien collectif !
-        </Card>
-      ) : (
-        <ListGrid>
-          {initiatives.map((initiative) => (
-            <InitiativeCard key={initiative.id} initiative={initiative} />
-          ))}
-        </ListGrid>
-      )}
-    </PageStack>
+    <InitiativesPageClient
+      params={params}
+      items={items}
+      nextCursor={nextCursor}
+      totalCount={totalCount}
+      mapCenter={[userLat, userLng]}
+      mapItems={[]}
+      mapMarkers={[]}
+      hasUserAddress={hasUserAddress}
+    />
   );
 }

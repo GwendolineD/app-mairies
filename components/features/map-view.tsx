@@ -7,7 +7,6 @@ import {
   Marker,
   Popup,
   TileLayer,
-  useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import {
@@ -22,31 +21,6 @@ import {
   getCategoryColorHex,
   getCategoryMapPinUrl,
 } from "@/lib/constants/announcement-categories";
-
-/**
- * Recomputes the map size after mount and whenever the container resizes.
- * Prevents missing tiles when the map mounts inside an element whose size
- * settles late (eg a modal that animates open).
- */
-function MapResizeHandler() {
-  const map = useMap();
-
-  useEffect(() => {
-    const container = map.getContainer();
-    const invalidate = () => map.invalidateSize();
-
-    const raf = requestAnimationFrame(invalidate);
-    const observer = new ResizeObserver(invalidate);
-    observer.observe(container);
-
-    return () => {
-      cancelAnimationFrame(raf);
-      observer.disconnect();
-    };
-  }, [map]);
-
-  return null;
-}
 
 type Props = {
   latitude: number;
@@ -86,10 +60,6 @@ export function MapViewCommune({
     const resolvedColorHex =
       colorHex ?? (categorySlug ? getCategoryColorHex(categorySlug) : "#A8A8A8");
 
-    if (!categorySlug && mapPinUrl == null && colorHex == null) {
-      return undefined;
-    }
-
     return createAnnouncementPinIcon(
       {
         mapPinUrl: resolvedMapPinUrl,
@@ -112,7 +82,6 @@ export function MapViewCommune({
       <Marker position={position} icon={markerIcon}>
         <Popup>{communeName}</Popup>
       </Marker>
-      <MapResizeHandler />
     </MapContainer>
   );
 }

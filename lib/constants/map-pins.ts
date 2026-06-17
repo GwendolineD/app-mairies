@@ -1,4 +1,4 @@
-import type { InitiativeCategorySlug } from "@/lib/constants/initiative-categories";
+import { getInitiativeCategoryMapPinUrl, getInitiativeCategoryColorHex } from "@/lib/constants/initiative-categories";
 
 /** Design-system color tokens for initiative / event map pins. */
 export type MapPinColorToken =
@@ -24,25 +24,22 @@ export const MAP_PIN_HEX: Record<MapPinColorToken, string> = {
   sun: "#ffc93d",
 };
 
-export const INITIATIVE_CATEGORY_PIN_COLORS: Record<
-  InitiativeCategorySlug,
-  MapPinColorToken
-> = {
-  solidarite: "coral",
-  nature: "mint",
-  culture: "purple",
-  convivialite: "pink",
-  sport: "orange",
-  jeunesse: "sun",
-};
-
 export const EVENT_PIN_COLOR: MapPinColorToken = "orange";
 
+/**
+ * Get the pin hex color for an initiative category.
+ * Now reads from the DB-backed facade (color_hex from initiative_event_categories table).
+ */
 export function getInitiativePinHex(categorySlug: string): string {
-  const token =
-    INITIATIVE_CATEGORY_PIN_COLORS[categorySlug as InitiativeCategorySlug] ??
-    "mint";
-  return MAP_PIN_HEX[token];
+  return getInitiativeCategoryColorHex(categorySlug);
+}
+
+/**
+ * Get the pin image URL for an initiative category (Cloudinary image).
+ * Returns null if the category has no configured pin.
+ */
+export function getInitiativePinUrl(categorySlug: string): string | null {
+  return getInitiativeCategoryMapPinUrl(categorySlug);
 }
 
 export function getEventPinHex(): string {
