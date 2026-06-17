@@ -54,6 +54,8 @@ export const ROUTES = {
     emails: "/backoffice/emails",
     categories: "/backoffice/categories",
     categoriesInitiatives: "/backoffice/categories-initiatives",
+    signalements: "/backoffice/signalements",
+    settings: "/backoffice/settings",
   },
 } as const;
 
