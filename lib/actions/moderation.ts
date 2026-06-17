@@ -54,10 +54,6 @@ export async function suspendContent(
   const table = TABLE_MAP[type];
   if (!table) return { success: false, error: "Type de contenu invalide." };
 
-  // Determine authorization (commune staff or platform admin)
-  let actorUserId: string;
-  let authorizedCommuneId: string;
-
   const supabase = await createClient();
 
   const { data: content, error: fetchError } = await supabase
@@ -74,11 +70,12 @@ export async function suspendContent(
     return { success: false, error: "Ce contenu est déjà suspendu." };
   }
 
-  // Try commune staff first, fall back to platform admin
+  // Determine authorization (commune staff or platform admin)
+  let actorUserId: string;
+
   try {
     const ctx = await requireCommuneStaff();
     if (ctx.communeId !== content.commune_id) {
-      // Not staff for this commune — try platform admin
       const adminCtx = await requirePlatformAdmin();
       actorUserId = adminCtx.userId;
     } else {
@@ -88,7 +85,6 @@ export async function suspendContent(
     const adminCtx = await requirePlatformAdmin();
     actorUserId = adminCtx.userId;
   }
-  authorizedCommuneId = content.commune_id;
 
   const now = new Date().toISOString();
   const { error: updateError } = await supabase
@@ -109,13 +105,13 @@ export async function suspendContent(
     actor_user_id: actorUserId,
     target_type: type,
     target_id: contentId,
-    commune_id: authorizedCommuneId,
+    commune_id: content.commune_id,
     action: "suspend",
     reason: trimmedReason,
     related_report_id: relatedReportId || null,
   });
 
-  revalidateContentPaths(type, contentId, authorizedCommuneId);
+  revalidateContentPaths(type, contentId, content.commune_id);
   return { success: true };
 }
 

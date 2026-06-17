@@ -18,6 +18,7 @@ export type EventMarker = {
   address_lng: number;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 function applyEventFilters<T extends { eq: Function }>(
   query: T,
   filters: EventListFilters,
