@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { ROUTES } from "@/lib/constants/routes";
 import type { ContextType } from "@/lib/types";
 

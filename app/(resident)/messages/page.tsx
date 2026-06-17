@@ -30,7 +30,7 @@ export default async function MessagesListePage(props: {
   }
 
   return (
-    <PageStack gap="2">
+    <PageStack gap="4">
       <PageHeading
         title="Messages"
         subtitle="Vos échanges autour des annonces, initiatives et événements."

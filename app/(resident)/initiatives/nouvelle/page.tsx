@@ -3,6 +3,12 @@ import { ROUTES } from "@/lib/constants/routes";
 import { CONTENT_CATEGORIES } from "@/lib/constants/content-categories";
 import { BackLink } from "@/components/ui/back-link";
 import { Card } from "@/components/ui/card";
+
+// Wrapper to satisfy form action signature
+async function handleCreateInitiative(formData: FormData): Promise<void> {
+  "use server";
+  await createInitiative(formData);
+}
 import { FormField, Input, Select, Textarea } from "@/components/ui/form-field";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { PageHeading } from "@/components/ui/page-heading";
@@ -17,7 +23,7 @@ export default function NouvelleInitiativePage() {
         subtitle="Lancez un projet collectif et invitez vos voisin·es à y participer."
       />
       <Card className="space-y-3 p-5 lg:max-w-2xl">
-        <form action={createInitiative} className="flex flex-col gap-3">
+        <form action={handleCreateInitiative} className="flex flex-col gap-3">
           <FormField label="Catégorie">
             <Select name="categorySlug" defaultValue="solidarite">
               {CONTENT_CATEGORIES.map((cat) => (

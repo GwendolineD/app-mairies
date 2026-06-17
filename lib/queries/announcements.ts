@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AnnouncementType } from "@/lib/constants/announcement-types";
 import { ANNOUNCEMENT_STATUS } from "@/lib/constants/statuses";

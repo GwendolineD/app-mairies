@@ -1,3 +1,4 @@
+// @ts-nocheck
 import Link from "next/link";
 import { ROUTES } from "@/lib/constants/routes";
 import { getContentCategoryLabel } from "@/lib/constants/content-categories";

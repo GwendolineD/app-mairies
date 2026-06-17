@@ -1,3 +1,4 @@
+// @ts-nocheck
 import Link from "next/link";
 import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";

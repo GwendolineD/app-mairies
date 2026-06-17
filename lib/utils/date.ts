@@ -111,3 +111,37 @@ export function formatEventAccueilSchedule(iso: string): string {
     return "Date à confirmer";
   }
 }
+
+export function formatInitiativeWhen(initiative: {
+  date_mode: string;
+  single_starts_at: string | null;
+  recurrence_rule: unknown;
+}): string {
+  if (initiative.date_mode === "once" && initiative.single_starts_at) {
+    return formatShortDate(initiative.single_starts_at);
+  }
+  if (initiative.date_mode === "recurring") {
+    return "Récurrent";
+  }
+  return "";
+}
+
+export function formatDay(iso: string): string {
+  try {
+    return new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric" }).format(
+      new Date(iso),
+    );
+  } catch {
+    return iso;
+  }
+}
+
+export function formatMonthYear(iso: string): string {
+  try {
+    return new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(
+      new Date(iso),
+    );
+  } catch {
+    return "";
+  }
+}

@@ -33,8 +33,11 @@ export async function AnnouncementLocation({
       <AnnouncementLocationMap
         latitude={latitude}
         longitude={longitude}
-        label={communeName}
-        approximate={!hasOwnCoords}
+        announcementTitle={communeName}
+        addressLines={{ streetLine: communeName, cityLine: null, fallback: null }}
+        categorySlug="solidarite"
+        mapPinUrl={null}
+        colorHex="#9A52FF"
       />
     </Card>
   );

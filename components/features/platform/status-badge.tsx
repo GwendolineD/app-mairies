@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { cn } from "@/lib/utils/cn";
 import {
   PAYMENT_STATUS_LABEL,

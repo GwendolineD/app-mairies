@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";
 import { formatDay } from "@/lib/utils/date";

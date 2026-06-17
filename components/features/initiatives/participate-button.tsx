@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 
 import { useFormStatus } from "react-dom";

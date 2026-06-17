@@ -5,8 +5,7 @@ import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
-import { ANNOUNCEMENT_CATEGORIES_CACHE_TAG } from "@/lib/queries/announcement-categories";
-import { ALLOWED_ICON_NAMES } from "@/lib/utils/lucide-icon-map";
+import { INITIATIVE_EVENT_CATEGORIES_CACHE_TAG } from "@/lib/queries/initiative-event-categories";
 
 const categorySchema = z.object({
   slug: z
@@ -24,7 +23,7 @@ const categorySchema = z.object({
   default_image_url: z.string().url("URL invalide").nullable().or(z.literal("")),
 });
 
-export type CategoryFormState = {
+export type InitiativeEventCategoryFormState = {
   success: boolean;
   error?: string;
   fieldErrors?: Record<string, string>;
@@ -42,10 +41,10 @@ function parseFormData(formData: FormData) {
   };
 }
 
-export async function createAnnouncementCategory(
-  _prev: CategoryFormState,
+export async function createInitiativeEventCategory(
+  _prev: InitiativeEventCategoryFormState,
   formData: FormData,
-): Promise<CategoryFormState> {
+): Promise<InitiativeEventCategoryFormState> {
   await requirePlatformAdmin();
 
   const raw = parseFormData(formData);
@@ -66,7 +65,7 @@ export async function createAnnouncementCategory(
   const supabase = await createClient();
 
   const { data: existing } = await supabase
-    .from("announcement_categories")
+    .from("initiative_event_categories")
     .select("slug")
     .eq("slug", slug)
     .maybeSingle();
@@ -79,7 +78,7 @@ export async function createAnnouncementCategory(
     };
   }
 
-  const { error } = await supabase.from("announcement_categories").insert({
+  const { error } = await supabase.from("initiative_event_categories").insert({
     slug,
     label,
     icon_name,
@@ -90,19 +89,19 @@ export async function createAnnouncementCategory(
   });
 
   if (error) {
-    console.error("[createAnnouncementCategory] DB error:", error);
+    console.error("[createInitiativeEventCategory] DB error:", error);
     return { success: false, error: "Erreur lors de la création" };
   }
 
-  revalidateTag(ANNOUNCEMENT_CATEGORIES_CACHE_TAG);
+  revalidateTag(INITIATIVE_EVENT_CATEGORIES_CACHE_TAG);
   return { success: true };
 }
 
-export async function updateAnnouncementCategory(
+export async function updateInitiativeEventCategory(
   slug: string,
-  _prev: CategoryFormState,
+  _prev: InitiativeEventCategoryFormState,
   formData: FormData,
-): Promise<CategoryFormState> {
+): Promise<InitiativeEventCategoryFormState> {
   await requirePlatformAdmin();
 
   const raw = parseFormData(formData);
@@ -123,7 +122,7 @@ export async function updateAnnouncementCategory(
   const supabase = await createClient();
 
   const { error } = await supabase
-    .from("announcement_categories")
+    .from("initiative_event_categories")
     .update({
       label,
       icon_name,
@@ -135,17 +134,17 @@ export async function updateAnnouncementCategory(
     .eq("slug", slug);
 
   if (error) {
-    console.error("[updateAnnouncementCategory] DB error:", error);
+    console.error("[updateInitiativeEventCategory] DB error:", error);
     return { success: false, error: "Erreur lors de la mise à jour" };
   }
 
-  revalidateTag(ANNOUNCEMENT_CATEGORIES_CACHE_TAG);
+  revalidateTag(INITIATIVE_EVENT_CATEGORIES_CACHE_TAG);
   return { success: true };
 }
 
-export async function deleteAnnouncementCategory(
+export async function deleteInitiativeEventCategory(
   slug: string,
-): Promise<CategoryFormState> {
+): Promise<InitiativeEventCategoryFormState> {
   await requirePlatformAdmin();
 
   if (!slug) {
@@ -154,48 +153,40 @@ export async function deleteAnnouncementCategory(
 
   const supabase = await createClient();
 
-  const { count } = await supabase
-    .from("announcements")
+  const { count: initiativeCount } = await supabase
+    .from("initiatives")
     .select("id", { count: "exact", head: true })
     .eq("category_slug", slug);
 
-  if (count && count > 0) {
+  const { count: eventCount } = await supabase
+    .from("events")
+    .select("id", { count: "exact", head: true })
+    .eq("category_slug", slug);
+
+  const total = (initiativeCount ?? 0) + (eventCount ?? 0);
+  if (total > 0) {
     return {
       success: false,
-      error: `Impossible de supprimer : ${count} annonce${count > 1 ? "s" : ""} utilise${count > 1 ? "nt" : ""} cette catégorie`,
+      error: `Impossible de supprimer : ${total} contenu${total > 1 ? "s" : ""} utilise${total > 1 ? "nt" : ""} cette catégorie`,
     };
   }
 
   const { error } = await supabase
-    .from("announcement_categories")
+    .from("initiative_event_categories")
     .delete()
     .eq("slug", slug);
 
   if (error) {
-    console.error("[deleteAnnouncementCategory] DB error:", error);
+    console.error("[deleteInitiativeEventCategory] DB error:", error);
     if (error.code === "23503") {
       return {
         success: false,
-        error: "Impossible de supprimer : des annonces utilisent cette catégorie",
+        error: "Impossible de supprimer : des contenus utilisent cette catégorie",
       };
     }
     return { success: false, error: "Erreur lors de la suppression" };
   }
 
-  revalidateTag(ANNOUNCEMENT_CATEGORIES_CACHE_TAG);
+  revalidateTag(INITIATIVE_EVENT_CATEGORIES_CACHE_TAG);
   return { success: true };
-}
-
-export async function getAnnouncementCountByCategory(
-  slug: string,
-): Promise<number> {
-  await requirePlatformAdmin();
-
-  const supabase = await createClient();
-  const { count } = await supabase
-    .from("announcements")
-    .select("id", { count: "exact", head: true })
-    .eq("category_slug", slug);
-
-  return count ?? 0;
 }
