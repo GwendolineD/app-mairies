@@ -29,6 +29,12 @@ export async function getSessionContext(): Promise<SessionContext | null> {
 
   if (!profile) return null;
 
+  // Compute is_platform_admin from role
+  const enhancedProfile = {
+    ...profile,
+    is_platform_admin: profile.role === 'platform_admin',
+  } as Profile;
+
   const { data: memberships } = await supabase
     .from("memberships")
     .select("*, commune:communes(*)")
@@ -51,7 +57,7 @@ export async function getSessionContext(): Promise<SessionContext | null> {
 
   return {
     userId: user.id,
-    profile: profile as Profile,
+    profile: enhancedProfile,
     memberships: list,
     activeCommuneId: activeMembership?.commune_id ?? activeCommuneId,
     activeMembership,
