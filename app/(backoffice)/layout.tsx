@@ -6,6 +6,8 @@ import {
 } from "@/lib/constants/routes";
 import { getAnnouncementCategories } from "@/lib/queries/announcement-categories";
 import { initCategories } from "@/lib/constants/announcement-categories";
+import { getInitiativeEventCategories } from "@/lib/queries/initiative-event-categories";
+import { initInitiativeEventCategories } from "@/lib/constants/initiative-categories";
 
 export default async function BackofficeLayout({
   children,
@@ -14,8 +16,12 @@ export default async function BackofficeLayout({
 }) {
   await requirePlatformAdmin();
 
-  const categoryRows = await getAnnouncementCategories();
+  const [categoryRows, initiativeCategoryRows] = await Promise.all([
+    getAnnouncementCategories(),
+    getInitiativeEventCategories(),
+  ]);
   initCategories(categoryRows);
+  initInitiativeEventCategories(initiativeCategoryRows);
 
   return (
     <AdminShell

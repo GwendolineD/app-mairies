@@ -1,5 +1,4 @@
-import { requireRole } from "@/lib/auth/session";
-import { USER_ROLES } from "@/lib/constants/roles";
+import { requireCommuneStaff } from "@/lib/auth/session";
 import { REPORT_STATUS } from "@/lib/constants/statuses";
 import { createClient } from "@/lib/supabase/server";
 import { markReportHandledForm } from "@/lib/actions/municipality";
@@ -9,9 +8,7 @@ import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
 
 export default async function MairieSignalementsPage() {
-  const ctx = await requireRole([USER_ROLES.municipalityStaff]);
-  const communeId = ctx.profile.active_commune_id;
-  if (!communeId) return null;
+  const { communeId } = await requireCommuneStaff();
 
   const supabase = await createClient();
 
