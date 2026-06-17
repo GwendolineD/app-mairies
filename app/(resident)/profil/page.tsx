@@ -1,39 +1,19 @@
 import { Suspense } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import {
-  CalendarDays,
-  MapPin,
-  Pencil,
-} from "lucide-react";
 import { requireActiveMembership } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { getNotificationPreferences } from "@/lib/queries/messages";
 import { getPushPublicKey } from "@/lib/actions/notifications";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { PageStack } from "@/components/ui/page-stack";
 import { ProfileSkeleton } from "@/components/features/profile/profile-skeleton";
 import {
-  ProfileTabs,
   isProfileTab,
   type ProfileTabKey,
 } from "@/components/features/profile/profile-tabs";
-import { ProfileEmptyState } from "@/components/features/profile/profile-empty-state";
-import { NotificationPreferencesForm } from "@/components/features/notification-preferences-form";
-import { ProfilAddCommuneButton } from "@/components/features/profil-add-commune-button";
 import { ProfilePageClient } from "@/components/features/profile/profile-page-client";
-import { getCategoryLabel } from "@/lib/constants/announcement-categories";
-import { AnnouncementTypeTag } from "@/components/ui/announcement-type-tag";
-import { CategoryTag } from "@/components/ui/category-tag";
 import type {
   Announcement,
   InitiativeRecord,
   AgendaEventRecord,
-  Membership,
-  NotificationPreferences,
 } from "@/lib/types";
-import { ROUTES } from "@/lib/constants/routes";
 import { NEIGHBOR_INVITE_TEMPLATE_KEY } from "@/lib/constants/email-templates";
 import { normalizeNeighborInviteTemplate } from "@/lib/utils/email-template";
 

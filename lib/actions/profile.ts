@@ -39,7 +39,7 @@ export async function updateProfile(
 
   const parsed = profileUpdateSchema.safeParse(input);
   if (!parsed.success) {
-    return { error: parsed.error.errors[0]?.message ?? "Données invalides" };
+    return { error: parsed.error.issues[0]?.message ?? "Données invalides" };
   }
 
   const supabase = await createClient();

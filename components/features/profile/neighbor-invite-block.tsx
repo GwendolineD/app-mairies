@@ -20,12 +20,8 @@ type Props = {
   inviteCount: number;
 };
 
-export function NeighborInviteBlock({
-  template,
-  senderName,
-  communeName,
-  inviteCount,
-}: Props) {
+export function NeighborInviteBlock(props: Props) {
+  const { inviteCount } = props;
   const formRef = useRef<HTMLFormElement>(null);
   const prevStateRef = useRef<NeighborInviteState | undefined>(undefined);
 
