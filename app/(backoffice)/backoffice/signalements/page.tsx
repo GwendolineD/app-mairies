@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { requireCommuneStaff } from "@/lib/auth/session";
+import { requirePlatformAdmin } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
 import { formatShortDate } from "@/lib/utils/format-date";
-import { ReportActionsClient } from "./_components/report-actions-client";
+import { BackofficeReportActions } from "./_components/backoffice-report-actions";
 
 const CONTEXT_TYPE_LABELS: Record<string, string> = {
   announcement: "Annonce",
@@ -15,18 +15,15 @@ const CONTEXT_TYPE_LABELS: Record<string, string> = {
   user: "Utilisateur",
 };
 
-function contextLink(
-  contextType: string,
-  contextId: string,
-): string | null {
+function contextLink(contextType: string, contextId: string): string | null {
   if (contextType === "announcement") return ROUTES.annonces.detail(contextId);
   if (contextType === "initiative") return ROUTES.initiatives.detail(contextId);
   if (contextType === "event") return ROUTES.evenements.detail(contextId);
   return null;
 }
 
-export default async function MairieSignalementsPage() {
-  const { communeId } = await requireCommuneStaff();
+export default async function BackofficeSignalementsPage() {
+  await requirePlatformAdmin();
   const supabase = await createClient();
 
   const { data: reports } = await supabase
@@ -34,18 +31,17 @@ export default async function MairieSignalementsPage() {
     .select(
       `*, reporter_membership:memberships!reports_reporter_membership_id_fkey(
         profiles:profiles!memberships_profiles_user_id_fkey(display_name, first_name, last_name)
-      )`,
+      ), commune:communes!reports_commune_id_fkey(name)`,
     )
-    .eq("commune_id", communeId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(100);
 
-  // Fetch content titles in batch
+  // Fetch content titles
   const contentIds = (reports ?? [])
     .filter((r) => r.context_type !== "user")
     .map((r) => ({ type: r.context_type, id: r.context_id }));
 
   const titleMap: Record<string, string> = {};
-  const authorMembershipIdMap: Record<string, string> = {};
 
   for (const table of ["announcements", "initiatives", "events"] as const) {
     const ctxType =
@@ -53,13 +49,9 @@ export default async function MairieSignalementsPage() {
       table === "initiatives" ? "initiative" : "event";
     const ids = contentIds.filter((c) => c.type === ctxType).map((c) => c.id);
     if (ids.length > 0) {
-      const { data } = await supabase
-        .from(table)
-        .select("id, title, author_membership_id")
-        .in("id", ids);
+      const { data } = await supabase.from(table).select("id, title").in("id", ids);
       for (const row of data ?? []) {
         titleMap[row.id] = row.title;
-        authorMembershipIdMap[row.id] = row.author_membership_id;
       }
     }
   }
@@ -67,8 +59,8 @@ export default async function MairieSignalementsPage() {
   return (
     <PageStack>
       <PageHeading
-        title="Signalements"
-        subtitle="Gérez les signalements de contenus et d'utilisateurs de votre commune."
+        title="Signalements (Plateforme)"
+        subtitle="Tous les signalements de toutes les communes."
       />
 
       <div className="space-y-3">
@@ -86,6 +78,7 @@ export default async function MairieSignalementsPage() {
                 .join(" ") ??
               "Inconnu";
             const contentTitle = titleMap[report.context_id] ?? null;
+            const communeName = report.commune?.name ?? "–";
             const link = contextLink(report.context_type, report.context_id);
             const isPending = report.status === "pending";
 
@@ -95,6 +88,9 @@ export default async function MairieSignalementsPage() {
                   <div className="flex items-center gap-2">
                     <span className="rounded-full bg-purple/10 px-2.5 py-0.5 text-[10px] font-bold uppercase text-purple">
                       {CONTEXT_TYPE_LABELS[report.context_type] ?? report.context_type}
+                    </span>
+                    <span className="text-xs font-medium text-muted">
+                      {communeName}
                     </span>
                     {isPending ? (
                       <span className="rounded-full bg-coral/10 px-2.5 py-0.5 text-[10px] font-bold uppercase text-coral">
@@ -135,7 +131,7 @@ export default async function MairieSignalementsPage() {
                 </p>
 
                 {isPending && (
-                  <ReportActionsClient
+                  <BackofficeReportActions
                     reportId={report.id}
                     contextType={report.context_type}
                     contextId={report.context_id}
