@@ -34,6 +34,9 @@ export type Profile = {
   avatar_url: string | null;
   active_commune_id: string | null;
   is_platform_admin: boolean;
+  banned_at: string | null;
+  ban_reason: string | null;
+  banned_by: string | null;
 };
 
 export type Membership = {
@@ -86,6 +89,9 @@ export type Announcement = {
   photo_url: string | null;
   target_date: string | null;
   status: "ouverte" | "pourvue" | "archivee" | "expiree";
+  suspended_at: string | null;
+  suspended_by: string | null;
+  suspension_reason: string | null;
   address_street: string | null;
   address_city: string | null;
   address_citycode: string | null;
@@ -154,6 +160,9 @@ export type InitiativeRecord = {
   single_ends_at: string | null;
   recurrence_rule: unknown;
   status: "active" | "archived";
+  suspended_at: string | null;
+  suspended_by: string | null;
+  suspension_reason: string | null;
   address_label: string | null;
   address_lat: number | null;
   address_lng: number | null;
@@ -173,6 +182,9 @@ export type AgendaEventRecord = {
   starts_at: string;
   ends_at: string;
   status: "active" | "archived";
+  suspended_at: string | null;
+  suspended_by: string | null;
+  suspension_reason: string | null;
   photo_url: string | null;
   address_label: string | null;
   address_lat: number | null;
@@ -215,6 +227,7 @@ export type ConversationInboxItem = {
   context_id: string | null;
   title: string | null;
   context_photo_url: string | null;
+  context_available: boolean;
   updated_at: string;
   last_message_at: string | null;
   last_message_preview: string | null;
@@ -256,3 +269,32 @@ export interface InitiativeEventCategoryRow {
   map_pin_url: string | null;
   default_image_url: string | null;
 }
+
+export type ModerationTargetType = "announcement" | "initiative" | "event" | "membership" | "user";
+export type ModerationActionType = "suspend" | "reactivate" | "ban" | "unban";
+export type ReportResolution = "content_suspended" | "user_suspended" | "dismissed";
+
+export type ModerationAction = {
+  id: string;
+  actor_user_id: string;
+  target_type: ModerationTargetType;
+  target_id: string;
+  commune_id: string | null;
+  action: ModerationActionType;
+  reason: string | null;
+  related_report_id: string | null;
+  created_at: string;
+};
+
+export type PlatformSettings = {
+  id: number;
+  support_email: string;
+  updated_at: string;
+};
+
+export type BannedEmail = {
+  email: string;
+  reason: string | null;
+  banned_by: string | null;
+  banned_at: string;
+};
