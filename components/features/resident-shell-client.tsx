@@ -3,17 +3,22 @@
 import { Suspense } from "react";
 import { CreationModalProvider } from "@/components/features/creation-modal-context";
 import { CreationModalHost } from "@/components/features/creation-modal-host";
+import { OnboardingModalHost } from "@/components/features/onboarding/onboarding-modal-host";
 import type { MembershipAddress } from "@/lib/types";
 
 type Props = {
   communeId: string;
   membershipAddress: MembershipAddress;
+  hasSeenOnboarding: boolean;
+  communeName: string;
   children: React.ReactNode;
 };
 
 export function ResidentShellClient({
   communeId,
   membershipAddress,
+  hasSeenOnboarding,
+  communeName,
   children,
 }: Props) {
   return (
@@ -25,6 +30,10 @@ export function ResidentShellClient({
           membershipAddress={membershipAddress}
         />
       </Suspense>
+      <OnboardingModalHost
+        hasSeenOnboarding={hasSeenOnboarding}
+        communeName={communeName}
+      />
     </CreationModalProvider>
   );
 }

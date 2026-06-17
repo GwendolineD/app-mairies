@@ -14,6 +14,7 @@ import { Card } from "@/components/ui/card";
 import { ContentTypeTag } from "@/components/ui/content-type-tag";
 import { ListGrid, PageStack } from "@/components/ui/page-stack";
 import { PageHeading } from "@/components/ui/page-heading";
+import { InfoPopover } from "@/components/features/onboarding/info-popover";
 import { formatEventRange } from "@/lib/utils/date";
 import { cn } from "@/lib/utils/cn";
 
@@ -59,6 +60,7 @@ export function EvenementsPageClient({
       <PageHeading
         title="Événements"
         subtitle="Les moments où l'on se retrouve — créés par votre mairie."
+        actions={<InfoPopover slide="evenements" />}
       />
       <div className="flex flex-wrap gap-2">
         <ViewToggle active={params.vue === "liste"} onClick={() => navigate({ vue: "liste" })} label="Liste" />

@@ -27,6 +27,12 @@ export const ILLUSTRATIONS = {
       nudgeEmpathique:
         "https://res.cloudinary.com/du3ko16j1/image/upload/v1779975389/app-mairies/illustrations/autres/hero-community_zweexd.png",
     },
+    onboarding: {
+      welcome: "",
+      annonces: "",
+      initiatives: "",
+      evenements: "",
+    },
     messages: {
       emptyState: "",
     },

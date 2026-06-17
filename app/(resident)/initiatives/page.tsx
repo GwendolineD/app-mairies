@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { ListGrid, PageStack } from "@/components/ui/page-stack";
 import { PageHeading } from "@/components/ui/page-heading";
 import { InitiativeCard } from "@/components/features/initiatives/initiative-card";
+import { InfoPopover } from "@/components/features/onboarding/info-popover";
 
 export default async function InitiativesListePage() {
   const ctx = await requireActiveMembership();
@@ -17,6 +18,7 @@ export default async function InitiativesListePage() {
         <PageHeading
           title="Initiatives"
           subtitle="Les projets collectifs qui font vivre votre commune : rejoignez ou lancez un élan d'entraide."
+          actions={<InfoPopover slide="initiatives" />}
         />
         <Button
           href={ROUTES.initiatives.new}

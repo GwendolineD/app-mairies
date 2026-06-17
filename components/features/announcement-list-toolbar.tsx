@@ -22,6 +22,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils/cn";
+import { InfoPopover } from "@/components/features/onboarding/info-popover";
 
 type Props = {
   params: AnnouncementListParams;
@@ -123,16 +124,22 @@ export function AnnouncementListToolbar({
   return (
     <div className="space-y-4">
       {/* Mobile: title only */}
-      <h1 className="text-xl font-bold leading-7 text-text md:hidden">
-        Toutes les annonces
-      </h1>
+      <div className="flex items-center gap-2 md:hidden">
+        <h1 className="text-xl font-bold leading-7 text-text">
+          Toutes les annonces
+        </h1>
+        <InfoPopover slide="annonces" />
+      </div>
 
       {/* Desktop: title, subtitle and full create button */}
       <div className="hidden flex-wrap items-start justify-between gap-3 md:flex">
         <div className="space-y-1">
-          <h1 className="text-[28px] font-bold leading-9 text-text">
-            Toutes les annonces
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-[28px] font-bold leading-9 text-text">
+              Toutes les annonces
+            </h1>
+            <InfoPopover slide="annonces" />
+          </div>
           <p className="text-xs font-medium text-muted">{countLabel}</p>
         </div>
         {createButtonDesktop}

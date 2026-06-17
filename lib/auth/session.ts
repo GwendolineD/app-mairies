@@ -78,7 +78,7 @@ export async function requireActiveMembership() {
 
 export async function requireRole(roles: StaffRole[]) {
   const ctx = await requireAuth();
-  if (!roles.includes(ctx.profile.role as StaffRole)) {
+  if (roles.includes("platform_admin") && !ctx.profile.is_platform_admin) {
     redirect(ROUTES.home);
   }
   return ctx;
