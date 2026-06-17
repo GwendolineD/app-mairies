@@ -197,7 +197,13 @@ export function ConversationThread({
             </Button>
           </div>
         </div>
-      ) : readOnly ? null : (
+      ) : readOnly ? (
+        <div className="border-t border-border/60 bg-warm/50 p-3">
+          <p className="text-center text-sm text-muted">
+            Le contenu lié à cette conversation a été suspendu. Vous ne pouvez plus envoyer de messages.
+          </p>
+        </div>
+      ) : (
         <form
           ref={formRef}
           action={handleSubmit}

@@ -138,6 +138,11 @@ export function MessagesInboxList({
                             {contextLabel}
                             {conv.title ? ` · ${conv.title}` : ""}
                           </span>
+                          {conv.context_available === false && (
+                            <span className="ml-1 rounded-full bg-coral/10 px-1.5 py-0.5 text-[9px] font-bold text-coral">
+                              Suspendu
+                            </span>
+                          )}
                         </div>
                         <p
                           className={cn(
