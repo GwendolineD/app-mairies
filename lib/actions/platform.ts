@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
+import { generateTrialCode } from "@/lib/utils/trial-code";
 import { createPilotCommuneSchema } from "@/lib/validations/schemas";
 import type { AccessStatus } from "@/lib/types";
 
@@ -80,18 +81,24 @@ export async function createPilotCommuneAction(
   const centroidLng = geo?.centre.coordinates[0] ?? data.centroidLng;
   const centroidLat = geo?.centre.coordinates[1] ?? data.centroidLat;
 
+  const insertPayload: Record<string, unknown> = {
+    insee_code: data.inseeCode,
+    name,
+    postcode,
+    department,
+    centroid_lat: centroidLat,
+    centroid_lng: centroidLng,
+    access_status: data.accessStatus,
+    settings: { address: data.mairieAddress },
+  };
+
+  if (data.accessStatus === "trial") {
+    insertPayload.trial_access_code = generateTrialCode();
+  }
+
   const { data: inserted, error } = await supabase
     .from("communes")
-    .insert({
-      insee_code: data.inseeCode,
-      name,
-      postcode,
-      department,
-      centroid_lat: centroidLat,
-      centroid_lng: centroidLng,
-      access_status: data.accessStatus,
-      settings: { address: data.mairieAddress },
-    })
+    .insert(insertPayload)
     .select("id")
     .single();
 
@@ -112,9 +119,24 @@ export async function setCommuneAccessStatus(
   await requirePlatformAdmin();
 
   const supabase = await createClient();
+
+  const updatePayload: Record<string, unknown> = { access_status: status };
+
+  if (status === "trial") {
+    const { data: existing } = await supabase
+      .from("communes")
+      .select("trial_access_code")
+      .eq("id", communeId)
+      .single();
+
+    if (!existing?.trial_access_code) {
+      updatePayload.trial_access_code = generateTrialCode();
+    }
+  }
+
   const { error } = await supabase
     .from("communes")
-    .update({ access_status: status })
+    .update(updatePayload)
     .eq("id", communeId);
 
   if (error) {

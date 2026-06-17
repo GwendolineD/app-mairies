@@ -7,6 +7,7 @@ import type { BanFeature } from "@/lib/ban/client";
 import { searchAddresses, searchMunicipalities } from "@/lib/ban/client";
 import { joinCommune, switchCommune } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
+import { FormField, Input } from "@/components/ui/form-field";
 import { Modal } from "@/components/ui/modal";
 import type { Commune, Membership } from "@/lib/types";
 
@@ -30,6 +31,8 @@ export function JoinCommuneModal({
   const [step, setStep] = useState<"commune" | "address" | "interest">("commune");
   const [communeMeta, setCommuneMeta] = useState<BanFeature | null>(null);
   const [lookupCommune, setLookupCommune] = useState<Commune | null>(null);
+  const [communeIsTrial, setCommuneIsTrial] = useState(false);
+  const [trialAccessCode, setTrialAccessCode] = useState("");
   const [lookupLoading, setLookupLoading] = useState(false);
   const [interestOpen, setInterestOpen] = useState(false);
   const [addr, setAddr] = useState({
@@ -50,6 +53,8 @@ export function JoinCommuneModal({
     setStep("commune");
     setCommuneMeta(null);
     setLookupCommune(null);
+    setCommuneIsTrial(false);
+    setTrialAccessCode("");
     setAddr({ label: "", city: "", postcode: "", lat: 0, lng: 0 });
     setInterestOpen(false);
   }, []);
@@ -84,11 +89,13 @@ export function JoinCommuneModal({
       const row = json.commune ?? null;
       setLookupCommune(row);
 
-      if (!row || row.access_status !== "active") {
+      if (!row || (row.access_status !== "active" && row.access_status !== "trial")) {
         setStep("interest");
         setInterestOpen(true);
         return;
       }
+
+      setCommuneIsTrial(row.access_status === "trial");
 
       setAddr({
         label: "",
@@ -170,11 +177,34 @@ export function JoinCommuneModal({
               className="space-y-3"
             >
               <input type="hidden" name="inseeCode" value={citycode} />
+              <input type="hidden" name="trialAccessCode" value={trialAccessCode} />
               <input type="hidden" name="addressCity" value={addr.city} />
               <input type="hidden" name="addressCitycode" value={citycode} />
               <input type="hidden" name="addressPostcode" value={addr.postcode} />
               <input type="hidden" name="addressLat" value={String(addr.lat)} />
               <input type="hidden" name="addressLng" value={String(addr.lng)} />
+
+              {communeIsTrial ? (
+                <FormField label="Code d'accès essai">
+                  <Input
+                    autoComplete="off"
+                    placeholder="VL-XXXXX"
+                    value={trialAccessCode}
+                    onChange={(e) =>
+                      setTrialAccessCode(e.target.value.toUpperCase())
+                    }
+                  />
+                  {joinState?.error?.trialAccessCode?.length ? (
+                    <p className="mt-1 text-xs font-medium text-coral" role="alert">
+                      {joinState.error.trialAccessCode[0]}
+                    </p>
+                  ) : null}
+                  <p className="mt-1 text-[11px] text-muted">
+                    Cette commune est en période d&apos;essai. Entrez le code
+                    communiqué par la mairie.
+                  </p>
+                </FormField>
+              ) : null}
 
               {joinState?.error?.form?.map((msg) => (
                 <p key={msg} role="alert" className="text-xs text-coral">

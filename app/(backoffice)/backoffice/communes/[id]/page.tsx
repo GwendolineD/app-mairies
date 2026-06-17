@@ -8,6 +8,7 @@ import {
 } from "@/components/features/backoffice/backoffice-list-toolbar";
 import { CommuneDetailHeader } from "@/components/features/backoffice/commune-detail-header";
 import { CommuneSubscriptionSection } from "@/components/features/backoffice/commune-subscription-section";
+import { CommuneTrialSection } from "@/components/features/backoffice/commune-trial-section";
 import { CommuneWelcomeMessageEditor } from "@/components/features/backoffice/commune-welcome-message-editor";
 import { MembershipStatusBadge } from "@/components/features/backoffice/membership-status-badge";
 import { HistoryBackLink } from "@/components/ui/history-back-link";
@@ -141,6 +142,14 @@ export default async function BackofficeCommuneDetailPage(props: {
           </Card>
         </div>
       </div>
+
+      <CommuneTrialSection
+        communeId={stats.commune.id}
+        accessStatus={stats.commune.access_status}
+        trialAccessCode={stats.commune.trial_access_code}
+        trialMaxMembers={stats.commune.trial_max_members}
+        currentMembersCount={stats.activeMembersCount}
+      />
 
       <CommuneSubscriptionSection
         communeId={stats.commune.id}
