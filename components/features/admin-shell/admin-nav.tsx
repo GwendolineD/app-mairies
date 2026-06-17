@@ -21,6 +21,7 @@ import {
   LayoutDashboard,
   Mail,
   Settings,
+  Sparkles,
   Tags,
   Users,
   type LucideIcon,
@@ -37,6 +38,7 @@ const ADMIN_NAV_ICONS: Record<AdminNavItem["icon"], LucideIcon> = {
   flame: Flame,
   "credit-card": CreditCard,
   tags: Tags,
+  sparkles: Sparkles,
 };
 
 type NavLinkProps = {
