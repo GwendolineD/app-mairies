@@ -43,6 +43,27 @@ const CONTEXT_ICONS = {
   event: CalendarDays,
 } as const;
 
+const CONTEXT_TABLES: Record<ConversationContextType, string> = {
+  announcement: "announcements",
+  initiative: "initiatives",
+  event: "events",
+};
+
+async function fetchContextPhotoUrl(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  contextType: ConversationContextType | null,
+  contextId: string | null,
+): Promise<string | null> {
+  if (!contextType || !contextId) return null;
+  const table = CONTEXT_TABLES[contextType];
+  const { data } = await supabase
+    .from(table)
+    .select("photo_url")
+    .eq("id", contextId)
+    .maybeSingle();
+  return (data as { photo_url: string | null } | null)?.photo_url ?? null;
+}
+
 /**
  * Server component for the right pane on `/messages/[id]`.
  *
@@ -105,7 +126,7 @@ export async function ConversationPane({
       ? conversation.participant_b
       : conversation.participant_a;
 
-  const [{ data: otherProfileRow }, messages] = await Promise.all([
+  const [{ data: otherProfileRow }, messages, contextPhotoUrl] = await Promise.all([
     otherUserId
       ? supabase
           .from("profiles")
@@ -114,6 +135,11 @@ export async function ConversationPane({
           .maybeSingle()
       : Promise.resolve({ data: null }),
     listConversationMessages(supabase, conversationId),
+    fetchContextPhotoUrl(
+      supabase,
+      conversation.context_type,
+      conversation.context_id,
+    ),
   ]);
 
   const otherProfile = (otherProfileRow ?? null) as OtherProfile | null;
@@ -151,11 +177,11 @@ export async function ConversationPane({
           >
             <ArrowLeft className="size-5" aria-hidden />
           </Link>
-          <Avatar name={otherName} url={otherProfile?.avatar_url ?? null} />
+          <ContextPhoto
+            url={contextPhotoUrl}
+            title={conversation.title}
+          />
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-text">
-              {otherName}
-            </p>
             {conversation.title ? (
               <p className="flex items-center gap-1 truncate text-[11px] font-semibold uppercase tracking-wide text-purple">
                 {ContextIcon ? (
@@ -164,6 +190,15 @@ export async function ConversationPane({
                 <span className="truncate">{conversation.title}</span>
               </p>
             ) : null}
+            <div className="mt-0.5 flex items-center gap-1.5">
+              <SmallAvatar
+                name={otherName}
+                url={otherProfile?.avatar_url ?? null}
+              />
+              <p className="truncate text-xs font-medium text-muted">
+                {otherName}
+              </p>
+            </div>
           </div>
         </div>
         {contextHref && contextLabel ? (
@@ -187,14 +222,32 @@ export async function ConversationPane({
   );
 }
 
-function Avatar({ name, url }: { name: string; url: string | null }) {
+function ContextPhoto({ url, title }: { url: string | null; title: string | null }) {
   if (url) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={url}
         alt=""
-        className="size-10 shrink-0 rounded-full border border-border object-cover"
+        className="block size-10 shrink-0 rounded-sm border border-border object-cover"
+      />
+    );
+  }
+  return (
+    <div className="flex size-10 shrink-0 items-center justify-center rounded-sm bg-soft-pink text-sm font-bold text-purple">
+      {title?.[0]?.toUpperCase() || "?"}
+    </div>
+  );
+}
+
+function SmallAvatar({ name, url }: { name: string; url: string | null }) {
+  if (url) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={url}
+        alt=""
+        className="block size-5 shrink-0 rounded-full border border-border object-cover"
       />
     );
   }
@@ -206,8 +259,8 @@ function Avatar({ name, url }: { name: string; url: string | null }) {
     .join("")
     .toUpperCase();
   return (
-    <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-soft-pink text-sm font-bold text-purple">
-      {initials || "?"}
+    <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-soft-pink text-[9px] font-bold text-purple">
+      {initials?.[0] || "?"}
     </div>
   );
 }

@@ -3,10 +3,11 @@ import { cn } from "@/lib/utils/cn";
 type Props = {
   children: React.ReactNode;
   className?: string;
-  gap?: "4" | "5" | "6";
+  gap?: "2" | "4" | "5" | "6";
 };
 
 const gapClass = {
+  "2": "gap-2",
   "4": "gap-4",
   "5": "gap-5",
   "6": "gap-6",

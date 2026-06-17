@@ -22,7 +22,7 @@ export default async function ConversationDetailPage(props: {
   const communeId = ctx.activeMembership!.commune_id;
 
   return (
-    <PageStack gap="4">
+    <PageStack gap="2">
       <PageHeading
         title="Messages"
         subtitle="Vos échanges autour des annonces, initiatives et événements."

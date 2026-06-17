@@ -295,6 +295,40 @@ export async function restoreConversation(conversationId: string) {
   return { success: true };
 }
 
+/**
+ * Permanently delete a conversation for the current user.
+ * Removes the user's participation record. If both participants have deleted,
+ * the conversation and its messages are fully removed.
+ */
+export async function permanentlyDeleteConversation(conversationId: string) {
+  const ctx = await requireActiveMembership();
+  const supabase = await createClient();
+
+  // Remove user's participation
+  const { error: delError } = await supabase
+    .from("conversation_participants")
+    .delete()
+    .eq("conversation_id", conversationId)
+    .eq("user_id", ctx.userId);
+
+  if (delError) return { error: delError.message };
+
+  // Check if any participants remain
+  const { count } = await supabase
+    .from("conversation_participants")
+    .select("*", { count: "exact", head: true })
+    .eq("conversation_id", conversationId);
+
+  // If no participants left, delete the conversation (messages cascade)
+  if (count === 0) {
+    await supabase.from("messages").delete().eq("conversation_id", conversationId);
+    await supabase.from("conversations").delete().eq("id", conversationId);
+  }
+
+  revalidatePath(ROUTES.messages.list);
+  return { success: true };
+}
+
 export async function createNeighborInvite(formData: FormData): Promise<void> {
   const ctx = await requireActiveMembership();
 

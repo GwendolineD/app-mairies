@@ -1,13 +1,13 @@
-import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import { requireActiveMembership } from "@/lib/auth/session";
+import { createClient } from "@/lib/supabase/server";
+import { listMyConversations } from "@/lib/queries/messages";
+import { ROUTES } from "@/lib/constants/routes";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
 import { MessagesShell } from "@/components/features/messages-shell";
-import { MessagesInboxAsync } from "@/components/features/messages-inbox-async";
-import {
-  ConversationEmptyState,
-  MessagesInboxSkeleton,
-} from "@/components/features/messages-skeletons";
+import { MessagesInboxList } from "@/components/features/messages-inbox-list";
+import { ConversationEmptyState } from "@/components/features/messages-skeletons";
 
 export default async function MessagesListePage(props: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -15,13 +15,22 @@ export default async function MessagesListePage(props: {
   const sp = (await props.searchParams) ?? {};
   const view = sp.vue === "corbeille" ? "archived" : "active";
 
-  // We render the shell + skeletons immediately. Auth resolution happens
-  // upstream in the layout so we just need the userId/communeId here.
   const ctx = await requireActiveMembership();
   const communeId = ctx.activeMembership!.commune_id;
 
+  const supabase = await createClient();
+  const conversations = await listMyConversations(supabase, communeId, {
+    archived: view === "archived",
+  });
+
+  // Auto-select the first conversation if there are any
+  if (conversations.length > 0) {
+    const suffix = view === "archived" ? "?vue=corbeille" : "";
+    redirect(ROUTES.messages.detail(conversations[0].conversation_id) + suffix);
+  }
+
   return (
-    <PageStack gap="4">
+    <PageStack gap="2">
       <PageHeading
         title="Messages"
         subtitle="Vos échanges autour des annonces, initiatives et événements."
@@ -29,13 +38,11 @@ export default async function MessagesListePage(props: {
       <MessagesShell
         mode="list"
         list={
-          <Suspense fallback={<MessagesInboxSkeleton />}>
-            <MessagesInboxAsync
-              communeId={communeId}
-              userId={ctx.userId}
-              view={view}
-            />
-          </Suspense>
+          <MessagesInboxList
+            conversations={conversations}
+            view={view}
+            currentUserId={ctx.userId}
+          />
         }
         pane={<ConversationEmptyState />}
       />

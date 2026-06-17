@@ -214,6 +214,7 @@ export type ConversationInboxItem = {
   context_type: ConversationContextType | null;
   context_id: string | null;
   title: string | null;
+  context_photo_url: string | null;
   updated_at: string;
   last_message_at: string | null;
   last_message_preview: string | null;
