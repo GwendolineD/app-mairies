@@ -1,27 +1,9 @@
-import { BackLink } from "@/components/ui/back-link";
+import { Card } from "@/components/ui/card";
 import { PageStack } from "@/components/ui/page-stack";
-import { ROUTES } from "@/lib/constants/routes";
-import {
-  AnnouncementContactSkeleton,
-  AnnouncementLocationSkeleton,
-  AnnouncementMainSkeleton,
-  SimilarAnnouncementsSkeleton,
-} from "./_components/skeletons";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Loading() {
   return (
-<<<<<<< HEAD
-    <PageStack gap="5">
-      <BackLink href={ROUTES.annonces.list}>← Retour aux annonces</BackLink>
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="min-w-0">
-          <AnnouncementMainSkeleton />
-        </div>
-        <aside className="flex flex-col gap-5">
-          <AnnouncementContactSkeleton />
-          <AnnouncementLocationSkeleton />
-          <SimilarAnnouncementsSkeleton />
-=======
     <PageStack gap="5" className="pb-28 md:pb-0">
       <Skeleton className="h-5 w-44" />
 
@@ -85,7 +67,6 @@ export default function Loading() {
               ))}
             </div>
           </Card>
->>>>>>> preprod
         </aside>
       </div>
     </PageStack>
