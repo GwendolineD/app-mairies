@@ -7,15 +7,28 @@ import type { AgendaEventRecord } from "@/lib/types";
 import type { EventListParams } from "@/lib/utils/search-params";
 import { Card } from "@/components/ui/card";
 import { ListGrid, PageStack } from "@/components/ui/page-stack";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useCreationModals } from "@/components/features/creation-modal-context";
 import { EventListToolbar, EventPagination } from "@/components/features/event-list-toolbar";
-import { EventCard, EventMapCard } from "@/components/features/event-card";
+import { EventCard } from "@/components/features/event-card";
 import { EVENTS_PAGE_SIZE } from "@/lib/queries/events";
 
 const MapContentView = dynamic(
   () =>
     import("@/components/features/map-content-view").then((m) => m.MapContentView),
-  { ssr: false, loading: () => <Card className="h-[420px] animate-pulse bg-warm" /> },
+  {
+    ssr: false,
+    loading: () => (
+      <div className="space-y-4">
+        <Skeleton className="h-[420px] w-full rounded-lg md:h-[520px]" />
+        <div className="flex gap-3 overflow-hidden">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-52 w-52 shrink-0 rounded-xl md:w-56" />
+          ))}
+        </div>
+      </div>
+    ),
+  },
 );
 
 type MapMarker = {
@@ -33,6 +46,7 @@ type Props = {
   mapCenter: [number, number];
   mapItems: AgendaEventRecord[];
   mapMarkers: MapMarker[];
+  hasUserAddress: boolean;
 };
 
 export function EvenementsPageClient({
@@ -42,6 +56,7 @@ export function EvenementsPageClient({
   mapCenter,
   mapItems,
   mapMarkers,
+  hasUserAddress,
 }: Props) {
   const { openEventModal } = useCreationModals();
 
@@ -73,12 +88,10 @@ export function EvenementsPageClient({
       {params.vue === "carte" ? (
         <MapContentView
           markers={markers}
+          eventItems={mapItems}
           center={mapCenter}
-          renderPopup={(markerId) => {
-            const event = mapItems.find((e) => e.id === markerId);
-            if (!event) return null;
-            return <EventMapCard event={event} />;
-          }}
+          showUserPin={hasUserAddress}
+          carouselTitle="Événements autour de vous"
         />
       ) : items.length === 0 ? (
         <EventsEmptyState />

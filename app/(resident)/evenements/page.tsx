@@ -43,6 +43,10 @@ export default async function EvenementsListePage(props: {
     ctx.activeMembership!.commune?.centroid_lng ??
     2.3522;
 
+  const hasUserAddress =
+    ctx.activeMembership!.address_lat != null &&
+    ctx.activeMembership!.address_lng != null;
+
   if (params.vue === "carte") {
     const [mapItems, rawMarkers, { totalCount }] = await Promise.all([
       listEventMapItems(supabase, filters),
@@ -59,6 +63,7 @@ export default async function EvenementsListePage(props: {
         mapCenter={[userLat, userLng]}
         mapItems={mapItems}
         mapMarkers={mapMarkers}
+        hasUserAddress={hasUserAddress}
       />
     );
   }
@@ -78,6 +83,7 @@ export default async function EvenementsListePage(props: {
       mapCenter={[userLat, userLng]}
       mapItems={[]}
       mapMarkers={[]}
+      hasUserAddress={hasUserAddress}
     />
   );
 }
