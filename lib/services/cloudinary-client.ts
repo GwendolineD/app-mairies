@@ -13,10 +13,12 @@ export class CloudinaryUploadError extends Error {
 export async function uploadImageToCloudinary(
   file: File,
   contentType: UploadContentType,
+  publicId?: string,
 ): Promise<string> {
   const fd = new FormData();
   fd.append("file", file);
   fd.append("contentType", contentType);
+  if (publicId) fd.append("publicId", publicId);
 
   const res = await fetch("/api/uploads/cloudinary", {
     method: "POST",

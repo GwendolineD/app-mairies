@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {
-  Bell,
+  CalendarDays,
   HeartHandshake,
   LayoutGrid,
   Megaphone,
@@ -11,9 +11,9 @@ import { ROUTES } from "@/lib/constants/routes";
 import { cn } from "@/lib/utils/cn";
 
 export const PROFILE_TABS = [
-  { key: "activite", label: "Activité", icon: Bell },
   { key: "annonces", label: "Annonces", icon: Megaphone },
   { key: "initiatives", label: "Initiatives", icon: LayoutGrid },
+  { key: "evenements", label: "Événements", icon: CalendarDays },
   { key: "participations", label: "Participations", icon: HeartHandshake },
   { key: "parametres", label: "Paramètres", icon: Settings },
 ] as const;

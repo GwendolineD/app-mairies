@@ -414,6 +414,23 @@ export async function createNeighborInvite(
     inviteLink,
   });
 
+  // Send the invitation email via SMTP (best-effort)
+  const { sendEmail } = await import("@/lib/email/send-email");
+  const htmlBody = rendered.body
+    .split("\n")
+    .map((line: string) => (line.trim() ? `<p>${line}</p>` : ""))
+    .join("");
+  const emailResult = await sendEmail({
+    to: email,
+    subject: rendered.subject,
+    html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;color:#252630;max-width:600px;margin:0 auto;padding:20px">${htmlBody}</div>`,
+    text: rendered.body,
+  });
+
+  if (!emailResult.success) {
+    console.error("[createNeighborInvite] email send failed", emailResult.error);
+  }
+
   revalidatePath(ROUTES.profil);
   return {
     success: true,

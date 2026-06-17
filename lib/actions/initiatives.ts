@@ -72,6 +72,14 @@ export async function createInitiative(formData: FormData): Promise<void> {
 
   if (error || !created) return;
   revalidatePath(ROUTES.initiatives.list);
+  revalidatePath(ROUTES.profil);
+
+  void supabase.rpc("increment_membership_counter", {
+    p_membership_id: membership.id,
+    p_column_name: "total_initiatives_published",
+  }).then(({ error: rpcErr }) => {
+    if (rpcErr) console.error("[createInitiative] counter increment failed", rpcErr.message);
+  });
 
   void fanoutNewContentNotification({
     contextType: "initiative",

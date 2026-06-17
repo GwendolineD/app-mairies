@@ -47,6 +47,14 @@ export async function createEvent(formData: FormData): Promise<void> {
 
   if (error || !created) return;
   revalidatePath(ROUTES.evenements.list);
+  revalidatePath(ROUTES.profil);
+
+  void supabase.rpc("increment_membership_counter", {
+    p_membership_id: membership.id,
+    p_column_name: "total_events_published",
+  }).then(({ error: rpcErr }) => {
+    if (rpcErr) console.error("[createEvent] counter increment failed", rpcErr.message);
+  });
 
   void fanoutNewContentNotification({
     contextType: "event",

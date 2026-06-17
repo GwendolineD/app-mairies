@@ -155,6 +155,9 @@ export type Membership = {
   status: MembershipStatus;
   suspended_at: string | null;
   suspension_reason: string | null;
+  total_announcements_published: number;
+  total_initiatives_published: number;
+  total_events_published: number;
   created_at: string;
   updated_at: string;
   commune?: Commune;

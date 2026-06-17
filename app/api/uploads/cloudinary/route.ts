@@ -74,9 +74,17 @@ export async function POST(request: Request) {
     }
 
     const folder = buildCloudinaryFolder(uploadEnv, contentType, ctx.userId);
+    const customPublicId = (formData.get("publicId") as string) || undefined;
+    const isOverwrite = contentType === "avatar";
     const timestamp = Math.floor(Date.now() / 1000);
 
-    const paramsToSign = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
+    const signParts = [`folder=${folder}`];
+    if (isOverwrite) signParts.push("overwrite=true");
+    if (customPublicId) signParts.push(`public_id=${customPublicId}`);
+    signParts.push(`timestamp=${timestamp}`);
+    signParts.sort();
+    const paramsToSign = `${signParts.join("&")}${apiSecret}`;
+
     const encoder = new TextEncoder();
     const hashBuffer = await crypto.subtle.digest("SHA-1", encoder.encode(paramsToSign));
     const signature = Array.from(new Uint8Array(hashBuffer))
@@ -89,6 +97,8 @@ export async function POST(request: Request) {
     uploadForm.append("timestamp", String(timestamp));
     uploadForm.append("signature", signature);
     uploadForm.append("folder", folder);
+    if (customPublicId) uploadForm.append("public_id", customPublicId);
+    if (isOverwrite) uploadForm.append("overwrite", "true");
 
     const uploadRes = await fetch(
       `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
