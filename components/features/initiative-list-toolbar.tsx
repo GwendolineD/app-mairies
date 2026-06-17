@@ -22,6 +22,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils/cn";
+import { InfoPopover } from "@/components/features/onboarding/info-popover";
 
 type Props = {
   params: InitiativeListParams;
@@ -101,15 +102,21 @@ export function InitiativeListToolbar({
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold leading-7 text-text md:hidden">
-        Toutes les initiatives
-      </h1>
+      <div className="flex items-center gap-2 md:hidden">
+        <h1 className="text-xl font-bold leading-7 text-text">
+          Toutes les initiatives
+        </h1>
+        <InfoPopover slide="initiatives" />
+      </div>
 
       <div className="hidden flex-wrap items-start justify-between gap-3 md:flex">
         <div className="space-y-1">
-          <h1 className="text-[28px] font-bold leading-9 text-text">
-            Toutes les initiatives
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-[28px] font-bold leading-9 text-text">
+              Toutes les initiatives
+            </h1>
+            <InfoPopover slide="initiatives" />
+          </div>
           <p className="text-sm font-medium leading-5 text-muted">
             Découvrez les idées proposées par les habitants pour faire évoluer la commune.
           </p>

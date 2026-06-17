@@ -3,6 +3,7 @@
 import { Suspense } from "react";
 import { CreationModalProvider } from "@/components/features/creation-modal-context";
 import { CreationModalHost } from "@/components/features/creation-modal-host";
+import { OnboardingModalHost } from "@/components/features/onboarding/onboarding-modal-host";
 import { initCategories } from "@/lib/constants/announcement-categories";
 import { initInitiativeEventCategories } from "@/lib/constants/initiative-categories";
 import type {
@@ -16,6 +17,8 @@ type Props = {
   membershipAddress: MembershipAddress;
   announcementCategoryRows: AnnouncementCategoryRow[];
   initiativeCategoryRows: InitiativeEventCategoryRow[];
+  hasSeenOnboarding: boolean;
+  communeName: string;
   children: React.ReactNode;
 };
 
@@ -24,10 +27,10 @@ export function ResidentShellClient({
   membershipAddress,
   announcementCategoryRows,
   initiativeCategoryRows,
+  hasSeenOnboarding,
+  communeName,
   children,
 }: Props) {
-  // Server layouts init these caches for RSC; client components need the same
-  // DB rows synced here because module state is not shared across the boundary.
   initCategories(announcementCategoryRows);
   initInitiativeEventCategories(initiativeCategoryRows);
 
@@ -40,6 +43,10 @@ export function ResidentShellClient({
           membershipAddress={membershipAddress}
         />
       </Suspense>
+      <OnboardingModalHost
+        hasSeenOnboarding={hasSeenOnboarding}
+        communeName={communeName}
+      />
     </CreationModalProvider>
   );
 }

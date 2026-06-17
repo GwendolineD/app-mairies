@@ -34,6 +34,7 @@ export type Profile = {
   avatar_url: string | null;
   active_commune_id: string | null;
   is_platform_admin: boolean;
+  has_seen_onboarding: boolean;
 };
 
 export type ParticipantProfile = Pick<

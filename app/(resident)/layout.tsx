@@ -51,6 +51,8 @@ export default async function ResidentRootLayout({
             membershipAddress={membershipToAddress(ctx.activeMembership!)}
             announcementCategoryRows={categoryRows}
             initiativeCategoryRows={initiativeCategoryRows}
+            hasSeenOnboarding={ctx.profile.has_seen_onboarding ?? false}
+            communeName={ctx.activeMembership!.commune?.name ?? "votre commune"}
           >
             {children}
           </ResidentShellClient>
