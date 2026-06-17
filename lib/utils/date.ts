@@ -32,26 +32,6 @@ export function formatEventDetail(start: string, end: string): string {
   }
 }
 
-<<<<<<< HEAD
-// Community content is scheduled and displayed in French local time,
-// regardless of the server timezone (which is UTC in production/CI).
-const PARIS_TZ = "Europe/Paris";
-
-const WEEKDAY_DATE: Intl.DateTimeFormatOptions = {
-  weekday: "long",
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-  timeZone: PARIS_TZ,
-};
-
-function capitalize(value: string): string {
-  return value.charAt(0).toUpperCase() + value.slice(1);
-}
-
-/** "Samedi 15 juin 2025" */
-export function formatLongDateFr(value: string): string | null {
-=======
 export function formatShortDate(iso: string): string {
   try {
     return formatFr(new Date(iso), { dateStyle: "medium" });
@@ -60,154 +40,34 @@ export function formatShortDate(iso: string): string {
   }
 }
 
-export function formatRelativeTime(iso: string): string {
->>>>>>> preprod
+export function formatLinkedEventDateTime(iso: string): string {
   try {
-    return capitalize(formatFr(new Date(value), WEEKDAY_DATE));
-  } catch {
-    return null;
-  }
-}
-
-/** "9h00" */
-export function formatTimeFr(value: string): string | null {
-  try {
-    const parts = new Intl.DateTimeFormat("fr-FR", {
-      hour: "numeric",
-      minute: "2-digit",
-      hourCycle: "h23",
-      timeZone: PARIS_TZ,
-    }).formatToParts(new Date(value));
-    const hour = parts.find((p) => p.type === "hour")?.value ?? "";
-    const minute = parts.find((p) => p.type === "minute")?.value ?? "00";
-    if (!hour) return null;
-    return `${parseInt(hour, 10)}h${minute}`;
-  } catch {
-    return null;
-  }
-}
-
-/** Short, human temporality label for an initiative card. */
-export function formatInitiativeWhen(
-  dateMode: string,
-  startsAt: string | null,
-): string {
-  if (dateMode === "once" && startsAt) {
-    return formatLongDateFr(startsAt) ?? "Date à confirmer";
-  }
-  if (dateMode === "recurring") return "Rendez-vous récurrent";
-  return "À tout moment";
-}
-
-const RELATIVE_DIVISIONS: { amount: number; unit: Intl.RelativeTimeFormatUnit }[] = [
-  { amount: 60, unit: "second" },
-  { amount: 60, unit: "minute" },
-  { amount: 24, unit: "hour" },
-  { amount: 7, unit: "day" },
-  { amount: 4.34524, unit: "week" },
-  { amount: 12, unit: "month" },
-  { amount: Number.POSITIVE_INFINITY, unit: "year" },
-];
-
-/** Compact relative time, eg "il y a 3 h" / "il y a 2 j". */
-export function formatRelativeTime(iso: string, now: Date = new Date()): string {
-  try {
-    const formatter = new Intl.RelativeTimeFormat("fr-FR", { numeric: "auto" });
-    let duration = (new Date(iso).getTime() - now.getTime()) / 1000;
-    for (const division of RELATIVE_DIVISIONS) {
-      if (Math.abs(duration) < division.amount) {
-        return formatter.format(Math.round(duration), division.unit);
-      }
-      duration /= division.amount;
-    }
-    return formatter.format(Math.round(duration), "year");
-  } catch {
-    return "récemment";
-  }
-}
-
-/** Month + year label, eg "juin 2026" — used for "Membre depuis". */
-export function formatMonthYear(iso: string): string {
-  try {
-    return formatFr(new Date(iso), { month: "long", year: "numeric" });
-  } catch {
-    return "";
-  }
-}
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-/** Compact timestamp for inbox rows (time today, "Hier", weekday, then date). */
-export function formatConversationTimestamp(value: string): string {
-  try {
-    const date = new Date(value);
-    const now = new Date();
-    if (date.toDateString() === now.toDateString()) {
-      return formatFr(date, TIME_SHORT);
-    }
-    const yesterday = new Date(now.getTime() - DAY_MS);
-    if (date.toDateString() === yesterday.toDateString()) return "Hier";
-    if (now.getTime() - date.getTime() < 7 * DAY_MS) {
-      return new Intl.DateTimeFormat("fr-FR", { weekday: "long" }).format(date);
-    }
-    return new Intl.DateTimeFormat("fr-FR", {
-      day: "2-digit",
-      month: "2-digit",
-    }).format(date);
-  } catch {
-    return "";
-  }
-}
-
-/** Time-only label shown under each chat bubble. */
-export function formatMessageTime(value: string): string {
-  try {
-    return formatFr(new Date(value), TIME_SHORT);
-  } catch {
-    return "";
-  }
-}
-
-/** Human day separator inserted between message groups. */
-export function formatMessageDaySeparator(value: string): string {
-  try {
-    const date = new Date(value);
-    const now = new Date();
-    if (date.toDateString() === now.toDateString()) return "Aujourd'hui";
-    const yesterday = new Date(now.getTime() - DAY_MS);
-    if (date.toDateString() === yesterday.toDateString()) return "Hier";
-    return new Intl.DateTimeFormat("fr-FR", {
-      weekday: "long",
+    return formatFr(new Date(iso), {
       day: "numeric",
       month: "long",
-    }).format(date);
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   } catch {
     return "";
   }
 }
 
-const DATE_DAY: Intl.DateTimeFormatOptions = { dateStyle: "medium" };
-const MONTH_SHORT: Intl.DateTimeFormatOptions = {
-  month: "short",
-  year: "2-digit",
-};
-
-/** Short day date, e.g. "8 juin 2026". Returns "—" on invalid input. */
-export function formatDay(value: string | null | undefined): string {
-  if (!value) return "—";
+export function formatRelativeTime(iso: string): string {
   try {
-    return formatFr(new Date(value), DATE_DAY);
+    const date = new Date(iso);
+    const diffMs = Date.now() - date.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return "à l'instant";
+    if (diffMin < 60) return `il y a ${diffMin} min`;
+    const diffH = Math.floor(diffMin / 60);
+    if (diffH < 24) return `il y a ${diffH} h`;
+    const diffD = Math.floor(diffH / 24);
+    if (diffD < 7) return `il y a ${diffD} j`;
+    return formatFr(date, { dateStyle: "medium" });
   } catch {
-    return "—";
-  }
-}
-
-/** Compact month label for chart axes, e.g. "juin 26". */
-export function formatMonthShort(value: string): string {
-  try {
-    return formatFr(new Date(value), MONTH_SHORT).replace(".", "");
-  } catch {
-    return value;
+    return "";
   }
 }
 

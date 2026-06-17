@@ -1,20 +1,13 @@
-import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import { requireActiveMembership } from "@/lib/auth/session";
-<<<<<<< HEAD
-import { PageStack } from "@/components/ui/page-stack";
-import { PageHeading } from "@/components/ui/page-heading";
-import { ConversationList } from "@/components/features/messaging/conversation-list";
-import { ConversationListSkeleton } from "@/components/features/messaging/conversation-list-skeleton";
-=======
+import { createClient } from "@/lib/supabase/server";
+import { listMyConversations } from "@/lib/queries/messages";
+import { ROUTES } from "@/lib/constants/routes";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
 import { MessagesShell } from "@/components/features/messages-shell";
-import { MessagesInboxAsync } from "@/components/features/messages-inbox-async";
-import {
-  ConversationEmptyState,
-  MessagesInboxSkeleton,
-} from "@/components/features/messages-skeletons";
->>>>>>> preprod
+import { MessagesInboxList } from "@/components/features/messages-inbox-list";
+import { ConversationEmptyState } from "@/components/features/messages-skeletons";
 
 export default async function MessagesListePage(props: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -22,38 +15,37 @@ export default async function MessagesListePage(props: {
   const sp = (await props.searchParams) ?? {};
   const view = sp.vue === "corbeille" ? "archived" : "active";
 
-  // We render the shell + skeletons immediately. Auth resolution happens
-  // upstream in the layout so we just need the userId/communeId here.
   const ctx = await requireActiveMembership();
   const communeId = ctx.activeMembership!.commune_id;
 
+  const supabase = await createClient();
+  const conversations = await listMyConversations(supabase, communeId, {
+    archived: view === "archived",
+  });
+
+  // Auto-select the first conversation if there are any
+  if (conversations.length > 0) {
+    const suffix = view === "archived" ? "?vue=corbeille" : "";
+    redirect(ROUTES.messages.detail(conversations[0].conversation_id) + suffix);
+  }
+
   return (
-    <PageStack gap="4">
+    <PageStack gap="2">
       <PageHeading
         title="Messages"
-<<<<<<< HEAD
-        subtitle="Vos échanges avec les voisin·es de votre commune."
-      />
-      <Suspense fallback={<ConversationListSkeleton />}>
-        <ConversationList communeId={communeId} currentUserId={ctx.userId} />
-      </Suspense>
-=======
         subtitle="Vos échanges autour des annonces, initiatives et événements."
       />
       <MessagesShell
         mode="list"
         list={
-          <Suspense fallback={<MessagesInboxSkeleton />}>
-            <MessagesInboxAsync
-              communeId={communeId}
-              userId={ctx.userId}
-              view={view}
-            />
-          </Suspense>
+          <MessagesInboxList
+            conversations={conversations}
+            view={view}
+            currentUserId={ctx.userId}
+          />
         }
         pane={<ConversationEmptyState />}
       />
->>>>>>> preprod
     </PageStack>
   );
 }

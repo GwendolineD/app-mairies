@@ -1,12 +1,3 @@
-<<<<<<< HEAD
-import { PageStack } from "@/components/ui/page-stack";
-import { MessageThreadSkeleton } from "@/components/features/messaging/message-thread-skeleton";
-
-export default function MessageThreadLoading() {
-  return (
-    <PageStack gap="4">
-      <MessageThreadSkeleton />
-=======
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
 import { MessagesShell } from "@/components/features/messages-shell";
@@ -27,7 +18,6 @@ export default function Loading() {
         list={<MessagesInboxSkeleton />}
         pane={<ConversationPaneSkeleton />}
       />
->>>>>>> preprod
     </PageStack>
   );
 }

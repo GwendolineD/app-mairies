@@ -3,7 +3,8 @@
 import type { LucideIcon } from "lucide-react";
 import { ChevronDown } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
-import { cn } from "@/lib/utils/cn";
+import { Input } from "@/components/ui/form-field";
+import { cn } from "@/lib/utils";
 import type { BanFeature } from "@/lib/ban/client";
 
 type Props = {
@@ -43,27 +44,17 @@ export function BanAutocomplete({
   formatSuggestion,
 }: Props) {
   const listboxId = useId();
+  const [query, setQuery] = useState(value ?? "");
   const [suggestions, setSuggestions] = useState<BanFeature[]>([]);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
-<<<<<<< HEAD
-  const queryRef = useRef(value ?? "");
-
-  useEffect(() => {
-    if (value === undefined) return;
-    queryRef.current = value;
-    if (inputRef.current) {
-      inputRef.current.value = value;
-=======
   const isFocusedRef = useRef(false);
 
   useEffect(() => {
     if (value !== undefined && !isFocusedRef.current) {
       setQuery(value);
->>>>>>> preprod
     }
   }, [value]);
 
@@ -79,22 +70,14 @@ export function BanAutocomplete({
   }
 
   function selectSuggestion(feature: BanFeature) {
-    const nextQuery = suggestionLabel(feature, formatSuggestion);
-    queryRef.current = nextQuery;
-    if (inputRef.current) {
-      inputRef.current.value = nextQuery;
-    }
+    setQuery(suggestionLabel(feature, formatSuggestion));
     onSelect(feature);
     closeList();
   }
 
   function handleChange(text: string) {
-<<<<<<< HEAD
-    queryRef.current = text;
-=======
     setQuery(text);
     onInputChange?.(text);
->>>>>>> preprod
     setActiveIndex(-1);
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
@@ -106,7 +89,6 @@ export function BanAutocomplete({
   }
 
   async function handleFocus() {
-    const query = queryRef.current;
     if (query.trim().length >= 2) {
       const results = await fetchSuggestions(query);
       setSuggestions(results);
@@ -186,8 +168,7 @@ export function BanAutocomplete({
             aria-hidden
           />
         ) : null}
-        <input
-          ref={inputRef}
+        <Input
           type="text"
           name="autocomplete"
           autoComplete="off"
@@ -198,7 +179,7 @@ export function BanAutocomplete({
           aria-activedescendant={activeOptionId}
           disabled={disabled}
           placeholder={placeholder}
-          defaultValue={value ?? ""}
+          value={query}
           onChange={(e) => handleChange(e.target.value)}
           onFocus={() => {
             isFocusedRef.current = true;
@@ -213,9 +194,8 @@ export function BanAutocomplete({
           }}
           onKeyDown={handleKeyDown}
           className={cn(
-            "w-full rounded-sm border border-border bg-surface py-2.5 text-sm text-text outline-none placeholder:text-subtle focus:border-purple disabled:cursor-not-allowed disabled:opacity-50 md:py-2",
-            LeadingIcon ? "pl-10" : "px-4",
-            showChevron ? "pr-10" : LeadingIcon ? "pr-4" : "px-4",
+            LeadingIcon ? "pl-10" : undefined,
+            showChevron ? "pr-10" : undefined,
             inputClassName,
           )}
         />

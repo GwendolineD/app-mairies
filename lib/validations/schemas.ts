@@ -1,12 +1,6 @@
 import { z } from "zod";
-import { ANNOUNCEMENT_CATEGORIES } from "@/lib/constants/announcement-categories";
+import { ANNOUNCEMENT_CATEGORY_SLUGS } from "@/lib/constants/announcement-categories";
 import { ANNOUNCEMENT_TYPE_SLUGS } from "@/lib/constants/announcement-types";
-import { CONTENT_CATEGORY_SLUGS } from "@/lib/constants/content-categories";
-
-const categorySlugs = ANNOUNCEMENT_CATEGORIES.map((c) => c.slug) as [
-  string,
-  ...string[],
-];
 
 export const passwordSchema = z
   .string()
@@ -59,12 +53,6 @@ export const joinCommuneSchema = z.object({
 
 export const announcementSchema = z.object({
   type: z.enum(ANNOUNCEMENT_TYPE_SLUGS),
-<<<<<<< HEAD
-  categorySlug: z.enum(categorySlugs),
-  title: z.string().min(3).max(120),
-  description: z.string().max(2000).optional(),
-  targetDate: z.string().optional(),
-=======
   categorySlug: z.enum(ANNOUNCEMENT_CATEGORY_SLUGS),
   title: z.string().trim().min(1, "Titre requis").max(70, "Titre trop long (70 caractères max.)"),
   description: z
@@ -81,7 +69,6 @@ export const announcementSchema = z.object({
     .string()
     .optional()
     .transform((v) => (v?.trim() ? v : undefined)),
->>>>>>> preprod
   photoUrl: z.string().url().optional().or(z.literal("")),
   addressStreet: z.string().trim().min(1, "Rue requise"),
   addressCity: z.string().trim().min(1, "Ville requise"),
@@ -95,15 +82,26 @@ export const announcementSchema = z.object({
     .finite("Localisation invalide : sélectionnez une adresse dans la liste."),
 });
 
+import { INITIATIVE_CATEGORY_SLUGS } from "@/lib/constants/initiative-categories";
+
 export const initiativeSchema = z.object({
-  categorySlug: z.enum(CONTENT_CATEGORY_SLUGS),
-  title: z.string().min(3).max(120),
-  description: z.string().max(3000).optional(),
-  dateMode: z.enum(["none", "once", "recurring"]),
-  singleStartsAt: z.string().optional(),
-  singleEndsAt: z.string().optional(),
-  locationLabel: z.string().max(160).optional(),
+  categorySlug: z.enum(INITIATIVE_CATEGORY_SLUGS),
+  title: z.string().min(3).max(70),
+  description: z.string().max(1000).optional(),
   photoUrl: z.string().url().optional().or(z.literal("")),
+  addressStreet: z.string().max(500).optional(),
+  addressCity: z.string().max(200).optional(),
+  addressPostcode: z.string().max(10).optional(),
+  addressCitycode: z.string().max(10).optional(),
+  addressLat: z.coerce.number().optional(),
+  addressLng: z.coerce.number().optional(),
+});
+
+export const createEventFromInitiativeSchema = z.object({
+  initiativeId: z.string().uuid(),
+  startsAt: z.string().min(1, "Date de début requise"),
+  endsAt: z.string().min(1, "Date de fin requise"),
+  volunteersNeeded: z.coerce.number().int().min(0).optional(),
 });
 
 export const eventSchema = z.object({
@@ -111,7 +109,31 @@ export const eventSchema = z.object({
   description: z.string().max(3000).optional(),
   startsAt: z.string(),
   endsAt: z.string(),
-  addressLabel: z.string().max(200).optional(),
+  addressLabel: z.string().max(500).optional(),
+  addressLat: z.number().optional(),
+  addressLng: z.number().optional(),
+});
+
+export const eventModalSchema = z.object({
+  categorySlug: z.enum(INITIATIVE_CATEGORY_SLUGS),
+  title: z.string().trim().min(3, "Titre requis (3 caractères min.)").max(120, "Titre trop long (120 caractères max.)"),
+  description: z.string().max(3000, "Description trop longue (3000 caractères max.)").optional(),
+  photoUrl: z.string().url().optional().or(z.literal("")),
+  startsAt: z.string().min(1, "Date et heure de début requises"),
+  endsAt: z.string().min(1, "Date et heure de fin requises"),
+  volunteersNeeded: z.coerce.number().int().min(0).nullable().optional(),
+  addressStreet: z.string().max(500).optional(),
+  addressCity: z.string().max(200).optional(),
+  addressPostcode: z.string().max(10).optional(),
+  addressCitycode: z.string().max(10).optional(),
+  addressLat: z.coerce.number().optional(),
+  addressLng: z.coerce.number().optional(),
+  sourceInitiativeId: z.string().uuid().optional(),
+});
+
+export const userReportSchema = z.object({
+  reportedUserId: z.string().uuid(),
+  reason: z.string().min(10).max(1000),
 });
 
 export const profileUpdateSchema = z.object({
@@ -124,11 +146,6 @@ export const messageSchema = z.object({
   body: z.string().min(1).max(5000),
 });
 
-<<<<<<< HEAD
-export const userReportSchema = z.object({
-  reportedUserId: z.string().uuid(),
-  reason: z.string().min(10).max(1000),
-=======
 export const notificationPreferencesSchema = z.object({
   notify_message_announcement: z.boolean(),
   notify_message_initiative: z.boolean(),
@@ -143,7 +160,6 @@ export const pushSubscriptionSchema = z.object({
   p256dh: z.string().min(1),
   auth: z.string().min(1),
   userAgent: z.string().max(500).optional(),
->>>>>>> preprod
 });
 
 export const reportSchema = z.object({
@@ -156,35 +172,6 @@ export const appealSchema = z.object({
   message: z.string().min(10).max(2000),
 });
 
-export const suspendMembershipSchema = z.object({
-  membershipId: z.string().uuid(),
-  reason: z.string().max(500).optional(),
-});
-
-export const communeAdminSchema = z.object({
-  name: z.string().min(2, "Nom requis").max(120),
-  inseeCode: z
-    .string()
-    .min(4, "Code INSEE invalide")
-    .max(10, "Code INSEE invalide"),
-  postcode: z.string().max(10).optional().or(z.literal("")),
-  department: z.string().max(120).optional().or(z.literal("")),
-  plan: z.enum(["free", "standard", "premium"]),
-  subscriptionStatus: z.enum(["inactive", "trial", "active", "suspended"]),
-  billingEmail: z
-    .string()
-    .email("Email de facturation invalide")
-    .optional()
-    .or(z.literal("")),
-});
-
-export const paymentAdminSchema = z.object({
-  status: z.enum(["paid", "pending", "failed", "refunded"]),
-  periodStart: z.string().optional().or(z.literal("")),
-  periodEnd: z.string().optional().or(z.literal("")),
-  note: z.string().max(300).optional().or(z.literal("")),
-});
-
 export const communeSettingsSchema = z.object({
   address: z.string().optional(),
   phone: z.string().optional(),
@@ -192,10 +179,6 @@ export const communeSettingsSchema = z.object({
   referentRole: z.string().optional(),
   openingHours: z.string().optional(),
   welcomeMessage: z.string().optional(),
-  neighborInviteSubject: z.string().min(3).max(180),
-  neighborInvitePreheader: z.string().max(280).optional(),
-  neighborInviteBodyMarkdown: z.string().min(20).max(4000),
-  neighborInviteCtaLabel: z.string().min(2).max(80),
 });
 
 export const createPilotCommuneSchema = z.object({

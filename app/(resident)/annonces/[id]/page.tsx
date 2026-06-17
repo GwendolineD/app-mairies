@@ -1,25 +1,7 @@
-<<<<<<< HEAD
-=======
 import { notFound } from "next/navigation";
->>>>>>> preprod
 import { Suspense } from "react";
 import { Calendar } from "lucide-react";
 import { requireActiveMembership } from "@/lib/auth/session";
-<<<<<<< HEAD
-import { ROUTES } from "@/lib/constants/routes";
-import { BackLink } from "@/components/ui/back-link";
-import { PageStack } from "@/components/ui/page-stack";
-import { AnnouncementMain } from "./_components/announcement-main";
-import { AnnouncementContact } from "./_components/announcement-contact";
-import { AnnouncementLocation } from "./_components/announcement-location";
-import { SimilarAnnouncements } from "./_components/similar-announcements";
-import {
-  AnnouncementContactSkeleton,
-  AnnouncementLocationSkeleton,
-  AnnouncementMainSkeleton,
-  SimilarAnnouncementsSkeleton,
-} from "./_components/skeletons";
-=======
 import { listSimilarAnnouncements } from "@/lib/queries/announcements";
 import type { AnnouncementWithAuthor } from "@/lib/queries/announcements";
 import { createClient } from "@/lib/supabase/server";
@@ -44,30 +26,26 @@ import { LinkifiedText } from "@/components/ui/linkified-text";
 import { formatMemberSince, formatRelativeTime } from "@/lib/utils/date";
 import { formatDisplayName } from "@/lib/utils/display-name";
 import { formatShortDate } from "@/lib/utils/format-date";
-import { formatAddressLines } from "@/lib/utils/format-address";
+import { formatAddressLines, resolveAddressPostcode } from "@/lib/utils/format-address";
 import type { AnnouncementEditData } from "@/lib/types";
 import { PageStack } from "@/components/ui/page-stack";
 
+const MAIN_DETAIL_CARD_CLASS =
+  "rounded-none border-0 bg-transparent p-0 !shadow-none";
 const DETAIL_CARD_CLASS =
   "rounded-none border-0 bg-transparent p-0 !shadow-none md:rounded-xl md:border md:border-border/60 md:bg-surface";
+const DESCRIPTION_SECTION_CLASS =
+  "rounded-md border border-border/60 p-4";
 const DETAIL_BADGE_CLASS =
   "h-[22px] px-2.5 py-0 text-[10px] leading-none";
 const DETAIL_TYPE_PASTILLE_CLASS = `${DETAIL_BADGE_CLASS} gap-1 shadow-none [&_svg]:size-3`;
 const DETAIL_CATEGORY_TAG_CLASS = `${DETAIL_BADGE_CLASS} w-fit font-semibold`;
->>>>>>> preprod
 
 export default async function AnnonceDetailPage(props: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await props.params;
   const ctx = await requireActiveMembership();
-<<<<<<< HEAD
-  const membership = ctx.activeMembership!;
-  const communeId = membership.commune_id;
-  const communeName = membership.commune?.name ?? "Votre commune";
-  const fallbackLat = membership.commune?.centroid_lat ?? 46;
-  const fallbackLng = membership.commune?.centroid_lng ?? 2.3;
-=======
   const supabase = await createClient();
 
   const { data } = await supabase
@@ -78,6 +56,7 @@ export default async function AnnonceDetailPage(props: {
         created_at,
         address_street,
         address_city,
+        address_postcode,
         user_id,
         profiles:profiles!memberships_profiles_user_id_fkey(
           display_name, first_name, last_name, avatar_url
@@ -99,6 +78,7 @@ export default async function AnnonceDetailPage(props: {
       created_at: string;
       address_street: string | null;
       address_city: string | null;
+      address_postcode: string | null;
       user_id: string;
       profiles: {
         display_name: string | null;
@@ -125,16 +105,20 @@ export default async function AnnonceDetailPage(props: {
     ? formatMemberSince(ann.author_membership.created_at)
     : "Membre";
 
+  const resolvedPostcode = resolveAddressPostcode(
+    ann.address_postcode,
+    ann.author_membership?.address_postcode,
+  );
+
   const addressLines = formatAddressLines(
     ann.address_street,
-    ann.address_postcode,
+    resolvedPostcode,
     ann.address_city,
   );
 
   const isAuthor = ann.author_membership?.user_id === ctx.userId;
   const contactLabel =
     ann.type === "demande" ? "Je peux aider !" : `Contacter ${authorName.split(" ")[0]}`;
->>>>>>> preprod
 
   const editData: AnnouncementEditData = {
     type: ann.type,
@@ -146,44 +130,18 @@ export default async function AnnonceDetailPage(props: {
     addressStreet: ann.address_street ?? "",
     addressCity: ann.address_city ?? "",
     addressCitycode: ann.address_citycode ?? "",
-    addressPostcode: ann.address_postcode ?? "",
+    addressPostcode: resolvedPostcode ?? "",
     addressLat: ann.address_lat ?? 0,
     addressLng: ann.address_lng ?? 0,
   };
 
   return (
     <PageStack gap="5">
-<<<<<<< HEAD
-      <BackLink href={ROUTES.annonces.list}>← Retour aux annonces</BackLink>
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="min-w-0">
-          <Suspense fallback={<AnnouncementMainSkeleton />}>
-            <AnnouncementMain id={id} communeId={communeId} />
-          </Suspense>
-        </div>
-        <aside className="flex flex-col gap-5">
-          <Suspense fallback={<AnnouncementContactSkeleton />}>
-            <AnnouncementContact
-              id={id}
-              communeId={communeId}
-              viewerMembershipId={membership.id}
-            />
-          </Suspense>
-          <Suspense fallback={<AnnouncementLocationSkeleton />}>
-            <AnnouncementLocation
-              id={id}
-              communeId={communeId}
-              communeName={communeName}
-              fallbackLat={fallbackLat}
-              fallbackLng={fallbackLng}
-            />
-          </Suspense>
-=======
       <HistoryBackLink label="Retour aux annonces" />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
         {/* --- Main card --- */}
-        <Card className={`space-y-5 md:p-6 ${DETAIL_CARD_CLASS}`}>
+        <Card className={`space-y-5 ${MAIN_DETAIL_CARD_CLASS}`}>
           <div className="space-y-5">
             <header className="space-y-3">
               <div className="flex items-center justify-between gap-3">
@@ -238,16 +196,21 @@ export default async function AnnonceDetailPage(props: {
               />
             ) : null}
 
-            {ann.description ? (
-              <LinkifiedText
-                text={ann.description}
-                className="scrollbar-hover max-h-64 overflow-y-auto whitespace-pre-line text-base font-medium leading-6 text-muted"
-              />
-            ) : (
-              <p className="text-base font-medium italic text-muted">
-                Pas de détail complémentaire.
-              </p>
-            )}
+            <section className={DESCRIPTION_SECTION_CLASS}>
+              <h2 className="mb-2 text-sm font-semibold leading-5 text-text">
+                Description
+              </h2>
+              {ann.description ? (
+                <LinkifiedText
+                  text={ann.description}
+                  className="scrollbar-hover max-h-64 overflow-y-auto whitespace-pre-line text-base font-medium leading-6 text-muted"
+                />
+              ) : (
+                <p className="text-base font-medium italic text-muted">
+                  Pas de détail complémentaire.
+                </p>
+              )}
+            </section>
           </div>
         </Card>
 
@@ -297,9 +260,12 @@ export default async function AnnonceDetailPage(props: {
           </div>
 
           {/* Similar announcements */}
->>>>>>> preprod
           <Suspense fallback={<SimilarAnnouncementsSkeleton />}>
-            <SimilarAnnouncements id={id} communeId={communeId} />
+            <SimilarAnnouncements
+              communeId={ctx.activeMembership!.commune_id}
+              categorySlug={ann.category_slug}
+              excludeId={ann.id}
+            />
           </Suspense>
         </aside>
       </div>
@@ -315,8 +281,6 @@ export default async function AnnonceDetailPage(props: {
     </PageStack>
   );
 }
-<<<<<<< HEAD
-=======
 
 async function SimilarAnnouncements({
   communeId,
@@ -362,4 +326,3 @@ function SimilarAnnouncementsSkeleton() {
     </Card>
   );
 }
->>>>>>> preprod
