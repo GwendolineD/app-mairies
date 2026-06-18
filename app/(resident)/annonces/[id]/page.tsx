@@ -24,7 +24,7 @@ import { LinkifiedText } from "@/components/ui/linkified-text";
 import { formatMemberSince, formatRelativeTime } from "@/lib/utils/date";
 import { formatDisplayName } from "@/lib/utils/display-name";
 import { formatShortDate } from "@/lib/utils/format-date";
-import { formatAddressLines, resolveAddressPostcode } from "@/lib/utils/format-address";
+import { formatDetailAddressLines, resolveAddressPostcode } from "@/lib/utils/format-address";
 import type { AnnouncementEditData } from "@/lib/types";
 import { PageStack } from "@/components/ui/page-stack";
 
@@ -137,15 +137,16 @@ export default async function AnnonceDetailPage(props: {
     ? formatMemberSince(ann.author_membership.created_at)
     : "Membre";
 
+  const addressLines = formatDetailAddressLines({
+    street: ann.address_street,
+    postcode: ann.address_postcode,
+    city: ann.address_city,
+    fallbackPostcode: ann.author_membership?.address_postcode,
+  });
+
   const resolvedPostcode = resolveAddressPostcode(
     ann.address_postcode,
     ann.author_membership?.address_postcode,
-  );
-
-  const addressLines = formatAddressLines(
-    ann.address_street,
-    resolvedPostcode,
-    ann.address_city,
   );
 
   const isAuthor = ann.author_membership?.user_id === ctx.userId;

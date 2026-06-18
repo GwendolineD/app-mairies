@@ -20,6 +20,8 @@ type Props = {
   placeholder?: string;
   className?: string;
   id?: string;
+  /** Earliest selectable date (yyyy-MM-dd). Dates before this are disabled. */
+  minDate?: string;
 };
 
 function parseValue(value: string): Date | undefined {
@@ -34,9 +36,11 @@ export function DatePickerField({
   placeholder = "Choisir une date",
   className,
   id,
+  minDate,
 }: Props) {
   const [open, setOpen] = useState(false);
   const selected = parseValue(value);
+  const minSelectable = minDate ? parseValue(minDate) : undefined;
   const currentYear = new Date().getFullYear();
 
   return (
@@ -47,7 +51,7 @@ export function DatePickerField({
           <button
             type="button"
             className={cn(
-              "flex w-fit min-w-0 cursor-pointer items-center justify-between gap-2 rounded-sm border border-border bg-surface px-4 py-2.5 text-left text-sm font-medium whitespace-nowrap outline-none transition hover:border-purple/30 focus-visible:border-purple focus-visible:ring-2 focus-visible:ring-purple/20",
+              "flex w-fit min-w-0 cursor-pointer items-center gap-2 rounded-sm border border-border bg-surface px-4 py-2.5 text-left text-sm font-medium whitespace-nowrap outline-none transition hover:border-purple/30 focus-visible:border-purple focus-visible:ring-2 focus-visible:ring-purple/20",
               !value && "text-subtle",
               value && "text-text",
               className,
@@ -55,12 +59,12 @@ export function DatePickerField({
           />
         }
       >
+        <CalendarIcon className="size-4 shrink-0 text-muted" aria-hidden />
         <span className="truncate">
           {selected
             ? format(selected, "d MMMM yyyy", { locale: fr })
             : placeholder}
         </span>
-        <CalendarIcon className="size-4 shrink-0 text-muted" aria-hidden />
       </PopoverTrigger>
       <PopoverContent className="w-auto gap-0 p-0" align="start" sideOffset={8}>
         <Calendar
@@ -72,10 +76,11 @@ export function DatePickerField({
               setOpen(false);
             }
           }}
+          disabled={minSelectable ? { before: minSelectable } : undefined}
           captionLayout="dropdown"
           startMonth={new Date(currentYear - 1, 0)}
           endMonth={new Date(currentYear + 5, 11)}
-          defaultMonth={selected ?? new Date()}
+          defaultMonth={selected ?? minSelectable ?? new Date()}
         />
         <div className="flex gap-2 border-t border-border p-2">
           <Button

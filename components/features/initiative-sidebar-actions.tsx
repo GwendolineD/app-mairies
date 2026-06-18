@@ -21,6 +21,7 @@ type LinkedEvent = {
   id: string;
   title: string;
   starts_at: string | null;
+  ends_at: string | null;
 };
 
 type Props = {
@@ -67,11 +68,11 @@ function InitiativeLinkedEventCard({
         </Link>
       </div>
       <p className="text-sm font-semibold text-text">{event.title}</p>
-      {event.starts_at ? (
+      {event.starts_at && event.ends_at ? (
         <p className="flex items-center gap-1.5 text-xs font-medium text-muted">
           <CalendarDays className="size-3.5 shrink-0 text-coral" aria-hidden />
           <time dateTime={event.starts_at}>
-            {formatLinkedEventDateTime(event.starts_at)}
+            {formatLinkedEventDateTime(event.starts_at, event.ends_at)}
           </time>
         </p>
       ) : null}

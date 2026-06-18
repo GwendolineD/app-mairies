@@ -23,6 +23,7 @@ import {
   readFormDraft,
   writeFormDraft,
 } from "@/lib/utils/form-draft";
+import { localDateTimeToIso } from "@/lib/utils/date";
 import { Button } from "@/components/ui/button";
 import { FormField, formFieldClassName, Input, Textarea } from "@/components/ui/form-field";
 import {
@@ -66,8 +67,9 @@ type Draft = {
   categorySlug: string;
   title: string;
   description: string;
-  date: string;
+  startDate: string;
   startTime: string;
+  endDate: string;
   endTime: string;
   volunteersNeeded: string;
 };
@@ -96,9 +98,25 @@ function parseDateTime(isoString: string): { date: string; time: string } {
   }
 }
 
-function combineDateAndTime(date: string, time: string): string {
-  if (!date || !time) return "";
-  return `${date}T${time}:00`;
+function combineDateAndTime(date: string, time: string): string | null {
+  return localDateTimeToIso(date, time);
+}
+
+function isDateBefore(a: string, b: string): boolean {
+  if (!a || !b) return false;
+  return a < b;
+}
+
+function resolveEndDateAfterStartChange(startDate: string, endDate: string): string {
+  if (!startDate) return endDate;
+  if (!endDate || isDateBefore(endDate, startDate)) return startDate;
+  return endDate;
+}
+
+function clampEndDate(endDate: string, startDate: string): string {
+  if (!startDate) return endDate;
+  if (!endDate || isDateBefore(endDate, startDate)) return startDate;
+  return endDate;
 }
 
 function getInitialAddressFromEditData(
@@ -189,8 +207,9 @@ export function CreateEventModal({
   );
   const [title, setTitle] = useState(initialData?.title ?? "");
   const [description, setDescription] = useState(initialData?.description ?? "");
-  const [date, setDate] = useState(initialStartDateTime.date);
+  const [startDate, setStartDate] = useState(initialStartDateTime.date);
   const [startTime, setStartTime] = useState(initialStartDateTime.time);
+  const [endDate, setEndDate] = useState(initialEndDateTime.date);
   const [endTime, setEndTime] = useState(initialEndDateTime.time);
   const [volunteersNeeded, setVolunteersNeeded] = useState<string>(
     initialData?.volunteersNeeded != null ? String(initialData.volunteersNeeded) : "",
@@ -219,8 +238,9 @@ export function CreateEventModal({
       setDescription(initialData.description);
       const startDT = parseDateTime(initialData.startsAt);
       const endDT = parseDateTime(initialData.endsAt);
-      setDate(startDT.date);
+      setStartDate(startDT.date);
       setStartTime(startDT.time);
+      setEndDate(endDT.date);
       setEndTime(endDT.time);
       setVolunteersNeeded(
         initialData.volunteersNeeded != null ? String(initialData.volunteersNeeded) : "",
@@ -234,8 +254,9 @@ export function CreateEventModal({
       setCategorySlug(INITIATIVE_CATEGORIES[0]?.slug ?? "solidarite");
       setTitle("");
       setDescription("");
-      setDate("");
+      setStartDate("");
       setStartTime("");
+      setEndDate("");
       setEndTime("");
       setVolunteersNeeded("");
       setPendingFile(null);
@@ -257,8 +278,9 @@ export function CreateEventModal({
         setCategorySlug(saved.categorySlug);
         setTitle(saved.title);
         setDescription(saved.description);
-        setDate(saved.date);
+        setStartDate(saved.startDate ?? (saved as { date?: string }).date ?? "");
         setStartTime(saved.startTime);
+        setEndDate(saved.endDate ?? saved.startDate ?? (saved as { date?: string }).date ?? "");
         setEndTime(saved.endTime);
         setVolunteersNeeded(saved.volunteersNeeded);
       }
@@ -273,12 +295,13 @@ export function CreateEventModal({
       categorySlug,
       title,
       description,
-      date,
+      startDate,
       startTime,
+      endDate,
       endTime,
       volunteersNeeded,
     });
-  }, [open, draftKey, categorySlug, title, description, date, startTime, endTime, volunteersNeeded]);
+  }, [open, draftKey, categorySlug, title, description, startDate, startTime, endDate, endTime, volunteersNeeded]);
 
   const handleAbandon = useCallback(() => {
     if (submitting) return;
@@ -289,9 +312,20 @@ export function CreateEventModal({
 
   const canSubmit =
     title.trim().length >= 3 &&
-    date.length > 0 &&
+    description.trim().length >= 1 &&
+    startDate.length > 0 &&
     startTime.length > 0 &&
+    endDate.length > 0 &&
     endTime.length > 0;
+
+  function handleStartDateChange(nextStartDate: string) {
+    setStartDate(nextStartDate);
+    setEndDate((prev) => resolveEndDateAfterStartChange(nextStartDate, prev));
+  }
+
+  function handleEndDateChange(nextEndDate: string) {
+    setEndDate(clampEndDate(nextEndDate, startDate));
+  }
 
   function invalidateAddressCoords(
     patch: Partial<Pick<AddressFormState, "street" | "city" | "postcode">>,
@@ -337,11 +371,23 @@ export function CreateEventModal({
     setFormError(null);
     setAddressStreetError(null);
 
-    const startsAt = combineDateAndTime(date, startTime);
-    const endsAt = combineDateAndTime(date, endTime);
+    const startsAt = combineDateAndTime(startDate, startTime);
+    const endsAt = combineDateAndTime(endDate, endTime);
 
     if (!startsAt || !endsAt) {
       setFormError("Veuillez renseigner la date et les heures de l'événement.");
+      return;
+    }
+
+    if (new Date(endsAt).getTime() < new Date(startsAt).getTime()) {
+      setFormError(
+        "La date et l'heure de fin doivent être postérieures ou égales à la date et l'heure de début.",
+      );
+      return;
+    }
+
+    if (!isEditMode && new Date(endsAt).getTime() <= Date.now()) {
+      setFormError("L'événement doit se terminer dans le futur.");
       return;
     }
 
@@ -360,7 +406,7 @@ export function CreateEventModal({
       const payload = {
         categorySlug,
         title: title.trim(),
-        description: description.trim() || undefined,
+        description: description.trim(),
         photoUrl: photoUrl || (initialData?.photoUrl ?? ""),
         startsAt,
         endsAt,
@@ -525,10 +571,11 @@ export function CreateEventModal({
               </span>
             </div>
           </FormField>
-          <FormField label="Description (optionnel)">
+          <FormField label="Description *">
             <div className="relative">
               <Textarea
                 name="description"
+                required
                 rows={5}
                 maxLength={DESCRIPTION_MAX}
                 value={description}
@@ -550,31 +597,45 @@ export function CreateEventModal({
 
         <section className="space-y-4">
           <SectionHeading number={3} title="Quand a lieu l'événement ?" />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <FormField label="Date *">
-              <DatePickerField
-                value={date}
-                onChange={setDate}
-                placeholder="Choisir une date"
-                className="w-full"
-              />
-            </FormField>
-            <FormField label="Heure de début *">
-              <TimePickerField
-                value={startTime}
-                onChange={setStartTime}
-                placeholder="Début"
-                className="w-full"
-              />
-            </FormField>
-            <FormField label="Heure de fin *">
-              <TimePickerField
-                value={endTime}
-                onChange={setEndTime}
-                placeholder="Fin"
-                className="w-full"
-              />
-            </FormField>
+          <div className="flex flex-nowrap items-end gap-6">
+            <div className="flex flex-nowrap items-end gap-4">
+              <FormField label="Date de début *" className="shrink-0">
+                <DatePickerField
+                  value={startDate}
+                  onChange={handleStartDateChange}
+                  minDate={isEditMode ? undefined : format(new Date(), "yyyy-MM-dd")}
+                  placeholder="Choisir une date"
+                  className="w-[12rem]"
+                />
+              </FormField>
+              <FormField label="Heure de début *" className="shrink-0">
+                <TimePickerField
+                  value={startTime}
+                  onChange={setStartTime}
+                  placeholder="Début"
+                  className="w-[7.5rem]"
+                />
+              </FormField>
+            </div>
+            <div className="flex flex-nowrap items-end gap-4">
+              <FormField label="Date de fin *" className="shrink-0">
+                <DatePickerField
+                  value={endDate}
+                  onChange={handleEndDateChange}
+                  minDate={startDate || undefined}
+                  placeholder="Choisir une date"
+                  className="w-[12rem]"
+                />
+              </FormField>
+              <FormField label="Heure de fin *" className="shrink-0">
+                <TimePickerField
+                  value={endTime}
+                  onChange={setEndTime}
+                  placeholder="Fin"
+                  className="w-[7.5rem]"
+                />
+              </FormField>
+            </div>
           </div>
         </section>
 

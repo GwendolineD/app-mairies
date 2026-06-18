@@ -9,7 +9,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";
 import { cn } from "@/lib/utils/cn";
-import { formatEventRange, formatShortDate } from "@/lib/utils/date";
+import { getEventRangeParts } from "@/lib/utils/date";
 import type { AgendaEventRecord } from "@/lib/types";
 
 export type EventCardData = Pick<
@@ -23,7 +23,9 @@ export type EventCardData = Pick<
   | "starts_at"
   | "ends_at"
   | "volunteers_needed"
->;
+> & {
+  volunteers_registered?: number;
+};
 
 type Props = {
   event: EventCardData;
@@ -39,13 +41,40 @@ function resolveImageUrl(event: EventCardData): string | null {
   return null;
 }
 
-function VolunteersBadge({ count }: { count: number | null }) {
-  if (!count || count <= 0) return null;
+function VolunteersBadge({
+  registered,
+  needed,
+}: {
+  registered: number;
+  needed: number | null;
+}) {
+  if (!needed || needed <= 0) return null;
   return (
     <span className="flex items-center gap-0.5 text-[10px] font-semibold text-orange">
       <Users className="size-3" aria-hidden />
-      {count} bénévole{count !== 1 ? "s" : ""}
+      {registered}/{needed} bénévole{needed !== 1 ? "s" : ""}
     </span>
+  );
+}
+
+function EventDateRangeLabel({ start, end }: { start: string; end: string }) {
+  const parts = getEventRangeParts(start, end);
+
+  return (
+    <>
+      {parts.map((part, index) => (
+        <span
+          key={index}
+          className={
+            part.variant === "connector"
+              ? "font-medium text-orange/50"
+              : "font-semibold text-orange"
+          }
+        >
+          {part.text}
+        </span>
+      ))}
+    </>
   );
 }
 
@@ -58,7 +87,7 @@ export function EventCard({
     ? "border-orange ring-2 ring-orange/35 shadow-[0_12px_32px_rgba(255,179,71,0.15)]"
     : "";
   const imageUrl = resolveImageUrl(e);
-  const dateRange = formatEventRange(e.starts_at, e.ends_at);
+  const volunteersRegistered = e.volunteers_registered ?? 0;
 
   if (layout === "horizontal") {
     return (
@@ -95,7 +124,7 @@ export function EventCard({
             <p className="flex items-center gap-1 text-[11px] font-medium text-orange">
               <CalendarDays className="size-3 shrink-0" aria-hidden />
               <time dateTime={e.starts_at} className="truncate">
-                {dateRange}
+                <EventDateRangeLabel start={e.starts_at} end={e.ends_at} />
               </time>
             </p>
             {e.address_label ? (
@@ -105,7 +134,7 @@ export function EventCard({
               </p>
             ) : null}
             <div className="mt-auto flex items-center justify-end">
-              <VolunteersBadge count={e.volunteers_needed} />
+              <VolunteersBadge registered={volunteersRegistered} needed={e.volunteers_needed} />
             </div>
           </div>
         </Card>
@@ -145,7 +174,7 @@ export function EventCard({
                 className="w-fit shrink-0"
               />
             ) : null}
-            <VolunteersBadge count={e.volunteers_needed} />
+            <VolunteersBadge registered={volunteersRegistered} needed={e.volunteers_needed} />
           </div>
 
           <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-text">
@@ -155,8 +184,8 @@ export function EventCard({
           <p className="flex items-center gap-1 text-[11px] font-medium text-orange">
             <CalendarDays className="size-3.5 shrink-0" aria-hidden />
             <time dateTime={e.starts_at} className="truncate">
-              {dateRange}
-            </time>
+                <EventDateRangeLabel start={e.starts_at} end={e.ends_at} />
+              </time>
           </p>
 
           {e.address_label ? (
@@ -173,7 +202,6 @@ export function EventCard({
 
 export function EventMapCard({ event: e }: { event: EventCardData }) {
   const imageUrl = resolveImageUrl(e);
-  const dateRange = formatEventRange(e.starts_at, e.ends_at);
 
   return (
     <div className="flex w-[260px] flex-col gap-2">
@@ -202,7 +230,7 @@ export function EventMapCard({ event: e }: { event: EventCardData }) {
       </h3>
       <p className="flex items-center gap-1 text-[11px] font-medium text-orange">
         <CalendarDays className="size-3.5 shrink-0" aria-hidden />
-        {dateRange}
+        <EventDateRangeLabel start={e.starts_at} end={e.ends_at} />
       </p>
       {e.address_label ? (
         <p className="text-[11px] font-medium text-subtle">{e.address_label}</p>

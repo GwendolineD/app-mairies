@@ -1,5 +1,6 @@
 import { requireActiveMembership } from "@/lib/auth/session";
 import {
+  enrichEventsWithVolunteerCounts,
   listEventMapItems,
   listEventMarkers,
   listEventsPage,
@@ -54,6 +55,7 @@ export default async function EvenementsListePage(props: {
       listEventsPage(supabase, filters, { limit: 1, sortMode: params.tri }),
     ]);
     const mapMarkers = buildEventMapMarkers(rawMarkers);
+    const enrichedMapItems = await enrichEventsWithVolunteerCounts(supabase, mapItems);
 
     return (
       <EvenementsPageClient
@@ -61,7 +63,7 @@ export default async function EvenementsListePage(props: {
         items={[]}
         totalCount={totalCount}
         mapCenter={[userLat, userLng]}
-        mapItems={mapItems}
+        mapItems={enrichedMapItems}
         mapMarkers={mapMarkers}
         hasUserAddress={hasUserAddress}
       />
@@ -74,11 +76,12 @@ export default async function EvenementsListePage(props: {
     filters,
     { offset, limit: EVENTS_PAGE_SIZE, sortMode: params.tri },
   );
+  const enrichedItems = await enrichEventsWithVolunteerCounts(supabase, items);
 
   return (
     <EvenementsPageClient
       params={params}
-      items={items}
+      items={enrichedItems}
       totalCount={totalCount}
       mapCenter={[userLat, userLng]}
       mapItems={[]}

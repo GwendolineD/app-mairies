@@ -238,7 +238,7 @@ export function AccueilUpcomingEvents({
                     </p>
                     <p className="flex items-center gap-1.5 text-xs font-medium text-muted">
                       <Clock className="size-3.5 shrink-0" aria-hidden />
-                      {formatEventAccueilSchedule(event.starts_at)}
+                      {formatEventAccueilSchedule(event.starts_at, event.ends_at)}
                     </p>
                     <p className="flex items-center gap-1.5 text-xs font-medium text-muted">
                       <MapPin className="size-3.5 shrink-0" aria-hidden />

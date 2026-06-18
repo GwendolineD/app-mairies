@@ -125,7 +125,16 @@ export const eventSchema = z.object({
 export const eventModalSchema = z.object({
   categorySlug: z.enum(INITIATIVE_CATEGORY_SLUGS),
   title: z.string().trim().min(3, "Titre requis (3 caractères min.)").max(120, "Titre trop long (120 caractères max.)"),
-  description: z.string().max(3000, "Description trop longue (3000 caractères max.)").optional(),
+  description: z
+    .string()
+    .max(3000, "Description trop longue (3000 caractères max.)")
+    .transform((value) => value.trim())
+    .pipe(
+      z
+        .string()
+        .min(1, "Description requise")
+        .max(3000, "Description trop longue (3000 caractères max.)"),
+    ),
   photoUrl: z.string().url().optional().or(z.literal("")),
   startsAt: z.string().min(1, "Date et heure de début requises"),
   endsAt: z.string().min(1, "Date et heure de fin requises"),

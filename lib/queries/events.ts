@@ -42,14 +42,14 @@ export async function listEventsPage(
   let countQuery = supabase
     .from("events")
     .select("id", { count: "exact", head: true })
-    .gte("starts_at", now);
+    .gte("ends_at", now);
   countQuery = applyEventFilters(countQuery, filters);
   const { count } = await countQuery;
 
   let query = supabase
     .from("events")
     .select("*")
-    .gte("starts_at", now)
+    .gte("ends_at", now)
     .order("starts_at", { ascending })
     .order("id", { ascending })
     .limit(limit);
@@ -73,7 +73,7 @@ export async function listEventMapItems(
   let query = supabase
     .from("events")
     .select("*")
-    .gte("starts_at", now)
+    .gte("ends_at", now)
     .not("address_lat", "is", null)
     .not("address_lng", "is", null)
     .order("starts_at", { ascending: true });
@@ -92,11 +92,50 @@ export async function listEventMarkers(
   let query = supabase
     .from("events")
     .select("id, title, category_slug, address_lat, address_lng")
-    .gte("starts_at", now)
+    .gte("ends_at", now)
     .not("address_lat", "is", null)
     .not("address_lng", "is", null);
 
   query = applyEventFilters(query, filters);
   const { data } = await query;
   return (data ?? []) as EventMarker[];
+}
+
+export async function listVolunteerCountsByInitiativeId(
+  supabase: SupabaseClient,
+  initiativeIds: string[],
+): Promise<Record<string, number>> {
+  if (initiativeIds.length === 0) return {};
+
+  const { data } = await supabase
+    .from("initiative_responses")
+    .select("initiative_id")
+    .in("initiative_id", initiativeIds)
+    .eq("response_type", "volunteer");
+
+  const counts: Record<string, number> = {};
+  for (const row of data ?? []) {
+    counts[row.initiative_id] = (counts[row.initiative_id] ?? 0) + 1;
+  }
+  return counts;
+}
+
+export async function enrichEventsWithVolunteerCounts<
+  T extends { source_initiative_id: string | null },
+>(supabase: SupabaseClient, events: T[]): Promise<(T & { volunteers_registered: number })[]> {
+  const initiativeIds = [
+    ...new Set(
+      events
+        .map((event) => event.source_initiative_id)
+        .filter((id): id is string => id != null),
+    ),
+  ];
+  const counts = await listVolunteerCountsByInitiativeId(supabase, initiativeIds);
+
+  return events.map((event) => ({
+    ...event,
+    volunteers_registered: event.source_initiative_id
+      ? (counts[event.source_initiative_id] ?? 0)
+      : 0,
+  }));
 }

@@ -21,7 +21,7 @@ import type { InitiativeEditData, InitiativeRecord } from "@/lib/types";
 import { PageStack } from "@/components/ui/page-stack";
 import { formatMemberSince, formatRelativeTime } from "@/lib/utils/date";
 import { formatDisplayName } from "@/lib/utils/display-name";
-import { formatAddressLines } from "@/lib/utils/format-address";
+import { formatAddressLines, parseAddressLabelParts, resolveAddressPostcode } from "@/lib/utils/format-address";
 
 const MAIN_DETAIL_CARD_CLASS =
   "rounded-none border-0 bg-transparent p-0 !shadow-none";
@@ -44,15 +44,11 @@ function buildInitiativeEditData(
     address_lng: number | null;
   },
 ): InitiativeEditData {
-  const labelParts = (initiative.address_label ?? "")
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean);
-  const addressStreet = labelParts[0] ?? membership.address_street ?? "";
-  const addressCity =
-    labelParts.length > 1
-      ? labelParts.slice(1).join(", ")
-      : (membership.address_city ?? "");
+  const parsedAddress = parseAddressLabelParts(initiative.address_label ?? "");
+  const addressStreet = parsedAddress.street ?? membership.address_street ?? "";
+  const addressCity = parsedAddress.city ?? membership.address_city ?? "";
+  const addressPostcode =
+    parsedAddress.postcode ?? membership.address_postcode ?? "";
 
   return {
     categorySlug: initiative.category_slug ?? "solidarite",
@@ -62,7 +58,7 @@ function buildInitiativeEditData(
     addressStreet,
     addressCity,
     addressCitycode: membership.address_citycode ?? "",
-    addressPostcode: membership.address_postcode ?? "",
+    addressPostcode,
     addressLat: initiative.address_lat ?? membership.address_lat ?? 0,
     addressLng: initiative.address_lng ?? membership.address_lng ?? 0,
   };
@@ -139,13 +135,14 @@ export default async function InitiativeDetailPage(props: {
   const { data: authorMembership } = await supabase
     .from("memberships")
     .select(
-      "id, created_at, profiles(first_name, last_name, display_name, avatar_url)",
+      "id, created_at, address_postcode, profiles(first_name, last_name, display_name, avatar_url)",
     )
     .eq("id", initiative.author_membership_id)
     .single();
 
   type AuthorMembership = {
     created_at: string;
+    address_postcode: string | null;
     profiles: {
       first_name: string | null;
       last_name: string | null;
@@ -174,7 +171,7 @@ export default async function InitiativeDetailPage(props: {
   const [{ data: linkedEvent }, supporters] = await Promise.all([
     supabase
       .from("events")
-      .select("id, title, starts_at")
+      .select("id, title, starts_at, ends_at")
       .eq("source_initiative_id", id)
       .eq("status", "active")
       .maybeSingle(),
@@ -191,10 +188,16 @@ export default async function InitiativeDetailPage(props: {
       ? getInitiativeCategoryDefaultImageUrl(initiative.category_slug)
       : null);
 
-  const addressLines = formatAddressLines(
+  const parsedAddress = parseAddressLabelParts(initiative.address_label ?? "");
+  const resolvedPostcode = resolveAddressPostcode(
+    parsedAddress.postcode,
     initiative.address_label,
-    null,
-    null,
+    authorData?.address_postcode,
+  );
+  const addressLines = formatAddressLines(
+    parsedAddress.street,
+    resolvedPostcode,
+    parsedAddress.city,
   );
 
   return (

@@ -21,7 +21,7 @@ export type InitiativeWithAuthor = InitiativeRecord & {
     } | null;
   } | null;
   support_count?: number;
-  linked_event?: { id: string; starts_at: string } | null;
+  linked_event?: { id: string; starts_at: string; ends_at: string } | null;
 };
 
 export type InitiativeMarker = {
@@ -145,7 +145,7 @@ async function enrichInitiativesWithMeta(
       .eq("response_type", "support"),
     supabase
       .from("events")
-      .select("id, source_initiative_id, starts_at")
+      .select("id, source_initiative_id, starts_at, ends_at")
       .in("source_initiative_id", ids)
       .eq("status", EVENT_STATUS.active),
   ]);
@@ -160,12 +160,13 @@ async function enrichInitiativesWithMeta(
     }
   }
 
-  const eventMap = new Map<string, { id: string; starts_at: string }>();
+  const eventMap = new Map<string, { id: string; starts_at: string; ends_at: string }>();
   for (const event of events ?? []) {
-    if (event.source_initiative_id && event.starts_at) {
+    if (event.source_initiative_id && event.starts_at && event.ends_at) {
       eventMap.set(event.source_initiative_id, {
         id: event.id,
         starts_at: event.starts_at,
+        ends_at: event.ends_at,
       });
     }
   }

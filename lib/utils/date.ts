@@ -1,13 +1,3 @@
-const DATE_TIME_SHORT: Intl.DateTimeFormatOptions = {
-  dateStyle: "medium",
-  timeStyle: "short",
-};
-
-const DATE_FULL: Intl.DateTimeFormatOptions = {
-  dateStyle: "full",
-  timeStyle: "short",
-};
-
 const TIME_SHORT: Intl.DateTimeFormatOptions = {
   timeStyle: "short",
 };
@@ -23,6 +13,17 @@ const WEEKDAY_DATE: Intl.DateTimeFormatOptions = {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/** Convert local date (yyyy-MM-dd) + time (HH:mm) to ISO UTC string. */
+export function localDateTimeToIso(date: string, time: string): string | null {
+  if (!date || !time) return null;
+  const [year, month, day] = date.split("-").map(Number);
+  const [hours, minutes] = time.split(":").map(Number);
+  if ([year, month, day, hours, minutes].some((value) => Number.isNaN(value))) {
+    return null;
+  }
+  return new Date(year, month - 1, day, hours, minutes, 0).toISOString();
+}
+
 function formatFr(date: Date, options: Intl.DateTimeFormatOptions): string {
   return new Intl.DateTimeFormat("fr-FR", options).format(date);
 }
@@ -31,17 +32,80 @@ function capitalize(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-export function formatEventRange(start: string, end: string): string {
+function isSameCalendarDay(start: Date, end: Date): boolean {
+  return start.toDateString() === end.toDateString();
+}
+
+function formatEventDayShort(date: Date): string {
+  return formatFr(date, { day: "numeric", month: "long", year: "numeric" });
+}
+
+export type EventRangePart = {
+  text: string;
+  variant: "connector" | "value";
+};
+
+export function getEventRangeParts(start: string, end: string): EventRangePart[] {
   try {
-    return `${formatFr(new Date(start), DATE_TIME_SHORT)} → ${formatFr(new Date(end), DATE_TIME_SHORT)}`;
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    if (isSameCalendarDay(startDate, endDate)) {
+      return [
+        { text: "le ", variant: "connector" },
+        { text: formatEventDayShort(startDate), variant: "value" },
+        { text: " de ", variant: "connector" },
+        { text: formatEventTimeCompact(startDate), variant: "value" },
+        { text: " à ", variant: "connector" },
+        { text: formatEventTimeCompact(endDate), variant: "value" },
+      ];
+    }
+    return [
+      { text: "Du ", variant: "connector" },
+      { text: formatEventDayShort(startDate), variant: "value" },
+      { text: " ", variant: "connector" },
+      { text: formatEventTimeCompact(startDate), variant: "value" },
+      { text: " au ", variant: "connector" },
+      { text: formatEventDayShort(endDate), variant: "value" },
+      { text: " ", variant: "connector" },
+      { text: formatEventTimeCompact(endDate), variant: "value" },
+    ];
   } catch {
-    return "Planning à confirmer";
+    return [{ text: "Planning à confirmer", variant: "value" }];
   }
+}
+
+export function formatEventRange(start: string, end: string): string {
+  return getEventRangeParts(start, end)
+    .map((part) => part.text)
+    .join("");
+}
+
+function formatEventDayFull(date: Date): string {
+  return capitalize(
+    formatFr(date, {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }),
+  );
+}
+
+function formatEventTimeCompact(date: Date): string {
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  if (minutes === 0) return `${hours}h`;
+  return `${hours}h${minutes.toString().padStart(2, "0")}`;
 }
 
 export function formatEventDetail(start: string, end: string): string {
   try {
-    return `${formatFr(new Date(start), DATE_FULL)} — ${formatFr(new Date(end), TIME_SHORT)}`;
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    if (isSameCalendarDay(startDate, endDate)) {
+      return `${formatEventDayFull(startDate)} — de ${formatEventTimeCompact(startDate)} à ${formatEventTimeCompact(endDate)}`;
+    }
+    return `Du ${formatEventDayFull(startDate)} à ${formatEventTimeCompact(startDate)} au ${formatEventDayFull(endDate)} à ${formatEventTimeCompact(endDate)}`;
   } catch {
     return "Planning à confirmer";
   }
@@ -119,9 +183,12 @@ export function formatInitiativeWhen(
   return "À tout moment";
 }
 
-export function formatLinkedEventDateTime(iso: string): string {
+export function formatLinkedEventDateTime(start: string, end?: string | null): string {
   try {
-    return formatFr(new Date(iso), {
+    if (end) {
+      return formatEventRange(start, end);
+    }
+    return formatFr(new Date(start), {
       day: "numeric",
       month: "long",
       year: "numeric",
@@ -224,15 +291,36 @@ export function formatMemberSince(iso: string): string {
   }
 }
 
-export function formatEventAccueilSchedule(iso: string): string {
+export function formatEventAccueilSchedule(start: string, end?: string | null): string {
   try {
-    const date = new Date(iso);
-    const weekday = new Intl.DateTimeFormat("fr-FR", { weekday: "long" }).format(date);
+    const startDate = new Date(start);
+    if (end) {
+      const endDate = new Date(end);
+      if (!isSameCalendarDay(startDate, endDate)) {
+        const startWeekday = new Intl.DateTimeFormat("fr-FR", {
+          weekday: "short",
+        }).format(startDate);
+        const endWeekday = new Intl.DateTimeFormat("fr-FR", {
+          weekday: "short",
+        }).format(endDate);
+        const startDayMonth = new Intl.DateTimeFormat("fr-FR", {
+          day: "numeric",
+          month: "long",
+        }).format(startDate);
+        const endDayMonth = new Intl.DateTimeFormat("fr-FR", {
+          day: "numeric",
+          month: "long",
+        }).format(endDate);
+        return `Du ${startWeekday} ${startDayMonth} au ${endWeekday} ${endDayMonth}`;
+      }
+    }
+
+    const weekday = new Intl.DateTimeFormat("fr-FR", { weekday: "long" }).format(startDate);
     const dayMonth = new Intl.DateTimeFormat("fr-FR", {
       day: "numeric",
       month: "long",
-    }).format(date);
-    const time = new Intl.DateTimeFormat("fr-FR", { timeStyle: "short" }).format(date);
+    }).format(startDate);
+    const time = formatEventTimeCompact(startDate);
     const capitalizedWeekday = weekday.charAt(0).toUpperCase() + weekday.slice(1);
     return `${capitalizedWeekday} ${dayMonth} à ${time}`;
   } catch {

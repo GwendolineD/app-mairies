@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";
 import { cn } from "@/lib/utils/cn";
 import { formatDisplayName } from "@/lib/utils/display-name";
-import { formatShortDate, formatRelativeTime } from "@/lib/utils/date";
+import { formatEventRange, formatRelativeTime } from "@/lib/utils/date";
 
 export type InitiativeCardData = {
   id: string;
@@ -21,7 +21,7 @@ export type InitiativeCardData = {
   address_label: string | null;
   created_at: string;
   support_count?: number;
-  linked_event?: { id: string; starts_at: string } | null;
+  linked_event?: { id: string; starts_at: string; ends_at: string } | null;
   author_membership?: {
     address_street?: string | null;
     address_city?: string | null;
@@ -77,12 +77,18 @@ function resolveAddress(initiative: InitiativeCardData): string {
   return street ?? city ?? "Adresse non renseignée";
 }
 
-function LinkedEventDate({ startsAt }: { startsAt: string }) {
+function LinkedEventDate({
+  startsAt,
+  endsAt,
+}: {
+  startsAt: string;
+  endsAt: string;
+}) {
   return (
     <p className="flex min-w-0 items-center gap-1 text-[11px] font-medium text-subtle">
       <CalendarDays className="size-3.5 shrink-0" aria-hidden />
       <time dateTime={startsAt} className="truncate">
-        Événement le {formatShortDate(startsAt)}
+        Événement : {formatEventRange(startsAt, endsAt)}
       </time>
     </p>
   );
@@ -158,8 +164,11 @@ export function InitiativeCard({
             <h3 className="my-1 truncate text-sm font-semibold leading-5 text-text">
               {i.title}
             </h3>
-            {i.linked_event?.starts_at ? (
-              <LinkedEventDate startsAt={i.linked_event.starts_at} />
+            {i.linked_event?.starts_at && i.linked_event.ends_at ? (
+              <LinkedEventDate
+                startsAt={i.linked_event.starts_at}
+                endsAt={i.linked_event.ends_at}
+              />
             ) : null}
             <p className="flex items-center gap-1 truncate text-[10px] font-medium leading-4 text-subtle">
               <MapPin className="size-3 shrink-0" aria-hidden />
@@ -240,8 +249,11 @@ export function InitiativeCard({
             {i.title}
           </h3>
 
-          {i.linked_event?.starts_at ? (
-            <LinkedEventDate startsAt={i.linked_event.starts_at} />
+          {i.linked_event?.starts_at && i.linked_event.ends_at ? (
+            <LinkedEventDate
+              startsAt={i.linked_event.starts_at}
+              endsAt={i.linked_event.ends_at}
+            />
           ) : null}
 
           <div className="my-1 flex items-center gap-1 text-[11px] font-medium leading-snug text-subtle">

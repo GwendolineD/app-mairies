@@ -8,6 +8,7 @@ import { ROUTES } from "@/lib/constants/routes";
 import { EVENT_STATUS } from "@/lib/constants/statuses";
 import { createClient } from "@/lib/supabase/server";
 import { parseFormId } from "@/lib/utils/form-data";
+import { buildAddressLabel, parseAddressLabelParts } from "@/lib/utils/format-address";
 import { eventSchema, eventModalSchema } from "@/lib/validations/schemas";
 import { fanoutNewContentNotification } from "@/lib/services/notification-fanout";
 import type { EventEditData, AgendaEventRecord } from "@/lib/types";
@@ -33,8 +34,8 @@ export async function createEvent(formData: FormData): Promise<void> {
       author_membership_id: membership.id,
       title: parsed.data.title,
       description: parsed.data.description ?? null,
-      starts_at: new Date(parsed.data.startsAt).toISOString(),
-      ends_at: new Date(parsed.data.endsAt).toISOString(),
+      starts_at: parsed.data.startsAt,
+      ends_at: parsed.data.endsAt,
       address_label:
         parsed.data.addressLabel ??
         (membership as { address_label?: string | null }).address_label ??
@@ -151,9 +152,11 @@ export async function createEventFromModal(
   const membership = ctx.activeMembership!;
   const supabase = await createClient();
 
-  const addressLabel = [parsed.data.addressStreet, parsed.data.addressCity]
-    .filter(Boolean)
-    .join(", ") || null;
+  const addressLabel = buildAddressLabel(
+    parsed.data.addressStreet,
+    parsed.data.addressPostcode,
+    parsed.data.addressCity,
+  );
 
   const { data: created, error } = await supabase
     .from("events")
@@ -164,8 +167,8 @@ export async function createEventFromModal(
       title: parsed.data.title,
       description: parsed.data.description ?? null,
       photo_url: parsed.data.photoUrl || null,
-      starts_at: new Date(parsed.data.startsAt).toISOString(),
-      ends_at: new Date(parsed.data.endsAt).toISOString(),
+      starts_at: parsed.data.startsAt,
+      ends_at: parsed.data.endsAt,
       volunteers_needed: parsed.data.volunteersNeeded ?? null,
       address_label: addressLabel,
       address_lat: parsed.data.addressLat ?? null,
@@ -215,9 +218,11 @@ export async function updateEvent(
     return { error: firstError?.message ?? "Données invalides" };
   }
 
-  const addressLabel = [parsed.data.addressStreet, parsed.data.addressCity]
-    .filter(Boolean)
-    .join(", ") || null;
+  const addressLabel = buildAddressLabel(
+    parsed.data.addressStreet,
+    parsed.data.addressPostcode,
+    parsed.data.addressCity,
+  );
 
   const { error } = await supabase
     .from("events")
@@ -226,8 +231,8 @@ export async function updateEvent(
       title: parsed.data.title,
       description: parsed.data.description ?? null,
       photo_url: parsed.data.photoUrl || null,
-      starts_at: new Date(parsed.data.startsAt).toISOString(),
-      ends_at: new Date(parsed.data.endsAt).toISOString(),
+      starts_at: parsed.data.startsAt,
+      ends_at: parsed.data.endsAt,
       volunteers_needed: parsed.data.volunteersNeeded ?? null,
       address_label: addressLabel,
       address_lat: parsed.data.addressLat ?? null,
@@ -261,10 +266,7 @@ export async function getEventForEdit(
 
   const event = data as AgendaEventRecord;
 
-  const labelParts = (event.address_label ?? "")
-    .split(",")
-    .map((p) => p.trim())
-    .filter(Boolean);
+  const parsedAddress = parseAddressLabelParts(event.address_label ?? "");
 
   const editData: EventEditData = {
     categorySlug: event.category_slug ?? "solidarite",
@@ -274,10 +276,10 @@ export async function getEventForEdit(
     startsAt: event.starts_at,
     endsAt: event.ends_at,
     volunteersNeeded: event.volunteers_needed,
-    addressStreet: labelParts[0] ?? "",
-    addressCity: labelParts.slice(1).join(", ") ?? "",
+    addressStreet: parsedAddress.street ?? "",
+    addressCity: parsedAddress.city ?? "",
     addressCitycode: "",
-    addressPostcode: "",
+    addressPostcode: parsedAddress.postcode ?? "",
     addressLat: event.address_lat ?? 0,
     addressLng: event.address_lng ?? 0,
     sourceInitiativeId: event.source_initiative_id ?? undefined,

@@ -9,7 +9,12 @@ import {
 } from "@/lib/constants/initiative-categories";
 import { createClient } from "@/lib/supabase/server";
 import { formatEventDetail } from "@/lib/utils/date";
-import { formatAddressLines } from "@/lib/utils/format-address";
+import {
+  formatAddressLabel,
+  formatAddressLines,
+  parseAddressLabelParts,
+  resolveAddressPostcode,
+} from "@/lib/utils/format-address";
 import { HistoryBackLink } from "@/components/ui/history-back-link";
 import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";
@@ -30,10 +35,7 @@ const DETAIL_BADGE_CLASS = "h-[22px] px-2.5 py-0 text-[10px] leading-none";
 const DETAIL_CATEGORY_TAG_CLASS = `${DETAIL_BADGE_CLASS} w-fit font-semibold`;
 
 function buildEventEditData(event: AgendaEventRecord): EventEditData {
-  const labelParts = (event.address_label ?? "")
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean);
+  const parsedAddress = parseAddressLabelParts(event.address_label ?? "");
 
   return {
     categorySlug: event.category_slug ?? "solidarite",
@@ -43,10 +45,10 @@ function buildEventEditData(event: AgendaEventRecord): EventEditData {
     startsAt: event.starts_at,
     endsAt: event.ends_at,
     volunteersNeeded: event.volunteers_needed,
-    addressStreet: labelParts[0] ?? "",
-    addressCity: labelParts.slice(1).join(", ") ?? "",
+    addressStreet: parsedAddress.street ?? "",
+    addressCity: parsedAddress.city ?? "",
     addressCitycode: "",
-    addressPostcode: "",
+    addressPostcode: parsedAddress.postcode ?? "",
     addressLat: event.address_lat ?? 0,
     addressLng: event.address_lng ?? 0,
     sourceInitiativeId: event.source_initiative_id ?? undefined,
@@ -62,13 +64,23 @@ export default async function EvenementDetailPage(props: {
 
   const { data } = await supabase
     .from("events")
-    .select("*")
+    .select(
+      `*,
+      author_membership:memberships!events_author_membership_id_fkey(
+        address_postcode
+      )`,
+    )
     .eq("commune_id", ctx.activeMembership!.commune_id)
     .eq("id", id)
     .single();
 
   if (!data) notFound();
-  const event = data as AgendaEventRecord;
+
+  type EnrichedEvent = AgendaEventRecord & {
+    author_membership: { address_postcode: string | null } | null;
+  };
+
+  const event = data as EnrichedEvent;
 
   // If the content is suspended, show appropriate screen
   if (event.suspended_at) {
@@ -124,7 +136,20 @@ export default async function EvenementDetailPage(props: {
       ? getInitiativeCategoryDefaultImageUrl(event.category_slug)
       : null);
 
-  const addressLines = formatAddressLines(event.address_label, null, null);
+  const parsedAddress = parseAddressLabelParts(event.address_label ?? "");
+  const resolvedPostcode = resolveAddressPostcode(
+    parsedAddress.postcode,
+    event.address_label,
+    event.author_membership?.address_postcode,
+  );
+  const addressLines = formatAddressLines(
+    parsedAddress.street,
+    resolvedPostcode,
+    parsedAddress.city,
+  );
+  const addressLabel = event.address_label
+    ? formatAddressLabel(parsedAddress.street, resolvedPostcode, parsedAddress.city)
+    : null;
 
   return (
     <PageStack gap="5">
@@ -165,10 +190,10 @@ export default async function EvenementDetailPage(props: {
                 <CalendarDays className="size-4 shrink-0" aria-hidden />
                 {formatEventDetail(event.starts_at, event.ends_at)}
               </p>
-              {event.address_label ? (
+              {addressLabel ? (
                 <p className="flex items-center gap-2 text-sm font-medium text-muted">
                   <MapPin className="size-4 shrink-0" aria-hidden />
-                  {event.address_label}
+                  {addressLabel}
                 </p>
               ) : null}
             </div>

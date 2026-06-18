@@ -9,6 +9,7 @@ import { EVENT_STATUS } from "@/lib/constants/statuses";
 import { getInitiativeCategoryDefaultImageUrl } from "@/lib/constants/initiative-categories";
 import { createClient } from "@/lib/supabase/server";
 import { parseFormId } from "@/lib/utils/form-data";
+import { buildAddressLabel } from "@/lib/utils/format-address";
 import { firstZodIssueMessage } from "@/lib/utils/supabase-errors";
 import {
   initiativeSchema,
@@ -68,8 +69,16 @@ export async function createInitiative(formData: FormData): Promise<{ id: string
     parsed.data.addressLng != null;
 
   const addressLabel = hasFormAddress
-    ? [streetFromForm, cityFromForm].filter(Boolean).join(", ")
-    : (membership.address_street ?? membership.address_city);
+    ? buildAddressLabel(
+        streetFromForm,
+        parsed.data.addressPostcode,
+        cityFromForm,
+      )
+    : buildAddressLabel(
+        membership.address_street,
+        membership.address_postcode,
+        membership.address_city,
+      );
   const addressLat = hasFormAddress
     ? parsed.data.addressLat!
     : membership.address_lat;
@@ -179,8 +188,16 @@ export async function updateInitiative(
     parsed.data.addressLng != null;
 
   const addressLabel = hasFormAddress
-    ? [streetFromForm, cityFromForm].filter(Boolean).join(", ")
-    : (membership.address_street ?? membership.address_city);
+    ? buildAddressLabel(
+        streetFromForm,
+        parsed.data.addressPostcode,
+        cityFromForm,
+      )
+    : buildAddressLabel(
+        membership.address_street,
+        membership.address_postcode,
+        membership.address_city,
+      );
   const addressLat = hasFormAddress
     ? parsed.data.addressLat!
     : membership.address_lat;

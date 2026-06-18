@@ -35,7 +35,7 @@ export default async function ResidentAccueilPage() {
         .eq("commune_id", communeId)
         .eq("status", EVENT_STATUS.active)
         .is("suspended_at", null)
-        .gte("starts_at", new Date().toISOString())
+        .gte("ends_at", new Date().toISOString())
         .order("starts_at", { ascending: true })
         .limit(3),
     ]);

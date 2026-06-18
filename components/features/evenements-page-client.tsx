@@ -4,7 +4,7 @@
 import dynamic from "next/dynamic";
 import { getEventPinHex, getInitiativePinHex } from "@/lib/constants/map-pins";
 import { getInitiativeCategoryMapPinUrl } from "@/lib/constants/initiative-categories";
-import type { AgendaEventRecord } from "@/lib/types";
+import type { EventCardData } from "@/components/features/event-card";
 import type { EventListParams } from "@/lib/utils/search-params";
 import { Card } from "@/components/ui/card";
 import { ListGrid, PageStack } from "@/components/ui/page-stack";
@@ -42,10 +42,10 @@ type MapMarker = {
 
 type Props = {
   params: EventListParams;
-  items: AgendaEventRecord[];
+  items: EventCardData[];
   totalCount: number;
   mapCenter: [number, number];
-  mapItems: AgendaEventRecord[];
+  mapItems: EventCardData[];
   mapMarkers: MapMarker[];
   hasUserAddress: boolean;
 };

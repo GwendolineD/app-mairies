@@ -31,6 +31,7 @@ import type {
   NotificationPreferences,
 } from "@/lib/types";
 import type { NeighborInviteTemplateView } from "@/lib/utils/email-template";
+import { formatEventRange } from "@/lib/utils/date";
 
 type ProfileData = {
   displayName: string;
@@ -368,7 +369,7 @@ function EventsPanel({ events }: { events: AgendaEventRecord[] }) {
                 {e.title}
               </p>
               <p className="mt-1 text-sm font-medium leading-5 text-muted">
-                {formatEventDate(e.starts_at, e.ends_at)}
+                {formatEventRange(e.starts_at, e.ends_at)}
               </p>
               <p className="mt-2 text-xs font-semibold text-muted">
                 {formatRelativeDate(e.created_at)}
@@ -428,18 +429,3 @@ function formatRelativeDate(value: string) {
   return `il y a ${Math.floor(diffDays / 7)} semaines`;
 }
 
-function formatEventDate(startsAt: string, endsAt: string) {
-  const start = new Date(startsAt);
-  const end = new Date(endsAt);
-  const fmt = new Intl.DateTimeFormat("fr-FR", {
-    day: "numeric",
-    month: "long",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  const endFmt = new Intl.DateTimeFormat("fr-FR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  return `${fmt.format(start)} — ${endFmt.format(end)}`;
-}
