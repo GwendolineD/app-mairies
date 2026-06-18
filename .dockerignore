@@ -4,5 +4,7 @@ node_modules
 .env*
 *.md
 scripts/
-supabase/
+supabase/migrations/
+supabase/seed.sql
+supabase/config.toml
 .cursor/
