@@ -30,16 +30,17 @@ export async function updateNotificationPreferences(formData: FormData): Promise
   revalidatePath(ROUTES.profil);
 }
 
-export async function updateProfile(formData: FormData): Promise<void> {
-  const ctx = await requireActiveMembership();
-  const raw = {
-    displayName: formData.get("displayName") as string,
-    bio: (formData.get("bio") as string) || undefined,
-    avatarUrl: (formData.get("avatarUrl") as string) || "",
-  };
+export type UpdateProfileResult = { success: true } | { error: string };
 
-  const parsed = profileUpdateSchema.safeParse(raw);
-  if (!parsed.success) return;
+export async function updateProfile(
+  input: { displayName: string; bio?: string; avatarUrl?: string },
+): Promise<UpdateProfileResult> {
+  const ctx = await requireActiveMembership();
+
+  const parsed = profileUpdateSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Données invalides" };
+  }
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -51,6 +52,10 @@ export async function updateProfile(formData: FormData): Promise<void> {
     })
     .eq("user_id", ctx.userId);
 
-  if (error) return;
+  if (error) {
+    return { error: "Impossible de mettre à jour le profil." };
+  }
+
   revalidatePath(ROUTES.profil);
+  return { success: true };
 }

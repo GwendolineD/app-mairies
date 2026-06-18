@@ -8,7 +8,6 @@ export default function Loading() {
       <Skeleton className="h-5 w-44" />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
-        {/* Main card skeleton */}
         <Card className="space-y-5 p-6">
           <header className="space-y-3">
             <Skeleton className="h-6 w-28 rounded-full" />
@@ -30,9 +29,7 @@ export default function Loading() {
           </div>
         </Card>
 
-        {/* Sidebar skeleton */}
         <aside className="space-y-4">
-          {/* Contact card */}
           <Card className="space-y-4 p-5">
             <Skeleton className="h-6 w-24" />
             <div className="flex items-center gap-3">
@@ -45,14 +42,12 @@ export default function Loading() {
             <Skeleton className="h-11 w-full rounded-sm" />
           </Card>
 
-          {/* Location card */}
           <Card className="space-y-3 p-5">
             <Skeleton className="h-6 w-32" />
             <Skeleton className="h-4 w-40" />
             <Skeleton className="h-48 w-full rounded-2xl" />
           </Card>
 
-          {/* Similar announcements */}
           <Card className="space-y-3 p-5">
             <Skeleton className="h-6 w-40" />
             <div className="space-y-3">

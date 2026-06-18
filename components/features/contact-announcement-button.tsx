@@ -11,11 +11,9 @@ import type { ConversationContextType } from "@/lib/types";
 import { cn } from "@/lib/utils/cn";
 
 type Props = {
-  /** Id of the announcement / initiative / event to start the conversation about. */
   contextId: string;
   label: string;
   contextType?: ConversationContextType;
-  /** Backwards-compatible alias for callers using the old API. */
   announcementId?: string;
   icon?: React.ReactNode;
   className?: string;

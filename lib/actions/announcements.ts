@@ -89,8 +89,16 @@ export async function createAnnouncement(formData: FormData): Promise<{ id: stri
   revalidatePath(ROUTES.annonces.list);
   revalidatePath(ROUTES.accueil);
   revalidatePath(ROUTES.annonces.detail(created.id));
+  revalidatePath(ROUTES.profil);
 
-  // Fanout "new announcement" notification to opted-in commune members (best-effort).
+  // Best-effort increment of the denormalized publish counter
+  void supabase.rpc("increment_membership_counter", {
+    p_membership_id: membership.id,
+    p_column_name: "total_announcements_published",
+  }).then(({ error: rpcErr }) => {
+    if (rpcErr) console.error("[createAnnouncement] counter increment failed", rpcErr.message);
+  });
+
   void fanoutNewContentNotification({
     contextType: "announcement",
     contextId: created.id,

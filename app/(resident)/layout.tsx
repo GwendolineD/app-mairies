@@ -1,3 +1,4 @@
+import { Toaster } from "sonner";
 import { BottomNav } from "@/components/features/resident-nav";
 import { ResidentSidebar } from "@/components/features/resident-sidebar";
 import { ResidentHeader } from "@/components/features/resident-header";
@@ -57,6 +58,7 @@ export default async function ResidentRootLayout({
       </div>
 
       <BottomNav unreadMessages={unreadMessages} />
+      <Toaster position="top-center" richColors closeButton />
     </div>
   );
 }

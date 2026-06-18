@@ -1,101 +1,179 @@
+import { Suspense } from "react";
 import { requireActiveMembership } from "@/lib/auth/session";
-import { createNeighborInvite } from "@/lib/actions/messages";
 import { createClient } from "@/lib/supabase/server";
 import { getNotificationPreferences } from "@/lib/queries/messages";
 import { getPushPublicKey } from "@/lib/actions/notifications";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/form-field";
-import { PageHeading } from "@/components/ui/page-heading";
-import { PageStack } from "@/components/ui/page-stack";
-import { ProfilAddCommuneButton } from "@/components/features/profil-add-commune-button";
-import { ProfilClient } from "@/components/features/profil-client";
-import { NotificationPreferencesForm } from "@/components/features/notification-preferences-form";
+import { ProfileSkeleton } from "@/components/features/profile/profile-skeleton";
+import {
+  isProfileTab,
+  type ProfileTabKey,
+} from "@/components/features/profile/profile-tabs";
+import { ProfilePageClient } from "@/components/features/profile/profile-page-client";
+import type {
+  Announcement,
+  InitiativeRecord,
+  AgendaEventRecord,
+} from "@/lib/types";
+import { NEIGHBOR_INVITE_TEMPLATE_KEY } from "@/lib/constants/email-templates";
+import { normalizeNeighborInviteTemplate } from "@/lib/utils/email-template";
 
-export default async function ProfilPage() {
+type SearchParams = Promise<{ tab?: string }> | undefined;
+
+export default function ProfilPage({
+  searchParams,
+}: {
+  searchParams?: SearchParams;
+}) {
+  return (
+    <Suspense fallback={<ProfileSkeleton />}>
+      <ProfilContent searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function ProfilContent({
+  searchParams,
+}: {
+  searchParams?: SearchParams;
+}) {
+  const sp = (await searchParams) ?? {};
+  const activeTab: ProfileTabKey = isProfileTab(sp.tab ?? "")
+    ? (sp.tab as ProfileTabKey)
+    : "annonces";
   const ctx = await requireActiveMembership();
+  const profile = ctx.profile;
   const membership = ctx.activeMembership!;
+  const communeId = membership.commune_id;
+  const membershipId = membership.id;
+
   const supabase = await createClient();
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("user_id", ctx.userId)
-    .single();
+  const [
+    activeAnnouncementsResult,
+    activeInitiativesResult,
+    activeEventsResult,
+    invitesResult,
+    templateResult,
+    notificationPrefs,
+    pushPublicKey,
+  ] = await Promise.all([
+    supabase
+      .from("announcements")
+      .select(
+        "id, commune_id, author_membership_id, type, category_slug, title, description, photo_url, target_date, status, created_at",
+      )
+      .eq("commune_id", communeId)
+      .eq("author_membership_id", membershipId)
+      .neq("status", "archivee")
+      .order("created_at", { ascending: false })
+      .limit(20),
+    supabase
+      .from("initiatives")
+      .select(
+        "id, commune_id, author_membership_id, category_slug, title, description, date_mode, single_starts_at, single_ends_at, recurrence_rule, status, photo_url, address_label, address_lat, address_lng, created_at, updated_at",
+      )
+      .eq("commune_id", communeId)
+      .eq("author_membership_id", membershipId)
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(20),
+    supabase
+      .from("events")
+      .select(
+        "id, commune_id, author_membership_id, title, description, starts_at, ends_at, status, photo_url, address_label, address_lat, address_lng, created_at, updated_at",
+      )
+      .eq("commune_id", communeId)
+      .eq("author_membership_id", membershipId)
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(20),
+    supabase
+      .from("neighbor_invites")
+      .select("id, email, created_at", { count: "exact" })
+      .eq("commune_id", communeId)
+      .eq("inviter_membership_id", membershipId)
+      .order("created_at", { ascending: false })
+      .limit(3),
+    supabase
+      .from("commune_email_templates")
+      .select("subject, preheader, body_markdown, cta_label")
+      .eq("commune_id", communeId)
+      .eq("template_key", NEIGHBOR_INVITE_TEMPLATE_KEY)
+      .maybeSingle(),
+    getNotificationPreferences(supabase, ctx.userId),
+    getPushPublicKey(),
+  ]);
 
-  const [annCount, initCount, partCount, notificationPrefs, pushPublicKey] =
-    await Promise.all([
-      supabase
-        .from("announcements")
-        .select("id", { count: "exact", head: true })
-        .eq("author_membership_id", membership.id),
-      supabase
-        .from("initiatives")
-        .select("id", { count: "exact", head: true })
-        .eq("author_membership_id", membership.id),
-      supabase
-        .from("initiative_responses")
-        .select("id", { count: "exact", head: true })
-        .eq("membership_id", membership.id),
-      getNotificationPreferences(supabase, ctx.userId),
-      getPushPublicKey(),
-    ]);
+  const announcements = (activeAnnouncementsResult.data ?? []) as Announcement[];
+  const initiatives = (activeInitiativesResult.data ?? []) as InitiativeRecord[];
+  const events = (activeEventsResult.data ?? []) as AgendaEventRecord[];
 
-  const communeNames = ctx.memberships
-    .map((m) => m.commune?.name)
-    .filter(Boolean)
-    .join(", ");
+  const displayName = getDisplayName(profile);
+  const communeName = membership.commune?.name ?? "Votre commune";
+
+  const addressParts = [
+    membership.address_street,
+    membership.address_city,
+    membership.address_postcode,
+  ].filter(Boolean);
+  const fullAddress =
+    addressParts.length > 0
+      ? addressParts.join(", ")
+      : "Adresse non renseignée";
+
+  const template = normalizeNeighborInviteTemplate(templateResult.data);
+  const inviteCount = invitesResult.count ?? (invitesResult.data?.length ?? 0);
 
   return (
-    <PageStack gap="5">
-      <PageHeading title="Mon profil" />
-
-      <Card className="space-y-2 p-5">
-        <p className="text-sm text-muted">
-          {membership.address_street ?? membership.address_city ?? "Adresse non renseignée"} · {communeNames}
-        </p>
-        <p className="text-xs text-subtle">
-          Rôle : {ctx.profile.is_platform_admin
-            ? "Super admin"
-            : membership.role === "mayor"
-              ? "Maire"
-              : membership.role === "staff"
-                ? "Staff mairie"
-                : "Résident·e"}
-        </p>
-      </Card>
-
-      <ProfilClient
-        displayName={profile?.display_name ?? "Voisin·e"}
-        bio={profile?.bio ?? ""}
-        avatarUrl={profile?.avatar_url ?? ""}
-        stats={{
-          announcements: annCount.count ?? 0,
-          initiatives: initCount.count ?? 0,
-          participations: partCount.count ?? 0,
-        }}
-      />
-
-      <NotificationPreferencesForm
-        initial={notificationPrefs}
-        pushPublicKey={pushPublicKey}
-      />
-
-      <Card className="space-y-3 p-5">
-        <h2 className="text-xl font-semibold text-text">
-          Inviter un·e voisin·e proche par e-mail
-        </h2>
-        <form action={createNeighborInvite} className="space-y-2">
-          <Input type="email" name="email" required placeholder="voisin@mail.fr" />
-          <Button type="submit" className="w-full">
-            Envoyer l&apos;invitation
-          </Button>
-        </form>
-      </Card>
-
-      <Card className="space-y-3 p-5">
-        <ProfilAddCommuneButton memberships={ctx.memberships} />
-      </Card>
-    </PageStack>
+    <ProfilePageClient
+      profile={{
+        displayName,
+        firstName: profile.first_name,
+        lastName: profile.last_name,
+        bio: profile.bio ?? "",
+        avatarUrl: profile.avatar_url,
+      }}
+      membership={{
+        fullAddress,
+        communeName,
+        joinedAt: membership.created_at,
+        totalAnnouncements: membership.total_announcements_published ?? 0,
+        totalInitiatives: membership.total_initiatives_published ?? 0,
+        totalEvents: membership.total_events_published ?? 0,
+        role: ctx.profile.is_platform_admin
+          ? "Super admin"
+          : membership.role === "mayor"
+            ? "Maire"
+            : membership.role === "staff"
+              ? "Staff mairie"
+              : "Résident·e",
+      }}
+      activeTab={activeTab}
+      announcements={announcements}
+      initiatives={initiatives}
+      events={events}
+      invite={{
+        template,
+        senderName: displayName,
+        communeName,
+        inviteCount,
+      }}
+      settings={{
+        notificationPrefs,
+        pushPublicKey,
+        memberships: ctx.memberships,
+      }}
+    />
   );
+}
+
+function getDisplayName(profile: {
+  display_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
+}) {
+  const fullName = [profile.first_name, profile.last_name]
+    .filter(Boolean)
+    .join(" ");
+  return profile.display_name || fullName || "Voisin·e";
 }

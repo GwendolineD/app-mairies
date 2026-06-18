@@ -18,7 +18,7 @@ export async function cancelSubscription(
 ): Promise<CancellationActionResult> {
   const ctx = await requireCommuneStaff();
 
-  if (ctx.communeId !== communeId) {
+  if (ctx.activeCommuneId !== communeId) {
     return { success: false, error: "Accès non autorisé à cette commune." };
   }
 

@@ -14,7 +14,7 @@ export default async function MairieAbonnementPage() {
 
   const subscriptionInfo = await getCommuneSubscriptionInfo(
     supabase,
-    ctx.communeId,
+    ctx.activeCommuneId!,
   );
 
   const cancellationsBySubscription = Object.fromEntries(
@@ -40,7 +40,7 @@ export default async function MairieAbonnementPage() {
         </h2>
         <Card className="p-6">
           <SubscriptionPeriodsTable
-            communeId={ctx.communeId}
+            communeId={ctx.activeCommuneId!}
             periods={subscriptionInfo.periods}
             cancellationsBySubscription={cancellationsBySubscription}
           />

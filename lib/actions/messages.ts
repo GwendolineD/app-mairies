@@ -2,14 +2,30 @@
 
 import { revalidatePath } from "next/cache";
 import { requireActiveMembership } from "@/lib/auth/session";
+import { NEIGHBOR_INVITE_TEMPLATE_KEY } from "@/lib/constants/email-templates";
 import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
+import { getAppUrl } from "@/lib/utils/app-url";
+import {
+  buildMailtoHref,
+  normalizeNeighborInviteTemplate,
+  renderNeighborInviteTemplate,
+} from "@/lib/utils/email-template";
 import { messageSchema } from "@/lib/validations/schemas";
 import {
   notifyUser,
   shouldNotifyMessage,
 } from "@/lib/services/push-notifications";
 import type { ConversationContextType } from "@/lib/types";
+
+export type NeighborInviteState = {
+  success?: boolean;
+  error?: string;
+  email?: string;
+  mailtoHref?: string;
+  subject?: string;
+  body?: string;
+};
 
 function normalizePair(userIdA: string, userIdB: string): [string, string] {
   return userIdA < userIdB ? [userIdA, userIdB] : [userIdB, userIdA];
@@ -329,25 +345,87 @@ export async function permanentlyDeleteConversation(conversationId: string) {
   return { success: true };
 }
 
-export async function createNeighborInvite(formData: FormData): Promise<void> {
+export async function createNeighborInvite(
+  _state: NeighborInviteState | undefined,
+  formData: FormData,
+): Promise<NeighborInviteState> {
   const ctx = await requireActiveMembership();
 
   const email = (formData.get("email") as string)?.trim().toLowerCase();
-  if (!email || !email.includes("@")) return;
+  if (!email || !email.includes("@")) {
+    return { error: "Adresse e-mail invalide." };
+  }
 
   const supabase = await createClient();
   const randomPart = [...crypto.getRandomValues(new Uint8Array(16))]
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 
+  const communeId = ctx.activeMembership!.commune_id;
+  const token = `${randomPart}`;
   const { error } = await supabase.from("neighbor_invites").insert({
     inviter_membership_id: ctx.activeMembership!.id,
-    commune_id: ctx.activeMembership!.commune_id,
+    commune_id: communeId,
     email,
-    token: `${randomPart}`,
+    token,
     expires_at: null,
   });
 
-  if (error) return;
+  if (error) {
+    console.error("Unable to create neighbor invite", error.message);
+    return { error: "Impossible de préparer l'invitation pour le moment." };
+  }
+
+  const { data: template, error: templateError } = await supabase
+    .from("commune_email_templates")
+    .select("subject, preheader, body_markdown, cta_label")
+    .eq("commune_id", communeId)
+    .eq("template_key", NEIGHBOR_INVITE_TEMPLATE_KEY)
+    .maybeSingle();
+
+  if (templateError) {
+    console.error("Unable to load neighbor invite template", templateError.message);
+  }
+
+  const profileName = [ctx.profile.first_name, ctx.profile.last_name]
+    .filter(Boolean)
+    .join(" ");
+  const senderName = ctx.profile.display_name || profileName || "Un voisin";
+  const communeName = ctx.activeMembership?.commune?.name ?? "votre commune";
+  const inviteLink = `${getAppUrl()}${ROUTES.inscription.root}?invite=${token}`;
+  const normalizedTemplate = normalizeNeighborInviteTemplate(template);
+  const rendered = renderNeighborInviteTemplate(normalizedTemplate, {
+    senderName,
+    communeName,
+    inviteLink,
+  });
+
+  const { sendEmail } = await import("@/lib/email/send-email");
+  const htmlBody = rendered.body
+    .split("\n")
+    .map((line: string) => (line.trim() ? `<p>${line}</p>` : ""))
+    .join("");
+  const emailResult = await sendEmail({
+    to: email,
+    subject: rendered.subject,
+    html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;color:#252630;max-width:600px;margin:0 auto;padding:20px">${htmlBody}</div>`,
+    text: rendered.body,
+  });
+
+  if (!emailResult.success) {
+    console.error("[createNeighborInvite] email send failed", emailResult.error);
+  }
+
   revalidatePath(ROUTES.profil);
+  return {
+    success: true,
+    email,
+    mailtoHref: buildMailtoHref({
+      email,
+      subject: rendered.subject,
+      body: rendered.body,
+    }),
+    subject: rendered.subject,
+    body: rendered.body,
+  };
 }
