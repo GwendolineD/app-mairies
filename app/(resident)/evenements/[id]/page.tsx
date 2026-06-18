@@ -7,9 +7,10 @@ import {
   getInitiativeCategoryMapPinUrl,
 } from "@/lib/constants/initiative-categories";
 import { createClient } from "@/lib/supabase/server";
+import { resolveEventAuthorLabel } from "@/lib/data/authors";
 import { listVolunteerCountsByInitiativeId } from "@/lib/queries/events";
 import { listInitiativeVolunteers } from "@/lib/queries/initiatives";
-import { formatEventDetail } from "@/lib/utils/date";
+import { formatEventDetail, formatMemberSince } from "@/lib/utils/date";
 import {
   formatAddressLines,
   parseAddressLabelParts,
@@ -119,6 +120,42 @@ export default async function EvenementDetailPage(props: {
 
   const isAuthor = event.author_membership_id === ctx.activeMembership?.id;
 
+  const { data: authorMembership } = await supabase
+    .from("memberships")
+    .select(
+      "id, created_at, profiles(first_name, last_name, display_name, avatar_url)",
+    )
+    .eq("id", event.author_membership_id)
+    .single();
+
+  type AuthorMembership = {
+    created_at: string;
+    profiles: {
+      first_name: string | null;
+      last_name: string | null;
+      display_name: string | null;
+      avatar_url: string | null;
+    } | null;
+  };
+
+  const authorData = authorMembership as AuthorMembership | null;
+  const authorProfile = authorData?.profiles;
+  const authorNameRaw =
+    (authorProfile?.display_name ??
+      [authorProfile?.first_name, authorProfile?.last_name]
+        .filter(Boolean)
+        .join(" ")) ||
+    "Voisin·e";
+  const authorName = resolveEventAuthorLabel(
+    event.is_official,
+    authorNameRaw,
+    ctx.activeMembership?.commune?.name,
+  );
+  const authorAvatarUrl = authorProfile?.avatar_url ?? null;
+  const memberSince = authorData?.created_at
+    ? formatMemberSince(authorData.created_at)
+    : "Membre";
+
   let sourceInitiative: { id: string; title: string } | null = null;
   if (event.source_initiative_id) {
     const { data: initiative } = await supabase
@@ -151,12 +188,22 @@ export default async function EvenementDetailPage(props: {
 
   let volunteersRegistered = 0;
   let volunteers: Awaited<ReturnType<typeof listInitiativeVolunteers>> = [];
+  let initialVolunteering = false;
   if (event.source_initiative_id) {
     const counts = await listVolunteerCountsByInitiativeId(supabase, [
       event.source_initiative_id,
     ]);
     volunteersRegistered = counts[event.source_initiative_id] ?? 0;
     volunteers = await listInitiativeVolunteers(supabase, event.source_initiative_id);
+
+    const { data: userVolunteer } = await supabase
+      .from("initiative_responses")
+      .select("id")
+      .eq("initiative_id", event.source_initiative_id)
+      .eq("membership_id", ctx.activeMembership!.id)
+      .eq("response_type", "volunteer")
+      .maybeSingle();
+    initialVolunteering = !!userVolunteer;
   }
 
   return (
@@ -219,9 +266,13 @@ export default async function EvenementDetailPage(props: {
           <EventSidebarActions
             isAuthor={isAuthor}
             eventId={event.id}
+            authorName={authorName}
+            authorAvatarUrl={authorAvatarUrl}
+            memberSince={memberSince}
             volunteersNeeded={event.volunteers_needed}
             volunteersRegistered={volunteersRegistered}
             volunteers={volunteers}
+            initialVolunteering={initialVolunteering}
             editData={editData}
             sourceInitiative={sourceInitiative}
             className={DETAIL_CARD_CLASS}

@@ -125,12 +125,24 @@ export default async function MairieEvenementDetailPage(props: {
 
   let volunteersRegistered = 0;
   let volunteers: Awaited<ReturnType<typeof listInitiativeVolunteers>> = [];
+  let initialVolunteering = false;
   if (event.source_initiative_id) {
     const counts = await listVolunteerCountsByInitiativeId(supabase, [
       event.source_initiative_id,
     ]);
     volunteersRegistered = counts[event.source_initiative_id] ?? 0;
     volunteers = await listInitiativeVolunteers(supabase, event.source_initiative_id);
+
+    if (ctx.activeMembership?.id) {
+      const { data: userVolunteer } = await supabase
+        .from("initiative_responses")
+        .select("id")
+        .eq("initiative_id", event.source_initiative_id)
+        .eq("membership_id", ctx.activeMembership.id)
+        .eq("response_type", "volunteer")
+        .maybeSingle();
+      initialVolunteering = !!userVolunteer;
+    }
   }
 
   return (
@@ -196,9 +208,13 @@ export default async function MairieEvenementDetailPage(props: {
           <EventSidebarActions
             isAuthor
             eventId={event.id}
+            authorName={authorLabel}
+            authorAvatarUrl={null}
+            memberSince=""
             volunteersNeeded={event.volunteers_needed}
             volunteersRegistered={volunteersRegistered}
             volunteers={volunteers}
+            initialVolunteering={initialVolunteering}
             editData={editData}
             sourceInitiative={sourceInitiative}
             className={DETAIL_CARD_CLASS}

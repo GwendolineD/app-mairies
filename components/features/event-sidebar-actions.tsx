@@ -3,13 +3,25 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowUpRight, CalendarDays, Copy, Pencil, Sparkles, Trash2, Users } from "lucide-react";
+import {
+  ArrowUpRight,
+  CalendarDays,
+  Copy,
+  MessageCircle,
+  Pencil,
+  Sparkles,
+  Trash2,
+  Users,
+} from "lucide-react";
+import { ContactAnnouncementButton } from "@/components/features/contact-announcement-button";
 import { useCreationModals } from "@/components/features/creation-modal-context";
 import { VolunteersAvatarRow } from "@/components/features/event-volunteers-list";
+import { EventVolunteerButton } from "@/components/features/event-volunteer-button";
 import { deleteEvent } from "@/lib/actions/events";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { ROUTES } from "@/lib/constants/routes";
 import type { InitiativeSupporter } from "@/lib/queries/initiatives";
 import type { EventEditData } from "@/lib/types";
@@ -23,9 +35,13 @@ type SourceInitiative = {
 type Props = {
   isAuthor: boolean;
   eventId: string;
+  authorName: string;
+  authorAvatarUrl: string | null;
+  memberSince: string;
   volunteersNeeded: number | null;
   volunteersRegistered?: number;
   volunteers?: InitiativeSupporter[];
+  initialVolunteering?: boolean;
   editData?: EventEditData;
   sourceInitiative?: SourceInitiative | null;
   className?: string;
@@ -35,14 +51,20 @@ type Props = {
 export function EventSidebarActions({
   isAuthor,
   eventId,
+  authorName,
+  authorAvatarUrl,
+  memberSince,
   volunteersNeeded,
   volunteersRegistered = 0,
   volunteers = [],
+  initialVolunteering = false,
   editData,
   sourceInitiative,
   className,
   deleteRedirectHref = ROUTES.evenements.list,
 }: Props) {
+  const contactLabel = `Contacter ${authorName.split(" ")[0]}`;
+
   return (
     <>
       {isAuthor ? (
@@ -52,12 +74,56 @@ export function EventSidebarActions({
           className={className}
           deleteRedirectHref={deleteRedirectHref}
         />
-      ) : null}
+      ) : (
+        <>
+          <div className="space-y-4 md:hidden">
+            <Card className={cn("space-y-4 p-4", className)}>
+              <h2 className="text-lg font-semibold text-text">Contact</h2>
+              <div className="flex items-center gap-3">
+                <UserAvatar name={authorName} url={authorAvatarUrl} size="sm" />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-text">
+                    {authorName}
+                  </p>
+                  <p className="text-xs text-muted">{memberSince}</p>
+                </div>
+              </div>
+              <ContactAnnouncementButton
+                contextId={eventId}
+                contextType="event"
+                label={contactLabel}
+                icon={<MessageCircle className="size-4" aria-hidden />}
+                className="py-4"
+              />
+            </Card>
+          </div>
+
+          <Card className={cn("hidden space-y-4 md:block md:p-5", className)}>
+            <h2 className="text-lg font-semibold text-text">Contact</h2>
+            <div className="flex items-center gap-3">
+              <UserAvatar name={authorName} url={authorAvatarUrl} />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-text">
+                  {authorName}
+                </p>
+                <p className="text-xs text-muted">{memberSince}</p>
+              </div>
+            </div>
+            <ContactAnnouncementButton
+              contextId={eventId}
+              contextType="event"
+              label={contactLabel}
+              icon={<MessageCircle className="size-4" aria-hidden />}
+            />
+          </Card>
+        </>
+      )}
 
       {volunteersNeeded != null && volunteersNeeded > 0 ? (
         <VolunteersCard
           eventId={eventId}
           isAuthor={isAuthor}
+          initialVolunteering={initialVolunteering}
           volunteersNeeded={volunteersNeeded}
           volunteersRegistered={volunteersRegistered}
           volunteers={volunteers}
@@ -178,6 +244,7 @@ function VolunteersGauge({
 function VolunteersCard({
   eventId,
   isAuthor,
+  initialVolunteering,
   volunteersNeeded,
   volunteersRegistered,
   volunteers,
@@ -185,6 +252,7 @@ function VolunteersCard({
 }: {
   eventId: string;
   isAuthor: boolean;
+  initialVolunteering: boolean;
   volunteersNeeded: number;
   volunteersRegistered: number;
   volunteers: InitiativeSupporter[];
@@ -198,7 +266,9 @@ function VolunteersCard({
           Bénévoles
         </h2>
         <p className="text-sm font-medium text-muted">
-          L&apos;organisateur recherche des bénévoles pour cet événement.
+          {isAuthor
+            ? "Recherchez des bénévoles — vous pouvez aussi vous inscrire vous-même."
+            : "L&apos;organisateur recherche des bénévoles pour cet événement."}
         </p>
       </div>
       <div className="space-y-3">
@@ -210,6 +280,10 @@ function VolunteersCard({
             isAuthor={isAuthor}
           />
         ) : null}
+        <EventVolunteerButton
+          eventId={eventId}
+          initialVolunteering={initialVolunteering}
+        />
       </div>
     </Card>
   );
