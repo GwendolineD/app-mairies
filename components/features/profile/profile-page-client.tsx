@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   CalendarDays,
@@ -13,31 +12,27 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PageStack } from "@/components/ui/page-stack";
-import { AnnouncementTypeTag } from "@/components/ui/announcement-type-tag";
-import { CategoryTag } from "@/components/ui/category-tag";
-import { getCategoryLabel } from "@/lib/constants/announcement-categories";
 import { ROUTES } from "@/lib/constants/routes";
 import { ProfileTabs, type ProfileTabKey } from "@/components/features/profile/profile-tabs";
 import { ProfileEmptyState } from "@/components/features/profile/profile-empty-state";
 import { ProfilEditModal } from "@/components/features/profile/profil-edit-modal";
 import { NeighborInviteBlock } from "@/components/features/profile/neighbor-invite-block";
 import { NotificationPreferencesForm } from "@/components/features/notification-preferences-form";
-import { ProfilAddCommuneButton } from "@/components/features/profil-add-commune-button";
+import { AnnouncementCard } from "@/components/features/announcement-card";
+import { InitiativeCard } from "@/components/features/initiative-card";
+import { EventCard } from "@/components/features/event-card";
+import type { AnnouncementWithAuthor } from "@/lib/queries/announcements";
+import type { InitiativeWithAuthor } from "@/lib/queries/initiatives";
 import type {
-  Announcement,
-  InitiativeRecord,
   AgendaEventRecord,
-  Membership,
   NotificationPreferences,
 } from "@/lib/types";
 import type { NeighborInviteTemplateView } from "@/lib/utils/email-template";
-import { formatEventRange } from "@/lib/utils/date";
 
 type ProfileData = {
   displayName: string;
   firstName: string | null;
   lastName: string | null;
-  bio: string;
   avatarUrl: string | null;
 };
 
@@ -49,6 +44,12 @@ type MembershipData = {
   totalInitiatives: number;
   totalEvents: number;
   role: string;
+  addressStreet: string | null;
+  addressPostcode: string | null;
+  addressCity: string | null;
+  addressCitycode: string | null;
+  addressLat: number | null;
+  addressLng: number | null;
 };
 
 type InviteData = {
@@ -61,15 +62,14 @@ type InviteData = {
 type SettingsData = {
   notificationPrefs: NotificationPreferences;
   pushPublicKey: string | null;
-  memberships: Membership[];
 };
 
 type Props = {
   profile: ProfileData;
   membership: MembershipData;
   activeTab: ProfileTabKey;
-  announcements: Announcement[];
-  initiatives: InitiativeRecord[];
+  announcements: AnnouncementWithAuthor[];
+  initiatives: InitiativeWithAuthor[];
   events: AgendaEventRecord[];
   invite: InviteData;
   settings: SettingsData;
@@ -88,7 +88,7 @@ export function ProfilePageClient({
   const [editOpen, setEditOpen] = useState(false);
 
   return (
-    <PageStack gap="5">
+    <PageStack gap="5" className="-mx-4 -mt-4 md:mx-0 md:mt-0">
       <ProfileHero
         profile={profile}
         membership={membership}
@@ -98,7 +98,7 @@ export function ProfilePageClient({
       <ProfileTabs activeTab={activeTab} />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <section>
+        <section className="px-4 md:px-0">
           {activeTab === "annonces" && (
             <AnnouncementsPanel announcements={announcements} />
           )}
@@ -114,7 +114,7 @@ export function ProfilePageClient({
           )}
         </section>
 
-        <aside className="space-y-5">
+        <aside className="space-y-5 px-4 md:px-0">
           <NeighborInviteBlock
             template={invite.template}
             senderName={invite.senderName}
@@ -127,11 +127,16 @@ export function ProfilePageClient({
       <ProfilEditModal
         open={editOpen}
         onClose={() => setEditOpen(false)}
-        displayName={profile.displayName}
-        bio={profile.bio}
         avatarUrl={profile.avatarUrl}
         firstName={profile.firstName}
         lastName={profile.lastName}
+        communeName={membership.communeName}
+        addressStreet={membership.addressStreet}
+        addressPostcode={membership.addressPostcode}
+        addressCity={membership.addressCity}
+        addressCitycode={membership.addressCitycode}
+        addressLat={membership.addressLat}
+        addressLng={membership.addressLng}
       />
     </PageStack>
   );
@@ -154,66 +159,80 @@ function ProfileHero({
     .join("");
 
   return (
-    <Card className="overflow-hidden p-0">
-      <div className="h-24 gradient-hero opacity-80" />
-      <div className="flex flex-col gap-5 p-5 md:flex-row md:items-end md:justify-between md:p-6">
-        <div className="-mt-16 flex flex-col gap-4 md:flex-row md:items-end">
-          <div className="flex size-28 items-center justify-center overflow-hidden rounded-full border-4 border-surface bg-soft-pink text-3xl font-bold text-purple shadow-card">
-            {profile.avatarUrl ? (
-              <Image
-                src={profile.avatarUrl}
-                alt=""
-                width={112}
-                height={112}
-                unoptimized
-                className="size-full object-cover"
-              />
-            ) : (
-              initials
-            )}
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <h1 className="text-[28px] font-bold leading-9 text-text">
-                {profile.displayName}
-              </h1>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={onEdit}
-                className="hidden md:inline-flex"
-              >
-                <Pencil className="size-3.5" aria-hidden />
-                Éditer mon profil
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-3 text-xs font-semibold text-muted">
-              <span className="inline-flex items-center gap-1">
-                <MapPin className="size-4" aria-hidden />
-                {membership.fullAddress}
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <CalendarDays className="size-4" aria-hidden />
-                Membre depuis {formatMonthYear(membership.joinedAt)}
-              </span>
-            </div>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={onEdit}
-              className="md:hidden"
-            >
-              <Pencil className="size-3.5" aria-hidden />
-              Éditer mon profil
-            </Button>
-          </div>
+    <Card className="relative overflow-hidden rounded-none border-0 p-0 shadow-none md:rounded-xl md:border md:border-border/60 md:shadow-card">
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        className="absolute right-4 top-4 z-10 size-9 shrink-0 p-0 md:hidden"
+        onClick={onEdit}
+        aria-label="Éditer mon profil"
+      >
+        <Pencil className="size-4" aria-hidden />
+      </Button>
+      <div className="relative grid gap-4 p-5 pt-14 md:grid-cols-[auto_1fr] md:gap-5 md:p-6 md:pt-6">
+        <div className="mx-auto flex size-28 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-surface bg-soft-pink text-3xl font-bold text-purple shadow-card md:mx-0 md:row-span-2">
+          {profile.avatarUrl ? (
+            <Image
+              src={profile.avatarUrl}
+              alt=""
+              width={112}
+              height={112}
+              unoptimized
+              className="size-full object-cover"
+            />
+          ) : (
+            initials
+          )}
         </div>
-        <div className="grid grid-cols-3 gap-3 md:w-80">
-          <ProfileStat label="Annonces" value={membership.totalAnnouncements} sublabel="publiées" />
-          <ProfileStat label="Initiatives" value={membership.totalInitiatives} sublabel="organisées" />
-          <ProfileStat label="Événements" value={membership.totalEvents} sublabel="créés" />
+        <div className="flex min-w-0 items-center justify-center gap-3 md:justify-between">
+          <h1 className="text-center text-xl font-bold leading-7 text-text md:text-left md:text-[28px] md:leading-9">
+            {profile.displayName}
+          </h1>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="hidden shrink-0 md:inline-flex"
+            onClick={onEdit}
+          >
+            <Pencil className="size-3.5" aria-hidden />
+            Éditer mon profil
+          </Button>
+        </div>
+        <div className="flex min-w-0 flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="flex flex-col items-center gap-1 text-center text-xs font-semibold text-muted md:items-start md:text-left">
+            <span className="inline-flex items-start gap-1">
+              <MapPin className="mt-0.5 size-4 shrink-0" aria-hidden />
+              {membership.addressStreet ||
+              membership.addressPostcode ||
+              membership.addressCity ? (
+                <span className="flex flex-col items-start">
+                  {membership.addressStreet ? (
+                    <span>{membership.addressStreet}</span>
+                  ) : null}
+                  {membership.addressPostcode || membership.addressCity ? (
+                    <span>
+                      {[membership.addressPostcode, membership.addressCity]
+                        .filter(Boolean)
+                        .join(" ")}
+                    </span>
+                  ) : null}
+                </span>
+              ) : (
+                membership.fullAddress
+              )}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <CalendarDays className="size-4 shrink-0" aria-hidden />
+              Membre depuis {formatMonthYear(membership.joinedAt)}
+            </span>
+          </div>
+          <div className="grid shrink-0 grid-cols-3 gap-3 md:w-80">
+            <ProfileStat label="Annonces" value={membership.totalAnnouncements} sublabel="publiées" />
+            <ProfileStat label="Initiatives" value={membership.totalInitiatives} sublabel="organisées" />
+            <ProfileStat label="Événements" value={membership.totalEvents} sublabel="créés" />
+          </div>
         </div>
       </div>
     </Card>
@@ -230,17 +249,21 @@ function ProfileStat({
   sublabel?: string;
 }) {
   return (
-    <div className="rounded-2xl bg-warm px-3 py-4 text-center">
+    <div className="rounded-2xl bg-warm px-2 py-3 text-center md:px-3 md:py-4">
       <p className="text-xl font-bold leading-7 text-text">{value}</p>
-      <p className="text-xs font-semibold text-muted">{label}</p>
+      <p className="text-[10px] font-semibold leading-4 text-muted">{label}</p>
       {sublabel && (
-        <p className="text-[10px] font-medium text-subtle">{sublabel}</p>
+        <p className="text-[9px] font-medium leading-4 text-subtle">{sublabel}</p>
       )}
     </div>
   );
 }
 
-function AnnouncementsPanel({ announcements }: { announcements: Announcement[] }) {
+function AnnouncementsPanel({
+  announcements,
+}: {
+  announcements: AnnouncementWithAuthor[];
+}) {
   const router = useRouter();
 
   if (announcements.length === 0) {
@@ -262,33 +285,24 @@ function AnnouncementsPanel({ announcements }: { announcements: Announcement[] }
   }
 
   return (
-    <Card className="space-y-4 p-5">
+    <div className="space-y-4">
       <h2 className="text-xl font-semibold leading-7 text-text">
         Mes annonces en cours
       </h2>
       <div className="space-y-3">
         {announcements.map((a) => (
-          <Link key={a.id} href={ROUTES.annonces.detail(a.id)}>
-            <div className="rounded-2xl border border-border p-4 transition hover:border-purple/40">
-              <div className="flex flex-wrap gap-2">
-                <AnnouncementTypeTag type={a.type} />
-                <CategoryTag label={getCategoryLabel(a.category_slug)} />
-              </div>
-              <p className="mt-2 text-base font-semibold leading-6 text-text">
-                {a.title}
-              </p>
-              <p className="mt-1 text-xs font-semibold text-muted">
-                {a.status} · {formatRelativeDate(a.created_at)}
-              </p>
-            </div>
-          </Link>
+          <AnnouncementCard key={a.id} announcement={a} layout="horizontal" />
         ))}
       </div>
-    </Card>
+    </div>
   );
 }
 
-function InitiativesPanel({ initiatives }: { initiatives: InitiativeRecord[] }) {
+function InitiativesPanel({
+  initiatives,
+}: {
+  initiatives: InitiativeWithAuthor[];
+}) {
   const router = useRouter();
 
   if (initiatives.length === 0) {
@@ -310,28 +324,16 @@ function InitiativesPanel({ initiatives }: { initiatives: InitiativeRecord[] }) 
   }
 
   return (
-    <Card className="space-y-4 p-5">
+    <div className="space-y-4">
       <h2 className="text-xl font-semibold leading-7 text-text">
         Mes initiatives en cours
       </h2>
       <div className="space-y-3">
         {initiatives.map((i) => (
-          <Link key={i.id} href={ROUTES.initiatives.detail(i.id)}>
-            <div className="rounded-2xl border border-border p-4 transition hover:border-mint/60">
-              <p className="text-base font-semibold leading-6 text-text">
-                {i.title}
-              </p>
-              <p className="mt-1 line-clamp-2 text-sm font-medium leading-5 text-muted">
-                {i.description ?? "Invitation ouverte à la commune."}
-              </p>
-              <p className="mt-2 text-xs font-semibold text-muted">
-                {formatRelativeDate(i.created_at)}
-              </p>
-            </div>
-          </Link>
+          <InitiativeCard key={i.id} initiative={i} layout="horizontal" />
         ))}
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -357,28 +359,16 @@ function EventsPanel({ events }: { events: AgendaEventRecord[] }) {
   }
 
   return (
-    <Card className="space-y-4 p-5">
+    <div className="space-y-4">
       <h2 className="text-xl font-semibold leading-7 text-text">
         Mes événements en cours
       </h2>
       <div className="space-y-3">
         {events.map((e) => (
-          <Link key={e.id} href={ROUTES.evenements.detail(e.id)}>
-            <div className="rounded-2xl border border-border p-4 transition hover:border-orange/60">
-              <p className="text-base font-semibold leading-6 text-text">
-                {e.title}
-              </p>
-              <p className="mt-1 text-sm font-medium leading-5 text-muted">
-                {formatEventRange(e.starts_at, e.ends_at)}
-              </p>
-              <p className="mt-2 text-xs font-semibold text-muted">
-                {formatRelativeDate(e.created_at)}
-              </p>
-            </div>
-          </Link>
+          <EventCard key={e.id} event={e} layout="horizontal" />
         ))}
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -396,15 +386,11 @@ function ParticipationsPlaceholder() {
 
 function SettingsPanel({ settings }: { settings: SettingsData }) {
   return (
-    <div className="space-y-5">
-      <NotificationPreferencesForm
-        initial={settings.notificationPrefs}
-        pushPublicKey={settings.pushPublicKey}
-      />
-      <Card className="space-y-3 p-5">
-        <ProfilAddCommuneButton memberships={settings.memberships} />
-      </Card>
-    </div>
+    <NotificationPreferencesForm
+      initial={settings.notificationPrefs}
+      pushPublicKey={settings.pushPublicKey}
+      cardClassName="rounded-none border-0 p-0 shadow-none md:rounded-3xl md:border md:border-border/60 md:p-5 md:shadow-card"
+    />
   );
 }
 
@@ -415,17 +401,3 @@ function formatMonthYear(value?: string) {
     year: "numeric",
   }).format(new Date(value));
 }
-
-function formatRelativeDate(value: string) {
-  const date = new Date(value);
-  const diffDays = Math.max(
-    0,
-    Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24)),
-  );
-  if (diffDays === 0) return "aujourd'hui";
-  if (diffDays === 1) return "il y a 1 jour";
-  if (diffDays < 7) return `il y a ${diffDays} jours`;
-  if (diffDays < 14) return "il y a 1 semaine";
-  return `il y a ${Math.floor(diffDays / 7)} semaines`;
-}
-

@@ -10,7 +10,7 @@ export const ILLUSTRATIONS = {
     background:
       "https://res.cloudinary.com/du3ko16j1/image/upload/v1779987275/app-mairies/illustrations/autres/accueil-bg3_nnlo1u.png",
     logoHorizontal:
-      "https://res.cloudinary.com/du3ko16j1/image/upload/v1780305075/app-mairies/illustrations/logos/logo-horizontal4_cezuwb.png",
+      "https://res.cloudinary.com/du3ko16j1/image/upload/v1781795228/app-mairies/logos/logo-horizontal_uxovbe.png",
     inscription: {
       interet: {
         communeSuggestion: "",
@@ -21,7 +21,7 @@ export const ILLUSTRATIONS = {
   resident: {
     header: {
       logoHorizontal:
-        "https://res.cloudinary.com/du3ko16j1/image/upload/v1780305075/app-mairies/illustrations/logos/logo-horizontal4_cezuwb.png",
+        "https://res.cloudinary.com/du3ko16j1/image/upload/v1781795228/app-mairies/logos/logo-horizontal_uxovbe.png",
     },
     accueil: {
       nudgeEmpathique:
@@ -57,6 +57,10 @@ export const ILLUSTRATIONS = {
       detail: {
         hero: "",
       },
+    },
+    profil: {
+      neighborInvite:
+        "https://res.cloudinary.com/du3ko16j1/image/upload/v1781795828/app-mairies/illustrations/autres/invitation_scekel.png",
     },
   },
 

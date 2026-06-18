@@ -130,7 +130,7 @@ export async function listInitiativesForAccueil(
   return items;
 }
 
-async function enrichInitiativesWithMeta(
+export async function enrichInitiativesWithMeta(
   supabase: SupabaseClient,
   items: InitiativeWithAuthor[],
 ): Promise<void> {

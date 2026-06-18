@@ -5,6 +5,7 @@ import { requireActiveMembership } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
 import { profileUpdateSchema } from "@/lib/validations/schemas";
+import { formatDisplayName } from "@/lib/utils/display-name";
 
 export async function updateNotificationPreferences(formData: FormData): Promise<void> {
   const ctx = await requireActiveMembership();
@@ -33,27 +34,64 @@ export async function updateNotificationPreferences(formData: FormData): Promise
 export type UpdateProfileResult = { success: true } | { error: string };
 
 export async function updateProfile(
-  input: { displayName: string; bio?: string; avatarUrl?: string },
+  input: {
+    firstName: string;
+    lastName: string;
+    avatarUrl?: string;
+    addressStreet: string;
+    addressCity: string;
+    addressPostcode: string;
+    addressLat: number;
+    addressLng: number;
+  },
 ): Promise<UpdateProfileResult> {
   const ctx = await requireActiveMembership();
+  const membership = ctx.activeMembership;
+
+  if (!membership) {
+    return { error: "Adhésion active introuvable." };
+  }
 
   const parsed = profileUpdateSchema.safeParse(input);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Données invalides" };
   }
 
+  const displayName = formatDisplayName(
+    parsed.data.firstName,
+    parsed.data.lastName,
+  );
+
   const supabase = await createClient();
-  const { error } = await supabase
+
+  const { error: profileError } = await supabase
     .from("profiles")
     .update({
-      display_name: parsed.data.displayName,
-      bio: parsed.data.bio ?? null,
+      first_name: parsed.data.firstName,
+      last_name: parsed.data.lastName,
+      display_name: displayName,
       avatar_url: parsed.data.avatarUrl || null,
     })
     .eq("user_id", ctx.userId);
 
-  if (error) {
+  if (profileError) {
     return { error: "Impossible de mettre à jour le profil." };
+  }
+
+  const { error: membershipError } = await supabase
+    .from("memberships")
+    .update({
+      address_street: parsed.data.addressStreet,
+      address_postcode: parsed.data.addressPostcode,
+      address_city: parsed.data.addressCity,
+      address_lat: parsed.data.addressLat,
+      address_lng: parsed.data.addressLng,
+    })
+    .eq("id", membership.id)
+    .eq("commune_id", membership.commune_id);
+
+  if (membershipError) {
+    return { error: "Impossible de mettre à jour l'adresse." };
   }
 
   revalidatePath(ROUTES.profil);

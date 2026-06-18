@@ -418,6 +418,24 @@ export async function createNeighborInvite(
 
   if (!emailResult.success) {
     console.error("[createNeighborInvite] email send failed", emailResult.error);
+    await supabase
+      .from("neighbor_invites")
+      .delete()
+      .eq("token", token)
+      .eq("commune_id", communeId);
+
+    const isFromDomainRejected =
+      emailResult.error?.includes("From address domain") ||
+      emailResult.error?.includes("not allowed");
+
+    const errorMessage =
+      emailResult.error === "SMTP not configured"
+        ? "L'envoi d'e-mails n'est pas configuré. Impossible d'envoyer l'invitation pour le moment."
+        : isFromDomainRejected
+          ? "L'adresse d'expédition n'est pas autorisée par le serveur mail. Vérifiez SMTP_FROM dans la configuration."
+          : "L'invitation n'a pas pu être envoyée par e-mail. Réessayez plus tard.";
+
+    return { error: errorMessage };
   }
 
   revalidatePath(ROUTES.profil);

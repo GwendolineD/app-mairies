@@ -1,10 +1,14 @@
 /**
  * Local asset paths and fixed third-party URLs (logos, map tiles, etc.).
  * UI illustrations → lib/constants/illustrations.ts
+ *
+ * Bump LOCAL_ASSET_VERSION when replacing a file in public/ without renaming
+ * (avoids stale browser / Next.js image optimizer cache).
  */
+const LOCAL_ASSET_VERSION = "2";
 
 export const ASSETS = {
-  logoVertical: "/logo-vertical.png",
+  logoVertical: `/logo-vertical.png?v=${LOCAL_ASSET_VERSION}`,
   icon: "/icons/icon.svg",
 } as const;
 

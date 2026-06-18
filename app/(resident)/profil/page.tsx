@@ -9,13 +9,13 @@ import {
   type ProfileTabKey,
 } from "@/components/features/profile/profile-tabs";
 import { ProfilePageClient } from "@/components/features/profile/profile-page-client";
-import type {
-  Announcement,
-  InitiativeRecord,
-  AgendaEventRecord,
-} from "@/lib/types";
+import type { AnnouncementWithAuthor } from "@/lib/queries/announcements";
+import type { InitiativeWithAuthor } from "@/lib/queries/initiatives";
+import { enrichInitiativesWithMeta } from "@/lib/queries/initiatives";
+import type { AgendaEventRecord } from "@/lib/types";
 import { NEIGHBOR_INVITE_TEMPLATE_KEY } from "@/lib/constants/email-templates";
 import { normalizeNeighborInviteTemplate } from "@/lib/utils/email-template";
+import { formatAddressLabel } from "@/lib/utils/format-address";
 
 type SearchParams = Promise<{ tab?: string }> | undefined;
 
@@ -60,7 +60,7 @@ async function ProfilContent({
     supabase
       .from("announcements")
       .select(
-        "id, commune_id, author_membership_id, type, category_slug, title, description, photo_url, target_date, status, created_at",
+        "*, author_membership:memberships!announcements_author_membership_id_fkey(address_street, address_city, address_postcode, address_lat, address_lng, profiles:profiles!memberships_profiles_user_id_fkey(first_name, last_name, display_name, avatar_url))",
       )
       .eq("commune_id", communeId)
       .eq("author_membership_id", membershipId)
@@ -70,7 +70,7 @@ async function ProfilContent({
     supabase
       .from("initiatives")
       .select(
-        "id, commune_id, author_membership_id, category_slug, title, description, date_mode, single_starts_at, single_ends_at, recurrence_rule, status, photo_url, address_label, address_lat, address_lng, created_at, updated_at",
+        "*, author_membership:memberships!initiatives_author_membership_id_fkey(address_street, address_city, profiles(first_name, last_name, display_name, avatar_url))",
       )
       .eq("commune_id", communeId)
       .eq("author_membership_id", membershipId)
@@ -79,9 +79,7 @@ async function ProfilContent({
       .limit(20),
     supabase
       .from("events")
-      .select(
-        "id, commune_id, author_membership_id, title, description, starts_at, ends_at, status, photo_url, address_label, address_lat, address_lng, created_at, updated_at",
-      )
+      .select("*")
       .eq("commune_id", communeId)
       .eq("author_membership_id", membershipId)
       .eq("status", "active")
@@ -104,22 +102,21 @@ async function ProfilContent({
     getPushPublicKey(),
   ]);
 
-  const announcements = (activeAnnouncementsResult.data ?? []) as Announcement[];
-  const initiatives = (activeInitiativesResult.data ?? []) as InitiativeRecord[];
+  const announcements = (activeAnnouncementsResult.data ??
+    []) as AnnouncementWithAuthor[];
+  const initiatives = (activeInitiativesResult.data ??
+    []) as InitiativeWithAuthor[];
+  await enrichInitiativesWithMeta(supabase, initiatives);
   const events = (activeEventsResult.data ?? []) as AgendaEventRecord[];
 
   const displayName = getDisplayName(profile);
   const communeName = membership.commune?.name ?? "Votre commune";
 
-  const addressParts = [
+  const fullAddress = formatAddressLabel(
     membership.address_street,
-    membership.address_city,
     membership.address_postcode,
-  ].filter(Boolean);
-  const fullAddress =
-    addressParts.length > 0
-      ? addressParts.join(", ")
-      : "Adresse non renseignée";
+    membership.address_city,
+  );
 
   const template = normalizeNeighborInviteTemplate(templateResult.data);
   const inviteCount = invitesResult.count ?? (invitesResult.data?.length ?? 0);
@@ -130,7 +127,6 @@ async function ProfilContent({
         displayName,
         firstName: profile.first_name,
         lastName: profile.last_name,
-        bio: profile.bio ?? "",
         avatarUrl: profile.avatar_url,
       }}
       membership={{
@@ -147,6 +143,12 @@ async function ProfilContent({
             : membership.role === "staff"
               ? "Staff mairie"
               : "Résident·e",
+        addressStreet: membership.address_street,
+        addressPostcode: membership.address_postcode,
+        addressCity: membership.address_city,
+        addressCitycode: membership.address_citycode,
+        addressLat: membership.address_lat,
+        addressLng: membership.address_lng,
       }}
       activeTab={activeTab}
       announcements={announcements}
@@ -161,7 +163,6 @@ async function ProfilContent({
       settings={{
         notificationPrefs,
         pushPublicKey,
-        memberships: ctx.memberships,
       }}
     />
   );
@@ -174,6 +175,7 @@ function getDisplayName(profile: {
 }) {
   const fullName = [profile.first_name, profile.last_name]
     .filter(Boolean)
-    .join(" ");
-  return profile.display_name || fullName || "Voisin·e";
+    .join(" ")
+    .trim();
+  return fullName || profile.display_name?.trim() || "Voisin·e";
 }

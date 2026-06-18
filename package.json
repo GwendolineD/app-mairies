@@ -4,6 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "icons:generate": "bash scripts/generate-pwa-icons.sh",
+    "predev": "npm run icons:generate",
+    "prebuild": "npm run icons:generate",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

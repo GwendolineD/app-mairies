@@ -154,9 +154,18 @@ export const userReportSchema = z.object({
 });
 
 export const profileUpdateSchema = z.object({
-  displayName: z.string().min(1).max(80),
-  bio: z.string().max(500).optional(),
+  firstName: z.string().trim().min(1, "Prénom requis").max(80),
+  lastName: z.string().trim().min(1, "Nom requis").max(80),
   avatarUrl: z.string().url().optional().or(z.literal("")),
+  addressStreet: z.string().trim().min(1, "Rue requise"),
+  addressCity: z.string().trim().min(1, "Ville requise"),
+  addressPostcode: z.string().trim().min(4, "Code postal invalide"),
+  addressLat: z
+    .number({ error: "Localisation invalide : sélectionnez une adresse dans la liste." })
+    .finite("Localisation invalide : sélectionnez une adresse dans la liste."),
+  addressLng: z
+    .number({ error: "Localisation invalide : sélectionnez une adresse dans la liste." })
+    .finite("Localisation invalide : sélectionnez une adresse dans la liste."),
 });
 
 export const messageSchema = z.object({

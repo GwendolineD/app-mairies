@@ -9,12 +9,14 @@ import {
 } from "@/lib/actions/notifications";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import type { NotificationPreferences } from "@/lib/types";
 import { cn } from "@/lib/utils/cn";
 
 type Props = {
   initial: NotificationPreferences;
   pushPublicKey: string | null;
+  cardClassName?: string;
 };
 
 const GROUPS: {
@@ -59,10 +61,13 @@ const GROUP_ICONS: Record<keyof NotificationPreferences, typeof Megaphone> = {
   notify_new_event: CalendarDays,
 };
 
-export function NotificationPreferencesForm({ initial, pushPublicKey }: Props) {
+export function NotificationPreferencesForm({
+  initial,
+  pushPublicKey,
+  cardClassName,
+}: Props) {
   const [prefs, setPrefs] = useState<NotificationPreferences>(initial);
   const [saving, startSaving] = useTransition();
-  const [savedAt, setSavedAt] = useState<string | null>(null);
 
   function toggle(key: keyof NotificationPreferences) {
     const next = { ...prefs, [key]: !prefs[key] };
@@ -72,15 +77,12 @@ export function NotificationPreferencesForm({ initial, pushPublicKey }: Props) {
       if (next[k]) formData.set(k, "on");
     });
     startSaving(async () => {
-      const result = await updateNotificationPreferences(formData);
-      if (!result?.error) {
-        setSavedAt(new Date().toLocaleTimeString("fr-FR"));
-      }
+      await updateNotificationPreferences(formData);
     });
   }
 
   return (
-    <Card className="space-y-5 p-5">
+    <Card className={cn("space-y-5", cardClassName ?? "p-5")}>
       <header className="space-y-1">
         <h2 className="flex items-center gap-2 text-xl font-semibold text-text">
           <Bell className="size-5 text-purple" aria-hidden />
@@ -110,11 +112,11 @@ export function NotificationPreferencesForm({ initial, pushPublicKey }: Props) {
                     <Icon className="size-4 text-muted" aria-hidden />
                     {label}
                   </span>
-                  <Toggle
+                  <Switch
                     checked={on}
-                    onChange={() => toggle(key)}
+                    onCheckedChange={() => toggle(key)}
                     disabled={saving}
-                    label={`${label} — ${on ? "activé" : "désactivé"}`}
+                    aria-label={`${label} — ${on ? "activé" : "désactivé"}`}
                   />
                 </li>
               );
@@ -124,56 +126,7 @@ export function NotificationPreferencesForm({ initial, pushPublicKey }: Props) {
       ))}
 
       <PushSubscriptionRow pushPublicKey={pushPublicKey} />
-
-      <p
-        className={cn(
-          "text-xs",
-          saving ? "text-purple" : savedAt ? "text-mint" : "text-subtle",
-        )}
-        aria-live="polite"
-      >
-        {saving
-          ? "Enregistrement…"
-          : savedAt
-            ? `Préférences enregistrées à ${savedAt}`
-            : " "}
-      </p>
     </Card>
-  );
-}
-
-function Toggle({
-  checked,
-  onChange,
-  disabled,
-  label,
-}: {
-  checked: boolean;
-  onChange: () => void;
-  disabled?: boolean;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      disabled={disabled}
-      onClick={onChange}
-      className={cn(
-        "relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition",
-        checked ? "bg-purple" : "bg-border",
-        disabled && "cursor-not-allowed opacity-60",
-      )}
-    >
-      <span
-        className={cn(
-          "inline-block size-5 transform rounded-full bg-white shadow transition",
-          checked ? "translate-x-5" : "translate-x-0.5",
-        )}
-      />
-    </button>
   );
 }
 

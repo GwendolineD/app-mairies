@@ -15,6 +15,7 @@ export default function LandingPage() {
             width={480}
             height={640}
             priority
+            unoptimized
             className="h-auto w-44 max-w-full object-contain sm:w-48"
           />
           <PageHeading

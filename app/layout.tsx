@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Manrope } from "next/font/google";
+import { PWA_ICON_VERSION } from "@/lib/constants/pwa-icons";
 import { THEME_COLORS } from "@/lib/constants/theme";
 import "./globals.css";
 
@@ -15,10 +16,31 @@ export const metadata: Metadata = {
   },
   description: "Découvrir, Partager, S'entraider — la vie de votre commune",
   manifest: "/manifest.webmanifest",
+  icons: {
+    apple: [
+      {
+        url: `/apple-touch-icon.png?v=${PWA_ICON_VERSION}`,
+        sizes: "180x180",
+        type: "image/png",
+      },
+    ],
+    icon: [
+      {
+        url: `/icons/icon-192.png?v=${PWA_ICON_VERSION}`,
+        sizes: "192x192",
+        type: "image/png",
+      },
+      {
+        url: `/icons/icon-512.png?v=${PWA_ICON_VERSION}`,
+        sizes: "512x512",
+        type: "image/png",
+      },
+    ],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Vie Locale",
+    title: "Tous Voisins",
   },
 };
 
