@@ -1,14 +1,13 @@
 import { NavLink } from "@/components/ui/nav-link";
-import { requireRole } from "@/lib/auth/session";
-import { PLATFORM_NAV } from "@/lib/constants/routes";
-import { USER_ROLES } from "@/lib/constants/roles";
+import { requirePlatformAdmin } from "@/lib/auth/session";
+import { BACKOFFICE_NAV } from "@/lib/constants/routes";
 
 export default async function PlatformLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  await requireRole([USER_ROLES.platformAdmin]);
+  await requirePlatformAdmin();
 
   return (
     <div className="min-h-dvh bg-background">
@@ -19,7 +18,7 @@ export default async function PlatformLayout({
           </p>
           <p className="mb-6 px-3 text-lg font-bold leading-7 text-text">Administration</p>
           <nav className="flex flex-col gap-1">
-            {PLATFORM_NAV.map((l) => (
+            {BACKOFFICE_NAV.map((l) => (
               <NavLink key={l.href} href={l.href} label={l.label} variant="sidebar" />
             ))}
           </nav>
@@ -35,7 +34,7 @@ export default async function PlatformLayout({
             </h1>
           </header>
           <nav className="flex flex-wrap gap-2 border-b border-border/60 px-4 py-4 lg:hidden">
-            {PLATFORM_NAV.map((l) => (
+            {BACKOFFICE_NAV.map((l) => (
               <NavLink key={l.href} href={l.href} label={l.label} />
             ))}
           </nav>

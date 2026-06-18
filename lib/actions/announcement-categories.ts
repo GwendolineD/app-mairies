@@ -93,7 +93,7 @@ export async function createAnnouncementCategory(
     return { success: false, error: "Erreur lors de la création" };
   }
 
-  revalidateTag(ANNOUNCEMENT_CATEGORIES_CACHE_TAG);
+  revalidateTag(ANNOUNCEMENT_CATEGORIES_CACHE_TAG, "max");
   return { success: true };
 }
 
@@ -138,7 +138,7 @@ export async function updateAnnouncementCategory(
     return { success: false, error: "Erreur lors de la mise à jour" };
   }
 
-  revalidateTag(ANNOUNCEMENT_CATEGORIES_CACHE_TAG);
+  revalidateTag(ANNOUNCEMENT_CATEGORIES_CACHE_TAG, "max");
   return { success: true };
 }
 
@@ -181,7 +181,7 @@ export async function deleteAnnouncementCategory(
     return { success: false, error: "Erreur lors de la suppression" };
   }
 
-  revalidateTag(ANNOUNCEMENT_CATEGORIES_CACHE_TAG);
+  revalidateTag(ANNOUNCEMENT_CATEGORIES_CACHE_TAG, "max");
   return { success: true };
 }
 

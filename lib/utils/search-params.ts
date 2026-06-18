@@ -3,7 +3,7 @@ import { isAnnouncementType } from "@/lib/constants/announcement-types";
 import { ANNOUNCEMENT_CATEGORY_SLUGS } from "@/lib/constants/announcement-categories";
 
 export type ListViewMode = "liste" | "carte";
-export type CreateModalKind = "annonce" | "initiative";
+export type CreateModalKind = "annonce" | "initiative" | "event";
 export type SortMode = "recent" | "oldest";
 
 export function isSortMode(value: string | undefined): value is SortMode {
@@ -159,10 +159,11 @@ export function parseInitiativeListParams(
     return Array.isArray(v) ? v[0] : v;
   };
   const createRaw = raw("create");
+  const triRaw = raw("tri");
   return {
     vue: parseListView(raw("vue")),
     categorie: raw("categorie") || undefined,
-    tri: "recent",
+    tri: isSortMode(triRaw) ? triRaw : "recent",
     page: Math.max(1, Number.parseInt(raw("page") ?? "1", 10) || 1),
     create:
       createRaw === "annonce" || createRaw === "initiative"
@@ -171,12 +172,19 @@ export function parseInitiativeListParams(
   };
 }
 
+export function hasActiveInitiativeFilters(
+  params: Pick<InitiativeListParams, "categorie">,
+): boolean {
+  return !!params.categorie;
+}
+
 export function buildInitiativeListQuery(
   params: Partial<InitiativeListParams>,
 ): string {
   const sp = new URLSearchParams();
   if (params.vue && params.vue !== DEFAULT_VIEW) sp.set("vue", params.vue);
   if (params.categorie) sp.set("categorie", params.categorie);
+  if (params.tri && params.tri !== "recent") sp.set("tri", params.tri);
   if (params.page && params.page > 1) sp.set("page", String(params.page));
   if (params.create) sp.set("create", params.create);
   const qs = sp.toString();
@@ -185,8 +193,10 @@ export function buildInitiativeListQuery(
 
 export type EventListParams = {
   vue: ListViewMode;
+  categorie?: string;
   tri: SortMode;
   page: number;
+  create?: "event";
 };
 
 export function parseEventListParams(
@@ -196,17 +206,24 @@ export function parseEventListParams(
     const v = searchParams[key];
     return Array.isArray(v) ? v[0] : v;
   };
+  const triRaw = raw("tri");
+  const createRaw = raw("create");
   return {
     vue: parseListView(raw("vue")),
-    tri: "recent",
+    categorie: raw("categorie") || undefined,
+    tri: isSortMode(triRaw) ? triRaw : "recent",
     page: Math.max(1, Number.parseInt(raw("page") ?? "1", 10) || 1),
+    create: createRaw === "event" ? "event" : undefined,
   };
 }
 
 export function buildEventListQuery(params: Partial<EventListParams>): string {
   const sp = new URLSearchParams();
   if (params.vue && params.vue !== DEFAULT_VIEW) sp.set("vue", params.vue);
+  if (params.categorie) sp.set("categorie", params.categorie);
+  if (params.tri && params.tri !== "recent") sp.set("tri", params.tri);
   if (params.page && params.page > 1) sp.set("page", String(params.page));
+  if (params.create) sp.set("create", params.create);
   const qs = sp.toString();
   return qs ? `?${qs}` : "";
 }

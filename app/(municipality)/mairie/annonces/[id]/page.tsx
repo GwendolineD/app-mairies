@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
-import { requireRole } from "@/lib/auth/session";
+import { requireCommuneStaff } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
-import { USER_ROLES } from "@/lib/constants/roles";
 import { getCategoryLabel } from "@/lib/constants/announcement-categories";
 import { getAuthorName } from "@/lib/data/authors";
 import { createClient } from "@/lib/supabase/server";
@@ -17,8 +16,7 @@ export default async function MairieAnnonceDetailPage(props: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await props.params;
-  const ctx = await requireRole([USER_ROLES.municipalityStaff]);
-  const communeId = ctx.profile.active_commune_id;
+  const { communeId } = await requireCommuneStaff();
   if (!communeId) return null;
 
   const supabase = await createClient();

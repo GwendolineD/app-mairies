@@ -19,7 +19,7 @@ export type AnnouncementListFilters = {
 export type AnnouncementWithAuthor = Announcement & {
   author_membership: (Pick<
     Membership,
-    "address_street" | "address_city" | "address_lat" | "address_lng"
+    "address_street" | "address_city" | "address_postcode" | "address_lat" | "address_lng"
   > & {
     profiles: Pick<
       Profile,
@@ -136,7 +136,7 @@ export async function listAnnouncementsPage(
   let query = supabase
     .from("announcements")
     .select(
-      "*, author_membership:memberships!announcements_author_membership_id_fkey(address_street, address_city, address_lat, address_lng, profiles:profiles!memberships_profiles_user_id_fkey(first_name, last_name, display_name, avatar_url))",
+      "*, author_membership:memberships!announcements_author_membership_id_fkey(address_street, address_city, address_postcode, address_lat, address_lng, profiles:profiles!memberships_profiles_user_id_fkey(first_name, last_name, display_name, avatar_url))",
     )
     .order("created_at", { ascending })
     .order("id", { ascending })
@@ -181,7 +181,7 @@ export async function listAnnouncementMarkers(
 
   query = applyAnnouncementFilters(query, filters);
   const { data } = await query;
-  return (data ?? []) as AnnouncementMarker[];
+  return (data ?? []) as unknown as AnnouncementMarker[];
 }
 
 /**
@@ -196,7 +196,7 @@ export async function listAnnouncementMapItems(
   let query = supabase
     .from("announcements")
     .select(
-      "*, author_membership:memberships!announcements_author_membership_id_fkey(address_street, address_city, address_lat, address_lng, profiles:profiles!memberships_profiles_user_id_fkey(first_name, last_name, display_name, avatar_url)), announcement_categories(map_pin_url, color_hex)",
+      "*, author_membership:memberships!announcements_author_membership_id_fkey(address_street, address_city, address_postcode, address_lat, address_lng, profiles:profiles!memberships_profiles_user_id_fkey(first_name, last_name, display_name, avatar_url)), announcement_categories(map_pin_url, color_hex)",
     )
     .not("address_lat", "is", null)
     .not("address_lng", "is", null)
@@ -234,7 +234,7 @@ export async function listSimilarAnnouncements(
   const { data } = await supabase
     .from("announcements")
     .select(
-      "*, author_membership:memberships!announcements_author_membership_id_fkey(address_street, address_city, address_lat, address_lng, profiles:profiles!memberships_profiles_user_id_fkey(first_name, last_name, display_name, avatar_url))",
+      "*, author_membership:memberships!announcements_author_membership_id_fkey(address_street, address_city, address_postcode, address_lat, address_lng, profiles:profiles!memberships_profiles_user_id_fkey(first_name, last_name, display_name, avatar_url))",
     )
     .eq("commune_id", communeId)
     .eq("category_slug", categorySlug)

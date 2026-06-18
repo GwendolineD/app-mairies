@@ -2,9 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-<<<<<<< HEAD
-import { RESIDENT_BOTTOM_NAV, ROUTES } from "@/lib/constants/routes";
-=======
 import {
   Popover,
   PopoverContent,
@@ -12,23 +9,17 @@ import {
 } from "@/components/ui/popover";
 import type { BackofficeNavLink } from "@/lib/auth/permissions";
 import { RESIDENT_BOTTOM_NAV } from "@/lib/constants/routes";
->>>>>>> preprod
 import { cn } from "@/lib/utils/cn";
 import { isActivePath } from "@/lib/utils/routes";
-import { useMessaging } from "@/components/features/messaging/messaging-context";
 import {
-  Calendar,
+  CalendarDays,
   Home,
-<<<<<<< HEAD
-  LayoutGrid,
-=======
   LampDesk,
   Landmark,
   LayoutDashboard,
   Mail,
->>>>>>> preprod
   Megaphone,
-  MessageCircle,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 
@@ -38,9 +29,9 @@ export const RESIDENT_NAV_ICONS: Record<
 > = {
   Accueil: Home,
   Annonces: Megaphone,
-  Initiatives: LayoutGrid,
-  "Événements": Calendar,
-  Messages: MessageCircle,
+  Initiatives: Sparkles,
+  "Événements": CalendarDays,
+  Messages: Mail,
 };
 
 const BACKOFFICE_NAV_ICONS: Record<BackofficeNavLink["label"], LucideIcon> = {
@@ -60,49 +51,20 @@ type NavLinkProps = {
   href: string;
   label: string;
   active: boolean;
-  badge: number;
   variant: "bottom" | "sidebar";
-<<<<<<< HEAD
-=======
   collapsed?: boolean;
   badge?: number;
->>>>>>> preprod
 };
 
-function NavBadge({ count, className }: { count: number; className?: string }) {
-  if (count <= 0) return null;
-  return (
-    <span
-      className={cn(
-        "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold leading-5 text-white gradient-hero",
-        className,
-      )}
-      aria-label={`${count} non lus`}
-    >
-      {count > 99 ? "99+" : count}
-    </span>
+const SIDEBAR_LINK_CLASS = (active: boolean, collapsed: boolean) =>
+  cn(
+    "flex items-center rounded-sm text-sm font-semibold transition",
+    collapsed
+      ? "w-full max-w-full justify-center overflow-hidden px-2 py-3"
+      : "gap-3 px-4 py-3",
+    active ? "bg-soft-pink text-coral" : "text-text hover:bg-soft-pink/70",
   );
-}
 
-<<<<<<< HEAD
-function ResidentNavLink({ href, label, active, badge, variant }: NavLinkProps) {
-  const Icon = RESIDENT_NAV_ICONS[label as keyof typeof RESIDENT_NAV_ICONS];
-
-  if (variant === "sidebar") {
-    return (
-      <Link
-        href={href}
-        className={cn(
-          "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition",
-          active
-            ? "bg-soft-pink text-purple"
-            : "text-muted hover:bg-warm hover:text-text",
-        )}
-      >
-        <Icon className="size-5 shrink-0" aria-hidden />
-        <span className="flex-1">{label}</span>
-        <NavBadge count={badge} />
-=======
 function BadgePill({ count }: { count: number }) {
   if (count <= 0) return null;
   return (
@@ -178,7 +140,6 @@ function ResidentNavLink({ href, label, active, variant, collapsed, badge }: Nav
         />
         <span className="flex-1">{label}</span>
         <BadgePill count={badge ?? 0} />
->>>>>>> preprod
       </Link>
     );
   }
@@ -195,18 +156,11 @@ function ResidentNavLink({ href, label, active, variant, collapsed, badge }: Nav
     >
       <span className="relative">
         <Icon className="size-6" aria-hidden />
-<<<<<<< HEAD
-        <NavBadge
-          count={badge}
-          className="absolute -right-2.5 -top-1.5 border border-surface"
-        />
-=======
         {badge && badge > 0 ? (
           <span className="absolute -top-1 -right-1.5 flex size-3.5 items-center justify-center rounded-full bg-coral text-[8px] font-bold leading-none text-white">
             {badge > 9 ? "9+" : badge}
           </span>
         ) : null}
->>>>>>> preprod
       </span>
       <span className="text-center">{label}</span>
     </Link>
@@ -215,13 +169,10 @@ function ResidentNavLink({ href, label, active, variant, collapsed, badge }: Nav
 
 function useResidentNavLinks() {
   const pathname = usePathname();
-  const messaging = useMessaging();
-  const unread = messaging?.unreadCount ?? 0;
   return RESIDENT_BOTTOM_NAV.map(({ href, label }) => ({
     href,
     label,
     active: isActivePath(pathname, href),
-    badge: href === ROUTES.messages ? unread : 0,
   }));
 }
 
@@ -245,13 +196,12 @@ export function BottomNav({
       )}
       aria-label="Navigation principale"
     >
-      {links.map(({ href, label, active, badge }) => (
+      {links.map(({ href, label, active }) => (
         <ResidentNavLink
           key={href}
           href={href}
           label={label}
           active={active}
-          badge={badge}
           variant="bottom"
           badge={label === "Messages" ? unreadMessages : undefined}
         />
@@ -260,10 +210,6 @@ export function BottomNav({
   );
 }
 
-<<<<<<< HEAD
-/** Desktop only — vertical sidebar (≥ md). */
-export function ResidentSidebarNav({ collapsed }: { collapsed?: boolean } = {}) {
-=======
 type ResidentSidebarNavProps = {
   collapsed?: boolean;
   unreadMessages?: number;
@@ -274,27 +220,25 @@ export function ResidentSidebarNav({
   collapsed = false,
   unreadMessages = 0,
 }: ResidentSidebarNavProps) {
->>>>>>> preprod
   const links = useResidentNavLinks();
 
   return (
     <nav
-      className="hidden flex-col gap-1 md:flex"
+      className={cn(
+        "flex flex-col gap-2",
+        collapsed && "overflow-hidden",
+      )}
       aria-label="Navigation principale"
     >
-      {links.map(({ href, label, active, badge }) => (
+      {links.map(({ href, label, active }) => (
         <ResidentNavLink
           key={href}
           href={href}
-          label={collapsed ? "" : label}
+          label={label}
           active={active}
-          badge={collapsed ? 0 : badge}
           variant="sidebar"
-<<<<<<< HEAD
-=======
           collapsed={collapsed}
           badge={label === "Messages" ? unreadMessages : undefined}
->>>>>>> preprod
         />
       ))}
     </nav>

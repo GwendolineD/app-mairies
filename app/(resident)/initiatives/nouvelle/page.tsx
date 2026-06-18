@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { createInitiative } from "@/lib/actions/initiatives";
 import { ROUTES } from "@/lib/constants/routes";
 import { CONTENT_CATEGORIES } from "@/lib/constants/content-categories";
@@ -8,6 +9,12 @@ import { GradientButton } from "@/components/ui/gradient-button";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
 
+async function submitInitiative(formData: FormData) {
+  "use server";
+  const { id } = await createInitiative(formData);
+  redirect(ROUTES.initiatives.detail(id));
+}
+
 export default function NouvelleInitiativePage() {
   return (
     <PageStack gap="4">
@@ -17,7 +24,7 @@ export default function NouvelleInitiativePage() {
         subtitle="Lancez un projet collectif et invitez vos voisin·es à y participer."
       />
       <Card className="space-y-3 p-5 lg:max-w-2xl">
-        <form action={createInitiative} className="flex flex-col gap-3">
+        <form action={submitInitiative} className="flex flex-col gap-3">
           <FormField label="Catégorie">
             <Select name="categorySlug" defaultValue="solidarite">
               {CONTENT_CATEGORIES.map((cat) => (

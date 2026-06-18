@@ -14,16 +14,11 @@ export const ROUTES = {
   accueil: "/accueil",
   suspendu: "/suspendu",
   profil: "/profil",
-<<<<<<< HEAD
-  messages: "/messages",
-  messageThread: (id: string) => `/messages/${id}`,
-=======
   messages: {
     list: "/messages",
     trash: "/messages?vue=corbeille",
     detail: (id: string) => `/messages/${id}`,
   },
->>>>>>> preprod
   annonces: {
     list: "/annonces",
     map: "/annonces/carte",
@@ -56,15 +51,6 @@ export const ROUTES = {
     eventNew: "/mairie/evenements/nouveau",
     abonnement: "/mairie/abonnement",
   },
-<<<<<<< HEAD
-  platform: {
-    admin: "/platform/admin",
-    clients: "/platform/clients",
-    clientDetail: (id: string) => `/platform/clients/${id}`,
-    clientNew: "/platform/clients/nouveau",
-    leads: "/platform/leads",
-    stats: "/platform/stats",
-=======
   backoffice: {
     admin: "/backoffice/admin",
     communes: "/backoffice/communes",
@@ -73,7 +59,7 @@ export const ROUTES = {
     leads: "/backoffice/leads",
     emails: "/backoffice/emails",
     categories: "/backoffice/categories",
->>>>>>> preprod
+    categoriesInitiatives: "/backoffice/categories-initiatives",
   },
 } as const;
 
@@ -82,28 +68,9 @@ export const RESIDENT_BOTTOM_NAV = [
   { href: ROUTES.annonces.list, label: "Annonces" },
   { href: ROUTES.initiatives.list, label: "Initiatives" },
   { href: ROUTES.evenements.list, label: "Événements" },
-  { href: ROUTES.messages, label: "Messages" },
+  { href: ROUTES.messages.list, label: "Messages" },
 ] as const;
 
-<<<<<<< HEAD
-export const MUNICIPALITY_NAV = [
-  { href: ROUTES.mairie.dashboard, label: "Tableau de bord" },
-  { href: ROUTES.mairie.habitants, label: "Habitant·es" },
-  { href: ROUTES.mairie.annonces, label: "Annonces" },
-  { href: ROUTES.mairie.initiatives, label: "Initiatives" },
-  { href: ROUTES.mairie.evenements, label: "Événements" },
-  { href: ROUTES.mairie.signalements, label: "Signalements" },
-  { href: ROUTES.mairie.parametres, label: "Paramètres" },
-  { href: ROUTES.mairie.eventNew, label: "+ Événement" },
-] as const;
-
-export const PLATFORM_NAV = [
-  { href: ROUTES.platform.admin, label: "Vue d'ensemble" },
-  { href: ROUTES.platform.clients, label: "Clients (communes)" },
-  { href: ROUTES.platform.stats, label: "Statistiques & revenus" },
-  { href: ROUTES.platform.leads, label: "Leads pré-inscription" },
-] as const;
-=======
 export const RESIDENT_BACKOFFICE_NAV = {
   mairie: {
     id: "mairie",
@@ -127,7 +94,8 @@ export type AdminNavIcon =
   | "mail"
   | "flame"
   | "credit-card"
-  | "tags";
+  | "tags"
+  | "sparkles";
 
 export type AdminNavItem = {
   href: string;
@@ -151,7 +119,7 @@ export const BACKOFFICE_NAV: readonly AdminNavItem[] = [
   { href: ROUTES.backoffice.admin, label: "Dashboard", icon: "layout-dashboard" },
   { href: ROUTES.backoffice.communes, label: "Communes pilotées", icon: "building2" },
   { href: ROUTES.backoffice.categories, label: "Catégories annonces", icon: "tags" },
+  { href: ROUTES.backoffice.categoriesInitiatives, label: "Catégories initiatives", icon: "sparkles" },
   { href: ROUTES.backoffice.leads, label: "Leads pré-inscription", icon: "flame" },
   { href: ROUTES.backoffice.emails, label: "Templates email", icon: "mail" },
 ];
->>>>>>> preprod

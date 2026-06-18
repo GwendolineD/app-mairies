@@ -86,10 +86,6 @@ export function MapViewCommune({
     const resolvedColorHex =
       colorHex ?? (categorySlug ? getCategoryColorHex(categorySlug) : "#A8A8A8");
 
-    if (!categorySlug && mapPinUrl == null && colorHex == null) {
-      return undefined;
-    }
-
     return createAnnouncementPinIcon(
       {
         mapPinUrl: resolvedMapPinUrl,

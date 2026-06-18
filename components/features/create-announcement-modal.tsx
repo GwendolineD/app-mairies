@@ -40,10 +40,10 @@ const TITLE_MAX = 70;
 const DESCRIPTION_MAX = 1000;
 
 const ANNOUNCEMENT_TIPS = [
-  "Choisissez un titre court et explicite",
-  "Décrivez le contexte et ce dont vous avez besoin",
-  "Indiquez vos disponibilités si vous le souhaitez",
-  "Restez bienveillant·e dans vos échanges",
+  "Donnez un titre clair et précis.",
+  "Expliquez simplement votre besoin ou ce que vous proposez.",
+  "Indiquez quand vous êtes disponible.",
+  "Remerciez les personnes qui prendront le temps de vous répondre ❤️",
 ] as const;
 
 type SubmitPhase = "idle" | "uploading" | "publishing";
@@ -363,6 +363,23 @@ export function CreateAnnouncementModal({
           submitting && "pointer-events-none opacity-70",
         )}
       >
+        <div className="rounded-xl border border-sun/30 bg-sun/10 px-4 py-3">
+          <p className="text-sm font-bold text-text">
+            Conseils pour une annonce réussie ✨
+          </p>
+          <ul className="mt-2 space-y-1.5">
+            {ANNOUNCEMENT_TIPS.map((tip) => (
+              <li
+                key={tip}
+                className="flex items-start gap-2 text-sm font-medium text-muted"
+              >
+                <Check className="mt-0.5 size-4 shrink-0 text-mint" aria-hidden />
+                {tip}
+              </li>
+            ))}
+          </ul>
+        </div>
+
         <section className="space-y-3">
           <SectionHeading number={1} title="Que souhaitez-vous faire ?" />
           <div className="grid grid-cols-2 gap-3">
@@ -498,11 +515,7 @@ export function CreateAnnouncementModal({
               <p className="mt-1.5 text-xs font-medium text-coral" role="alert">
                 {addressStreetError}
               </p>
-            ) : (
-              <p className="mt-1.5 text-xs font-medium text-subtle">
-                Préremplie avec votre adresse. Modifiez-la si l&apos;annonce se situe ailleurs.
-              </p>
-            )}
+            ) : null}
           </FormField>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField label="Code postal *">
@@ -530,31 +543,11 @@ export function CreateAnnouncementModal({
         </section>
 
         <section className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 md:items-stretch">
-            <ImageDropzone
-              file={pendingFile}
-              onFileChange={setPendingFile}
-              isUploading={submitPhase === "uploading"}
-              className="h-full min-h-0"
-            />
-
-            <div className="rounded-xl border border-sun/30 bg-sun/10 px-4 py-3">
-              <p className="text-sm font-bold text-text">
-                Conseils pour une annonce réussie ✨
-              </p>
-              <ul className="mt-2 space-y-1.5">
-                {ANNOUNCEMENT_TIPS.map((tip) => (
-                  <li
-                    key={tip}
-                    className="flex items-start gap-2 text-sm font-medium text-muted"
-                  >
-                    <Check className="mt-0.5 size-4 shrink-0 text-mint" aria-hidden />
-                    {tip}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+          <ImageDropzone
+            file={pendingFile}
+            onFileChange={setPendingFile}
+            isUploading={submitPhase === "uploading"}
+          />
         </section>
 
         {formError ? (

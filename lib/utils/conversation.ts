@@ -1,7 +1,7 @@
 import { ROUTES } from "@/lib/constants/routes";
-import type { ContextType } from "@/lib/types";
+import type { ConversationContextType } from "@/lib/types";
 
-export const CONTEXT_LABEL: Record<ContextType, string> = {
+export const CONTEXT_LABEL: Record<ConversationContextType, string> = {
   announcement: "Annonce",
   initiative: "Initiative",
   event: "Événement",
@@ -9,7 +9,7 @@ export const CONTEXT_LABEL: Record<ContextType, string> = {
 
 /** Link back to the announcement / initiative / event a thread is attached to. */
 export function contextHref(
-  type: ContextType | null,
+  type: ConversationContextType | null,
   id: string | null,
 ): string | null {
   if (!type || !id) return null;

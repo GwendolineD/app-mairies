@@ -1,34 +1,52 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { ROUTES } from "@/lib/constants/routes";
-import { getEventPinHex } from "@/lib/constants/map-pins";
+import { getEventPinHex, getInitiativePinHex } from "@/lib/constants/map-pins";
+import { getInitiativeCategoryMapPinUrl } from "@/lib/constants/initiative-categories";
 import type { AgendaEventRecord } from "@/lib/types";
-import {
-  buildEventListQuery,
-  type EventListParams,
-} from "@/lib/utils/search-params";
+import type { EventListParams } from "@/lib/utils/search-params";
 import { Card } from "@/components/ui/card";
-import { ContentTypeTag } from "@/components/ui/content-type-tag";
 import { ListGrid, PageStack } from "@/components/ui/page-stack";
-import { PageHeading } from "@/components/ui/page-heading";
-import { formatEventRange } from "@/lib/utils/date";
-import { cn } from "@/lib/utils/cn";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useCreationModals } from "@/components/features/creation-modal-context";
+import { EventListToolbar, EventPagination } from "@/components/features/event-list-toolbar";
+import { EventCard } from "@/components/features/event-card";
+import { EVENTS_PAGE_SIZE } from "@/lib/queries/events";
 
 const MapContentView = dynamic(
   () =>
     import("@/components/features/map-content-view").then((m) => m.MapContentView),
-  { ssr: false, loading: () => <Card className="h-[420px] animate-pulse bg-warm" /> },
+  {
+    ssr: false,
+    loading: () => (
+      <div className="space-y-4">
+        <Skeleton className="h-[420px] w-full rounded-lg md:h-[520px]" />
+        <div className="flex gap-3 overflow-hidden">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-52 w-52 shrink-0 rounded-xl md:w-56" />
+          ))}
+        </div>
+      </div>
+    ),
+  },
 );
+
+type MapMarker = {
+  id: string;
+  title: string;
+  categorySlug: string | null;
+  lat: number;
+  lng: number;
+};
 
 type Props = {
   params: EventListParams;
   items: AgendaEventRecord[];
   totalCount: number;
   mapCenter: [number, number];
-  mapMarkers: { id: string; title: string; lat: number; lng: number }[];
+  mapItems: AgendaEventRecord[];
+  mapMarkers: MapMarker[];
+  hasUserAddress: boolean;
 };
 
 export function EvenementsPageClient({
@@ -36,85 +54,79 @@ export function EvenementsPageClient({
   items,
   totalCount,
   mapCenter,
+  mapItems,
   mapMarkers,
+  hasUserAddress,
 }: Props) {
-  const router = useRouter();
-  const pathname = ROUTES.evenements.list;
-
-  function navigate(partial: Partial<EventListParams>) {
-    router.push(`${pathname}${buildEventListQuery({ ...params, ...partial, page: 1 })}`);
-  }
+  const { openEventModal } = useCreationModals();
 
   const markers = mapMarkers.map((m) => ({
     id: m.id,
     title: m.title,
-    categorySlug: "event",
+    categorySlug: m.categorySlug ?? "event",
     lat: m.lat,
     lng: m.lng,
-    pinColor: getEventPinHex(),
+    mapPinUrl: m.categorySlug
+      ? getInitiativeCategoryMapPinUrl(m.categorySlug)
+      : null,
+    pinColor: m.categorySlug
+      ? getInitiativePinHex(m.categorySlug)
+      : getEventPinHex(),
+    colorHex: m.categorySlug
+      ? getInitiativePinHex(m.categorySlug)
+      : getEventPinHex(),
   }));
 
   return (
     <PageStack gap="5">
-      <PageHeading
-        title="Événements"
-        subtitle="Les moments où l'on se retrouve — créés par votre mairie."
+      <EventListToolbar
+        params={params}
+        totalCount={totalCount}
+        onCreateClick={() => openEventModal()}
       />
-      <div className="flex flex-wrap gap-2">
-        <ViewToggle active={params.vue === "liste"} onClick={() => navigate({ vue: "liste" })} label="Liste" />
-        <ViewToggle active={params.vue === "carte"} onClick={() => navigate({ vue: "carte" })} label="Carte" />
-        <span className="self-center text-sm text-muted">
-          {totalCount} événement{totalCount !== 1 ? "s" : ""}
-        </span>
-      </div>
 
       {params.vue === "carte" ? (
-        <MapContentView markers={markers} center={mapCenter} />
+        <MapContentView
+          markers={markers}
+          eventItems={mapItems}
+          center={mapCenter}
+          showUserPin={hasUserAddress}
+          carouselTitle="Événements autour de vous"
+        />
       ) : items.length === 0 ? (
-        <Card className="p-5 text-center text-sm text-muted">
-          Aucun événement à venir.
-        </Card>
+        <EventsEmptyState />
       ) : (
-        <ListGrid>
-          {items.map((event) => (
-            <Link href={ROUTES.evenements.detail(event.id)} key={event.id} className="h-full">
-              <Card className="flex h-full flex-col space-y-2 p-4 transition hover:border-purple/35">
-                <ContentTypeTag type="event" />
-                <h3 className="text-xl font-semibold text-text">{event.title}</h3>
-                <p className="text-xs text-subtle">
-                  {formatEventRange(event.starts_at, event.ends_at)}
-                </p>
-                {event.address_label ? (
-                  <p className="text-xs text-muted">{event.address_label}</p>
-                ) : null}
-              </Card>
-            </Link>
-          ))}
-        </ListGrid>
+        <>
+          <ListGrid className="hidden md:grid">
+            {items.map((event) => (
+              <EventCard key={event.id} event={event} layout="vertical" />
+            ))}
+          </ListGrid>
+          <div className="flex flex-col gap-3 md:hidden">
+            {items.map((event) => (
+              <EventCard key={event.id} event={event} layout="horizontal" />
+            ))}
+          </div>
+          <EventPagination
+            params={params}
+            totalCount={totalCount}
+            pageSize={EVENTS_PAGE_SIZE}
+          />
+        </>
       )}
     </PageStack>
   );
 }
 
-function ViewToggle({
-  active,
-  onClick,
-  label,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-}) {
+function EventsEmptyState() {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "cursor-pointer rounded-sm px-3 py-1.5 text-xs font-semibold",
-        active ? "bg-soft-pink text-purple" : "border border-border text-muted",
-      )}
-    >
-      {label}
-    </button>
+    <Card className="flex flex-col items-center justify-center gap-3 p-8 text-center">
+      <p className="text-sm font-medium text-muted">
+        Aucun événement à venir pour le moment.
+      </p>
+      <p className="text-xs text-subtle">
+        Créez un événement pour rassembler vos voisin·es !
+      </p>
+    </Card>
   );
 }

@@ -1,22 +1,57 @@
 import { notFound } from "next/navigation";
-import { submitArchiveEvent, submitDeleteEvent } from "@/lib/actions/events";
+import { CalendarDays, MapPin } from "lucide-react";
 import { requireActiveMembership } from "@/lib/auth/session";
-import { ROUTES } from "@/lib/constants/routes";
+import {
+  getInitiativeCategoryColorHex,
+  getInitiativeCategoryDefaultImageUrl,
+  getInitiativeCategoryLabel,
+  getInitiativeCategoryMapPinUrl,
+} from "@/lib/constants/initiative-categories";
 import { createClient } from "@/lib/supabase/server";
 import { formatEventDetail } from "@/lib/utils/date";
-import { AssetPlaceholder } from "@/components/ui/asset-placeholder";
-import { BackLink } from "@/components/ui/back-link";
-import { Button } from "@/components/ui/button";
+import { formatAddressLines } from "@/lib/utils/format-address";
+import { HistoryBackLink } from "@/components/ui/history-back-link";
 import { Card } from "@/components/ui/card";
-import { ContentTypeTag } from "@/components/ui/content-type-tag";
-import { ContactButton } from "@/components/features/messaging/contact-button";
+import { CategoryTag } from "@/components/ui/category-tag";
+import { LinkifiedText } from "@/components/ui/linkified-text";
 import { ReportButton } from "@/components/features/report-button";
-import type { AgendaEventRecord } from "@/lib/types";
+import { EventSidebarActions } from "@/components/features/event-sidebar-actions";
+import { AnnouncementLocationMap } from "@/components/features/announcement-location-map";
+import { AnnouncementAddressLines } from "@/components/features/announcement-address-lines";
+import type { AgendaEventRecord, EventEditData } from "@/lib/types";
 import { PageStack } from "@/components/ui/page-stack";
-<<<<<<< HEAD
-=======
-import { CarteAnnoncesMap } from "@/components/features/carte-preview-map";
->>>>>>> preprod
+
+const MAIN_DETAIL_CARD_CLASS =
+  "rounded-none border-0 bg-transparent p-0 !shadow-none";
+const DETAIL_CARD_CLASS =
+  "rounded-none border-0 bg-transparent p-0 !shadow-none md:rounded-xl md:border md:border-border/60 md:bg-surface";
+const DESCRIPTION_SECTION_CLASS = "rounded-md border border-border/60 p-4";
+const DETAIL_BADGE_CLASS = "h-[22px] px-2.5 py-0 text-[10px] leading-none";
+const DETAIL_CATEGORY_TAG_CLASS = `${DETAIL_BADGE_CLASS} w-fit font-semibold`;
+
+function buildEventEditData(event: AgendaEventRecord): EventEditData {
+  const labelParts = (event.address_label ?? "")
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  return {
+    categorySlug: event.category_slug ?? "solidarite",
+    title: event.title,
+    description: event.description ?? "",
+    photoUrl: event.photo_url ?? "",
+    startsAt: event.starts_at,
+    endsAt: event.ends_at,
+    volunteersNeeded: event.volunteers_needed,
+    addressStreet: labelParts[0] ?? "",
+    addressCity: labelParts.slice(1).join(", ") ?? "",
+    addressCitycode: "",
+    addressPostcode: "",
+    addressLat: event.address_lat ?? 0,
+    addressLng: event.address_lng ?? 0,
+    sourceInitiativeId: event.source_initiative_id ?? undefined,
+  };
+}
 
 export default async function EvenementDetailPage(props: {
   params: Promise<{ id: string }>;
@@ -36,100 +71,147 @@ export default async function EvenementDetailPage(props: {
   const event = data as AgendaEventRecord;
   const isAuthor = event.author_membership_id === ctx.activeMembership?.id;
 
+  let sourceInitiative: { id: string; title: string } | null = null;
+  if (event.source_initiative_id) {
+    const { data: initiative } = await supabase
+      .from("initiatives")
+      .select("id, title")
+      .eq("id", event.source_initiative_id)
+      .maybeSingle();
+    sourceInitiative = initiative;
+  }
+
+  const editData = isAuthor ? buildEventEditData(event) : undefined;
+
+  const imageUrl =
+    event.photo_url ??
+    (event.category_slug
+      ? getInitiativeCategoryDefaultImageUrl(event.category_slug)
+      : null);
+
+  const addressLines = formatAddressLines(event.address_label, null, null);
+
   return (
     <PageStack gap="5">
-      <BackLink href={ROUTES.evenements.list}>← Liste</BackLink>
-      <Card className="space-y-4 p-6 lg:max-w-4xl">
-        <div className="flex flex-wrap justify-between gap-4">
-          <div>
-            <ContentTypeTag type="event" />
-            <h1 className="mt-2 text-[28px] font-bold leading-9 text-text">{event.title}</h1>
+      <HistoryBackLink label="Retour aux événements" />
+
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
+        <Card className={`space-y-5 ${MAIN_DETAIL_CARD_CLASS}`}>
+          <div className="space-y-5">
+            <header className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  {event.category_slug ? (
+                    <CategoryTag
+                      label={getInitiativeCategoryLabel(event.category_slug)}
+                      colorHex={getInitiativeCategoryColorHex(event.category_slug)}
+                      className={DETAIL_CATEGORY_TAG_CLASS}
+                      borderMatchBackground
+                    />
+                  ) : null}
+                </div>
+              </div>
+              <h1 className="text-2xl font-bold leading-8 text-text">
+                {event.title}
+              </h1>
+            </header>
+
+            {imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={imageUrl}
+                alt=""
+                className="aspect-[16/10] w-full rounded-lg border border-border object-cover"
+              />
+            ) : null}
+
+            <div className="flex flex-col gap-2 rounded-xl bg-warm p-4">
+              <p className="flex items-center gap-2 text-sm font-semibold text-orange">
+                <CalendarDays className="size-4 shrink-0" aria-hidden />
+                {formatEventDetail(event.starts_at, event.ends_at)}
+              </p>
+              {event.address_label ? (
+                <p className="flex items-center gap-2 text-sm font-medium text-muted">
+                  <MapPin className="size-4 shrink-0" aria-hidden />
+                  {event.address_label}
+                </p>
+              ) : null}
+            </div>
+
+            <section className={DESCRIPTION_SECTION_CLASS}>
+              <h2 className="mb-2 text-sm font-semibold leading-5 text-text">
+                Description
+              </h2>
+              {event.description ? (
+                <LinkifiedText
+                  text={event.description}
+                  className="scrollbar-hover max-h-64 overflow-y-auto whitespace-pre-line text-base font-medium leading-6 text-muted"
+                />
+              ) : (
+                <p className="text-base font-medium italic text-muted">
+                  Pas de détail complémentaire.
+                </p>
+              )}
+            </section>
           </div>
-          <ReportButton contextType="event" contextId={event.id} />
-        </div>
-        <AssetPlaceholder
-          description="Illustration événement — style 3D Warm Community à venir"
-          aspectRatio="16/9"
-          className="rounded-2xl"
-        />
-        <p className="rounded-2xl bg-warm px-4 py-3 text-sm font-medium text-muted">
-          {formatEventDetail(event.starts_at, event.ends_at)}
-        </p>
-        <p className="whitespace-pre-line text-base font-medium leading-6 text-muted">
-          {event.description}
-        </p>
-        {isAuthor ? (
-          <div className="flex gap-2">
-            <form action={submitArchiveEvent}>
-              <input type="hidden" name="id" value={event.id} />
-              <Button type="submit" variant="secondary" className="text-xs">
-                Archiver
-              </Button>
-            </form>
-            <form action={submitDeleteEvent}>
-              <input type="hidden" name="id" value={event.id} />
-              <Button type="submit" variant="danger" className="text-xs">
-                Supprimer
-              </Button>
-            </form>
-          </div>
-        ) : (
-          <div className="space-y-3 rounded-2xl bg-warm/60 p-4">
-            <p className="text-sm font-semibold leading-5 text-text">
-              Une question sur l&apos;événement ? Écrivez à
-              l&apos;organisateur·rice.
-            </p>
-            <ContactButton
+        </Card>
+
+        <aside className="space-y-4">
+          <EventSidebarActions
+            isAuthor={isAuthor}
+            eventId={event.id}
+            volunteersNeeded={event.volunteers_needed}
+            editData={editData}
+            sourceInitiative={sourceInitiative}
+            className={DETAIL_CARD_CLASS}
+          />
+
+          <Card className={`gap-2 md:p-5 ${DETAIL_CARD_CLASS}`}>
+            <h2 className="hidden text-lg font-semibold leading-7 text-text md:block">
+              Localisation
+            </h2>
+            {event.address_lat != null && event.address_lng != null ? (
+              <AnnouncementLocationMap
+                latitude={event.address_lat}
+                longitude={event.address_lng}
+                announcementTitle={event.title}
+                addressLines={addressLines}
+                categorySlug={event.category_slug ?? "autre"}
+                mapPinUrl={
+                  event.category_slug
+                    ? getInitiativeCategoryMapPinUrl(event.category_slug)
+                    : null
+                }
+                colorHex={
+                  event.category_slug
+                    ? getInitiativeCategoryColorHex(event.category_slug)
+                    : undefined
+                }
+              />
+            ) : (
+              <AnnouncementAddressLines {...addressLines} size="md" />
+            )}
+          </Card>
+
+          <div className="hidden md:flex md:justify-center">
+            <ReportButton
               contextType="event"
               contextId={event.id}
-              contextTitle={event.title}
-              gradient="events"
+              showIcon
+              className="text-sm font-medium text-muted"
             />
-<<<<<<< HEAD
           </div>
-        )}
-      </Card>
-=======
-          )}
-          <p className="rounded-2xl bg-warm px-4 py-3 text-sm font-medium text-muted">
-            {formatEventDetail(event.starts_at, event.ends_at)}
-          </p>
-          {event.address_label ? (
-            <p className="text-sm text-muted">Lieu : {event.address_label}</p>
-          ) : null}
-          <p className="whitespace-pre-line text-base font-medium leading-6 text-muted">
-            {event.description}
-          </p>
-          {isAuthor ? (
-            <div className="flex gap-2">
-              <form action={submitArchiveEvent}>
-                <input type="hidden" name="id" value={event.id} />
-                <Button type="submit" variant="secondary" className="text-xs">
-                  Archiver
-                </Button>
-              </form>
-              <form action={submitDeleteEvent}>
-                <input type="hidden" name="id" value={event.id} />
-                <Button type="submit" variant="danger" className="text-xs">
-                  Supprimer
-                </Button>
-              </form>
-            </div>
-          ) : null}
-        </Card>
-        {event.address_lat != null && event.address_lng != null ? (
-          <Card className="p-4">
-            <h2 className="mb-2 text-lg font-semibold text-text">Carte</h2>
-            <CarteAnnoncesMap
-              latitude={event.address_lat}
-              longitude={event.address_lng}
-              communeName={event.title}
-              className="h-48 rounded-2xl overflow-hidden border border-border/70"
-            />
-          </Card>
-        ) : null}
+        </aside>
       </div>
->>>>>>> preprod
+
+      <div className="flex justify-center pb-2 md:hidden">
+        <ReportButton
+          contextType="event"
+          contextId={event.id}
+          showIcon
+          className="text-sm font-medium text-muted"
+        />
+      </div>
     </PageStack>
   );
 }

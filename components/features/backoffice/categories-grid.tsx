@@ -317,12 +317,8 @@ function CategoryFormFields({
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField
           label="Slug"
-          name="slug"
-          error={state.fieldErrors?.slug}
-          required
         >
           <Input
-            name="slug"
             defaultValue={defaultValues?.slug}
             placeholder="ex: bricolage"
             readOnly={isEdit}
@@ -332,12 +328,8 @@ function CategoryFormFields({
 
         <FormField
           label="Libellé"
-          name="label"
-          error={state.fieldErrors?.label}
-          required
         >
           <Input
-            name="label"
             defaultValue={defaultValues?.label}
             placeholder="ex: Bricolage"
           />
@@ -345,11 +337,10 @@ function CategoryFormFields({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <FormField label="Couleur" name="color_hex" error={state.fieldErrors?.color_hex}>
+        <FormField label="Couleur">
           <div className="flex items-center gap-2">
             <input
               type="color"
-              name="color_hex"
               value={color}
               onChange={(e) => setColor(e.target.value)}
               className="size-10 cursor-pointer rounded-sm border border-border"
@@ -358,9 +349,8 @@ function CategoryFormFields({
           </div>
         </FormField>
 
-        <FormField label="Ordre" name="sort_order" error={state.fieldErrors?.sort_order}>
+        <FormField label="Ordre">
           <Input
-            name="sort_order"
             type="number"
             defaultValue={defaultValues?.sort_order ?? 0}
             min={0}
@@ -368,8 +358,8 @@ function CategoryFormFields({
         </FormField>
       </div>
 
-      <FormField label="Icône" name="icon_name" error={state.fieldErrors?.icon_name}>
-        <input type="hidden" name="icon_name" value={selectedIcon} />
+      <FormField label="Icône">
+        <input type="hidden" value={selectedIcon} />
         <div className="grid grid-cols-6 gap-2 rounded-sm border border-border bg-surface p-2 sm:grid-cols-8 md:grid-cols-12">
           {ALLOWED_ICON_NAMES.map((name) => {
             const Icon = resolveIcon(name);
@@ -396,11 +386,10 @@ function CategoryFormFields({
 
       <FormField
         label="URL image pin carte"
-        name="map_pin_url"
-        error={state.fieldErrors?.map_pin_url}
+       
+       
       >
         <Input
-          name="map_pin_url"
           type="url"
           defaultValue={defaultValues?.map_pin_url ?? ""}
           placeholder="https://..."
@@ -409,11 +398,10 @@ function CategoryFormFields({
 
       <FormField
         label="URL image par défaut"
-        name="default_image_url"
-        error={state.fieldErrors?.default_image_url}
+       
+       
       >
         <Input
-          name="default_image_url"
           type="url"
           defaultValue={defaultValues?.default_image_url ?? ""}
           placeholder="https://..."

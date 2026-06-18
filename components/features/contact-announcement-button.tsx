@@ -1,13 +1,7 @@
 "use client";
 
-<<<<<<< HEAD
-import { useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { ensureContextConversation } from "@/lib/actions/messages";
-=======
 import { useRef, useState, useTransition } from "react";
 import { sendContextMessage } from "@/lib/actions/messages";
->>>>>>> preprod
 import { ROUTES } from "@/lib/constants/routes";
 import { Button } from "@/components/ui/button";
 import { FormField, Textarea } from "@/components/ui/form-field";
@@ -43,13 +37,6 @@ export function ContactAnnouncementButton({
   );
   const [sending, startSending] = useTransition();
 
-<<<<<<< HEAD
-  function handleContact() {
-    startTransition(async () => {
-      const result = await ensureContextConversation("announcement", announcementId);
-      if (result.ok) {
-        router.push(ROUTES.messageThread(result.conversationId));
-=======
   const id = contextId ?? announcementId;
 
   function handleOpen() {
@@ -80,7 +67,6 @@ export function ContactAnnouncementButton({
       if (result.conversationId) {
         setSentConversationId(result.conversationId);
         formRef.current?.reset();
->>>>>>> preprod
       }
     });
   }
@@ -153,20 +139,22 @@ export function ContactAnnouncementButton({
               ) : null}
               <div className="flex gap-2">
                 <Button
-                  type="submit"
-                  className="flex-1 py-2 text-sm"
-                  disabled={sending}
-                >
-                  {sending ? "Envoi…" : "Envoyer"}
-                </Button>
-                <Button
                   type="button"
-                  variant="secondary"
-                  className="py-2 text-sm"
+                  variant="ghost"
+                  size="sm"
                   disabled={sending}
                   onClick={handleClose}
                 >
                   Annuler
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="sm"
+                  className="flex-1"
+                  disabled={sending}
+                >
+                  {sending ? "Envoi…" : "Envoyer"}
                 </Button>
               </div>
             </form>

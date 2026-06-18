@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { requireRole } from "@/lib/auth/session";
+import { requireCommuneStaff } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
-import { USER_ROLES } from "@/lib/constants/roles";
 import { isAnnouncementType } from "@/lib/constants/announcement-types";
 import { getCategoryLabel } from "@/lib/constants/announcement-categories";
 import { createClient } from "@/lib/supabase/server";
@@ -24,8 +23,7 @@ const TYPE_FILTERS = [
 export default async function MairieAnnoncesPage(props: {
   searchParams: Promise<{ type?: string; page?: string }>;
 }) {
-  const ctx = await requireRole([USER_ROLES.municipalityStaff]);
-  const communeId = ctx.profile.active_commune_id;
+  const { communeId } = await requireCommuneStaff();
   if (!communeId) return null;
 
   const { type, page } = await props.searchParams;

@@ -17,5 +17,9 @@ export function RelativeTime({ iso, className }: Props) {
     setLabel(formatRelativeTime(iso));
   }, [iso]);
 
-  return <span className={cn(className)}>{label}</span>;
+  return (
+    <span className={cn(className)} suppressHydrationWarning>
+      {label}
+    </span>
+  );
 }

@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils/cn";
 import { formatDisplayName } from "@/lib/utils/display-name";
 import { formatRelativeTime } from "@/lib/utils/date";
 import { formatShortDate } from "@/lib/utils/format-date";
-import { formatAddressLabel, formatAddressLines } from "@/lib/utils/format-address";
+import { formatAddressLabel, formatAddressLines, resolveAddressPostcode } from "@/lib/utils/format-address";
 
 type Props = {
   announcement: AnnouncementWithAuthor;
@@ -68,18 +68,30 @@ function AnnouncementTargetDate({
   );
 }
 
+function resolveAnnouncementPostcode(
+  announcement: AnnouncementWithAuthor,
+): string | null {
+  return resolveAddressPostcode(
+    announcement.address_postcode,
+    announcement.author_membership?.address_postcode,
+  );
+}
+
 function AnnouncementCardAddress({
   street,
   postcode,
   city,
+  fallbackPostcode,
 }: {
   street: string | null | undefined;
   postcode: string | null | undefined;
   city: string | null | undefined;
+  fallbackPostcode?: string | null;
 }) {
+  const resolvedPostcode = resolveAddressPostcode(postcode, fallbackPostcode);
   const { streetLine, cityLine, fallback } = formatAddressLines(
     street,
-    postcode,
+    resolvedPostcode,
     city,
   );
 
@@ -134,7 +146,7 @@ export function AnnouncementCard({
   if (layout === "horizontal") {
     const fullAddress = formatAddressLabel(
       a.address_street,
-      a.address_postcode,
+      resolveAnnouncementPostcode(a),
       a.address_city,
     );
 
@@ -263,6 +275,7 @@ export function AnnouncementCard({
             street={a.address_street}
             postcode={a.address_postcode}
             city={a.address_city}
+            fallbackPostcode={a.author_membership?.address_postcode}
           />
 
           <div className="mt-auto flex items-center justify-end gap-2">
