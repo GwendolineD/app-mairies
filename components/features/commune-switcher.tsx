@@ -98,31 +98,39 @@ export function CommuneSwitcher({
             ) : (
               selectable.map((m) => {
                 const isActive = m.commune_id === activeCommuneId;
-                const disabled = m.status !== "active" && m.status !== "suspended";
+                const isSuspended = m.status === "suspended";
+                const disabled = isSuspended || (m.status !== "active" && m.status !== "suspended") || busy;
                 return (
                   <li key={m.id} role="presentation">
                     <button
                       type="button"
                       role="option"
                       aria-selected={isActive}
-                      disabled={disabled || busy}
-                      onClick={() => selectCommune(m.commune_id)}
+                      disabled={disabled}
+                      onClick={() => !isSuspended && selectCommune(m.commune_id)}
                       className={cn(
-                        "flex h-[54px] w-full cursor-pointer items-center gap-3 px-3 text-left text-sm transition hover:bg-warm disabled:cursor-not-allowed disabled:opacity-50",
-                        isActive && "bg-soft-pink/70",
+                        "flex h-[54px] w-full items-center gap-3 px-3 text-left text-sm transition",
+                        isSuspended
+                          ? "cursor-not-allowed opacity-60"
+                          : "cursor-pointer hover:bg-warm disabled:cursor-not-allowed disabled:opacity-50",
+                        isActive && !isSuspended && "bg-soft-pink/70",
                       )}
                     >
                       <MapPin
                         className={cn(
                           "size-4 shrink-0",
-                          isActive ? "text-purple" : "text-muted",
+                          isActive && !isSuspended ? "text-purple" : "text-muted",
                         )}
                         aria-hidden
                       />
                       <span className="min-w-0 flex-1 truncate font-medium text-text">
-                        {membershipLabel(m)}
+                        {m.commune?.name ?? "Commune"}
                       </span>
-                      {isActive ? (
+                      {isSuspended ? (
+                        <span className="shrink-0 rounded-full bg-coral/10 px-2 py-0.5 text-[10px] font-semibold text-coral">
+                          Suspendu
+                        </span>
+                      ) : isActive ? (
                         <Check className="size-4 shrink-0 text-purple" aria-hidden />
                       ) : null}
                     </button>

@@ -4,6 +4,12 @@ import { ROUTES } from "@/lib/constants/routes";
 import { CONTENT_CATEGORIES } from "@/lib/constants/content-categories";
 import { BackLink } from "@/components/ui/back-link";
 import { Card } from "@/components/ui/card";
+
+// Wrapper to satisfy form action signature
+async function handleCreateInitiative(formData: FormData): Promise<void> {
+  "use server";
+  await createInitiative(formData);
+}
 import { FormField, Input, Select, Textarea } from "@/components/ui/form-field";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { PageHeading } from "@/components/ui/page-heading";

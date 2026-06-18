@@ -53,15 +53,19 @@ async function fetchContextPhotoUrl(
   supabase: Awaited<ReturnType<typeof createClient>>,
   contextType: ConversationContextType | null,
   contextId: string | null,
-): Promise<string | null> {
-  if (!contextType || !contextId) return null;
+): Promise<{ photoUrl: string | null; available: boolean }> {
+  if (!contextType || !contextId) return { photoUrl: null, available: true };
   const table = CONTEXT_TABLES[contextType];
   const { data } = await supabase
     .from(table)
-    .select("photo_url")
+    .select("photo_url, suspended_at")
     .eq("id", contextId)
     .maybeSingle();
-  return (data as { photo_url: string | null } | null)?.photo_url ?? null;
+  const row = data as { photo_url: string | null; suspended_at: string | null } | null;
+  return {
+    photoUrl: row?.photo_url ?? null,
+    available: row ? !row.suspended_at : false,
+  };
 }
 
 /**
@@ -126,7 +130,7 @@ export async function ConversationPane({
       ? conversation.participant_b
       : conversation.participant_a;
 
-  const [{ data: otherProfileRow }, messages, contextPhotoUrl] = await Promise.all([
+  const [{ data: otherProfileRow }, messages, contextInfo] = await Promise.all([
     otherUserId
       ? supabase
           .from("profiles")
@@ -142,6 +146,8 @@ export async function ConversationPane({
     ),
   ]);
 
+  const contextPhotoUrl = contextInfo.photoUrl;
+  const contextAvailable = contextInfo.available;
   const otherProfile = (otherProfileRow ?? null) as OtherProfile | null;
   const otherName = otherProfile?.display_name ?? "Voisin·e";
 
@@ -201,7 +207,7 @@ export async function ConversationPane({
             </div>
           </div>
         </div>
-        {contextHref && contextLabel ? (
+        {contextAvailable && contextHref && contextLabel ? (
           <Link
             href={contextHref}
             className="inline-flex shrink-0 items-center gap-1 rounded-sm border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-text transition hover:bg-warm"
@@ -209,6 +215,10 @@ export async function ConversationPane({
             <ExternalLink className="size-3" aria-hidden />
             <span className="hidden sm:inline">{contextLabel}</span>
           </Link>
+        ) : !contextAvailable && conversation.context_type ? (
+          <span className="shrink-0 rounded-full bg-coral/10 px-2.5 py-1 text-[10px] font-semibold text-coral">
+            Contenu suspendu
+          </span>
         ) : null}
       </header>
 
@@ -217,6 +227,7 @@ export async function ConversationPane({
         messages={messages as MessageRow[]}
         currentUserId={currentUserId}
         isArchived={isArchived}
+        readOnly={!contextAvailable}
       />
     </div>
   );

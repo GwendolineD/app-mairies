@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSessionContext } from "@/lib/auth/session";
 import { submitSuspensionAppeal } from "@/lib/actions/reports";
+import { getPlatformSupportEmail } from "@/lib/actions/platform-settings";
 import { ROUTES } from "@/lib/constants/routes";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -13,6 +14,8 @@ export default async function SuspenduPage() {
   if (!ctx) redirect(ROUTES.connexion);
   if (ctx.activeMembership) redirect(ROUTES.accueil);
   if (!ctx.isSuspendedForActiveCommune) redirect(ROUTES.accueil);
+
+  const supportEmail = await getPlatformSupportEmail();
 
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-6 px-6 py-12">
@@ -28,6 +31,15 @@ export default async function SuspenduPage() {
         <p className="text-base font-medium leading-6 text-muted">
           Détaillez calmement votre contexte. Notre équipe relira votre message hors
           des heures municipales lorsque la charge administrative le permet.
+        </p>
+        <p className="text-sm text-muted">
+          Vous pouvez aussi nous contacter directement à{" "}
+          <a
+            href={`mailto:${supportEmail}`}
+            className="font-semibold text-purple hover:underline"
+          >
+            {supportEmail}
+          </a>
         </p>
         <SuspendAppealForm />
       </Card>

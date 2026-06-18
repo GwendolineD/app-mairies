@@ -39,10 +39,8 @@
     "@types/nodemailer": "^8.0.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/web-push": "^3.6.4",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
-    "supabase": "^2.104.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

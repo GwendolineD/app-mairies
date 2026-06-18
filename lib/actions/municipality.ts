@@ -57,6 +57,28 @@ export async function setReportReviewed(reportId: string): Promise<void> {
 
   if (error) return;
   revalidatePath(ROUTES.mairie.signalements);
+  revalidatePath(ROUTES.backoffice.signalements);
+}
+
+export async function resolveReportAction(
+  reportId: string,
+  resolution: "content_suspended" | "user_suspended" | "dismissed",
+): Promise<void> {
+  await requireCommuneStaff();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("reports")
+    .update({
+      status: "reviewed",
+      reviewed_at: new Date().toISOString(),
+      resolution,
+    })
+    .eq("id", reportId);
+
+  if (error) return;
+  revalidatePath(ROUTES.mairie.signalements);
+  revalidatePath(ROUTES.backoffice.signalements);
 }
 
 export async function markReportHandledForm(formData: FormData): Promise<void> {

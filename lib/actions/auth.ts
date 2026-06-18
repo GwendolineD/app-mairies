@@ -5,7 +5,7 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { RECOVERY_COOKIE_NAME } from "@/lib/constants/auth";
 import { ROUTES } from "@/lib/constants/routes";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getAppUrl } from "@/lib/utils/app-url";
 import { formatAuthError } from "@/lib/utils/auth-errors";
 import { formatDisplayName } from "@/lib/utils/display-name";
@@ -103,6 +103,24 @@ export async function signUp(formData: FormData) {
     }
   }
 
+  // Block signup if email is banned (Option A: application-level check)
+  // Option B (Auth Hook before-user-created reading the same table) can be
+  // activated later if OAuth/magic link flows are opened.
+  const serviceClient = await createServiceClient();
+  const { data: bannedRow } = await serviceClient
+    .from("banned_emails")
+    .select("email")
+    .eq("email", parsed.data.email)
+    .maybeSingle();
+
+  if (bannedRow) {
+    return {
+      error: {
+        form: ["Inscription impossible. Veuillez contacter l'assistance."],
+      },
+    };
+  }
+
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
@@ -166,6 +184,33 @@ export async function signIn(formData: FormData) {
         "Connexion impossible. Vérifiez vos identifiants et réessayez.",
       ),
     };
+  }
+
+  // Check if the user is platform-banned after successful auth
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("banned_at")
+      .eq("user_id", user.id)
+      .single();
+
+    if (profile?.banned_at) {
+      await supabase.auth.signOut();
+      // Retrieve support email for the error message
+      const serviceClient = await createServiceClient();
+      const { data: settings } = await serviceClient
+        .from("platform_settings")
+        .select("support_email")
+        .eq("id", 1)
+        .single();
+      const supportEmail = settings?.support_email ?? "contact@vielocale.fr";
+      return {
+        error: `Votre compte a été suspendu. Contactez l'assistance : ${supportEmail}`,
+      };
+    }
   }
 
   redirect(ROUTES.accueil);

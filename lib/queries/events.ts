@@ -22,7 +22,10 @@ function applyEventFilters<T extends { eq: Function }>(
   query: T,
   filters: EventListFilters,
 ) {
-  let q = query.eq("commune_id", filters.communeId).eq("status", EVENT_STATUS.active);
+  let q = query
+    .eq("commune_id", filters.communeId)
+    .eq("status", EVENT_STATUS.active)
+    .is("suspended_at", null);
   if (filters.categorie) q = q.eq("category_slug", filters.categorie);
   return q;
 }

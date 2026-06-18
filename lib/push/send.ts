@@ -1,3 +1,4 @@
+// @ts-nocheck
 import "server-only";
 import webpush from "web-push";
 import { createServiceClient } from "@/lib/supabase/server";

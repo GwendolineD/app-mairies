@@ -66,13 +66,17 @@ async function ensureConversation(
 
   const { data: row, error: ctxError } = await supabase
     .from(table)
-    .select("id, commune_id, title, author_membership_id")
+    .select("id, commune_id, title, author_membership_id, suspended_at")
     .eq("id", contextId)
     .eq("commune_id", communeId)
     .single();
 
   if (ctxError || !row) {
     return { error: "Élément introuvable", conversationId: null };
+  }
+
+  if (row.suspended_at) {
+    return { error: "Ce contenu est suspendu", conversationId: null };
   }
   const context = row as ContextRow;
 
