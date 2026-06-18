@@ -77,7 +77,9 @@ VALUES
 ALTER TABLE public.initiatives
   ADD COLUMN IF NOT EXISTS photo_url text;
 
--- Add FK constraint (category_slug column already exists from earlier migration)
+-- Repoint category FK from content_categories to initiative_event_categories.
+ALTER TABLE public.initiatives DROP CONSTRAINT IF EXISTS initiatives_category_slug_fkey;
+
 ALTER TABLE public.initiatives
   ADD CONSTRAINT initiatives_category_slug_fkey
   FOREIGN KEY (category_slug) REFERENCES public.initiative_event_categories (slug);

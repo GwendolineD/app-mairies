@@ -37,13 +37,35 @@ ON CONFLICT (slug) DO UPDATE SET
 -- =============================================================================
 
 ALTER TABLE public.initiatives
-  ADD COLUMN category_slug text NOT NULL DEFAULT 'autre'
-    REFERENCES public.content_categories (slug),
-  ADD COLUMN photo_url text,
-  ADD COLUMN location_label text;
+  ADD COLUMN IF NOT EXISTS category_slug text,
+  ADD COLUMN IF NOT EXISTS photo_url text,
+  ADD COLUMN IF NOT EXISTS location_label text;
+
+UPDATE public.initiatives
+SET category_slug = 'autre'
+WHERE category_slug IS NULL;
+
+ALTER TABLE public.initiatives
+  ALTER COLUMN category_slug SET DEFAULT 'autre',
+  ALTER COLUMN category_slug SET NOT NULL;
+
+DO $migrate$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'initiatives_category_slug_fkey'
+      AND conrelid = 'public.initiatives'::regclass
+  ) THEN
+    ALTER TABLE public.initiatives
+      ADD CONSTRAINT initiatives_category_slug_fkey
+      FOREIGN KEY (category_slug) REFERENCES public.content_categories (slug);
+  END IF;
+END;
+$migrate$;
 
 -- Browse initiatives within a commune filtered by category.
-CREATE INDEX idx_initiatives_commune_category
+CREATE INDEX IF NOT EXISTS idx_initiatives_commune_category
   ON public.initiatives (commune_id, category_slug);
 
 -- =============================================================================

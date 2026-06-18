@@ -1,5 +1,5 @@
 {
-  "name": "vie-locale",
+  "name": "tous-voisins",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "import-communes": "tsx scripts/import-communes.ts"
+    "import-communes": "tsx scripts/import-communes.ts",
+    "bootstrap-super-admin": "npx tsx --env-file=.env.local scripts/bootstrap-super-admin.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
