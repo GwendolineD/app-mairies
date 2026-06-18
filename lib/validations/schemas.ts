@@ -146,6 +146,7 @@ export const eventModalSchema = z.object({
   addressLat: z.coerce.number().optional(),
   addressLng: z.coerce.number().optional(),
   sourceInitiativeId: z.string().uuid().optional(),
+  isOfficial: z.boolean().optional(),
 });
 
 export const userReportSchema = z.object({
@@ -218,4 +219,19 @@ export const createPilotCommuneSchema = z.object({
   centroidLng: z.number(),
   accessStatus: z.enum(["inactive", "trial", "active"]),
   mairieAddress: z.string().trim().min(3, "Adresse mairie requise"),
+  mairieAddressStreet: z.string().trim().optional(),
+  mairieAddressCity: z.string().trim().optional(),
+  mairieAddressPostcode: z.string().trim().optional(),
+  mairieAddressLat: z.coerce.number().optional(),
+  mairieAddressLng: z.coerce.number().optional(),
+});
+
+export const updateCommuneInfoSchema = z.object({
+  name: z.string().trim().min(1, "Nom requis"),
+  postcode: z.string().trim().min(4, "Code postal requis").max(10),
+  mairieAddressStreet: z.string().trim().min(3, "Adresse mairie requise"),
+  mairieAddressCity: z.string().trim().optional(),
+  mairieAddressPostcode: z.string().trim().optional(),
+  mairieAddressLat: z.coerce.number().optional(),
+  mairieAddressLng: z.coerce.number().optional(),
 });

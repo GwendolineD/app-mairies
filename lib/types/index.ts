@@ -12,6 +12,11 @@ export type Commune = {
   department: string | null;
   centroid_lat: number | null;
   centroid_lng: number | null;
+  mairie_address_street: string | null;
+  mairie_address_city: string | null;
+  mairie_address_postcode: string | null;
+  mairie_address_lat: number | null;
+  mairie_address_lng: number | null;
   access_status: AccessStatus;
   trial_access_code: string | null;
   trial_max_members: number;
@@ -187,6 +192,7 @@ export type AgendaEventRecord = {
   id: string;
   commune_id: string;
   author_membership_id: string;
+  is_official: boolean;
   category_slug: string | null;
   source_initiative_id: string | null;
   volunteers_needed: number | null;

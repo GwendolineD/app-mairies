@@ -14,9 +14,16 @@ import type { MembershipAddress } from "@/lib/types";
 type Props = {
   communeId: string;
   membershipAddress: MembershipAddress;
+  eventIsOfficial?: boolean;
+  eventDetailHref?: (id: string) => string;
 };
 
-export function CreationModalHost({ communeId, membershipAddress }: Props) {
+export function CreationModalHost({
+  communeId,
+  membershipAddress,
+  eventIsOfficial = false,
+  eventDetailHref = ROUTES.evenements.detail,
+}: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const {
@@ -114,6 +121,8 @@ export function CreationModalHost({ communeId, membershipAddress }: Props) {
         editId={eventEditId}
         initialData={eventInitialData}
         duplicateMode={eventDuplicateMode}
+        isOfficial={eventIsOfficial}
+        detailHref={eventDetailHref}
       />
     </>
   );

@@ -2,8 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { assertAuthorMembership } from "@/lib/auth/ownership";
+import { assertAuthorMembership, assertCanManageEvent } from "@/lib/auth/ownership";
 import { requireActiveMembership } from "@/lib/auth/session";
+import { COMMUNE_STAFF_ROLES } from "@/lib/constants/roles";
 import { ROUTES } from "@/lib/constants/routes";
 import { EVENT_STATUS } from "@/lib/constants/statuses";
 import { createClient } from "@/lib/supabase/server";
@@ -96,17 +97,18 @@ export async function deleteEvent(id: string) {
   const ctx = await requireActiveMembership();
   const supabase = await createClient();
 
-  const auth = await assertAuthorMembership(
+  const auth = await assertCanMutateEvent(
     supabase,
-    "events",
     id,
-    ctx.activeMembership!.id,
+    ctx.activeMembership!,
   );
   if (auth.error) return { error: auth.error };
 
   const { error } = await supabase.from("events").delete().eq("id", id);
   if (error) return { error: error.message };
   revalidatePath(ROUTES.evenements.list);
+  revalidatePath(ROUTES.mairie.evenements);
+  revalidatePath(ROUTES.mairie.evenementDetail(id));
   return { success: true };
 }
 
@@ -137,7 +139,31 @@ export type CreateEventFromModalInput = {
   addressLat?: number;
   addressLng?: number;
   sourceInitiativeId?: string;
+  isOfficial?: boolean;
 };
+
+function isMunicipalityStaffMembership(
+  membership: { role: string } | null | undefined,
+): boolean {
+  return (
+    !!membership &&
+    (COMMUNE_STAFF_ROLES as readonly string[]).includes(membership.role)
+  );
+}
+
+async function assertCanMutateEvent(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  id: string,
+  membership: { id: string; commune_id: string; role: string },
+) {
+  return assertCanManageEvent(
+    supabase,
+    id,
+    membership.id,
+    membership.commune_id,
+    isMunicipalityStaffMembership(membership),
+  );
+}
 
 export async function createEventFromModal(
   input: CreateEventFromModalInput,
@@ -174,6 +200,7 @@ export async function createEventFromModal(
       address_lat: parsed.data.addressLat ?? null,
       address_lng: parsed.data.addressLng ?? null,
       source_initiative_id: parsed.data.sourceInitiativeId ?? null,
+      is_official: parsed.data.isOfficial ?? false,
       status: EVENT_STATUS.active,
     })
     .select("id")
@@ -184,6 +211,8 @@ export async function createEventFromModal(
   }
 
   revalidatePath(ROUTES.evenements.list);
+  revalidatePath(ROUTES.mairie.evenements);
+  revalidatePath(ROUTES.mairie.evenementDetail(created.id));
 
   void fanoutNewContentNotification({
     contextType: "event",
@@ -204,11 +233,10 @@ export async function updateEvent(
   const ctx = await requireActiveMembership();
   const supabase = await createClient();
 
-  const auth = await assertAuthorMembership(
+  const auth = await assertCanMutateEvent(
     supabase,
-    "events",
     id,
-    ctx.activeMembership!.id,
+    ctx.activeMembership!,
   );
   if (auth.error) return { error: auth.error };
 
@@ -244,6 +272,8 @@ export async function updateEvent(
 
   revalidatePath(ROUTES.evenements.list);
   revalidatePath(ROUTES.evenements.detail(id));
+  revalidatePath(ROUTES.mairie.evenements);
+  revalidatePath(ROUTES.mairie.evenementDetail(id));
   return { success: true };
 }
 

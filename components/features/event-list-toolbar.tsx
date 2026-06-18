@@ -115,19 +115,19 @@ export function EventListToolbar({
         <InfoPopover slide="evenements" />
       </div>
 
-      <div className="mb-3 hidden flex-wrap items-start justify-between gap-3 md:flex">
-        <div className="space-y-1">
+      <div className="mb-3 hidden md:block">
+        <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <h1 className="text-[28px] font-bold leading-9 text-text">
               Événements
             </h1>
             <InfoPopover slide="evenements" />
           </div>
-          <p className="text-sm font-medium leading-5 text-muted">
-            Fêtes, ateliers, rencontres, chantiers participatifs… retrouvez les événements près de chez vous.
-          </p>
+          {createButtonDesktop}
         </div>
-        {createButtonDesktop}
+        <p className="mt-1 text-sm font-medium leading-5 text-muted">
+          Fêtes, ateliers, rencontres, chantiers participatifs… retrouvez les événements près de chez vous.
+        </p>
       </div>
 
       <div className="flex items-center justify-between gap-3 md:hidden">

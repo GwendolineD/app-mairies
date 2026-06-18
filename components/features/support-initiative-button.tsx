@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Heart } from "lucide-react";
 import { toggleInitiativeSupport } from "@/lib/actions/initiatives";
 import { Button } from "@/components/ui/button";
+import { GradientText } from "@/components/ui/gradient-text";
 import { cn } from "@/lib/utils/cn";
 
 type Props = {
@@ -49,15 +50,10 @@ export function SupportInitiativeButton({
   }
 
   return (
-    <div className={cn("relative", hideCountInLabel && "space-y-3")}>
-      {hideCountInLabel ? (
-        <p className="text-base font-bold text-text">
-          {count} soutien{count !== 1 ? "s" : ""}
-        </p>
-      ) : null}
+    <div className="relative">
       <Button
         type="button"
-        variant={supported ? "primary" : "secondary"}
+        variant="secondary"
         onClick={handleToggle}
         disabled={isPending}
         className={cn(
@@ -67,13 +63,20 @@ export function SupportInitiativeButton({
         )}
       >
         <Heart
-          className={cn("size-4", supported && "fill-mint")}
+          className={cn(
+            "size-4",
+            supported ? "fill-mint" : "text-coral",
+          )}
           aria-hidden
         />
-        <span>
-          {supported ? "Soutenu" : "Je soutiens"}
-          {!hideCountInLabel && count > 0 ? ` (${count})` : ""}
-        </span>
+        {!supported ? (
+          <GradientText className="font-bold">Je soutiens</GradientText>
+        ) : (
+          <span>
+            Soutenu
+            {!hideCountInLabel && count > 0 ? ` (${count})` : ""}
+          </span>
+        )}
       </Button>
 
       {toastMessage ? (

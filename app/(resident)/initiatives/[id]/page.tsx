@@ -14,6 +14,7 @@ import { CategoryTag } from "@/components/ui/category-tag";
 import { ReportButton } from "@/components/features/report-button";
 import { InitiativeSidebarActions } from "@/components/features/initiative-sidebar-actions";
 import { AnnouncementLocationMap } from "@/components/features/announcement-location-map";
+import { DetailLocationSidebarCard } from "@/components/features/detail-location-sidebar-card";
 import { AnnouncementAddressLines } from "@/components/features/announcement-address-lines";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { LinkifiedText } from "@/components/ui/linkified-text";
@@ -287,10 +288,7 @@ export default async function InitiativeDetailPage(props: {
             className={DETAIL_CARD_CLASS}
           />
 
-          <Card className={`gap-2 md:p-5 ${DETAIL_CARD_CLASS}`}>
-            <h2 className="hidden text-lg font-semibold leading-7 text-text md:block">
-              Localisation
-            </h2>
+          <DetailLocationSidebarCard className={DETAIL_CARD_CLASS}>
             {initiative.address_lat != null &&
             initiative.address_lng != null ? (
               <AnnouncementLocationMap
@@ -309,11 +307,12 @@ export default async function InitiativeDetailPage(props: {
                     ? getInitiativeCategoryColorHex(initiative.category_slug)
                     : undefined
                 }
+                hideAddressIcon
               />
             ) : (
-              <AnnouncementAddressLines {...addressLines} size="md" />
+              <AnnouncementAddressLines {...addressLines} hideIcon />
             )}
-          </Card>
+          </DetailLocationSidebarCard>
 
           <div className="hidden md:flex md:justify-center">
             <ReportButton

@@ -186,15 +186,17 @@ export function formatInitiativeWhen(
 export function formatLinkedEventDateTime(start: string, end?: string | null): string {
   try {
     if (end) {
-      return formatEventRange(start, end);
+      return capitalize(formatEventRange(start, end));
     }
-    return formatFr(new Date(start), {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return capitalize(
+      formatFr(new Date(start), {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    );
   } catch {
     return "";
   }

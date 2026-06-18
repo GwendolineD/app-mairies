@@ -17,6 +17,7 @@ import { AnnouncementTypePastille } from "@/components/ui/announcement-type-past
 import { AnnouncementCard } from "@/components/features/announcement-card";
 import { AnnouncementAddressLines } from "@/components/features/announcement-address-lines";
 import { AnnouncementLocationMap } from "@/components/features/announcement-location-map";
+import { DetailLocationSidebarCard } from "@/components/features/detail-location-sidebar-card";
 import { AnnouncementSidebarActions } from "@/components/features/announcement-sidebar-actions";
 import { ReportButton } from "@/components/features/report-button";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -260,11 +261,7 @@ export default async function AnnonceDetailPage(props: {
             className={DETAIL_CARD_CLASS}
           />
 
-          {/* Location card */}
-          <Card className={`gap-2 md:p-5 ${DETAIL_CARD_CLASS}`}>
-            <h2 className="hidden text-lg font-semibold leading-7 text-text md:block">
-              Localisation
-            </h2>
+          <DetailLocationSidebarCard className={DETAIL_CARD_CLASS}>
             {ann.address_lat != null && ann.address_lng != null ? (
               <AnnouncementLocationMap
                 latitude={ann.address_lat}
@@ -277,11 +274,12 @@ export default async function AnnonceDetailPage(props: {
                   ann.announcement_categories?.color_hex ??
                   getCategoryColorHex(ann.category_slug)
                 }
+                hideAddressIcon
               />
             ) : (
-              <AnnouncementAddressLines {...addressLines} size="md" />
+              <AnnouncementAddressLines {...addressLines} hideIcon />
             )}
-          </Card>
+          </DetailLocationSidebarCard>
 
           <div className="hidden md:flex md:justify-center">
             <ReportButton

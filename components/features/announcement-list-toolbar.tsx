@@ -136,20 +136,20 @@ export function AnnouncementListToolbar({
         <InfoPopover slide="annonces" />
       </div>
 
-      {/* Desktop: title, subtitle and full create button */}
-      <div className="mb-3 hidden flex-wrap items-start justify-between gap-3 md:flex">
-        <div className="space-y-1">
+      {/* Desktop: title + create button on one row, subtitle below */}
+      <div className="mb-3 hidden md:block">
+        <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <h1 className="text-[28px] font-bold leading-9 text-text">
               Toutes les annonces
             </h1>
             <InfoPopover slide="annonces" />
           </div>
-          <p className="text-sm font-medium leading-5 text-muted">
-            Retrouvez toutes les demandes et propositions d&apos;entraide près de chez vous
-          </p>
+          {createButtonDesktop}
         </div>
-        {createButtonDesktop}
+        <p className="mt-1 text-sm font-medium leading-5 text-muted">
+          Retrouvez toutes les demandes et propositions d&apos;entraide près de chez vous
+        </p>
       </div>
 
       {/* Mobile: view toggle + create button */}

@@ -20,3 +20,24 @@ export async function assertAuthorMembership(
 
   return {};
 }
+
+/** Author or municipality staff managing an official commune event. */
+export async function assertCanManageEvent(
+  supabase: SupabaseClient,
+  id: string,
+  membershipId: string,
+  communeId: string,
+  isMunicipalityStaff: boolean,
+): Promise<{ error?: string }> {
+  const { data: row } = await supabase
+    .from("events")
+    .select("author_membership_id, is_official, commune_id")
+    .eq("id", id)
+    .single();
+
+  if (!row) return { error: "Événement introuvable" };
+  if (row.commune_id !== communeId) return { error: "Non autorisé" };
+  if (row.author_membership_id === membershipId) return {};
+  if (row.is_official && isMunicipalityStaff) return {};
+  return { error: "Non autorisé" };
+}

@@ -77,6 +77,11 @@ export default async function BackofficeCommuneDetailPage(props: {
         createdAt={stats.commune.created_at}
         communeId={stats.commune.id}
         accessStatus={stats.commune.access_status}
+        mairieAddressStreet={stats.commune.mairie_address_street}
+        mairieAddressCity={stats.commune.mairie_address_city}
+        mairieAddressPostcode={stats.commune.mairie_address_postcode}
+        mairieAddressLat={stats.commune.mairie_address_lat}
+        mairieAddressLng={stats.commune.mairie_address_lng}
       />
 
       <div className="space-y-4">

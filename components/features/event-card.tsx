@@ -31,6 +31,7 @@ type Props = {
   event: EventCardData;
   layout?: "vertical" | "horizontal";
   highlighted?: boolean;
+  hrefBuilder?: (id: string) => string;
 };
 
 function resolveImageUrl(event: EventCardData): string | null {
@@ -41,7 +42,7 @@ function resolveImageUrl(event: EventCardData): string | null {
   return null;
 }
 
-function VolunteersBadge({
+function VolunteersGauge({
   registered,
   needed,
 }: {
@@ -49,11 +50,23 @@ function VolunteersBadge({
   needed: number | null;
 }) {
   if (!needed || needed <= 0) return null;
+  const progress = Math.min(100, Math.round((registered / needed) * 100));
+
   return (
-    <span className="flex items-center gap-0.5 text-[10px] font-semibold text-orange">
-      <Users className="size-3" aria-hidden />
-      {registered}/{needed} bénévole{needed !== 1 ? "s" : ""}
-    </span>
+    <div className="mt-1 flex items-center gap-2">
+      <Users className="size-3 shrink-0 text-orange" aria-hidden />
+      <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-border">
+        <div
+          className="h-full rounded-full bg-orange transition-all"
+          style={{
+            width: `${Math.max(progress, registered > 0 ? 8 : 0)}%`,
+          }}
+        />
+      </div>
+      <span className="shrink-0 text-[10px] font-semibold text-orange">
+        {registered}/{needed}
+      </span>
+    </div>
   );
 }
 
@@ -82,7 +95,9 @@ export function EventCard({
   event: e,
   layout = "vertical",
   highlighted = false,
+  hrefBuilder = ROUTES.evenements.detail,
 }: Props) {
+  const detailHref = hrefBuilder(e.id);
   const highlightRing = highlighted
     ? "border-orange ring-2 ring-orange/35 shadow-[0_12px_32px_rgba(255,179,71,0.15)]"
     : "";
@@ -91,7 +106,7 @@ export function EventCard({
 
   if (layout === "horizontal") {
     return (
-      <Link href={ROUTES.evenements.detail(e.id)} className="block">
+      <Link href={detailHref} className="block">
         <Card
           className={cn(
             "flex h-28 flex-row items-stretch gap-0 overflow-hidden rounded-lg p-0 transition hover:border-orange/45",
@@ -133,9 +148,7 @@ export function EventCard({
                 <span className="truncate">{e.address_label}</span>
               </p>
             ) : null}
-            <div className="mt-auto flex items-center justify-end">
-              <VolunteersBadge registered={volunteersRegistered} needed={e.volunteers_needed} />
-            </div>
+            <VolunteersGauge registered={volunteersRegistered} needed={e.volunteers_needed} />
           </div>
         </Card>
       </Link>
@@ -143,7 +156,7 @@ export function EventCard({
   }
 
   return (
-    <Link href={ROUTES.evenements.detail(e.id)} className="h-full">
+    <Link href={detailHref} className="h-full">
       <Card
         className={cn(
           "flex h-full flex-col gap-0 rounded-xl p-0 transition hover:border-orange/45",
@@ -166,7 +179,7 @@ export function EventCard({
         </div>
 
         <div className="flex flex-1 flex-col gap-1 px-2.5 pt-2.5 pb-2.5">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
             {e.category_slug ? (
               <CategoryTag
                 label={getInitiativeCategoryLabel(e.category_slug)}
@@ -174,7 +187,6 @@ export function EventCard({
                 className="w-fit shrink-0"
               />
             ) : null}
-            <VolunteersBadge registered={volunteersRegistered} needed={e.volunteers_needed} />
           </div>
 
           <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-text">
@@ -194,6 +206,7 @@ export function EventCard({
               <span className="min-w-0 truncate">{e.address_label}</span>
             </div>
           ) : null}
+          <VolunteersGauge registered={volunteersRegistered} needed={e.volunteers_needed} />
         </div>
       </Card>
     </Link>

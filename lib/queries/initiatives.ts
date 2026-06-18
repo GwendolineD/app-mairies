@@ -222,13 +222,28 @@ export async function listInitiativeSupporters(
   supabase: SupabaseClient,
   initiativeId: string,
 ): Promise<InitiativeSupporter[]> {
+  return listInitiativeResponses(supabase, initiativeId, "support");
+}
+
+export async function listInitiativeVolunteers(
+  supabase: SupabaseClient,
+  initiativeId: string,
+): Promise<InitiativeSupporter[]> {
+  return listInitiativeResponses(supabase, initiativeId, "volunteer");
+}
+
+async function listInitiativeResponses(
+  supabase: SupabaseClient,
+  initiativeId: string,
+  responseType: "support" | "volunteer",
+): Promise<InitiativeSupporter[]> {
   const { data, error } = await supabase
     .from("initiative_responses")
     .select(
       "membership_id, memberships(id, profiles(first_name, last_name, display_name, avatar_url))",
     )
     .eq("initiative_id", initiativeId)
-    .eq("response_type", "support")
+    .eq("response_type", responseType)
     .order("created_at", { ascending: false });
 
   if (error || !data) return [];

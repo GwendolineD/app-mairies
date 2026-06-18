@@ -10,11 +10,12 @@ import {
 import type { AdminNavItem } from "@/lib/constants/routes";
 import { ROUTES } from "@/lib/constants/routes";
 import { cn } from "@/lib/utils/cn";
-import { isActivePath } from "@/lib/utils/routes";
+import { resolveActiveNavHref } from "@/lib/utils/routes";
 import {
   ArrowLeft,
   Building2,
   CalendarPlus,
+  CalendarDays,
   CreditCard,
   Flag,
   Flame,
@@ -33,6 +34,7 @@ const ADMIN_NAV_ICONS: Record<AdminNavItem["icon"], LucideIcon> = {
   settings: Settings,
   flag: Flag,
   "calendar-plus": CalendarPlus,
+  "calendar-days": CalendarDays,
   building2: Building2,
   mail: Mail,
   flame: Flame,
@@ -221,6 +223,10 @@ export function AdminSidebarNav({
   title,
 }: AdminSidebarNavProps) {
   const pathname = usePathname();
+  const activeHref = resolveActiveNavHref(
+    pathname,
+    navItems.map((item) => item.href),
+  );
 
   return (
     <nav
@@ -247,7 +253,7 @@ export function AdminSidebarNav({
             href={href}
             label={label}
             icon={Icon}
-            active={isActivePath(pathname, href)}
+            active={href === activeHref}
             variant="sidebar"
             collapsed={collapsed}
           />
@@ -282,6 +288,10 @@ export function AdminMobileNav({
   backHref = ROUTES.accueil,
 }: AdminMobileNavProps) {
   const pathname = usePathname();
+  const activeHref = resolveActiveNavHref(
+    pathname,
+    navItems.map((item) => item.href),
+  );
 
   return (
     <nav
@@ -298,7 +308,7 @@ export function AdminMobileNav({
               href={href}
               label={label}
               icon={Icon}
-              active={isActivePath(pathname, href)}
+              active={href === activeHref}
               variant="pill"
             />
           );

@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRight, Heart, MessageCircle } from "lucide-react";
+import { ChevronRight, MessageCircle, Users } from "lucide-react";
 import { ContactAnnouncementButton } from "@/components/features/contact-announcement-button";
-import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatDisplayName } from "@/lib/utils/display-name";
@@ -11,41 +10,41 @@ import { cn } from "@/lib/utils/cn";
 import type { InitiativeSupporter } from "@/lib/queries/initiatives";
 
 type Props = {
-  supporters: InitiativeSupporter[];
-  initiativeId: string;
+  volunteers: InitiativeSupporter[];
+  eventId: string;
   isAuthor: boolean;
   maxVisible?: number;
   className?: string;
 };
 
-function getSupporterDisplayName(supporter: InitiativeSupporter): string {
-  if (supporter.displayName) return supporter.displayName;
-  if (supporter.firstName && supporter.lastName) {
-    return formatDisplayName(supporter.firstName, supporter.lastName);
+function getVolunteerDisplayName(volunteer: InitiativeSupporter): string {
+  if (volunteer.displayName) return volunteer.displayName;
+  if (volunteer.firstName && volunteer.lastName) {
+    return formatDisplayName(volunteer.firstName, volunteer.lastName);
   }
-  return supporter.firstName || "Voisin·e";
+  return volunteer.firstName || "Voisin·e";
 }
 
-function getSupporterFullName(supporter: InitiativeSupporter): string {
-  if (supporter.displayName) return supporter.displayName;
-  return [supporter.firstName, supporter.lastName].filter(Boolean).join(" ") || "Voisin·e";
+function getVolunteerFullName(volunteer: InitiativeSupporter): string {
+  if (volunteer.displayName) return volunteer.displayName;
+  return [volunteer.firstName, volunteer.lastName].filter(Boolean).join(" ") || "Voisin·e";
 }
 
-export function SupportersAvatarRow({
-  supporters,
-  initiativeId,
+export function VolunteersAvatarRow({
+  volunteers,
+  eventId,
   isAuthor,
   maxVisible = 5,
   className,
 }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
 
-  if (supporters.length === 0) {
+  if (volunteers.length === 0) {
     return null;
   }
 
-  const visibleSupporters = supporters.slice(0, maxVisible);
-  const overflowCount = supporters.length - maxVisible;
+  const visibleVolunteers = volunteers.slice(0, maxVisible);
+  const overflowCount = volunteers.length - maxVisible;
 
   return (
     <>
@@ -59,15 +58,15 @@ export function SupportersAvatarRow({
       >
         <div className="flex items-center">
           <div className="flex -space-x-2">
-            {visibleSupporters.map((supporter, index) => (
+            {visibleVolunteers.map((volunteer, index) => (
               <div
-                key={supporter.membershipId}
+                key={volunteer.membershipId}
                 className="relative rounded-full ring-2 ring-surface"
                 style={{ zIndex: maxVisible - index }}
               >
                 <UserAvatar
-                  name={getSupporterDisplayName(supporter)}
-                  url={supporter.avatarUrl}
+                  name={getVolunteerDisplayName(volunteer)}
+                  url={volunteer.avatarUrl}
                   size="sm"
                 />
               </div>
@@ -85,28 +84,28 @@ export function SupportersAvatarRow({
         <ChevronRight className="size-5 shrink-0 text-muted" aria-hidden />
       </button>
 
-      <SupportersModal
+      <VolunteersModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        supporters={supporters}
-        initiativeId={initiativeId}
+        volunteers={volunteers}
+        eventId={eventId}
         isAuthor={isAuthor}
       />
     </>
   );
 }
 
-function SupportersModal({
+function VolunteersModal({
   open,
   onClose,
-  supporters,
-  initiativeId,
+  volunteers,
+  eventId,
   isAuthor,
 }: {
   open: boolean;
   onClose: () => void;
-  supporters: InitiativeSupporter[];
-  initiativeId: string;
+  volunteers: InitiativeSupporter[];
+  eventId: string;
   isAuthor: boolean;
 }) {
   return (
@@ -115,19 +114,19 @@ function SupportersModal({
       onClose={onClose}
       title={
         <span className="flex items-center gap-1.5">
-          <Heart className="size-4 shrink-0 text-coral" aria-hidden />
-          {supporters.length} soutien{supporters.length !== 1 ? "s" : ""}
+          <Users className="size-4 shrink-0 text-orange" aria-hidden />
+          {volunteers.length} bénévole{volunteers.length !== 1 ? "s" : ""}
         </span>
       }
       showCloseButton
       size="sm"
     >
       <div className="max-h-[60vh] space-y-2 overflow-y-auto">
-        {supporters.map((supporter) => (
-          <SupporterRow
-            key={supporter.membershipId}
-            supporter={supporter}
-            initiativeId={initiativeId}
+        {volunteers.map((volunteer) => (
+          <VolunteerRow
+            key={volunteer.membershipId}
+            volunteer={volunteer}
+            eventId={eventId}
             showContactButton={isAuthor}
           />
         ))}
@@ -136,28 +135,28 @@ function SupportersModal({
   );
 }
 
-function SupporterRow({
-  supporter,
-  initiativeId,
+function VolunteerRow({
+  volunteer,
+  eventId,
   showContactButton,
 }: {
-  supporter: InitiativeSupporter;
-  initiativeId: string;
+  volunteer: InitiativeSupporter;
+  eventId: string;
   showContactButton: boolean;
 }) {
-  const displayName = getSupporterDisplayName(supporter);
-  const fullName = getSupporterFullName(supporter);
+  const displayName = getVolunteerDisplayName(volunteer);
+  const fullName = getVolunteerFullName(volunteer);
 
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg p-2 transition hover:bg-warm">
       <div className="flex min-w-0 items-center gap-3">
-        <UserAvatar name={displayName} url={supporter.avatarUrl} size="sm" />
+        <UserAvatar name={displayName} url={volunteer.avatarUrl} size="sm" />
         <span className="truncate text-sm font-semibold text-text">{fullName}</span>
       </div>
       {showContactButton ? (
         <ContactAnnouncementButton
-          contextId={initiativeId}
-          contextType="initiative"
+          contextId={eventId}
+          contextType="event"
           label="Contacter"
           icon={<MessageCircle className="size-4" aria-hidden />}
           className="h-8 w-auto shrink-0 gap-1.5 px-3 py-0 text-xs"

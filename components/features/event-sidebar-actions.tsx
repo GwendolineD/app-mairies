@@ -3,13 +3,15 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowUpRight, Copy, Pencil, Sparkles, Trash2, Users } from "lucide-react";
+import { ArrowUpRight, CalendarDays, Copy, Pencil, Sparkles, Trash2, Users } from "lucide-react";
 import { useCreationModals } from "@/components/features/creation-modal-context";
-import { deleteEvent, duplicateEvent } from "@/lib/actions/events";
+import { VolunteersAvatarRow } from "@/components/features/event-volunteers-list";
+import { deleteEvent } from "@/lib/actions/events";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
 import { ROUTES } from "@/lib/constants/routes";
+import type { InitiativeSupporter } from "@/lib/queries/initiatives";
 import type { EventEditData } from "@/lib/types";
 import { cn } from "@/lib/utils/cn";
 
@@ -22,18 +24,24 @@ type Props = {
   isAuthor: boolean;
   eventId: string;
   volunteersNeeded: number | null;
+  volunteersRegistered?: number;
+  volunteers?: InitiativeSupporter[];
   editData?: EventEditData;
   sourceInitiative?: SourceInitiative | null;
   className?: string;
+  deleteRedirectHref?: string;
 };
 
 export function EventSidebarActions({
   isAuthor,
   eventId,
   volunteersNeeded,
+  volunteersRegistered = 0,
+  volunteers = [],
   editData,
   sourceInitiative,
   className,
+  deleteRedirectHref = ROUTES.evenements.list,
 }: Props) {
   return (
     <>
@@ -42,12 +50,17 @@ export function EventSidebarActions({
           eventId={eventId}
           editData={editData}
           className={className}
+          deleteRedirectHref={deleteRedirectHref}
         />
       ) : null}
 
       {volunteersNeeded != null && volunteersNeeded > 0 ? (
         <VolunteersCard
+          eventId={eventId}
+          isAuthor={isAuthor}
           volunteersNeeded={volunteersNeeded}
+          volunteersRegistered={volunteersRegistered}
+          volunteers={volunteers}
           className={className}
         />
       ) : null}
@@ -66,87 +79,137 @@ function AuthorActionsCard({
   eventId,
   editData,
   className,
+  deleteRedirectHref,
 }: {
   eventId: string;
   editData?: EventEditData;
   className?: string;
+  deleteRedirectHref: string;
 }) {
   const { openEventModal } = useCreationModals();
-  const router = useRouter();
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [duplicating, setDuplicating] = useState(false);
 
-  async function handleDuplicate() {
-    setDuplicating(true);
-    const result = await duplicateEvent(eventId);
-    setDuplicating(false);
-    if ("id" in result) {
-      router.push(ROUTES.evenements.detail(result.id));
-    }
+  function handleDuplicate() {
+    if (!editData) return;
+    openEventModal({
+      initialData: editData,
+      duplicateMode: true,
+    });
   }
 
   return (
-    <Card className={cn("space-y-4 md:p-5", className)}>
-      <h2 className="text-lg font-semibold text-text">Gérez votre événement</h2>
-      <p className="text-sm font-medium text-muted">
-        Modifiez les détails ou dupliquez cet événement.
-      </p>
-      <Button
-        type="button"
-        className="w-full cursor-pointer"
-        onClick={() =>
-          openEventModal({ editId: eventId, initialData: editData })
-        }
-      >
-        <Pencil className="size-4" aria-hidden />
-        Modifier l&apos;événement
-      </Button>
-      <Button
-        type="button"
-        variant="outline"
-        className="w-full cursor-pointer"
-        onClick={handleDuplicate}
-        disabled={duplicating}
-      >
-        <Copy className="size-4" aria-hidden />
-        {duplicating ? "Duplication…" : "Dupliquer"}
-      </Button>
-      <Button
-        type="button"
-        variant="outline"
-        className="w-full cursor-pointer border-coral bg-surface text-coral hover:bg-coral/5"
-        onClick={() => setDeleteOpen(true)}
-      >
-        <Trash2 className="size-4" aria-hidden />
-        Supprimer
-      </Button>
+    <Card className={cn("gap-6 md:p-5", className)}>
+      <div className="space-y-1">
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-text">
+          <CalendarDays className="size-5 shrink-0 text-orange" aria-hidden />
+          Gérez votre événement
+        </h2>
+        <p className="text-sm font-medium text-muted">
+          Modifiez les détails ou dupliquez cet événement.
+        </p>
+      </div>
+      <div className="flex flex-col gap-2">
+        <Button
+          type="button"
+          className="w-full cursor-pointer"
+          onClick={() =>
+            openEventModal({ editId: eventId, initialData: editData })
+          }
+        >
+          <Pencil className="size-4" aria-hidden />
+          Modifier l&apos;événement
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full cursor-pointer"
+          onClick={handleDuplicate}
+          disabled={!editData}
+        >
+          <Copy className="size-4" aria-hidden />
+          Dupliquer
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full cursor-pointer border-coral bg-surface text-coral hover:bg-coral/5"
+          onClick={() => setDeleteOpen(true)}
+        >
+          <Trash2 className="size-4" aria-hidden />
+          Supprimer
+        </Button>
+      </div>
       <DeleteEventModal
         eventId={eventId}
         open={deleteOpen}
         onClose={() => setDeleteOpen(false)}
+        redirectHref={deleteRedirectHref}
       />
     </Card>
   );
 }
 
+function VolunteersGauge({
+  registered,
+  needed,
+}: {
+  registered: number;
+  needed: number;
+}) {
+  const progress = Math.min(100, Math.round((registered / needed) * 100));
+
+  return (
+    <div className="flex items-center gap-3">
+      <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-border">
+        <div
+          className="h-full rounded-full bg-orange transition-all"
+          style={{
+            width: `${Math.max(progress, registered > 0 ? 8 : 0)}%`,
+          }}
+        />
+      </div>
+      <span className="shrink-0 text-xs font-bold text-muted">
+        {registered}/{needed}
+      </span>
+    </div>
+  );
+}
+
 function VolunteersCard({
+  eventId,
+  isAuthor,
   volunteersNeeded,
+  volunteersRegistered,
+  volunteers,
   className,
 }: {
+  eventId: string;
+  isAuthor: boolean;
   volunteersNeeded: number;
+  volunteersRegistered: number;
+  volunteers: InitiativeSupporter[];
   className?: string;
 }) {
   return (
-    <Card className={cn("space-y-3 md:p-5", className)}>
-      <h2 className="text-lg font-semibold text-text">Bénévoles</h2>
-      <p className="text-sm font-medium text-muted">
-        L&apos;organisateur recherche des bénévoles pour cet événement.
-      </p>
-      <div className="flex items-center gap-2 text-orange">
-        <Users className="size-5" aria-hidden />
-        <span className="text-base font-bold">
-          {volunteersNeeded} bénévole{volunteersNeeded !== 1 ? "s" : ""} souhaité{volunteersNeeded !== 1 ? "s" : ""}
-        </span>
+    <Card className={cn("gap-6 md:p-5", className)}>
+      <div className="space-y-1">
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-text">
+          <Users className="size-5 shrink-0 text-orange" aria-hidden />
+          Bénévoles
+        </h2>
+        <p className="text-sm font-medium text-muted">
+          L&apos;organisateur recherche des bénévoles pour cet événement.
+        </p>
+      </div>
+      <div className="space-y-3">
+        <VolunteersGauge registered={volunteersRegistered} needed={volunteersNeeded} />
+        {volunteers.length > 0 ? (
+          <VolunteersAvatarRow
+            volunteers={volunteers}
+            eventId={eventId}
+            isAuthor={isAuthor}
+          />
+        ) : null}
       </div>
     </Card>
   );
@@ -183,10 +246,12 @@ function DeleteEventModal({
   eventId,
   open,
   onClose,
+  redirectHref,
 }: {
   eventId: string;
   open: boolean;
   onClose: () => void;
+  redirectHref: string;
 }) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
@@ -197,7 +262,7 @@ function DeleteEventModal({
     setDeleting(false);
     if ("success" in result) {
       onClose();
-      router.push(ROUTES.evenements.list);
+      router.push(redirectHref);
     }
   }
 

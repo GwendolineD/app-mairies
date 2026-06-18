@@ -31,3 +31,15 @@ export async function getAuthorName(
     "Habitant·e"
   );
 }
+
+/** Display label for event author (official municipality vs resident). */
+export function resolveEventAuthorLabel(
+  isOfficial: boolean,
+  authorName: string,
+  communeName?: string | null,
+): string {
+  if (isOfficial) {
+    return communeName ? `Mairie de ${communeName}` : "La Mairie";
+  }
+  return authorName;
+}

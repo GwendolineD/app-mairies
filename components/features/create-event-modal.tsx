@@ -82,6 +82,8 @@ type Props = {
   editId?: string;
   initialData?: EventEditData;
   duplicateMode?: boolean;
+  isOfficial?: boolean;
+  detailHref?: (id: string) => string;
 };
 
 function parseDateTime(isoString: string): { date: string; time: string } {
@@ -180,6 +182,8 @@ export function CreateEventModal({
   editId,
   initialData,
   duplicateMode = false,
+  isOfficial = false,
+  detailHref = ROUTES.evenements.detail,
 }: Props) {
   const router = useRouter();
   const isEditMode = Boolean(editId) && !duplicateMode;
@@ -418,6 +422,7 @@ export function CreateEventModal({
         addressLat: addressData.lat ?? undefined,
         addressLng: addressData.lng ?? undefined,
         sourceInitiativeId: initialData?.sourceInitiativeId,
+        isOfficial: isEditMode ? undefined : isOfficial,
       };
 
       if (isEditMode && editId) {
@@ -448,7 +453,7 @@ export function CreateEventModal({
       setSubmitting(false);
       setSubmitPhase("idle");
       onClose();
-      router.push(ROUTES.evenements.detail(result.id));
+      router.push(detailHref(result.id));
     } catch (error) {
       if (error instanceof CloudinaryUploadError) {
         if (error.errorType === "virus_detected") {

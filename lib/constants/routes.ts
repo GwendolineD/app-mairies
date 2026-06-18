@@ -92,6 +92,7 @@ export type AdminNavIcon =
   | "settings"
   | "flag"
   | "calendar-plus"
+  | "calendar-days"
   | "building2"
   | "mail"
   | "flame"
@@ -113,7 +114,7 @@ export const MUNICIPALITY_NAV: readonly AdminNavItem[] = [
   { href: ROUTES.mairie.habitants, label: "Habitant·es", icon: "users" },
   { href: ROUTES.mairie.parametres, label: "Paramètres", icon: "settings" },
   { href: ROUTES.mairie.signalements, label: "Signalements", icon: "flag" },
-  { href: ROUTES.mairie.eventNew, label: "+ Événement", icon: "calendar-plus" },
+  { href: ROUTES.mairie.evenements, label: "Événements", icon: "calendar-days" },
   { href: ROUTES.mairie.abonnement, label: "Abonnement", icon: "credit-card" },
 ];
 

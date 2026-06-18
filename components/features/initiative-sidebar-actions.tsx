@@ -2,7 +2,16 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, CalendarDays, CalendarPlus, MessageCircle, Pencil, Trash2 } from "lucide-react";
+import {
+  ArrowUpRight,
+  CalendarDays,
+  CalendarPlus,
+  Heart,
+  MessageCircle,
+  Pencil,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import { useCreationModals } from "@/components/features/creation-modal-context";
 import { ContactAnnouncementButton } from "@/components/features/contact-announcement-button";
 import { DeleteInitiativeModal } from "@/components/features/delete-initiative-modal";
@@ -38,11 +47,45 @@ type Props = {
   className?: string;
 };
 
+function getAuthorSupportMessage(count: number) {
+  if (count === 0) {
+    return "C'est un beau projet pour la commune — les premiers soutiens arriveront bientôt, continuez à le faire vivre !";
+  }
+
+  return "Bravo, votre idée mobilise déjà des voisin·es autour de vous !";
+}
+
 function SupportCountLabel({ count }: { count: number }) {
   return (
-    <p className="text-base font-bold text-text">
+    <p className="flex items-center justify-center gap-1.5 text-base font-bold text-text">
       {count} soutien{count !== 1 ? "s" : ""}
+      <Heart className="size-4 shrink-0 fill-coral text-coral" aria-hidden />
     </p>
+  );
+}
+
+function SupportersSection({
+  initiativeId,
+  initialSupportCount,
+  supporters,
+  isAuthor,
+}: {
+  initiativeId: string;
+  initialSupportCount: number;
+  supporters: InitiativeSupporter[];
+  isAuthor: boolean;
+}) {
+  return (
+    <div className="space-y-3">
+      <SupportCountLabel count={initialSupportCount} />
+      {supporters.length > 0 ? (
+        <SupportersAvatarRow
+          supporters={supporters}
+          initiativeId={initiativeId}
+          isAuthor={isAuthor}
+        />
+      ) : null}
+    </div>
   );
 }
 
@@ -54,11 +97,12 @@ function InitiativeLinkedEventCard({
   className?: string;
 }) {
   return (
-    <Card className={cn("relative space-y-2 md:p-5", className)}>
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-xs font-semibold uppercase text-mint">
+    <Card className={cn("relative space-y-3 md:p-5", className)}>
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="flex min-w-0 items-center gap-2 text-lg font-semibold text-text">
+          <CalendarDays className="size-5 shrink-0 text-coral/85" aria-hidden />
           Événement associé
-        </p>
+        </h2>
         <Link
           href={ROUTES.evenements.detail(event.id)}
           className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-sm text-muted transition hover:bg-warm hover:text-text"
@@ -67,15 +111,16 @@ function InitiativeLinkedEventCard({
           <ArrowUpRight className="size-4" aria-hidden />
         </Link>
       </div>
-      <p className="text-sm font-semibold text-text">{event.title}</p>
-      {event.starts_at && event.ends_at ? (
-        <p className="flex items-center gap-1.5 text-xs font-medium text-muted">
-          <CalendarDays className="size-3.5 shrink-0 text-coral" aria-hidden />
-          <time dateTime={event.starts_at}>
-            {formatLinkedEventDateTime(event.starts_at, event.ends_at)}
-          </time>
-        </p>
-      ) : null}
+      <div className="space-y-1">
+        <p className="text-sm font-semibold text-text">{event.title}</p>
+        {event.starts_at && event.ends_at ? (
+          <p className="text-xs font-medium text-muted">
+            <time dateTime={event.starts_at}>
+              {formatLinkedEventDateTime(event.starts_at, event.ends_at)}
+            </time>
+          </p>
+        ) : null}
+      </div>
     </Card>
   );
 }
@@ -116,41 +161,48 @@ function AuthorActionsCard({
   }
 
   return (
-    <Card className={cn("space-y-4 md:p-5", className)}>
-      <h2 className="text-lg font-semibold text-text">Gérez votre initiative</h2>
-      <p className="text-sm font-medium text-muted">
-        Suivez l&apos;engagement des voisin·es et faites évoluer votre idée.
-      </p>
-      <Button
-        type="button"
-        className="w-full cursor-pointer"
-        onClick={() =>
-          openInitiativeModal({ editId: initiativeId, initialData: editData })
-        }
-      >
-        <Pencil className="size-4" aria-hidden />
-        Modifier l&apos;initiative
-      </Button>
-      {!linkedEvent ? (
+    <Card className={cn("gap-6 md:p-5", className)}>
+      <div className="space-y-1">
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-text">
+          <Sparkles className="size-5 shrink-0 text-mint" aria-hidden />
+          Gérez votre initiative
+        </h2>
+        <p className="text-sm font-medium text-muted">
+          Suivez l&apos;engagement des voisin·es et faites évoluer votre idée.
+        </p>
+      </div>
+      <div className="flex flex-col gap-2">
+        <Button
+          type="button"
+          className="w-full cursor-pointer"
+          onClick={() =>
+            openInitiativeModal({ editId: initiativeId, initialData: editData })
+          }
+        >
+          <Pencil className="size-4" aria-hidden />
+          Modifier l&apos;initiative
+        </Button>
+        {!linkedEvent ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full cursor-pointer border-orange bg-surface text-orange hover:bg-orange/5"
+            onClick={handleTransformToEvent}
+          >
+            <CalendarPlus className="size-4" aria-hidden />
+            Transformer en événement
+          </Button>
+        ) : null}
         <Button
           type="button"
           variant="outline"
-          className="w-full cursor-pointer border-orange bg-surface text-orange hover:bg-orange/5"
-          onClick={handleTransformToEvent}
+          className="w-full cursor-pointer border-coral bg-surface text-coral hover:bg-coral/5"
+          onClick={() => setDeleteOpen(true)}
         >
-          <CalendarPlus className="size-4" aria-hidden />
-          Transformer en événement
+          <Trash2 className="size-4" aria-hidden />
+          Supprimer
         </Button>
-      ) : null}
-      <Button
-        type="button"
-        variant="outline"
-        className="w-full cursor-pointer border-coral bg-surface text-coral hover:bg-coral/5"
-        onClick={() => setDeleteOpen(true)}
-      >
-        <Trash2 className="size-4" aria-hidden />
-        Supprimer
-      </Button>
+      </div>
       <DeleteInitiativeModal
         initiativeId={initiativeId}
         open={deleteOpen}
@@ -177,29 +229,43 @@ function SupportCard({
 }) {
   if (isAuthor) {
     return (
-      <Card className={cn("space-y-3 md:p-5", className)}>
-        <h2 className="text-lg font-semibold text-text">Soutiens</h2>
-        <p className="text-sm font-medium text-muted">
-          Des habitants trouvent votre idée intéressante pour la commune.
-        </p>
-        <SupportCountLabel count={initialSupportCount} />
-        {supporters.length > 0 ? (
-          <SupportersAvatarRow
-            supporters={supporters}
-            initiativeId={initiativeId}
-            isAuthor={isAuthor}
-          />
-        ) : null}
+      <Card className={cn("gap-6 md:p-5", className)}>
+        <div className="space-y-1">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-text">
+            <Heart className="size-5 shrink-0 text-coral/85" aria-hidden />
+            Soutiens
+          </h2>
+          <p className="text-sm font-medium text-muted">
+            {getAuthorSupportMessage(initialSupportCount)}
+          </p>
+        </div>
+        <SupportersSection
+          initiativeId={initiativeId}
+          initialSupportCount={initialSupportCount}
+          supporters={supporters}
+          isAuthor={isAuthor}
+        />
       </Card>
     );
   }
 
   return (
     <Card className={cn("space-y-3 md:p-5", className)}>
-      <h2 className="text-lg font-semibold text-text">Soutien</h2>
-      <p className="text-sm font-medium text-muted">
-        Vous trouvez cette idée intéressante pour la commune ?
-      </p>
+      <div className="space-y-1">
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-text">
+          <Heart className="size-5 shrink-0 text-coral/85" aria-hidden />
+          Soutien
+        </h2>
+        <p className="text-sm font-medium text-muted">
+          Vous trouvez cette idée intéressante pour la commune ? Soutenez-la !
+        </p>
+      </div>
+      <SupportersSection
+        initiativeId={initiativeId}
+        initialSupportCount={initialSupportCount}
+        supporters={supporters}
+        isAuthor={isAuthor}
+      />
       <SupportInitiativeButton
         initiativeId={initiativeId}
         initialSupported={initialSupported}

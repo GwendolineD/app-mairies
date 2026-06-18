@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils/cn";
 type Props = AddressLines & {
   className?: string;
   size?: "sm" | "md";
+  hideIcon?: boolean;
 };
 
 const SIZE_STYLES = {
@@ -24,6 +25,7 @@ export function AnnouncementAddressLines({
   fallback,
   className,
   size = "sm",
+  hideIcon = false,
 }: Props) {
   const label = fallback ?? streetLine ?? cityLine ?? "";
   const styles = SIZE_STYLES[size];
@@ -36,10 +38,12 @@ export function AnnouncementAddressLines({
         className,
       )}
     >
-      <MapPin
-        className={cn("shrink-0 text-subtle", styles.icon)}
-        aria-hidden
-      />
+      {hideIcon ? null : (
+        <MapPin
+          className={cn("shrink-0 text-subtle", styles.icon)}
+          aria-hidden
+        />
+      )}
       {fallback ? (
         <span>{label}</span>
       ) : (

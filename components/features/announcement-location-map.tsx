@@ -16,6 +16,8 @@ type Props = {
   mapPinUrl?: string | null;
   colorHex?: string;
   mapClassName?: string;
+  addressSize?: "sm" | "md";
+  hideAddressIcon?: boolean;
 };
 
 const MAP_PREVIEW_CLASS =
@@ -30,10 +32,16 @@ export function AnnouncementLocationMap({
   mapPinUrl,
   colorHex,
   mapClassName = MAP_PREVIEW_CLASS,
+  addressSize = "sm",
+  hideAddressIcon = false,
 }: Props) {
   return (
     <div className="space-y-2">
-      <AnnouncementAddressLines {...addressLines} size="md" />
+      <AnnouncementAddressLines
+        {...addressLines}
+        size={addressSize}
+        hideIcon={hideAddressIcon}
+      />
 
       <div className="relative z-0">
         <Suspense fallback={<Skeleton className={cn(mapClassName, "h-48")} />}>

@@ -8,7 +8,7 @@ import { BanAutocomplete } from "@/components/features/ban-autocomplete";
 import { createPilotCommuneAction } from "@/lib/actions/platform";
 import type { BanFeature } from "@/lib/ban/client";
 import { searchAddresses, searchMunicipalities } from "@/lib/ban/client";
-import { formatMunicipalityDisplay } from "@/lib/ban/display";
+import { formatMunicipalityDisplay, formatStreetDisplay } from "@/lib/ban/display";
 import { Button } from "@/components/ui/button";
 import { FormField, Input } from "@/components/ui/form-field";
 import { Modal } from "@/components/ui/modal";
@@ -40,6 +40,11 @@ export function AddCommuneModal({ open, onClose }: Props) {
   const [communeFeature, setCommuneFeature] = useState<BanFeature | null>(null);
   const [postcode, setPostcode] = useState("");
   const [mairieAddress, setMairieAddress] = useState("");
+  const [mairieAddressStreet, setMairieAddressStreet] = useState("");
+  const [mairieAddressCity, setMairieAddressCity] = useState("");
+  const [mairieAddressPostcode, setMairieAddressPostcode] = useState("");
+  const [mairieAddressLat, setMairieAddressLat] = useState<number | null>(null);
+  const [mairieAddressLng, setMairieAddressLng] = useState<number | null>(null);
   const [accessStatus, setAccessStatus] = useState<AccessStatus>(
     ACCESS_STATUS.inactive,
   );
@@ -51,6 +56,11 @@ export function AddCommuneModal({ open, onClose }: Props) {
     setCommuneFeature(null);
     setPostcode("");
     setMairieAddress("");
+    setMairieAddressStreet("");
+    setMairieAddressCity("");
+    setMairieAddressPostcode("");
+    setMairieAddressLat(null);
+    setMairieAddressLng(null);
     setAccessStatus(ACCESS_STATUS.inactive);
     setLookupLoading(false);
     setDuplicateCommuneId(null);
@@ -63,13 +73,22 @@ export function AddCommuneModal({ open, onClose }: Props) {
     onClose();
   }
 
+  function applyMairieAddressFeature(feature: BanFeature) {
+    setMairieAddress(feature.label);
+    setMairieAddressStreet(formatStreetDisplay(feature.label));
+    setMairieAddressCity(feature.city?.trim() || communeFeature?.city?.trim() || "");
+    setMairieAddressPostcode(feature.postcode?.trim() || postcode);
+    setMairieAddressLat(feature.lat);
+    setMairieAddressLng(feature.lng);
+  }
+
   async function prefillMairieAddress(citycode: string) {
     const results = await searchAddresses("mairie", citycode, 3);
     const match = results.find((feature) =>
       /mairie|hôtel de ville|hotel de ville/i.test(feature.label),
     );
     if (match) {
-      setMairieAddress(match.label);
+      applyMairieAddressFeature(match);
     }
   }
 
@@ -77,6 +96,11 @@ export function AddCommuneModal({ open, onClose }: Props) {
     setCommuneFeature(feature);
     setPostcode(feature.postcode ?? "");
     setMairieAddress("");
+    setMairieAddressStreet("");
+    setMairieAddressCity("");
+    setMairieAddressPostcode("");
+    setMairieAddressLat(null);
+    setMairieAddressLng(null);
     setDuplicateCommuneId(null);
     setError(null);
     setLookupLoading(true);
@@ -176,12 +200,25 @@ export function AddCommuneModal({ open, onClose }: Props) {
           label="Adresse de la mairie"
           placeholder="Numéro, rue… ou « mairie »"
           fetchSuggestions={(q) => searchAddresses(q, citycode)}
-          onSelect={(feature) => setMairieAddress(feature.label)}
+          onSelect={applyMairieAddressFeature}
           value={mairieAddress}
           disabled={!citycode || Boolean(duplicateCommuneId)}
         />
 
         <input type="hidden" name="mairieAddress" value={mairieAddress} />
+        <input type="hidden" name="mairieAddressStreet" value={mairieAddressStreet} />
+        <input type="hidden" name="mairieAddressCity" value={mairieAddressCity} />
+        <input type="hidden" name="mairieAddressPostcode" value={mairieAddressPostcode} />
+        <input
+          type="hidden"
+          name="mairieAddressLat"
+          value={mairieAddressLat != null ? String(mairieAddressLat) : ""}
+        />
+        <input
+          type="hidden"
+          name="mairieAddressLng"
+          value={mairieAddressLng != null ? String(mairieAddressLng) : ""}
+        />
         <input type="hidden" name="inseeCode" value={citycode} />
         <input type="hidden" name="name" value={communeFeature?.city ?? ""} />
         <input

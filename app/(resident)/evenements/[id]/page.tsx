@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { CalendarDays, MapPin } from "lucide-react";
 import { requireActiveMembership } from "@/lib/auth/session";
 import {
   getInitiativeCategoryColorHex,
@@ -8,9 +7,10 @@ import {
   getInitiativeCategoryMapPinUrl,
 } from "@/lib/constants/initiative-categories";
 import { createClient } from "@/lib/supabase/server";
+import { listVolunteerCountsByInitiativeId } from "@/lib/queries/events";
+import { listInitiativeVolunteers } from "@/lib/queries/initiatives";
 import { formatEventDetail } from "@/lib/utils/date";
 import {
-  formatAddressLabel,
   formatAddressLines,
   parseAddressLabelParts,
   resolveAddressPostcode,
@@ -22,6 +22,7 @@ import { LinkifiedText } from "@/components/ui/linkified-text";
 import { ReportButton } from "@/components/features/report-button";
 import { EventSidebarActions } from "@/components/features/event-sidebar-actions";
 import { AnnouncementLocationMap } from "@/components/features/announcement-location-map";
+import { DetailLocationSidebarCard } from "@/components/features/detail-location-sidebar-card";
 import { AnnouncementAddressLines } from "@/components/features/announcement-address-lines";
 import type { AgendaEventRecord, EventEditData } from "@/lib/types";
 import { PageStack } from "@/components/ui/page-stack";
@@ -147,9 +148,16 @@ export default async function EvenementDetailPage(props: {
     resolvedPostcode,
     parsedAddress.city,
   );
-  const addressLabel = event.address_label
-    ? formatAddressLabel(parsedAddress.street, resolvedPostcode, parsedAddress.city)
-    : null;
+
+  let volunteersRegistered = 0;
+  let volunteers: Awaited<ReturnType<typeof listInitiativeVolunteers>> = [];
+  if (event.source_initiative_id) {
+    const counts = await listVolunteerCountsByInitiativeId(supabase, [
+      event.source_initiative_id,
+    ]);
+    volunteersRegistered = counts[event.source_initiative_id] ?? 0;
+    volunteers = await listInitiativeVolunteers(supabase, event.source_initiative_id);
+  }
 
   return (
     <PageStack gap="5">
@@ -185,18 +193,9 @@ export default async function EvenementDetailPage(props: {
               />
             ) : null}
 
-            <div className="flex flex-col gap-2 rounded-xl bg-warm p-4">
-              <p className="flex items-center gap-2 text-sm font-semibold text-orange">
-                <CalendarDays className="size-4 shrink-0" aria-hidden />
-                {formatEventDetail(event.starts_at, event.ends_at)}
-              </p>
-              {addressLabel ? (
-                <p className="flex items-center gap-2 text-sm font-medium text-muted">
-                  <MapPin className="size-4 shrink-0" aria-hidden />
-                  {addressLabel}
-                </p>
-              ) : null}
-            </div>
+            <p className="text-base font-semibold text-orange">
+              {formatEventDetail(event.starts_at, event.ends_at)}
+            </p>
 
             <section className={DESCRIPTION_SECTION_CLASS}>
               <h2 className="mb-2 text-sm font-semibold leading-5 text-text">
@@ -221,15 +220,14 @@ export default async function EvenementDetailPage(props: {
             isAuthor={isAuthor}
             eventId={event.id}
             volunteersNeeded={event.volunteers_needed}
+            volunteersRegistered={volunteersRegistered}
+            volunteers={volunteers}
             editData={editData}
             sourceInitiative={sourceInitiative}
             className={DETAIL_CARD_CLASS}
           />
 
-          <Card className={`gap-2 md:p-5 ${DETAIL_CARD_CLASS}`}>
-            <h2 className="hidden text-lg font-semibold leading-7 text-text md:block">
-              Localisation
-            </h2>
+          <DetailLocationSidebarCard className={DETAIL_CARD_CLASS}>
             {event.address_lat != null && event.address_lng != null ? (
               <AnnouncementLocationMap
                 latitude={event.address_lat}
@@ -247,11 +245,12 @@ export default async function EvenementDetailPage(props: {
                     ? getInitiativeCategoryColorHex(event.category_slug)
                     : undefined
                 }
+                hideAddressIcon
               />
             ) : (
-              <AnnouncementAddressLines {...addressLines} size="md" />
+              <AnnouncementAddressLines {...addressLines} hideIcon />
             )}
-          </Card>
+          </DetailLocationSidebarCard>
 
           <div className="hidden md:flex md:justify-center">
             <ReportButton
