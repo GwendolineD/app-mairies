@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils/cn";
 import { InfoPopover } from "@/components/features/onboarding/info-popover";
+import { FilterHelpPopover } from "@/components/ui/filter-help-popover";
 
 type Props = {
   params: InitiativeListParams;
@@ -69,7 +70,13 @@ export function InitiativeListToolbar({
   );
 
   const createButtonDesktop = onCreateClick ? (
-    <Button type="button" variant="primary" size="sm" onClick={onCreateClick}>
+    <Button
+      type="button"
+      variant="primary"
+      size="sm"
+      className="font-bold"
+      onClick={onCreateClick}
+    >
       <span className="text-sm leading-none">+</span>
       <span>Lancer une initiative</span>
     </Button>
@@ -77,6 +84,7 @@ export function InitiativeListToolbar({
     <Button
       href={`${pathname}${buildInitiativeListQuery({ ...params, create: "initiative" })}`}
       size="sm"
+      className="font-bold"
     >
       <span className="text-sm leading-none">+</span>
       <span>Lancer une initiative</span>
@@ -101,7 +109,7 @@ export function InitiativeListToolbar({
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2 md:space-y-4">
       <div className="flex items-center gap-2 md:hidden">
         <h1 className="text-xl font-bold leading-7 text-text">
           Toutes les initiatives
@@ -109,7 +117,7 @@ export function InitiativeListToolbar({
         <InfoPopover slide="initiatives" />
       </div>
 
-      <div className="hidden flex-wrap items-start justify-between gap-3 md:flex">
+      <div className="mb-3 hidden flex-wrap items-start justify-between gap-3 md:flex">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <h1 className="text-[28px] font-bold leading-9 text-text">
@@ -141,7 +149,7 @@ export function InitiativeListToolbar({
         </div>
       </div>
 
-      <p className="hidden text-xs font-medium text-muted md:block">{countLabel}</p>
+      <p className="mb-0 mt-[15px] hidden text-xs font-medium text-muted md:block">{countLabel}</p>
 
       <div className="flex justify-end md:hidden">
         <div className="flex items-center gap-2">
@@ -219,7 +227,7 @@ function SortPopover({
         side="bottom"
         align="start"
         sideOffset={6}
-        className="z-1200 w-48 rounded-sm border border-border bg-surface p-1 shadow-card"
+        className="z-1200 w-48 gap-0 overflow-hidden rounded-sm border border-border bg-surface p-0 shadow-card"
       >
         {SORT_OPTIONS.map((opt) => (
           <button
@@ -230,7 +238,7 @@ function SortPopover({
               setOpen(false);
             }}
             className={cn(
-              "flex w-full cursor-pointer items-center rounded-sm px-3 py-2 text-xs font-medium transition",
+              "flex w-full cursor-pointer items-center px-3 py-2.5 text-xs font-medium transition",
               params.tri === opt.value
                 ? "bg-soft-pink text-purple"
                 : "text-text hover:bg-warm",
@@ -286,26 +294,31 @@ function CategoryFiltersPopover({
         sideOffset={8}
         className="w-[min(92vw,360px)] gap-0 p-0"
       >
-        <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
-          <h2 className="text-sm font-bold text-text">Filtres</h2>
-          <div className="flex items-center gap-1">
-            {count > 0 ? (
+        <div className="border-b border-border px-4 py-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1">
+              <h2 className="text-sm font-bold text-text">Filtres</h2>
+              <FilterHelpPopover />
+            </div>
+            <div className="flex items-center gap-1">
+              {count > 0 ? (
+                <button
+                  type="button"
+                  onClick={clearAll}
+                  className="cursor-pointer whitespace-nowrap text-xs font-semibold text-muted hover:text-text"
+                >
+                  Tout effacer
+                </button>
+              ) : null}
               <button
                 type="button"
-                onClick={clearAll}
-                className="cursor-pointer text-xs font-semibold text-muted hover:text-text"
+                onClick={() => setOpen(false)}
+                aria-label="Fermer les filtres"
+                className="inline-flex size-7 cursor-pointer items-center justify-center rounded-sm text-muted hover:bg-warm hover:text-text"
               >
-                Tout effacer
+                <X className="size-4" aria-hidden />
               </button>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              aria-label="Fermer les filtres"
-              className="inline-flex size-7 cursor-pointer items-center justify-center rounded-sm text-muted hover:bg-warm hover:text-text"
-            >
-              <X className="size-4" aria-hidden />
-            </button>
+            </div>
           </div>
         </div>
 

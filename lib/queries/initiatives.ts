@@ -109,10 +109,11 @@ export async function listInitiativesPage(
   return { items, nextCursor, totalCount: count ?? 0 };
 }
 
-export async function getTrendingInitiativeForAccueil(
+export async function listInitiativesForAccueil(
   supabase: SupabaseClient,
   communeId: string,
-): Promise<InitiativeWithAuthor | null> {
+  limit = 3,
+): Promise<InitiativeWithAuthor[]> {
   const { data } = await supabase
     .from("initiatives")
     .select(
@@ -122,34 +123,11 @@ export async function getTrendingInitiativeForAccueil(
     .eq("status", INITIATIVE_STATUS.active)
     .is("suspended_at", null)
     .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(limit);
 
-  if (!data) return null;
-
-  const initiative = data as InitiativeWithAuthor;
-
-  const [{ count }, { data: linkedEvent }] = await Promise.all([
-    supabase
-      .from("initiative_responses")
-      .select("id", { count: "exact", head: true })
-      .eq("initiative_id", initiative.id)
-      .eq("response_type", "support"),
-    supabase
-      .from("events")
-      .select("id, starts_at")
-      .eq("source_initiative_id", initiative.id)
-      .eq("status", EVENT_STATUS.active)
-      .maybeSingle(),
-  ]);
-
-  initiative.support_count = count ?? 0;
-  initiative.linked_event =
-    linkedEvent?.starts_at != null
-      ? { id: linkedEvent.id, starts_at: linkedEvent.starts_at }
-      : null;
-
-  return initiative;
+  const items = (data ?? []) as InitiativeWithAuthor[];
+  await enrichInitiativesWithMeta(supabase, items);
+  return items;
 }
 
 async function enrichInitiativesWithMeta(

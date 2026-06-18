@@ -13,10 +13,8 @@ import { HistoryBackLink } from "@/components/ui/history-back-link";
 import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  AnnouncementCard,
-  TypePastille,
-} from "@/components/features/announcement-card";
+import { AnnouncementTypePastille } from "@/components/ui/announcement-type-pastille";
+import { AnnouncementCard } from "@/components/features/announcement-card";
 import { AnnouncementAddressLines } from "@/components/features/announcement-address-lines";
 import { AnnouncementLocationMap } from "@/components/features/announcement-location-map";
 import { AnnouncementSidebarActions } from "@/components/features/announcement-sidebar-actions";
@@ -80,7 +78,7 @@ export default async function AnnonceDetailPage(props: {
     if (!isStaff) {
       return (
         <PageStack gap="5">
-          <HistoryBackLink label="Retour aux annonces" />
+          <HistoryBackLink />
           <Card className="mx-auto max-w-lg space-y-4 p-8 text-center">
             <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-coral/10">
               <span className="text-2xl">⚠️</span>
@@ -171,7 +169,7 @@ export default async function AnnonceDetailPage(props: {
 
   return (
     <PageStack gap="5">
-      <HistoryBackLink label="Retour aux annonces" />
+      <HistoryBackLink />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
         {/* --- Main card --- */}
@@ -180,7 +178,7 @@ export default async function AnnonceDetailPage(props: {
             <header className="space-y-3">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-2">
-                  <TypePastille
+                  <AnnouncementTypePastille
                     type={ann.type}
                     className={DETAIL_TYPE_PASTILLE_CLASS}
                   />

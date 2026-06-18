@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Clock, MapPin } from "lucide-react";
-import { formatStreetDisplay } from "@/lib/ban/display";
+import { Clock, MapPin, type LucideIcon } from "lucide-react";
 import { ROUTES } from "@/lib/constants/routes";
 import type { AnnouncementWithAuthor } from "@/lib/queries/announcements";
 import type { InitiativeWithAuthor } from "@/lib/queries/initiatives";
@@ -19,22 +18,26 @@ const feedCardClass =
   "md:overflow-hidden md:rounded-xl md:border md:border-border/60 md:bg-surface";
 
 function AccueilSectionHeader({
+  icon: Icon,
   emoji,
   title,
   mobileTitle,
   href,
 }: {
-  emoji: string;
+  icon?: LucideIcon;
+  emoji?: string;
   title: string;
   mobileTitle?: string;
   href: string;
 }) {
   return (
     <div className="mb-4 flex items-center justify-between gap-3 md:mb-0">
-      <h3 className="text-sm font-bold leading-5 text-text md:text-base md:leading-snug">
-        <span aria-hidden className="mr-1.5">
-          {emoji}
-        </span>
+      <h3 className="flex items-center gap-1.5 text-sm font-bold leading-5 text-text md:text-base md:leading-snug">
+        {Icon ? (
+          <Icon className="size-5 shrink-0 text-coral/85" aria-hidden />
+        ) : emoji ? (
+          <span aria-hidden>{emoji}</span>
+        ) : null}
         {mobileTitle ? (
           <>
             <span className="md:hidden">{mobileTitle}</span>
@@ -44,12 +47,13 @@ function AccueilSectionHeader({
           title
         )}
       </h3>
-      <AccueilSectionLink href={href} label="Tout voir" size="sm" />
+      <AccueilSectionLink href={href} label="Explorer" size="sm" />
     </div>
   );
 }
 
 function AccueilFeedCard({
+  icon,
   emoji,
   title,
   mobileTitle,
@@ -57,7 +61,8 @@ function AccueilFeedCard({
   children,
   className,
 }: {
-  emoji: string;
+  icon?: LucideIcon;
+  emoji?: string;
   title: string;
   mobileTitle?: string;
   href: string;
@@ -68,6 +73,7 @@ function AccueilFeedCard({
     <div className={cn(feedCardClass, className)}>
       <div className="md:px-5 md:pt-4 md:pb-3">
         <AccueilSectionHeader
+          icon={icon}
           emoji={emoji}
           title={title}
           mobileTitle={mobileTitle}
@@ -80,38 +86,36 @@ function AccueilFeedCard({
 }
 
 const EVENT_DATE_THEMES = [
-  { box: "bg-coral/10 text-coral", badge: "bg-coral/10 text-coral" },
-  { box: "bg-turquoise/10 text-turquoise", badge: "bg-sun/15 text-orange" },
-  { box: "bg-purple/10 text-purple", badge: "bg-purple/10 text-purple" },
+  { box: "bg-coral/10 text-coral" },
+  { box: "bg-turquoise/10 text-turquoise" },
+  { box: "bg-purple/10 text-purple" },
 ] as const;
 
-const EVENT_STATUS_LABELS = [
-  { label: "Populaire", emoji: "🔥" },
-  { label: "En vedette", emoji: "⭐" },
-  { label: "À ne pas manquer", emoji: "" },
-] as const;
-
-type TrendingInitiativeProps = {
-  initiative: InitiativeWithAuthor | null;
+type NeighborInitiativesProps = {
+  initiatives: InitiativeWithAuthor[];
 };
 
 export function AccueilTrendingInitiative({
-  initiative,
-}: TrendingInitiativeProps) {
+  initiatives,
+}: NeighborInitiativesProps) {
   return (
     <AccueilFeedCard
-      emoji="🔥"
-      title="L'initiative qui monte"
+      emoji="✨"
+      title="Vos voisins ont des idées"
       href={ROUTES.initiatives.list}
     >
-      {initiative ? (
-        <div className="md:px-5 md:pb-5">
-          <InitiativeCard initiative={initiative} layout="horizontal" />
-        </div>
-      ) : (
+      {initiatives.length === 0 ? (
         <p className="text-sm font-medium text-muted md:p-6">
           Aucune initiative pour le moment.
         </p>
+      ) : (
+        <ul className="space-y-3 md:px-5 md:pb-5">
+          {initiatives.map((initiative) => (
+            <li key={initiative.id}>
+              <InitiativeCard initiative={initiative} layout="horizontal" />
+            </li>
+          ))}
+        </ul>
       )}
     </AccueilFeedCard>
   );
@@ -177,7 +181,7 @@ function EventVolunteerGauge({
         />
       </div>
       <span className="shrink-0 text-xs font-bold text-muted">
-        {registered}/{needed}
+        {registered}/{needed} bénévole{needed !== 1 ? "s" : ""}
       </span>
     </div>
   );
@@ -202,9 +206,8 @@ export function AccueilUpcomingEvents({
         <ul className="divide-y divide-border/60">
           {events.map((event, index) => {
             const theme = EVENT_DATE_THEMES[index % EVENT_DATE_THEMES.length];
-            const status = EVENT_STATUS_LABELS[index % EVENT_STATUS_LABELS.length];
             const { day, month } = formatEventAccueilDate(event.starts_at);
-            const location = formatStreetDisplay(event.address_label);
+            const location = event.address_label?.trim() ?? "Adresse non renseignée";
             const volunteersNeeded = event.volunteers_needed ?? 0;
             const volunteerCount = event.source_initiative_id
               ? (volunteerCountByInitiativeId[event.source_initiative_id] ?? 0)
@@ -214,7 +217,7 @@ export function AccueilUpcomingEvents({
               <li key={event.id}>
                 <Link
                   href={ROUTES.evenements.detail(event.id)}
-                  className="flex items-center gap-3 transition hover:bg-warm/40 md:gap-4 md:p-5"
+                  className="flex items-center gap-3 transition hover:scale-[1.02] hover:bg-warm/40 md:gap-4 md:p-5"
                 >
                   <div
                     className={cn(
@@ -248,15 +251,6 @@ export function AccueilUpcomingEvents({
                       />
                     ) : null}
                   </div>
-                  <span
-                    className={cn(
-                      "hidden shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold sm:inline-flex",
-                      theme.badge,
-                    )}
-                  >
-                    {status.label}
-                    {status.emoji ? ` ${status.emoji}` : null}
-                  </span>
                 </Link>
               </li>
             );

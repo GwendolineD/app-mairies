@@ -429,8 +429,44 @@ export function MapContentView({
   );
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [canScrollPrev, setCanScrollPrev] = useState(false);
+  const [canScrollNext, setCanScrollNext] = useState(false);
   const cardRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
   const carouselRef = useRef<HTMLDivElement | null>(null);
+
+  const updateCarouselScrollState = useCallback(() => {
+    const el = carouselRef.current;
+    if (!el || el.children.length === 0) {
+      setCanScrollPrev(false);
+      setCanScrollNext(false);
+      return;
+    }
+    const containerRect = el.getBoundingClientRect();
+    const first = el.children[0] as HTMLElement;
+    const last = el.children[el.children.length - 1] as HTMLElement;
+    const tolerance = 2;
+
+    setCanScrollPrev(
+      first.getBoundingClientRect().left < containerRect.left - tolerance,
+    );
+    setCanScrollNext(
+      last.getBoundingClientRect().right > containerRect.right + tolerance,
+    );
+  }, []);
+
+  const scrollCarouselByCard = useCallback((direction: -1 | 1) => {
+    const container = carouselRef.current;
+    if (!container || container.children.length === 0) return;
+    const first = container.children[0] as HTMLElement;
+    const step = first.offsetWidth + 8;
+    const maxScrollLeft = Math.max(0, container.scrollWidth - container.clientWidth);
+    const target =
+      direction === -1
+        ? Math.max(0, container.scrollLeft - step)
+        : Math.min(maxScrollLeft, container.scrollLeft + step);
+
+    container.scrollTo({ left: target, behavior: "smooth" });
+  }, []);
 
   useEffect(() => {
     const proto = L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown };
@@ -458,6 +494,19 @@ export function MapContentView({
       return da - db;
     });
   }, [richItems, showUserPin, center]);
+
+  useEffect(() => {
+    updateCarouselScrollState();
+    const el = carouselRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(updateCarouselScrollState);
+    observer.observe(el);
+    el.addEventListener("scrollend", updateCarouselScrollState);
+    return () => {
+      observer.disconnect();
+      el.removeEventListener("scrollend", updateCarouselScrollState);
+    };
+  }, [sortedItems.length, updateCarouselScrollState]);
 
   const userIcon = useMemo(() => (showUserPin ? createUserIcon() : null), [showUserPin]);
 
@@ -621,12 +670,47 @@ export function MapContentView({
 
       {sortedItems.length > 0 ? (
         <section className="space-y-2">
-          <h3 className="text-xs font-semibold text-text md:text-sm">
-            {carouselTitle}{" "}
-            <span className="font-medium text-muted">({sortedItems.length})</span>
-          </h3>
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-xs font-semibold text-text md:text-sm">
+              {carouselTitle}{" "}
+              <span className="font-medium text-muted">({sortedItems.length})</span>
+            </h3>
+            {sortedItems.length > 1 ? (
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => scrollCarouselByCard(-1)}
+                  disabled={!canScrollPrev}
+                  className={cn(
+                    "inline-flex size-7 cursor-pointer items-center justify-center rounded-full transition md:size-6",
+                    canScrollPrev
+                      ? "bg-warm text-text hover:bg-border"
+                      : "cursor-not-allowed text-subtle opacity-40",
+                  )}
+                  aria-label="Voir l'élément précédent"
+                >
+                  <ChevronLeft className="size-4" aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollCarouselByCard(1)}
+                  disabled={!canScrollNext}
+                  className={cn(
+                    "inline-flex size-7 cursor-pointer items-center justify-center rounded-full transition md:size-6",
+                    canScrollNext
+                      ? "bg-warm text-text hover:bg-border"
+                      : "cursor-not-allowed text-subtle opacity-40",
+                  )}
+                  aria-label="Voir l'élément suivant"
+                >
+                  <ChevronRight className="size-4" aria-hidden />
+                </button>
+              </div>
+            ) : null}
+          </div>
           <div
             ref={carouselRef}
+            onScroll={updateCarouselScrollState}
             className="flex snap-x snap-mandatory gap-2 overflow-x-auto py-3 md:pl-1"
           >
             {sortedItems.map((item) => (

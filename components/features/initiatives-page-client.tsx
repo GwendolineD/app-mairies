@@ -74,7 +74,7 @@ export function InitiativesPageClient({
   })}`;
 
   return (
-    <PageStack>
+    <PageStack gap="4">
       <InitiativeListToolbar
         params={params}
         totalCount={totalCount}

@@ -97,7 +97,7 @@ export default async function InitiativeDetailPage(props: {
     if (!isStaff) {
       return (
         <PageStack gap="5">
-          <HistoryBackLink label="Retour aux initiatives" />
+          <HistoryBackLink />
           <Card className="mx-auto max-w-lg space-y-4 p-8 text-center">
             <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-coral/10">
               <span className="text-2xl">⚠️</span>
@@ -199,7 +199,7 @@ export default async function InitiativeDetailPage(props: {
 
   return (
     <PageStack gap="5">
-      <HistoryBackLink label="Retour aux initiatives" />
+      <HistoryBackLink />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
         <Card className={`space-y-5 ${MAIN_DETAIL_CARD_CLASS}`}>

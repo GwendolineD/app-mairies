@@ -46,9 +46,11 @@ export function ResidentSidebar({ unreadMessages = 0 }: { unreadMessages?: numbe
   return (
     <aside
       className={cn(
-        "group/sidebar relative hidden shrink-0 flex-col overflow-visible bg-sidebar py-6 transition-[width] duration-200 ease-in-out md:flex",
-        collapsed ? "px-2 md:w-16" : "px-3 md:w-44 lg:w-48",
-        !hydrated && "md:w-44 lg:w-48",
+        "group/sidebar relative hidden shrink-0 flex-col bg-sidebar py-6 transition-[width] duration-200 ease-in-out md:flex",
+        "overflow-hidden group-hover/sidebar:overflow-visible",
+        collapsed && "overflow-visible",
+        collapsed ? "px-2 md:w-16" : "px-3 md:w-48 lg:w-52",
+        !hydrated && "md:w-48 lg:w-52",
       )}
     >
       <button
@@ -56,8 +58,10 @@ export function ResidentSidebar({ unreadMessages = 0 }: { unreadMessages?: numbe
         onClick={toggleCollapsed}
         aria-label={collapsed ? "Agrandir le menu" : "Réduire le menu"}
         className={cn(
-          "absolute top-6 -right-3 z-10 flex size-7 items-center justify-center rounded-full bg-soft-pink text-coral shadow-sm transition hover:bg-soft-pink focus-visible:pointer-events-auto focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple/30",
-          "pointer-events-none opacity-0 group-hover/sidebar:pointer-events-auto group-hover/sidebar:opacity-100",
+          "absolute top-1 -right-3 z-10 flex size-7 items-center justify-center rounded-full bg-soft-pink text-coral shadow-sm transition hover:bg-soft-pink focus-visible:pointer-events-auto focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple/30",
+          collapsed
+            ? "pointer-events-auto opacity-100"
+            : "pointer-events-none opacity-0 group-hover/sidebar:pointer-events-auto group-hover/sidebar:opacity-100",
         )}
       >
         {collapsed ? (

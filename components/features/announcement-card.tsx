@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Calendar, HandHeart, MapPin, Sparkles } from "lucide-react";
+import { ArrowRight, Calendar, MapPin } from "lucide-react";
 import { ROUTES } from "@/lib/constants/routes";
 import {
   getCategoryColorHex,
@@ -8,11 +8,12 @@ import {
 import type { AnnouncementWithAuthor } from "@/lib/queries/announcements";
 import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";
+import { AnnouncementTypePastille } from "@/components/ui/announcement-type-pastille";
 import { cn } from "@/lib/utils/cn";
 import { formatDisplayName } from "@/lib/utils/display-name";
 import { formatRelativeTime } from "@/lib/utils/date";
 import { formatShortDate } from "@/lib/utils/format-date";
-import { formatAddressLabel, formatAddressLines, resolveAddressPostcode } from "@/lib/utils/format-address";
+import { formatAddressLabel, formatAddressLines } from "@/lib/utils/format-address";
 
 type Props = {
   announcement: AnnouncementWithAuthor;
@@ -68,30 +69,16 @@ function AnnouncementTargetDate({
   );
 }
 
-function resolveAnnouncementPostcode(
-  announcement: AnnouncementWithAuthor,
-): string | null {
-  return resolveAddressPostcode(
-    announcement.address_postcode,
-    announcement.author_membership?.address_postcode,
-  );
-}
-
 function AnnouncementCardAddress({
   street,
-  postcode,
   city,
-  fallbackPostcode,
 }: {
   street: string | null | undefined;
-  postcode: string | null | undefined;
   city: string | null | undefined;
-  fallbackPostcode?: string | null;
 }) {
-  const resolvedPostcode = resolveAddressPostcode(postcode, fallbackPostcode);
   const { streetLine, cityLine, fallback } = formatAddressLines(
     street,
-    resolvedPostcode,
+    null,
     city,
   );
 
@@ -107,33 +94,6 @@ function AnnouncementCardAddress({
   );
 }
 
-export function TypePastille({
-  type,
-  className,
-}: {
-  type: string;
-  className?: string;
-}) {
-  if (type !== "offre" && type !== "demande") return null;
-  const isOffer = type === "offre";
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-card",
-        isOffer ? "gradient-offre" : "gradient-demande",
-        className,
-      )}
-    >
-      {isOffer ? (
-        <Sparkles className="size-3" aria-hidden />
-      ) : (
-        <HandHeart className="size-3" aria-hidden />
-      )}
-      <span>{isOffer ? "Offre" : "Demande"}</span>
-    </span>
-  );
-}
-
 export function AnnouncementCard({
   announcement: a,
   layout = "vertical",
@@ -146,7 +106,7 @@ export function AnnouncementCard({
   if (layout === "horizontal") {
     const fullAddress = formatAddressLabel(
       a.address_street,
-      resolveAnnouncementPostcode(a),
+      null,
       a.address_city,
     );
 
@@ -154,7 +114,7 @@ export function AnnouncementCard({
       <Link href={ROUTES.annonces.detail(a.id)} className="block">
         <Card
           className={cn(
-            "flex h-28 flex-row items-stretch gap-0 overflow-hidden rounded-lg p-0 transition hover:border-purple/45",
+            "flex h-28 flex-row items-stretch gap-0 overflow-hidden rounded-lg p-0 transition hover:scale-[1.02] hover:border-purple/45",
             highlightRing,
           )}
         >
@@ -173,10 +133,10 @@ export function AnnouncementCard({
             )}
           </div>
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col p-2">
-            <div className="flex items-center gap-1">
-              <TypePastille
+            <div className="flex items-center gap-2">
+              <AnnouncementTypePastille
                 type={a.type}
-                className="h-4 gap-0.5 px-1.5 py-0 text-[10px] font-semibold leading-4 shadow-none [&_svg]:size-2.5"
+                className="h-4 gap-0.5 px-1.5 py-0 text-[10px] font-bold leading-4 shadow-none [&_svg]:size-2.5 [&_span]:font-extrabold"
               />
               <CategoryTag
                 label={getCategoryLabel(a.category_slug)}
@@ -196,12 +156,6 @@ export function AnnouncementCard({
               <span className="truncate">{fullAddress}</span>
             </p>
             <div className="mt-auto flex items-center justify-between gap-1">
-              <time
-                className="shrink-0 text-[10px] leading-4 text-muted"
-                dateTime={a.created_at}
-              >
-                {formatRelativeTime(a.created_at)}
-              </time>
               <div className="flex min-w-0 items-center gap-1">
                 {a.author_membership?.profiles?.avatar_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -219,6 +173,12 @@ export function AnnouncementCard({
                   {resolveAuthorName(a.author_membership?.profiles ?? null)}
                 </span>
               </div>
+              <time
+                className="shrink-0 text-[10px] leading-4 text-muted"
+                dateTime={a.created_at}
+              >
+                {formatRelativeTime(a.created_at)}
+              </time>
             </div>
           </div>
         </Card>
@@ -247,7 +207,7 @@ export function AnnouncementCard({
               Annonce
             </div>
           )}
-          <TypePastille type={a.type} className="absolute left-2 top-2" />
+          <AnnouncementTypePastille type={a.type} className="absolute left-2 top-2" />
         </div>
 
         <div className="flex flex-1 flex-col gap-1 px-2.5 pt-2.5 pb-2.5">
@@ -273,9 +233,7 @@ export function AnnouncementCard({
 
           <AnnouncementCardAddress
             street={a.address_street}
-            postcode={a.address_postcode}
             city={a.address_city}
-            fallbackPostcode={a.author_membership?.address_postcode}
           />
 
           <div className="mt-auto flex items-center justify-end gap-2">
@@ -327,7 +285,7 @@ export function AnnouncementMapCard({
             Annonce
           </div>
         )}
-        <TypePastille type={a.type} className="absolute left-2 top-2" />
+        <AnnouncementTypePastille type={a.type} className="absolute left-2 top-2" />
       </div>
       <CategoryTag
         label={getCategoryLabel(a.category_slug)}

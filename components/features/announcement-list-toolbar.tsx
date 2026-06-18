@@ -25,6 +25,7 @@ import {
 import type { LucideIcon } from "@/lib/utils/lucide-icon-map";
 import { cn } from "@/lib/utils/cn";
 import { InfoPopover } from "@/components/features/onboarding/info-popover";
+import { FilterHelpPopover } from "@/components/ui/filter-help-popover";
 
 type Props = {
   params: AnnouncementListParams;
@@ -84,6 +85,7 @@ export function AnnouncementListToolbar({
       type="button"
       variant="primary"
       size="sm"
+      className="font-bold"
       onClick={onCreateClick}
     >
       <span className="text-sm leading-none">+</span>
@@ -93,6 +95,7 @@ export function AnnouncementListToolbar({
     <Button
       href={`${pathname}${buildAnnouncementListQuery({ ...params, create: "annonce" })}`}
       size="sm"
+      className="font-bold"
     >
       <span className="text-sm leading-none">+</span>
       <span>Créer une annonce</span>
@@ -124,7 +127,7 @@ export function AnnouncementListToolbar({
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2 md:space-y-4">
       {/* Mobile: title only */}
       <div className="flex items-center gap-2 md:hidden">
         <h1 className="text-xl font-bold leading-7 text-text">
@@ -134,7 +137,7 @@ export function AnnouncementListToolbar({
       </div>
 
       {/* Desktop: title, subtitle and full create button */}
-      <div className="hidden flex-wrap items-start justify-between gap-3 md:flex">
+      <div className="mb-3 hidden flex-wrap items-start justify-between gap-3 md:flex">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <h1 className="text-[28px] font-bold leading-9 text-text">
@@ -155,13 +158,13 @@ export function AnnouncementListToolbar({
         {createButtonMobile}
       </div>
 
-      {/* Desktop: view toggle + sort/filters on one row */}
+      {/* Desktop: view toggle + sort/filters */}
       <div className="hidden flex-wrap items-center justify-between gap-3 md:flex">
         {viewToggle}
         {sortAndFilters}
       </div>
 
-      <p className="hidden text-xs font-medium text-muted md:block">{countLabel}</p>
+      <p className="mb-0 mt-[15px] hidden text-xs font-medium text-muted md:block">{countLabel}</p>
 
       {/* Mobile: sort/filters aligned right */}
       <div className="flex justify-end md:hidden">{sortAndFilters}</div>
@@ -233,7 +236,7 @@ function SortPopover({
         side="bottom"
         align="start"
         sideOffset={6}
-        className="z-1200 w-48 rounded-sm border border-border bg-surface p-1 shadow-card"
+        className="z-1200 w-48 gap-0 overflow-hidden rounded-sm border border-border bg-surface p-0 shadow-card"
       >
         {SORT_OPTIONS.map((opt) => (
           <button
@@ -244,7 +247,7 @@ function SortPopover({
               setOpen(false);
             }}
             className={cn(
-              "flex w-full cursor-pointer items-center rounded-sm px-3 py-2 text-xs font-medium transition",
+              "flex w-full cursor-pointer items-center px-3 py-2.5 text-xs font-medium transition",
               params.tri === opt.value
                 ? "bg-soft-pink text-purple"
                 : "text-text hover:bg-warm",
@@ -299,26 +302,31 @@ function FiltersPopover({
         sideOffset={8}
         className="w-[min(92vw,360px)] gap-0 p-0"
       >
-        <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
-          <h2 className="text-sm font-bold text-text">Filtres</h2>
-          <div className="flex items-center gap-1">
-            {count > 0 ? (
+        <div className="border-b border-border px-4 py-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1">
+              <h2 className="text-sm font-bold text-text">Filtres</h2>
+              <FilterHelpPopover />
+            </div>
+            <div className="flex items-center gap-1">
+              {count > 0 ? (
+                <button
+                  type="button"
+                  onClick={clearAll}
+                  className="cursor-pointer whitespace-nowrap text-xs font-semibold text-muted hover:text-text"
+                >
+                  Tout effacer
+                </button>
+              ) : null}
               <button
                 type="button"
-                onClick={clearAll}
-                className="cursor-pointer text-xs font-semibold text-muted hover:text-text"
+                onClick={() => setOpen(false)}
+                aria-label="Fermer les filtres"
+                className="inline-flex size-7 cursor-pointer items-center justify-center rounded-sm text-muted hover:bg-warm hover:text-text"
               >
-                Tout effacer
+                <X className="size-4" aria-hidden />
               </button>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              aria-label="Fermer les filtres"
-              className="inline-flex size-7 cursor-pointer items-center justify-center rounded-sm text-muted hover:bg-warm hover:text-text"
-            >
-              <X className="size-4" aria-hidden />
-            </button>
+            </div>
           </div>
         </div>
 

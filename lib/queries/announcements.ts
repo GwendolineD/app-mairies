@@ -209,21 +209,27 @@ export async function listAnnouncementMapItems(
   return (data ?? []) as AnnouncementMapItem[];
 }
 
-export async function countOpenDemandsToday(
+export async function countNeighborAnnouncementsDueToday(
   supabase: SupabaseClient,
   communeId: string,
+  excludeMembershipId?: string,
 ): Promise<number> {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayIso();
 
-  const { count } = await supabase
+  let query = supabase
     .from("announcements")
     .select("id", { count: "exact", head: true })
     .eq("commune_id", communeId)
-    .eq("type", "demande")
+    .in("type", ["demande", "offre"])
     .eq("status", ANNOUNCEMENT_STATUS.ouverte)
     .eq("target_date", today)
     .is("suspended_at", null);
 
+  if (excludeMembershipId) {
+    query = query.neq("author_membership_id", excludeMembershipId);
+  }
+
+  const { count } = await query;
   return count ?? 0;
 }
 

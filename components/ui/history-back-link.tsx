@@ -9,7 +9,7 @@ type Props = {
   className?: string;
 };
 
-export function HistoryBackLink({ label = "retour", className }: Props) {
+export function HistoryBackLink({ label = "Retour", className }: Props) {
   const router = useRouter();
 
   return (

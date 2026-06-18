@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, HandHeart, Loader2, MapPin, Plus } from "lucide-react";
+import { Check, Loader2, MapPin } from "lucide-react";
 import { createAnnouncement, updateAnnouncement } from "@/lib/actions/announcements";
 import { searchAddresses, type BanFeature } from "@/lib/ban/client";
 import { formatStreetDisplay } from "@/lib/ban/display";
@@ -12,7 +12,11 @@ import {
   type AnnouncementCategory,
   type AnnouncementCategorySlug,
 } from "@/lib/constants/announcement-categories";
-import type { AnnouncementType } from "@/lib/constants/announcement-types";
+import type {
+  AnnouncementType,
+  AnnouncementTypeGradient,
+} from "@/lib/constants/announcement-types";
+import { getAnnouncementTypeConfig } from "@/lib/constants/announcement-types";
 import { ROUTES } from "@/lib/constants/routes";
 import {
   CloudinaryUploadError,
@@ -30,6 +34,7 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import { GradientButton } from "@/components/ui/gradient-button";
+import { AnnouncementTypeIcon } from "@/components/ui/announcement-type-icon";
 import { Modal } from "@/components/ui/modal";
 import { ImageDropzone } from "@/components/features/image-dropzone";
 import { BanAutocomplete } from "@/components/features/ban-autocomplete";
@@ -388,9 +393,13 @@ export function CreateAnnouncementModal({
               onClick={() => setType("demande")}
               title="Je demande"
               subtitle="J'ai besoin d'aide"
-              gradient="gradient-demande"
+              gradient={getAnnouncementTypeConfig("demande")!.gradient}
               icon={
-                <HandHeart className="size-4 text-white md:size-5" strokeWidth={2.25} aria-hidden />
+                <AnnouncementTypeIcon
+                  type="demande"
+                  className="size-4 text-white md:size-5"
+                  strokeWidth={2.25}
+                />
               }
             />
             <TypeCard
@@ -398,8 +407,14 @@ export function CreateAnnouncementModal({
               onClick={() => setType("offre")}
               title="J'offre"
               subtitle="Je propose mon aide"
-              gradient="gradient-offre"
-              icon={<Plus className="size-4 text-white md:size-5" strokeWidth={2.5} aria-hidden />}
+              gradient={getAnnouncementTypeConfig("offre")!.gradient}
+              icon={
+                <AnnouncementTypeIcon
+                  type="offre"
+                  className="size-4 text-white md:size-5"
+                  strokeWidth={2.25}
+                />
+              }
             />
           </div>
         </section>
@@ -672,7 +687,7 @@ function TypeCard({
   onClick: () => void;
   title: string;
   subtitle: string;
-  gradient: "gradient-demande" | "gradient-offre";
+  gradient: AnnouncementTypeGradient;
   icon: React.ReactNode;
 }) {
   return (

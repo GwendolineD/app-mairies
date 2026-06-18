@@ -99,11 +99,11 @@ function SupportBadge({
   return (
     <span
       className={cn(
-        "flex items-center gap-0.5 font-semibold text-mint",
+        "flex items-center gap-1 font-semibold text-purple",
         className,
       )}
     >
-      <Heart className="size-3 fill-mint" aria-hidden />
+      <Heart className="size-3.5 fill-purple" aria-hidden />
       {count}
     </span>
   );
@@ -127,7 +127,7 @@ export function InitiativeCard({
       <Link href={ROUTES.initiatives.detail(i.id)} className="block">
         <Card
           className={cn(
-            "flex h-28 flex-row items-stretch gap-0 overflow-hidden rounded-lg p-0 transition hover:border-purple/45",
+            "flex h-28 flex-row items-stretch gap-0 overflow-hidden rounded-lg p-0 transition hover:scale-[1.02] hover:border-purple/45",
             highlightRing,
           )}
         >
@@ -142,6 +142,10 @@ export function InitiativeCard({
             )}
           </div>
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col p-2">
+            <SupportBadge
+              count={supportCount}
+              className="absolute right-2 top-2 text-xs [&_svg]:size-3.5"
+            />
             <div className="flex items-center gap-1">
               {i.category_slug ? (
                 <CategoryTag
@@ -162,15 +166,6 @@ export function InitiativeCard({
               <span className="truncate">{address}</span>
             </p>
             <div className="mt-auto flex items-center justify-between gap-1">
-              <div className="flex items-center gap-1.5">
-                <time
-                  className="shrink-0 text-[10px] leading-4 text-muted"
-                  dateTime={i.created_at}
-                >
-                  {formatRelativeTime(i.created_at)}
-                </time>
-                <SupportBadge count={supportCount} className="text-[10px]" />
-              </div>
               <div className="flex min-w-0 items-center gap-1">
                 {profiles?.avatar_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -188,6 +183,12 @@ export function InitiativeCard({
                   {resolveAuthorName(profiles)}
                 </span>
               </div>
+              <time
+                className="shrink-0 text-[10px] leading-4 text-muted"
+                dateTime={i.created_at}
+              >
+                {formatRelativeTime(i.created_at)}
+              </time>
             </div>
           </div>
         </Card>
@@ -227,15 +228,12 @@ export function InitiativeCard({
                 className="w-fit shrink-0"
               />
             ) : null}
-            <div className="flex shrink-0 items-center gap-1.5">
-              <SupportBadge count={supportCount} className="text-[10px]" />
-              <time
-                className="text-[10px] font-medium text-subtle"
-                dateTime={i.created_at}
-              >
-                {formatRelativeTime(i.created_at)}
-              </time>
-            </div>
+            <time
+              className="shrink-0 text-[10px] font-medium text-subtle"
+              dateTime={i.created_at}
+            >
+              {formatRelativeTime(i.created_at)}
+            </time>
           </div>
 
           <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-text">
@@ -251,22 +249,25 @@ export function InitiativeCard({
             <span className="min-w-0 truncate">{address}</span>
           </div>
 
-          <div className="mt-auto flex items-center justify-end gap-2">
-            {profiles?.avatar_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={profiles.avatar_url}
-                alt=""
-                className="size-6 shrink-0 rounded-full object-cover"
-              />
-            ) : (
-              <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-warm text-[10px] font-bold text-muted">
-                {resolveAuthorInitials(profiles)}
-              </div>
-            )}
-            <span className="truncate text-xs font-medium text-text">
-              {resolveAuthorName(profiles)}
-            </span>
+          <div className="mt-auto flex items-center gap-2">
+            <SupportBadge count={supportCount} className="text-xs" />
+            <div className="ml-auto flex min-w-0 items-center gap-2">
+              {profiles?.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={profiles.avatar_url}
+                  alt=""
+                  className="size-6 shrink-0 rounded-full object-cover"
+                />
+              ) : (
+                <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-warm text-[10px] font-bold text-muted">
+                  {resolveAuthorInitials(profiles)}
+                </div>
+              )}
+              <span className="truncate text-xs font-medium text-text">
+                {resolveAuthorName(profiles)}
+              </span>
+            </div>
           </div>
         </div>
       </Card>

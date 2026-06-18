@@ -95,7 +95,7 @@ export function AnnoncesPageClient({
   })}`;
 
   return (
-    <PageStack>
+    <PageStack gap="4">
       <AnnouncementListToolbar
         params={params}
         totalCount={totalCount}

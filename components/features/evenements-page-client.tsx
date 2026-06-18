@@ -79,7 +79,7 @@ export function EvenementsPageClient({
   }));
 
   return (
-    <PageStack gap="5">
+    <PageStack gap="4">
       <EventListToolbar
         params={params}
         totalCount={totalCount}
