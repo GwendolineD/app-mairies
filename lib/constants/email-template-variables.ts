@@ -17,6 +17,13 @@ export const EMAIL_TEMPLATE_VARIABLES: Record<string, string[]> = {
     "logo_url",
     "app_name",
   ],
+  "trial-invitation": [
+    "commune_name",
+    "access_code",
+    "signup_url",
+    "logo_url",
+    "app_name",
+  ],
 };
 
 export function getEmailTemplateVariables(slug: string): string[] {
@@ -32,6 +39,8 @@ export function getEmailTemplateMockValue(variable: string): string {
     request_date: "12 juin 2026",
     subscription_end_date: "31 déc. 2026",
     comment: "Ceci est un commentaire de test pour prévisualiser le rendu.",
+    access_code: "VL-KAMET",
+    signup_url: "http://localhost:3000/inscription?commune=27027&code=VL-KAMET",
     logo_url: "https://via.placeholder.com/120x40?text=Vie+Locale",
     app_name: "Vie Locale",
   };

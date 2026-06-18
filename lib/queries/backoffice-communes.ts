@@ -136,6 +136,8 @@ export type CommuneDetailStats = {
     postcode: string | null;
     insee_code: string;
     access_status: AccessStatus;
+    trial_access_code: string | null;
+    trial_max_members: number;
     created_at: string;
     welcomeMessage: string;
   };
@@ -155,7 +157,7 @@ export async function getCommuneDetailStats(
   const { data: commune, error } = await supabase
     .from("communes")
     .select(
-      "id, name, postcode, insee_code, access_status, created_at, settings",
+      "id, name, postcode, insee_code, access_status, trial_access_code, trial_max_members, created_at, settings",
     )
     .eq("id", communeId)
     .maybeSingle();
@@ -216,6 +218,8 @@ export async function getCommuneDetailStats(
       postcode: commune.postcode,
       insee_code: commune.insee_code,
       access_status: commune.access_status as AccessStatus,
+      trial_access_code: commune.trial_access_code as string | null,
+      trial_max_members: (commune.trial_max_members as number) ?? 30,
       created_at: commune.created_at,
       welcomeMessage,
     },

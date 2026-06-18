@@ -27,6 +27,10 @@ export const signupSchema = z.object({
   firstName: z.string().min(1, "Prénom requis"),
   lastName: z.string().min(1, "Nom requis"),
   inseeCode: z.string().min(1),
+  trialAccessCode: z
+    .string()
+    .optional()
+    .transform((v) => (v?.trim() ? v.trim() : undefined)),
   addressStreet: z.string().min(1, "Rue requise"),
   addressLieuDit: z
     .string()
@@ -44,6 +48,10 @@ export const signupSchema = z.object({
 
 export const joinCommuneSchema = z.object({
   inseeCode: z.string().min(1),
+  trialAccessCode: z
+    .string()
+    .optional()
+    .transform((v) => (v?.trim() ? v.trim() : undefined)),
   addressCity: z.string().min(1, "Ville requise"),
   addressCitycode: z.string().min(1),
   addressPostcode: z.string().min(4),
@@ -170,35 +178,6 @@ export const reportSchema = z.object({
 
 export const appealSchema = z.object({
   message: z.string().min(10).max(2000),
-});
-
-export const suspendMembershipSchema = z.object({
-  membershipId: z.string().uuid(),
-  reason: z.string().max(500).optional(),
-});
-
-export const communeAdminSchema = z.object({
-  name: z.string().min(2, "Nom requis").max(120),
-  inseeCode: z
-    .string()
-    .min(4, "Code INSEE invalide")
-    .max(10, "Code INSEE invalide"),
-  postcode: z.string().max(10).optional().or(z.literal("")),
-  department: z.string().max(120).optional().or(z.literal("")),
-  plan: z.enum(["free", "standard", "premium"]),
-  subscriptionStatus: z.enum(["inactive", "trial", "active", "suspended"]),
-  billingEmail: z
-    .string()
-    .email("Email de facturation invalide")
-    .optional()
-    .or(z.literal("")),
-});
-
-export const paymentAdminSchema = z.object({
-  status: z.enum(["paid", "pending", "failed", "refunded"]),
-  periodStart: z.string().optional().or(z.literal("")),
-  periodEnd: z.string().optional().or(z.literal("")),
-  note: z.string().max(300).optional().or(z.literal("")),
 });
 
 export const communeSettingsSchema = z.object({

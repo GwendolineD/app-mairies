@@ -1,6 +1,13 @@
 "use client";
 
-import { startTransition, useActionState, useCallback, useState } from "react";
+import {
+  startTransition,
+  useActionState,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
 import { Loader2, UserPlus, Users } from "lucide-react";
 import { BanAutocomplete } from "@/components/features/ban-autocomplete";
@@ -34,13 +41,23 @@ type AddressDraft = {
   lng: number;
 };
 
-export function InscriptionSignupForm() {
+type Props = {
+  prefillInseeCode?: string;
+  prefillTrialCode?: string;
+};
+
+export function InscriptionSignupForm({
+  prefillInseeCode,
+  prefillTrialCode,
+}: Props = {}) {
   const { email, password, setCredentials } = useAuthCredentials();
   const [communeFeature, setCommuneFeature] = useState<BanFeature | null>(null);
   const [communeActive, setCommuneActive] = useState(false);
+  const [communeIsTrial, setCommuneIsTrial] = useState(false);
   const [communeLoading, setCommuneLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [lookupName, setLookupName] = useState<string | undefined>();
+  const [trialAccessCode, setTrialAccessCode] = useState(prefillTrialCode ?? "");
   const [lieuDit, setLieuDit] = useState("");
   const [addr, setAddr] = useState<AddressDraft>({
     city: "",
@@ -54,6 +71,48 @@ export function InscriptionSignupForm() {
     PASSWORD_RULE.test(password),
   );
 
+  const prefillDone = useRef(false);
+
+  useEffect(() => {
+    if (!prefillInseeCode || prefillDone.current) return;
+    prefillDone.current = true;
+
+    (async () => {
+      setCommuneLoading(true);
+      try {
+        const params = new URLSearchParams({ inseeCode: prefillInseeCode });
+        const res = await fetch(`/api/communes/lookup?${params}`, {
+          cache: "no-store",
+        });
+        const json = (await res.json()) as LookupResponse;
+        const row = json.commune;
+
+        if (row && (row.access_status === "active" || row.access_status === "trial")) {
+          setCommuneActive(true);
+          setCommuneIsTrial(row.access_status === "trial");
+          setLookupName(row.name);
+          setCommuneFeature({
+            citycode: row.insee_code,
+            city: row.name,
+            postcode: row.postcode ?? "",
+            label: row.name,
+            lat: row.centroid_lat ?? 0,
+            lng: row.centroid_lng ?? 0,
+          } as BanFeature);
+          setAddr({
+            city: row.name ?? "",
+            postcode: row.postcode ?? "",
+            street: "",
+            lat: row.centroid_lat ?? 0,
+            lng: row.centroid_lng ?? 0,
+          });
+        }
+      } finally {
+        setCommuneLoading(false);
+      }
+    })();
+  }, [prefillInseeCode]);
+
   const [signupState, signupAction, signupPending] = useActionState(
     async (_prev: SignUpState | undefined, formData: FormData) =>
       signUp(formData) as Promise<SignUpState>,
@@ -63,6 +122,7 @@ export function InscriptionSignupForm() {
   const onPickCommune = useCallback(async (feature: BanFeature) => {
     setCommuneFeature(feature);
     setCommuneActive(false);
+    setCommuneIsTrial(false);
     setCommuneLoading(true);
 
     try {
@@ -73,8 +133,9 @@ export function InscriptionSignupForm() {
       const json = (await res.json()) as LookupResponse;
       const row = json.commune;
 
-      if (row?.access_status === "active") {
+      if (row?.access_status === "active" || row?.access_status === "trial") {
         setCommuneActive(true);
+        setCommuneIsTrial(row.access_status === "trial");
         setLookupName(row.name);
         setModalOpen(false);
         setAddr({
@@ -155,6 +216,11 @@ export function InscriptionSignupForm() {
                 value={communeFeature.citycode}
               />
             ) : null}
+            <input
+              type="hidden"
+              name="trialAccessCode"
+              value={trialAccessCode}
+            />
             <input type="hidden" name="addressCity" value={addr.city} />
             <input
               type="hidden"
@@ -193,6 +259,30 @@ export function InscriptionSignupForm() {
                 Cette commune n&apos;est pas encore disponible pour
                 l&apos;inscription.
               </p>
+            ) : null}
+
+            {communeIsTrial && communeActive ? (
+              <FormField label="Code d'accès essai">
+                <Input
+                  name="trialAccessCodeDisplay"
+                  required
+                  autoComplete="off"
+                  placeholder="VL-XXXXX"
+                  value={trialAccessCode}
+                  onChange={(e) =>
+                    setTrialAccessCode(e.target.value.toUpperCase())
+                  }
+                />
+                {signupState?.error?.trialAccessCode?.length ? (
+                  <p className="mt-1 text-xs font-medium text-coral" role="alert">
+                    {signupState.error.trialAccessCode[0]}
+                  </p>
+                ) : null}
+                <p className="mt-1 text-[11px] text-muted">
+                  Cette commune est en période d&apos;essai. Un code d&apos;accès
+                  vous a été communiqué par la mairie.
+                </p>
+              </FormField>
             ) : null}
 
             <BanAutocomplete

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { RECOVERY_COOKIE_NAME } from "@/lib/constants/auth";
 import { ROUTES } from "@/lib/constants/routes";
@@ -9,6 +9,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getAppUrl } from "@/lib/utils/app-url";
 import { formatAuthError } from "@/lib/utils/auth-errors";
 import { formatDisplayName } from "@/lib/utils/display-name";
+import { normalizeTrialCode } from "@/lib/utils/trial-code";
+import { checkTrialCodeRateLimit } from "@/lib/utils/trial-rate-limit";
 import {
   forgotPasswordSchema,
   joinCommuneSchema,
@@ -31,6 +33,8 @@ export async function signUp(formData: FormData) {
     firstName: formData.get("firstName") as string,
     lastName: formData.get("lastName") as string,
     inseeCode: formData.get("inseeCode") as string,
+    trialAccessCode:
+      (formData.get("trialAccessCode") as string) || undefined,
     addressStreet: formData.get("addressStreet") as string,
     addressLieuDit: (formData.get("addressLieuDit") as string) || undefined,
     addressCity: formData.get("addressCity") as string,
@@ -49,12 +53,54 @@ export async function signUp(formData: FormData) {
   const supabase = await createClient();
   const { data: commune } = await supabase
     .from("communes")
-    .select("id, access_status")
+    .select("id, access_status, trial_access_code, trial_max_members")
     .eq("insee_code", parsed.data.inseeCode)
     .single();
 
-  if (!commune || commune.access_status !== "active") {
+  if (!commune || (commune.access_status !== "active" && commune.access_status !== "trial")) {
     return { error: { form: ["Cette commune n'est pas encore active."] } };
+  }
+
+  if (commune.access_status === "trial") {
+    const reqHeaders = await headers();
+    const ip = reqHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+
+    if (!checkTrialCodeRateLimit(ip, commune.id)) {
+      return {
+        error: {
+          form: ["Trop de tentatives. Réessayez dans quelques minutes."],
+        },
+      };
+    }
+
+    if (
+      !parsed.data.trialAccessCode ||
+      !commune.trial_access_code ||
+      normalizeTrialCode(parsed.data.trialAccessCode) !==
+        normalizeTrialCode(commune.trial_access_code)
+    ) {
+      return {
+        error: {
+          trialAccessCode: ["Code d'accès invalide."],
+        },
+      };
+    }
+
+    const { count: currentMembers } = await supabase
+      .from("memberships")
+      .select("id", { count: "exact", head: true })
+      .eq("commune_id", commune.id)
+      .eq("status", "active");
+
+    if ((currentMembers ?? 0) >= commune.trial_max_members) {
+      return {
+        error: {
+          form: [
+            "Le nombre maximum de testeurs pour cette commune a été atteint. Contactez la mairie.",
+          ],
+        },
+      };
+    }
   }
 
   const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -299,6 +345,8 @@ export async function switchCommune(communeId: string): Promise<void> {
 export async function joinCommune(formData: FormData) {
   const raw = {
     inseeCode: formData.get("inseeCode") as string,
+    trialAccessCode:
+      (formData.get("trialAccessCode") as string) || undefined,
     addressCity: formData.get("addressCity") as string,
     addressCitycode: formData.get("addressCitycode") as string,
     addressPostcode: formData.get("addressPostcode") as string,
@@ -319,12 +367,54 @@ export async function joinCommune(formData: FormData) {
 
   const { data: commune } = await supabase
     .from("communes")
-    .select("id, access_status")
+    .select("id, access_status, trial_access_code, trial_max_members")
     .eq("insee_code", parsed.data.inseeCode)
     .single();
 
-  if (!commune || commune.access_status !== "active") {
+  if (!commune || (commune.access_status !== "active" && commune.access_status !== "trial")) {
     return { error: { form: ["Cette commune n'est pas encore active."] } };
+  }
+
+  if (commune.access_status === "trial") {
+    const reqHeaders = await headers();
+    const ip = reqHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+
+    if (!checkTrialCodeRateLimit(ip, commune.id)) {
+      return {
+        error: {
+          form: ["Trop de tentatives. Réessayez dans quelques minutes."],
+        },
+      };
+    }
+
+    if (
+      !parsed.data.trialAccessCode ||
+      !commune.trial_access_code ||
+      normalizeTrialCode(parsed.data.trialAccessCode) !==
+        normalizeTrialCode(commune.trial_access_code)
+    ) {
+      return {
+        error: {
+          trialAccessCode: ["Code d'accès invalide."],
+        },
+      };
+    }
+
+    const { count: currentMembers } = await supabase
+      .from("memberships")
+      .select("id", { count: "exact", head: true })
+      .eq("commune_id", commune.id)
+      .eq("status", "active");
+
+    if ((currentMembers ?? 0) >= commune.trial_max_members) {
+      return {
+        error: {
+          form: [
+            "Le nombre maximum de testeurs pour cette commune a été atteint. Contactez la mairie.",
+          ],
+        },
+      };
+    }
   }
 
   const { data: existing } = await supabase

@@ -13,6 +13,8 @@ export type Commune = {
   centroid_lat: number | null;
   centroid_lng: number | null;
   access_status: AccessStatus;
+  trial_access_code: string | null;
+  trial_max_members: number;
   settings: CommuneSettings;
 };
 
