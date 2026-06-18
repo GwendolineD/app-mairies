@@ -8,8 +8,11 @@ import {
 } from "@/lib/constants/initiative-categories";
 import { ROUTES } from "@/lib/constants/routes";
 import { getAuthorName, resolveEventAuthorLabel } from "@/lib/data/authors";
-import { listVolunteerCountsByInitiativeId } from "@/lib/queries/events";
-import { listInitiativeVolunteers } from "@/lib/queries/initiatives";
+import {
+  listEventVolunteers,
+  listEventParticipants,
+  countEventParticipants,
+} from "@/lib/queries/events";
 import { createClient } from "@/lib/supabase/server";
 import { formatDay, formatEventDetail } from "@/lib/utils/date";
 import {
@@ -123,26 +126,32 @@ export default async function MairieEvenementDetailPage(props: {
     parsedAddress.city,
   );
 
-  let volunteersRegistered = 0;
-  let volunteers: Awaited<ReturnType<typeof listInitiativeVolunteers>> = [];
-  let initialVolunteering = false;
-  if (event.source_initiative_id) {
-    const counts = await listVolunteerCountsByInitiativeId(supabase, [
-      event.source_initiative_id,
-    ]);
-    volunteersRegistered = counts[event.source_initiative_id] ?? 0;
-    volunteers = await listInitiativeVolunteers(supabase, event.source_initiative_id);
+  const volunteers = await listEventVolunteers(supabase, event.id);
+  const volunteersRegistered = volunteers.length;
 
-    if (ctx.activeMembership?.id) {
-      const { data: userVolunteer } = await supabase
-        .from("initiative_responses")
-        .select("id")
-        .eq("initiative_id", event.source_initiative_id)
-        .eq("membership_id", ctx.activeMembership.id)
-        .eq("response_type", "volunteer")
-        .maybeSingle();
-      initialVolunteering = !!userVolunteer;
-    }
+  let initialVolunteering = false;
+  if (ctx.activeMembership?.id) {
+    const { data: userVolunteer } = await supabase
+      .from("event_volunteers")
+      .select("id")
+      .eq("event_id", event.id)
+      .eq("membership_id", ctx.activeMembership.id)
+      .maybeSingle();
+    initialVolunteering = !!userVolunteer;
+  }
+
+  const participants = await listEventParticipants(supabase, event.id);
+  const participantsCount = await countEventParticipants(supabase, event.id);
+
+  let initialParticipating = false;
+  if (ctx.activeMembership?.id) {
+    const { data: userParticipant } = await supabase
+      .from("event_participants")
+      .select("id")
+      .eq("event_id", event.id)
+      .eq("membership_id", ctx.activeMembership.id)
+      .maybeSingle();
+    initialParticipating = !!userParticipant;
   }
 
   return (
@@ -215,6 +224,9 @@ export default async function MairieEvenementDetailPage(props: {
             volunteersRegistered={volunteersRegistered}
             volunteers={volunteers}
             initialVolunteering={initialVolunteering}
+            participantsCount={participantsCount}
+            participants={participants}
+            initialParticipating={initialParticipating}
             editData={editData}
             sourceInitiative={sourceInitiative}
             className={DETAIL_CARD_CLASS}

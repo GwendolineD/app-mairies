@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowUpRight,
+  CalendarCheck,
   CalendarDays,
   Copy,
   MessageCircle,
@@ -15,6 +16,8 @@ import {
 } from "lucide-react";
 import { ContactAnnouncementButton } from "@/components/features/contact-announcement-button";
 import { useCreationModals } from "@/components/features/creation-modal-context";
+import { EventParticipantButton } from "@/components/features/event-participant-button";
+import { ParticipantsAvatarRow } from "@/components/features/event-participants-list";
 import { VolunteersAvatarRow } from "@/components/features/event-volunteers-list";
 import { EventVolunteerButton } from "@/components/features/event-volunteer-button";
 import { deleteEvent } from "@/lib/actions/events";
@@ -23,7 +26,7 @@ import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { ROUTES } from "@/lib/constants/routes";
-import type { InitiativeSupporter } from "@/lib/queries/initiatives";
+import type { EventVolunteer } from "@/lib/queries/events";
 import type { EventEditData } from "@/lib/types";
 import { cn } from "@/lib/utils/cn";
 
@@ -40,8 +43,11 @@ type Props = {
   memberSince: string;
   volunteersNeeded: number | null;
   volunteersRegistered?: number;
-  volunteers?: InitiativeSupporter[];
+  volunteers?: EventVolunteer[];
   initialVolunteering?: boolean;
+  participantsCount?: number;
+  participants?: EventVolunteer[];
+  initialParticipating?: boolean;
   editData?: EventEditData;
   sourceInitiative?: SourceInitiative | null;
   className?: string;
@@ -58,6 +64,9 @@ export function EventSidebarActions({
   volunteersRegistered = 0,
   volunteers = [],
   initialVolunteering = false,
+  participantsCount = 0,
+  participants = [],
+  initialParticipating = false,
   editData,
   sourceInitiative,
   className,
@@ -130,6 +139,15 @@ export function EventSidebarActions({
           className={className}
         />
       ) : null}
+
+      <EventParticipantsCard
+        eventId={eventId}
+        isAuthor={isAuthor}
+        initialParticipating={initialParticipating}
+        participantsCount={participantsCount}
+        participants={participants}
+        className={className}
+      />
 
       {sourceInitiative ? (
         <SourceInitiativeCard
@@ -255,7 +273,7 @@ function VolunteersCard({
   initialVolunteering: boolean;
   volunteersNeeded: number;
   volunteersRegistered: number;
-  volunteers: InitiativeSupporter[];
+  volunteers: EventVolunteer[];
   className?: string;
 }) {
   return (
@@ -283,6 +301,58 @@ function VolunteersCard({
         <EventVolunteerButton
           eventId={eventId}
           initialVolunteering={initialVolunteering}
+        />
+      </div>
+    </Card>
+  );
+}
+
+function EventParticipantsCard({
+  eventId,
+  isAuthor,
+  initialParticipating,
+  participantsCount,
+  participants,
+  className,
+}: {
+  eventId: string;
+  isAuthor: boolean;
+  initialParticipating: boolean;
+  participantsCount: number;
+  participants: EventVolunteer[];
+  className?: string;
+}) {
+  return (
+    <Card className={cn("gap-6 md:p-5", className)}>
+      <div className="space-y-1">
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-text">
+          <CalendarCheck className="size-5 shrink-0 text-orange" aria-hidden />
+          {isAuthor ? "Participants" : "Participer"}
+        </h2>
+        <p className="text-sm font-medium text-muted">
+          {isAuthor
+            ? participantsCount === 0
+              ? "Les premières inscriptions arriveront bientôt !"
+              : `${participantsCount} voisin${participantsCount !== 1 ? "·es" : "·e"} se ${participantsCount !== 1 ? "sont inscrits" : "s'est inscrit·e"} !`
+            : "Vous souhaitez participer à cet événement ?"}
+        </p>
+      </div>
+      <div className="space-y-3">
+        {participantsCount > 0 ? (
+          <p className="text-sm font-semibold text-text">
+            {participantsCount} participant{participantsCount !== 1 ? "s" : ""}
+          </p>
+        ) : null}
+        {participants.length > 0 ? (
+          <ParticipantsAvatarRow
+            participants={participants}
+            eventId={eventId}
+            isAuthor={isAuthor}
+          />
+        ) : null}
+        <EventParticipantButton
+          eventId={eventId}
+          initialParticipating={initialParticipating}
         />
       </div>
     </Card>

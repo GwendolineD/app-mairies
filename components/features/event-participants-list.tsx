@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRight, MessageCircle, Users } from "lucide-react";
+import { CalendarCheck, ChevronRight, MessageCircle } from "lucide-react";
 import { ContactAnnouncementButton } from "@/components/features/contact-announcement-button";
 import { Modal } from "@/components/ui/modal";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -10,28 +10,28 @@ import { cn } from "@/lib/utils/cn";
 import type { EventVolunteer } from "@/lib/queries/events";
 
 type Props = {
-  volunteers: EventVolunteer[];
+  participants: EventVolunteer[];
   eventId: string;
   isAuthor: boolean;
   maxVisible?: number;
   className?: string;
 };
 
-function getVolunteerDisplayName(volunteer: EventVolunteer): string {
-  if (volunteer.displayName) return volunteer.displayName;
-  if (volunteer.firstName && volunteer.lastName) {
-    return formatDisplayName(volunteer.firstName, volunteer.lastName);
+function getDisplayName(p: EventVolunteer): string {
+  if (p.displayName) return p.displayName;
+  if (p.firstName && p.lastName) {
+    return formatDisplayName(p.firstName, p.lastName);
   }
-  return volunteer.firstName || "Voisin·e";
+  return p.firstName || "Voisin·e";
 }
 
-function getVolunteerFullName(volunteer: EventVolunteer): string {
-  if (volunteer.displayName) return volunteer.displayName;
-  return [volunteer.firstName, volunteer.lastName].filter(Boolean).join(" ") || "Voisin·e";
+function getFullName(p: EventVolunteer): string {
+  if (p.displayName) return p.displayName;
+  return [p.firstName, p.lastName].filter(Boolean).join(" ") || "Voisin·e";
 }
 
-export function VolunteersAvatarRow({
-  volunteers,
+export function ParticipantsAvatarRow({
+  participants,
   eventId,
   isAuthor,
   maxVisible = 5,
@@ -39,12 +39,10 @@ export function VolunteersAvatarRow({
 }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
 
-  if (volunteers.length === 0) {
-    return null;
-  }
+  if (participants.length === 0) return null;
 
-  const visibleVolunteers = volunteers.slice(0, maxVisible);
-  const overflowCount = volunteers.length - maxVisible;
+  const visible = participants.slice(0, maxVisible);
+  const overflowCount = participants.length - maxVisible;
 
   return (
     <>
@@ -58,15 +56,15 @@ export function VolunteersAvatarRow({
       >
         <div className="flex items-center">
           <div className="flex -space-x-2">
-            {visibleVolunteers.map((volunteer, index) => (
+            {visible.map((p, index) => (
               <div
-                key={volunteer.membershipId}
+                key={p.membershipId}
                 className="relative rounded-full ring-2 ring-surface"
                 style={{ zIndex: maxVisible - index }}
               >
                 <UserAvatar
-                  name={getVolunteerDisplayName(volunteer)}
-                  url={volunteer.avatarUrl}
+                  name={getDisplayName(p)}
+                  url={p.avatarUrl}
                   size="sm"
                 />
               </div>
@@ -84,10 +82,10 @@ export function VolunteersAvatarRow({
         <ChevronRight className="size-5 shrink-0 text-muted" aria-hidden />
       </button>
 
-      <VolunteersModal
+      <ParticipantsModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        volunteers={volunteers}
+        participants={participants}
         eventId={eventId}
         isAuthor={isAuthor}
       />
@@ -95,16 +93,16 @@ export function VolunteersAvatarRow({
   );
 }
 
-function VolunteersModal({
+function ParticipantsModal({
   open,
   onClose,
-  volunteers,
+  participants,
   eventId,
   isAuthor,
 }: {
   open: boolean;
   onClose: () => void;
-  volunteers: EventVolunteer[];
+  participants: EventVolunteer[];
   eventId: string;
   isAuthor: boolean;
 }) {
@@ -114,18 +112,18 @@ function VolunteersModal({
       onClose={onClose}
       title={
         <span className="flex items-center gap-1.5">
-          <Users className="size-4 shrink-0 text-orange" aria-hidden />
-          {volunteers.length} bénévole{volunteers.length !== 1 ? "s" : ""}
+          <CalendarCheck className="size-4 shrink-0 text-orange" aria-hidden />
+          {participants.length} participant{participants.length !== 1 ? "s" : ""}
         </span>
       }
       showCloseButton
       size="sm"
     >
       <div className="max-h-[60vh] space-y-2 overflow-y-auto">
-        {volunteers.map((volunteer) => (
-          <VolunteerRow
-            key={volunteer.membershipId}
-            volunteer={volunteer}
+        {participants.map((p) => (
+          <ParticipantRow
+            key={p.membershipId}
+            participant={p}
             eventId={eventId}
             showContactButton={isAuthor}
           />
@@ -135,22 +133,22 @@ function VolunteersModal({
   );
 }
 
-function VolunteerRow({
-  volunteer,
+function ParticipantRow({
+  participant,
   eventId,
   showContactButton,
 }: {
-  volunteer: EventVolunteer;
+  participant: EventVolunteer;
   eventId: string;
   showContactButton: boolean;
 }) {
-  const displayName = getVolunteerDisplayName(volunteer);
-  const fullName = getVolunteerFullName(volunteer);
+  const displayName = getDisplayName(participant);
+  const fullName = getFullName(participant);
 
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg p-2 transition hover:bg-warm">
       <div className="flex min-w-0 items-center gap-3">
-        <UserAvatar name={displayName} url={volunteer.avatarUrl} size="sm" />
+        <UserAvatar name={displayName} url={participant.avatarUrl} size="sm" />
         <span className="truncate text-sm font-semibold text-text">{fullName}</span>
       </div>
       {showContactButton ? (

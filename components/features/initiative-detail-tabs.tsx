@@ -37,7 +37,7 @@ export function InitiativeDetailTabs({
 
   async function participate() {
     setPending(true);
-    await submitInitiativeResponse(initiativeId, "volunteer");
+    await submitInitiativeResponse(initiativeId);
     setPending(false);
   }
 

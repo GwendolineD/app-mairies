@@ -42,25 +42,17 @@ export default async function ResidentAccueilPage() {
 
   const upcomingEvents = (eventsRes.data ?? []) as AgendaEventRecord[];
 
-  const linkedInitiativeIds = [
-    ...new Set(
-      upcomingEvents
-        .map((event) => event.source_initiative_id)
-        .filter((id): id is string => id != null),
-    ),
-  ];
-
-  const volunteerCountByInitiativeId: Record<string, number> = {};
-  if (linkedInitiativeIds.length > 0) {
+  const eventIds = upcomingEvents.map((e) => e.id);
+  const volunteerCountByEventId: Record<string, number> = {};
+  if (eventIds.length > 0) {
     const { data: volunteerRows } = await supabase
-      .from("initiative_responses")
-      .select("initiative_id")
-      .in("initiative_id", linkedInitiativeIds)
-      .eq("response_type", "volunteer");
+      .from("event_volunteers")
+      .select("event_id")
+      .in("event_id", eventIds);
 
     for (const row of volunteerRows ?? []) {
-      volunteerCountByInitiativeId[row.initiative_id] =
-        (volunteerCountByInitiativeId[row.initiative_id] ?? 0) + 1;
+      volunteerCountByEventId[row.event_id] =
+        (volunteerCountByEventId[row.event_id] ?? 0) + 1;
     }
   }
 
@@ -79,7 +71,7 @@ export default async function ResidentAccueilPage() {
         </div>
         <AccueilUpcomingEvents
           events={upcomingEvents}
-          volunteerCountByInitiativeId={volunteerCountByInitiativeId}
+          volunteerCountByEventId={volunteerCountByEventId}
         />
       </div>
     </PageStack>

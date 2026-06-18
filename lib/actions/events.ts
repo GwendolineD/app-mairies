@@ -6,7 +6,7 @@ import { assertAuthorMembership, assertCanManageEvent } from "@/lib/auth/ownersh
 import { requireActiveMembership } from "@/lib/auth/session";
 import { COMMUNE_STAFF_ROLES } from "@/lib/constants/roles";
 import { ROUTES } from "@/lib/constants/routes";
-import { EVENT_STATUS, INITIATIVE_STATUS } from "@/lib/constants/statuses";
+import { EVENT_STATUS } from "@/lib/constants/statuses";
 import { createClient } from "@/lib/supabase/server";
 import { parseFormId } from "@/lib/utils/form-data";
 import { buildAddressLabel, parseAddressLabelParts } from "@/lib/utils/format-address";
@@ -367,7 +367,7 @@ export async function duplicateEvent(
   return { success: true, id: created.id };
 }
 
-/** Toggle volunteer registration for an event (via its linked initiative). */
+/** Toggle volunteer registration for an event. */
 export async function toggleEventVolunteer(eventId: string) {
   const ctx = await requireActiveMembership();
   const supabase = await createClient();
@@ -375,87 +375,82 @@ export async function toggleEventVolunteer(eventId: string) {
 
   const { data: event, error: fetchError } = await supabase
     .from("events")
-    .select(
-      "id, source_initiative_id, commune_id, author_membership_id, category_slug, title, description, photo_url, address_label, address_lat, address_lng",
-    )
+    .select("id")
     .eq("id", eventId)
     .eq("commune_id", membership.commune_id)
     .single();
 
   if (fetchError || !event) {
-    return {
-      error: "Impossible de s'inscrire comme bénévole pour cet événement.",
-      volunteering: false,
-    };
-  }
-
-  let initiativeId = event.source_initiative_id;
-
-  if (!initiativeId) {
-    const { data: initiative, error: createError } = await supabase
-      .from("initiatives")
-      .insert({
-        commune_id: event.commune_id,
-        author_membership_id: event.author_membership_id,
-        category_slug: event.category_slug ?? "solidarite",
-        title: event.title,
-        description: event.description,
-        photo_url: event.photo_url,
-        date_mode: "none",
-        address_label: event.address_label,
-        address_lat: event.address_lat,
-        address_lng: event.address_lng,
-        status: INITIATIVE_STATUS.active,
-      })
-      .select("id")
-      .single();
-
-    if (createError || !initiative) {
-      return {
-        error: createError?.message ?? "Impossible de s'inscrire comme bénévole.",
-        volunteering: false,
-      };
-    }
-
-    initiativeId = initiative.id;
-
-    const { error: linkError } = await supabase
-      .from("events")
-      .update({ source_initiative_id: initiativeId })
-      .eq("id", eventId);
-
-    if (linkError) {
-      return { error: linkError.message, volunteering: false };
-    }
+    return { error: "Événement introuvable.", volunteering: false };
   }
 
   const { data: existing } = await supabase
-    .from("initiative_responses")
+    .from("event_volunteers")
     .select("id")
-    .eq("initiative_id", initiativeId)
+    .eq("event_id", eventId)
     .eq("membership_id", membership.id)
-    .eq("response_type", "volunteer")
     .maybeSingle();
 
   if (existing) {
     const { error } = await supabase
-      .from("initiative_responses")
+      .from("event_volunteers")
       .delete()
       .eq("id", existing.id);
     if (error) return { error: error.message, volunteering: true };
     revalidatePath(ROUTES.evenements.detail(eventId));
-    revalidatePath(ROUTES.initiatives.detail(initiativeId));
     return { success: true as const, volunteering: false };
   }
 
-  const { error } = await supabase.from("initiative_responses").insert({
-    initiative_id: initiativeId,
+  const { error } = await supabase.from("event_volunteers").insert({
+    event_id: eventId,
     membership_id: membership.id,
-    response_type: "volunteer",
   });
 
   if (error) return { error: error.message, volunteering: false };
   revalidatePath(ROUTES.evenements.detail(eventId));
-  revalidatePath(ROUTES.initiatives.detail(initiativeId));
   return { success: true as const, volunteering: true };
+}
+
+/** Toggle participation for an event. */
+export async function toggleEventParticipation(eventId: string) {
+  const ctx = await requireActiveMembership();
+  const supabase = await createClient();
+  const membership = ctx.activeMembership!;
+
+  const { data: event, error: fetchError } = await supabase
+    .from("events")
+    .select("id")
+    .eq("id", eventId)
+    .eq("commune_id", membership.commune_id)
+    .single();
+
+  if (fetchError || !event) {
+    return { error: "Événement introuvable.", participating: false };
+  }
+
+  const { data: existing } = await supabase
+    .from("event_participants")
+    .select("id")
+    .eq("event_id", eventId)
+    .eq("membership_id", membership.id)
+    .maybeSingle();
+
+  if (existing) {
+    const { error } = await supabase
+      .from("event_participants")
+      .delete()
+      .eq("id", existing.id);
+    if (error) return { error: error.message, participating: true };
+    revalidatePath(ROUTES.evenements.detail(eventId));
+    return { success: true as const, participating: false };
+  }
+
+  const { error } = await supabase.from("event_participants").insert({
+    event_id: eventId,
+    membership_id: membership.id,
+  });
+
+  if (error) return { error: error.message, participating: false };
+  revalidatePath(ROUTES.evenements.detail(eventId));
+  return { success: true as const, participating: true };
 }

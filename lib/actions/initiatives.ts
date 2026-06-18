@@ -373,10 +373,7 @@ export async function toggleInitiativeSupport(initiativeId: string) {
   return { success: true, supported: true };
 }
 
-export async function submitInitiativeResponse(
-  initiativeId: string,
-  responseType: "support" | "volunteer",
-) {
+export async function submitInitiativeResponse(initiativeId: string) {
   const ctx = await requireActiveMembership();
   const supabase = await createClient();
 
@@ -384,7 +381,7 @@ export async function submitInitiativeResponse(
     {
       initiative_id: initiativeId,
       membership_id: ctx.activeMembership!.id,
-      response_type: responseType,
+      response_type: "support" as const,
     },
     { onConflict: "initiative_id,membership_id,response_type" },
   );

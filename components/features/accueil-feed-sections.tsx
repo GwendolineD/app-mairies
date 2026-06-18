@@ -155,7 +155,7 @@ export function AccueilRecentAnnouncements({ items }: RecentAnnouncementsProps) 
 
 type UpcomingEventsProps = {
   events: AgendaEventRecord[];
-  volunteerCountByInitiativeId?: Record<string, number>;
+  volunteerCountByEventId?: Record<string, number>;
 };
 
 function EventVolunteerGauge({
@@ -189,7 +189,7 @@ function EventVolunteerGauge({
 
 export function AccueilUpcomingEvents({
   events,
-  volunteerCountByInitiativeId = {},
+  volunteerCountByEventId = {},
 }: UpcomingEventsProps) {
   return (
     <AccueilFeedCard
@@ -209,9 +209,7 @@ export function AccueilUpcomingEvents({
             const { day, month } = formatEventAccueilDate(event.starts_at);
             const location = event.address_label?.trim() ?? "Adresse non renseignée";
             const volunteersNeeded = event.volunteers_needed ?? 0;
-            const volunteerCount = event.source_initiative_id
-              ? (volunteerCountByInitiativeId[event.source_initiative_id] ?? 0)
-              : 0;
+            const volunteerCount = volunteerCountByEventId[event.id] ?? 0;
 
             return (
               <li key={event.id}>
