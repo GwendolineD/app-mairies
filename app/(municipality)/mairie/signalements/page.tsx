@@ -85,19 +85,24 @@ export default async function MairieSignalementsPage(props: {
       table === "initiatives" ? "initiative" : "event";
     const ids = contentIds.filter((c) => c.type === ctxType).map((c) => c.id);
     if (ids.length > 0) {
-      const selectFields =
-        table === "announcements"
-          ? "id, title, author_membership_id, type"
-          : "id, title, author_membership_id";
-      const { data } = await supabase
-        .from(table)
-        .select(selectFields)
-        .in("id", ids);
-      for (const row of data ?? []) {
-        titleMap[row.id] = row.title;
-        authorMembershipIdMap[row.id] = row.author_membership_id;
-        if (table === "announcements" && "type" in row) {
+      if (table === "announcements") {
+        const { data } = await supabase
+          .from("announcements")
+          .select("id, title, author_membership_id, type")
+          .in("id", ids);
+        for (const row of data ?? []) {
+          titleMap[row.id] = row.title;
+          authorMembershipIdMap[row.id] = row.author_membership_id;
           announcementTypeMap[row.id] = row.type;
+        }
+      } else {
+        const { data } = await supabase
+          .from(table)
+          .select("id, title, author_membership_id")
+          .in("id", ids);
+        for (const row of data ?? []) {
+          titleMap[row.id] = row.title;
+          authorMembershipIdMap[row.id] = row.author_membership_id;
         }
       }
     }

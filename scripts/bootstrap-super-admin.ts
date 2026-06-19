@@ -8,7 +8,7 @@
  * Requires NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY
  * (from .env.local locally, or prod env vars).
  */
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 const COMMUNE = {
   inseeCode: "27027",
@@ -60,7 +60,7 @@ async function geocodeAddress(): Promise<{ lat: number; lng: number }> {
 }
 
 async function findUserByEmail(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   email: string,
 ) {
   let page = 1;
