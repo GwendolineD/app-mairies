@@ -121,17 +121,19 @@ export async function signUp(formData: FormData) {
     };
   }
 
-  const { data: authData, error: authError } = await supabase.auth.signUp({
-    email: parsed.data.email,
-    password: parsed.data.password,
-  });
+  const { data: adminData, error: adminError } =
+    await serviceClient.auth.admin.createUser({
+      email: parsed.data.email,
+      password: parsed.data.password,
+      email_confirm: true,
+    });
 
-  if (authError || !authData.user) {
+  if (adminError || !adminData.user) {
     return {
       error: {
         form: [
           formatAuthError(
-            authError,
+            adminError,
             "Inscription impossible pour le moment. Réessayez dans un instant.",
           ),
         ],
@@ -144,7 +146,7 @@ export async function signUp(formData: FormData) {
     parsed.data.lastName,
   );
 
-  await supabase
+  await serviceClient
     .from("profiles")
     .update({
       first_name: parsed.data.firstName,
@@ -152,10 +154,10 @@ export async function signUp(formData: FormData) {
       display_name: displayName,
       active_commune_id: commune.id,
     })
-    .eq("user_id", authData.user.id);
+    .eq("user_id", adminData.user.id);
 
-  await supabase.from("memberships").insert({
-    user_id: authData.user.id,
+  await serviceClient.from("memberships").insert({
+    user_id: adminData.user.id,
     commune_id: commune.id,
     address_street: parsed.data.addressStreet,
     address_lieu_dit: parsed.data.addressLieuDit ?? null,
@@ -167,6 +169,25 @@ export async function signUp(formData: FormData) {
     is_primary: true,
     status: "active",
   });
+
+  // Sign in the newly created user to establish a session
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email: parsed.data.email,
+    password: parsed.data.password,
+  });
+
+  if (signInError) {
+    return {
+      error: {
+        form: [
+          formatAuthError(
+            signInError,
+            "Compte créé mais connexion impossible. Essayez de vous connecter.",
+          ),
+        ],
+      },
+    };
+  }
 
   redirect(ROUTES.accueil);
 }
