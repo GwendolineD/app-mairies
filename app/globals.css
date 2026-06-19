@@ -103,6 +103,7 @@
   --color-sun: var(--sun);
   --font-sans: var(--font-manrope), system-ui, sans-serif;
   --font-brand: var(--font-permanent-marker), cursive;
+  --font-handwritten: var(--font-homemade-apple), cursive;
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;

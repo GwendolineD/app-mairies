@@ -36,20 +36,30 @@ function SlideIllustration({ slide }: { slide: OnboardingSlideId }) {
   );
 }
 
-function WelcomeSlide({ communeName, mode }: { communeName: string; mode: "full" | "compact" }) {
+function WelcomeSlide({ communeName }: { communeName: string }) {
+  const heartUrl = ILLUSTRATIONS.resident.onboarding.heart;
+
   return (
-    <div className="flex flex-col items-center text-center">
-      {mode === "full" && <SlideIllustration slide="welcome" />}
-      <p className="mt-4 text-2xl">👋</p>
-      <h2 className="mt-2 text-xl font-bold text-text">
+    <div className="flex flex-col items-start text-left">
+      <p className="mb-8 text-2xl">Bienvenue 👋</p>
+      <h2 className="text-xl font-bold text-text">
         {communeName} prend vie grâce à vous !
       </h2>
       <p className="mt-3 text-sm font-medium leading-relaxed text-muted">
         Ici, vos voisins partagent, s&apos;entraident et font bouger les choses
         ensemble. Rejoignez-les.
       </p>
-      <p className="mt-4 text-base italic text-text/80">
-        Chaque petit geste compte 💛
+      <p className="mt-4 inline-flex -rotate-2 items-center gap-1.5 font-handwritten text-lg text-text/80">
+        Chaque petit geste compte
+        {heartUrl ? (
+          <Image
+            src={heartUrl}
+            alt=""
+            width={20}
+            height={20}
+            className="size-5 shrink-0 object-contain"
+          />
+        ) : null}
       </p>
     </div>
   );
@@ -180,7 +190,7 @@ function ActionBlock({
 export function OnboardingSlideContent({ slide, communeName = "votre commune", mode = "full" }: Props) {
   switch (slide) {
     case "welcome":
-      return <WelcomeSlide communeName={communeName} mode={mode} />;
+      return <WelcomeSlide communeName={communeName} />;
     case "annonces":
       return <AnnoncesSlide mode={mode} />;
     case "initiatives":

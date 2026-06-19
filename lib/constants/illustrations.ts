@@ -28,7 +28,10 @@ export const ILLUSTRATIONS = {
         "https://res.cloudinary.com/du3ko16j1/image/upload/v1779975389/app-mairies/illustrations/autres/hero-community_zweexd.png",
     },
     onboarding: {
-      welcome: "",
+      welcome:
+        "https://res.cloudinary.com/du3ko16j1/image/upload/v1779987275/app-mairies/illustrations/autres/accueil-bg3_nnlo1u.png",
+      heart:
+        "https://res.cloudinary.com/du3ko16j1/image/upload/v1781848731/app-mairies/illustrations/autres/coeur_n9sseg.png",
       annonces: "",
       initiatives: "",
       evenements: "",

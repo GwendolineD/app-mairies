@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ILLUSTRATIONS } from "@/lib/constants/illustrations";
 import { cn } from "@/lib/utils/cn";
 import { OnboardingSlideContent, type OnboardingSlideId } from "./onboarding-slide-content";
 
@@ -22,6 +24,9 @@ export function OnboardingModal({ open, onComplete, communeName }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const isLast = current === TOTAL - 1;
+  const activeSlide = SLIDES[current];
+  const welcomeBackground = ILLUSTRATIONS.resident.onboarding.welcome;
+  const showWelcomeBackground = activeSlide === "welcome" && Boolean(welcomeBackground);
 
   const goNext = useCallback(() => {
     if (isLast) {
@@ -63,7 +68,7 @@ export function OnboardingModal({ open, onComplete, communeName }: Props) {
       <DialogPrimitive.Portal>
         <DialogPrimitive.Backdrop className="fixed inset-0 z-1100 bg-text/40 backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
         <DialogPrimitive.Popup
-          className="fixed inset-x-0 bottom-0 z-1100 mx-auto flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl bg-surface shadow-elevated sm:inset-auto sm:top-1/2 sm:left-1/2 sm:max-h-[min(90dvh,calc(100%-2rem))] sm:w-full sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl"
+          className="fixed inset-x-0 bottom-0 z-1100 mx-auto flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl bg-surface shadow-elevated sm:inset-auto sm:top-1/2 sm:left-1/2 sm:max-h-[min(90dvh,calc(100%-2rem))] sm:w-full sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl"
           ref={containerRef}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
@@ -85,18 +90,44 @@ export function OnboardingModal({ open, onComplete, communeName }: Props) {
           )}
 
           {/* Slide content */}
-          <div className="flex-1 overflow-y-auto px-6 py-8 pb-4 sm:px-8 sm:py-10">
-            <OnboardingSlideContent
-              slide={SLIDES[current]}
-              communeName={communeName}
-              mode="full"
-            />
+          <div className="relative flex-1 overflow-y-auto px-6 py-8 pb-4 sm:px-8 sm:py-10">
+            {showWelcomeBackground ? (
+              <>
+                <Image
+                  src={welcomeBackground}
+                  alt=""
+                  fill
+                  priority
+                  sizes="(max-width: 640px) 100vw, 448px"
+                  className="object-cover object-center"
+                />
+                <div className="absolute inset-0 bg-background/75" aria-hidden />
+              </>
+            ) : null}
+            <div className="relative">
+              <OnboardingSlideContent
+                slide={activeSlide}
+                communeName={communeName}
+                mode="full"
+              />
+            </div>
           </div>
 
-          {/* Footer: dots + navigation */}
-          <div className="flex shrink-0 flex-col items-center gap-4 border-t border-border/40 px-6 py-5 sm:px-8">
-            {/* Progress indicator: label + dots */}
-            <div className="flex flex-col items-center gap-2">
+          {/* Footer: navigation + progress on one row */}
+          <div className="flex shrink-0 items-center gap-3 border-t border-border/40 px-6 py-5 sm:px-8">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={goPrev}
+              disabled={current === 0}
+              className="shrink-0 gap-1"
+            >
+              <ChevronLeft className="size-4" />
+              Précédent
+            </Button>
+
+            <div className="flex min-w-0 flex-1 flex-col items-center gap-2">
               <span className="text-xs font-medium text-muted">
                 {current + 1}/{TOTAL}
               </span>
@@ -118,31 +149,16 @@ export function OnboardingModal({ open, onComplete, communeName }: Props) {
               </div>
             </div>
 
-            {/* Navigation buttons */}
-            <div className="flex w-full items-center justify-between gap-3">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={goPrev}
-                disabled={current === 0}
-                className="gap-1"
-              >
-                <ChevronLeft className="size-4" />
-                Précédent
-              </Button>
-
-              <Button
-                type="button"
-                variant="primary"
-                size="sm"
-                onClick={goNext}
-                className="gap-1"
-              >
-                {isLast ? "C'est parti !" : "Suivant"}
-                {!isLast && <ChevronRight className="size-4" />}
-              </Button>
-            </div>
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={goNext}
+              className="shrink-0 gap-1"
+            >
+              {isLast ? "C'est parti !" : "Suivant"}
+              {!isLast && <ChevronRight className="size-4" />}
+            </Button>
           </div>
         </DialogPrimitive.Popup>
       </DialogPrimitive.Portal>

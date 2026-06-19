@@ -60,8 +60,9 @@ const root = process.env.ROOT;
 const manifestPath = path.join(root, "public/manifest.webmanifest");
 const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
 
-// No query strings in manifest icon URLs — iOS/Android installers often reject them.
-// iOS Safari ignores icons with purpose "maskable" only; keep separate "any" + "maskable" entries.
+// No query strings — iOS installers reject them.
+// "maskable" only → Android displays the icon full-bleed (no background_color plate).
+// iOS ignores maskable icons from the manifest but uses <link rel="apple-touch-icon"> from HTML instead.
 manifest.background_color = "#9A52FF";
 manifest.theme_color = "#9A52FF";
 manifest.icons = [
@@ -69,13 +70,7 @@ manifest.icons = [
     src: "/icons/icon-192.png",
     sizes: "192x192",
     type: "image/png",
-    purpose: "any",
-  },
-  {
-    src: "/icons/icon-512.png",
-    sizes: "512x512",
-    type: "image/png",
-    purpose: "any",
+    purpose: "maskable",
   },
   {
     src: "/icons/icon-512.png",
