@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { CreationModalProvider } from "@/components/features/creation-modal-context";
 import { CreationModalHost } from "@/components/features/creation-modal-host";
 import { OnboardingModalHost } from "@/components/features/onboarding/onboarding-modal-host";
+import { OnboardingCommuneProvider } from "@/components/features/onboarding/onboarding-commune-context";
 import { initCategories } from "@/lib/constants/announcement-categories";
 import { initInitiativeEventCategories } from "@/lib/constants/initiative-categories";
 import type {
@@ -35,18 +36,20 @@ export function ResidentShellClient({
   initInitiativeEventCategories(initiativeCategoryRows);
 
   return (
-    <CreationModalProvider>
-      {children}
-      <Suspense fallback={null}>
-        <CreationModalHost
-          communeId={communeId}
-          membershipAddress={membershipAddress}
+    <OnboardingCommuneProvider communeName={communeName}>
+      <CreationModalProvider>
+        {children}
+        <Suspense fallback={null}>
+          <CreationModalHost
+            communeId={communeId}
+            membershipAddress={membershipAddress}
+          />
+        </Suspense>
+        <OnboardingModalHost
+          hasSeenOnboarding={hasSeenOnboarding}
+          communeName={communeName}
         />
-      </Suspense>
-      <OnboardingModalHost
-        hasSeenOnboarding={hasSeenOnboarding}
-        communeName={communeName}
-      />
-    </CreationModalProvider>
+      </CreationModalProvider>
+    </OnboardingCommuneProvider>
   );
 }

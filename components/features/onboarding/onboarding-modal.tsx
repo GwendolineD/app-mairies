@@ -4,72 +4,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ILLUSTRATIONS } from "@/lib/constants/illustrations";
 import { cn } from "@/lib/utils/cn";
-import { OnboardingSlideContent, type OnboardingSlideId } from "./onboarding-slide-content";
+import { OnboardingSlideFrame } from "./onboarding-slide-frame";
+import type { OnboardingSlideId } from "./onboarding-slide-content";
 
 const SLIDES: OnboardingSlideId[] = ["welcome", "annonces", "initiatives", "evenements"];
 const TOTAL = SLIDES.length;
-
-const ONBOARDING_ILLUSTRATION_OVERLAY =
-  "linear-gradient(rgba(251, 251, 252, 0.75), rgba(251, 251, 252, 0.75))";
-
-const ONBOARDING_EVENEMENTS_OVERLAY =
-  "linear-gradient(rgba(251, 251, 252, 0.80), rgba(251, 251, 252, 0.80))";
-
-function getSlideBackground(slide: OnboardingSlideId): {
-  className?: string;
-  style?: React.CSSProperties;
-} {
-  switch (slide) {
-    case "welcome": {
-      const url = ILLUSTRATIONS.resident.onboarding.welcome;
-      if (!url) return {};
-      return {
-        className: "bg-cover bg-right bg-no-repeat",
-        style: {
-          backgroundImage: `${ONBOARDING_ILLUSTRATION_OVERLAY}, url(${url})`,
-        },
-      };
-    }
-    case "annonces": {
-      const url = ILLUSTRATIONS.resident.onboarding.annonces;
-      if (!url) return {};
-      return {
-        className: "bg-no-repeat",
-        style: {
-          backgroundImage: `url(${url})`,
-          backgroundPosition: "right bottom",
-          backgroundSize: "min(68%, 230px) auto",
-        },
-      };
-    }
-    case "initiatives": {
-      const url = ILLUSTRATIONS.resident.onboarding.initiatives;
-      if (!url) return {};
-      return {
-        className: "bg-no-repeat bg-bottom",
-        style: {
-          backgroundImage: `${ONBOARDING_ILLUSTRATION_OVERLAY}, url(${url})`,
-          backgroundOrigin: "border-box",
-          backgroundSize: "100% auto",
-        },
-      };
-    }
-    case "evenements": {
-      const url = ILLUSTRATIONS.resident.onboarding.evenements;
-      if (!url) return {};
-      return {
-        className: "bg-cover bg-left bg-no-repeat",
-        style: {
-          backgroundImage: `${ONBOARDING_EVENEMENTS_OVERLAY}, url(${url})`,
-        },
-      };
-    }
-    default:
-      return {};
-  }
-}
 
 type Props = {
   open: boolean;
@@ -84,7 +24,6 @@ export function OnboardingModal({ open, onComplete, communeName }: Props) {
 
   const isLast = current === TOTAL - 1;
   const activeSlide = SLIDES[current];
-  const slideBackground = getSlideBackground(activeSlide);
 
   const goNext = useCallback(() => {
     if (isLast) {
@@ -135,7 +74,6 @@ export function OnboardingModal({ open, onComplete, communeName }: Props) {
             Bienvenue sur Vie Locale
           </DialogPrimitive.Title>
 
-          {/* Skip button */}
           {!isLast && (
             <button
               type="button"
@@ -147,22 +85,12 @@ export function OnboardingModal({ open, onComplete, communeName }: Props) {
             </button>
           )}
 
-          {/* Slide content */}
-          <div
-            className={cn(
-              "relative flex-1 overflow-y-auto pt-8 pr-5 pb-4 pl-4 sm:pt-10 sm:pr-6 sm:pb-5 sm:pl-5",
-              slideBackground.className,
-            )}
-            style={slideBackground.style}
-          >
-            <OnboardingSlideContent
-              slide={activeSlide}
-              communeName={communeName}
-              mode="full"
-            />
-          </div>
+          <OnboardingSlideFrame
+            slide={activeSlide}
+            communeName={communeName}
+            className="flex-1"
+          />
 
-          {/* Footer: navigation + progress on one row */}
           <div className="flex shrink-0 items-center gap-2 border-t border-border/40 px-4 py-3 sm:px-5">
             <Button
               type="button"
