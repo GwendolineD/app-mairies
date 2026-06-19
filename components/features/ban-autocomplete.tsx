@@ -89,7 +89,7 @@ export function BanAutocomplete({
   }
 
   async function handleFocus() {
-    if (query.trim().length >= 2) {
+    if (query.trim().length >= 3) {
       const results = await fetchSuggestions(query);
       setSuggestions(results);
       setOpen(results.length > 0);

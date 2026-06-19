@@ -47,9 +47,11 @@ export async function searchMunicipalities(
   query: string,
   limit = 8,
 ): Promise<BanFeature[]> {
-  if (query.trim().length < 2) return [];
+  const trimmed = query.trim();
+  if (trimmed.length < 3) return [];
+  if (!/^[a-zA-Z0-9\u00C0-\u024F]/.test(trimmed)) return [];
   const params = new URLSearchParams({
-    q: query,
+    q: trimmed,
     type: "municipality",
     limit: String(limit),
   });
@@ -64,9 +66,11 @@ export async function searchAddresses(
   citycode?: string,
   limit = 8,
 ): Promise<BanFeature[]> {
-  if (query.trim().length < 3) return [];
+  const trimmed = query.trim();
+  if (trimmed.length < 3) return [];
+  if (!/^[a-zA-Z0-9\u00C0-\u024F]/.test(trimmed)) return [];
   const params = new URLSearchParams({
-    q: query,
+    q: trimmed,
     limit: String(limit),
   });
   if (citycode?.trim()) {

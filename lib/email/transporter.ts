@@ -33,7 +33,14 @@ export function getTransporter(): Transporter | null {
 
   const config = getSmtpConfig();
   if (!config) {
-    console.warn("[email] SMTP not configured (missing SMTP_HOST/USER/PASS)");
+    console.warn(
+      "[email] SMTP not configured — SMTP_HOST:",
+      process.env.SMTP_HOST ? "set" : "MISSING",
+      "| SMTP_USER:",
+      process.env.SMTP_USER ? "set" : "MISSING",
+      "| SMTP_PASS:",
+      process.env.SMTP_PASS ? "set" : "MISSING",
+    );
     return null;
   }
 
@@ -44,6 +51,11 @@ export function getTransporter(): Transporter | null {
     ...(config.user && config.pass
       ? { auth: { user: config.user, pass: config.pass } }
       : {}),
+    tls: {
+      // Infomaniak (and some other providers) may present intermediate certs
+      // that Alpine's minimal CA bundle doesn't trust
+      rejectUnauthorized: process.env.SMTP_REJECT_UNAUTHORIZED !== "false",
+    },
   });
 
   return transporter;

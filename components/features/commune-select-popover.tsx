@@ -44,7 +44,7 @@ export function CommuneSelectPopover({
 
   const fetchResults = useCallback(async (query: string) => {
     const trimmed = query.trim();
-    if (trimmed.length < 2) {
+    if (trimmed.length < 3) {
       setResults([]);
       setLoading(false);
       return;
@@ -86,7 +86,7 @@ export function CommuneSelectPopover({
     setSearch(text);
     clearTimeout(debounceRef.current);
 
-    if (text.trim().length < 2) {
+    if (text.trim().length < 3) {
       setResults([]);
       setLoading(false);
       return;
@@ -114,7 +114,7 @@ export function CommuneSelectPopover({
   }
 
   const showEmpty =
-    search.trim().length >= 2 && !loading && results.length === 0;
+    search.trim().length >= 3 && !loading && results.length === 0;
 
   return (
     <div className="w-full">
@@ -188,9 +188,9 @@ export function CommuneSelectPopover({
               </div>
             ) : null}
 
-            {!loading && search.trim().length < 2 ? (
+            {!loading && search.trim().length < 3 ? (
               <p className="px-3 py-6 text-center text-xs font-medium text-muted">
-                Saisissez au moins 2 caractères pour rechercher
+                Saisissez au moins 3 caractères pour rechercher
               </p>
             ) : null}
 

@@ -160,22 +160,7 @@ export async function sendTrialInvitations(
     }),
   );
 
-  const sentCount = results.filter(
-    (r) => r.status === "fulfilled" && r.value.success,
-  ).length;
-
-  const failures = results.filter(
-    (r) => r.status === "rejected" || (r.status === "fulfilled" && !r.value.success),
-  ).length;
-
-  if (failures > 0 && sentCount === 0) {
-    return {
-      success: false,
-      error: "Aucun email n'a pu être envoyé. Vérifiez la configuration SMTP.",
-    };
-  }
-
-  return { success: true, sentCount };
+  return summarizeInvitationResults(results);
 }
 
 export async function sendTrialInvitationsAsAdmin(
@@ -221,19 +206,40 @@ export async function sendTrialInvitationsAsAdmin(
     }),
   );
 
+  return summarizeInvitationResults(results);
+}
+
+function summarizeInvitationResults(
+  results: PromiseSettledResult<{ success: boolean; error?: string }>[],
+): TrialActionResult & { sentCount?: number } {
   const sentCount = results.filter(
     (r) => r.status === "fulfilled" && r.value.success,
   ).length;
 
-  const failures = results.filter(
-    (r) => r.status === "rejected" || (r.status === "fulfilled" && !r.value.success),
-  ).length;
+  const failedResults = results.filter(
+    (r) =>
+      r.status === "rejected" ||
+      (r.status === "fulfilled" && !r.value.success),
+  );
 
-  if (failures > 0 && sentCount === 0) {
-    return {
-      success: false,
-      error: "Aucun email n'a pu être envoyé. Vérifiez la configuration SMTP.",
-    };
+  if (failedResults.length > 0 && sentCount === 0) {
+    const firstError = failedResults[0];
+    const detail =
+      firstError?.status === "rejected"
+        ? String(firstError.reason)
+        : firstError?.status === "fulfilled"
+          ? firstError.value.error
+          : undefined;
+
+    console.error("[trial-invitation] All emails failed. First error:", detail);
+
+    const userMessage = detail?.includes("not found")
+      ? "Le template d'email est introuvable en base de données. Vérifiez que la migration a été appliquée."
+      : detail === "SMTP not configured"
+        ? "SMTP non configuré. Vérifiez que SMTP_HOST, SMTP_USER et SMTP_PASS sont définis."
+        : `Aucun email n'a pu être envoyé (${detail ?? "erreur inconnue"}). Vérifiez la configuration SMTP.`;
+
+    return { success: false, error: userMessage };
   }
 
   return { success: true, sentCount };
