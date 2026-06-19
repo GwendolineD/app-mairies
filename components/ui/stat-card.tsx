@@ -47,9 +47,6 @@ export function StatCard({
       {hint ? (
         <p className="text-xs font-medium text-muted">{hint}</p>
       ) : null}
-      {href ? (
-        <span className="text-xs font-semibold text-purple">Voir la liste →</span>
-      ) : null}
     </>
   );
 
