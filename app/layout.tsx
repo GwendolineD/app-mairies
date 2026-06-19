@@ -1,11 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Manrope } from "next/font/google";
+import { Manrope, Permanent_Marker } from "next/font/google";
 import { PWA_ICON_VERSION } from "@/lib/constants/pwa-icons";
 import { THEME_COLORS } from "@/lib/constants/theme";
 import "./globals.css";
 
 const manrope = Manrope({
   variable: "--font-manrope",
+  subsets: ["latin"],
+});
+
+const permanentMarker = Permanent_Marker({
+  variable: "--font-permanent-marker",
+  weight: "400",
   subsets: ["latin"],
 });
 
@@ -60,7 +66,7 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
-      className={`${manrope.variable} h-full font-sans antialiased`}
+      className={`${manrope.variable} ${permanentMarker.variable} h-full font-sans antialiased`}
       suppressHydrationWarning
     >
       <body

@@ -5,14 +5,16 @@ type Props = {
   children: ReactNode;
   /** Tailwind color class for the underline SVG (`currentColor`). */
   underlineClassName?: string;
+  className?: string;
 };
 
 export function StylizedUnderline({
   children,
   underlineClassName = "text-pink",
+  className,
 }: Props) {
   return (
-    <span className="relative inline-block pb-1">
+    <span className={cn("relative inline-block pb-1", className)}>
       {children}
       <svg
         className={cn(

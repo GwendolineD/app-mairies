@@ -5,5 +5,9 @@ type Props = {
 };
 
 export function AppNameHighlight({ children }: Props) {
-  return <StylizedUnderline underlineClassName="text-pink">{children}</StylizedUnderline>;
+  return (
+    <StylizedUnderline underlineClassName="text-pink" className="font-brand">
+      {children}
+    </StylizedUnderline>
+  );
 }
