@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,66 @@ import { OnboardingSlideContent, type OnboardingSlideId } from "./onboarding-sli
 
 const SLIDES: OnboardingSlideId[] = ["welcome", "annonces", "initiatives", "evenements"];
 const TOTAL = SLIDES.length;
+
+const ONBOARDING_ILLUSTRATION_OVERLAY =
+  "linear-gradient(rgba(251, 251, 252, 0.75), rgba(251, 251, 252, 0.75))";
+
+const ONBOARDING_EVENEMENTS_OVERLAY =
+  "linear-gradient(rgba(251, 251, 252, 0.80), rgba(251, 251, 252, 0.80))";
+
+function getSlideBackground(slide: OnboardingSlideId): {
+  className?: string;
+  style?: React.CSSProperties;
+} {
+  switch (slide) {
+    case "welcome": {
+      const url = ILLUSTRATIONS.resident.onboarding.welcome;
+      if (!url) return {};
+      return {
+        className: "bg-cover bg-right bg-no-repeat",
+        style: {
+          backgroundImage: `${ONBOARDING_ILLUSTRATION_OVERLAY}, url(${url})`,
+        },
+      };
+    }
+    case "annonces": {
+      const url = ILLUSTRATIONS.resident.onboarding.annonces;
+      if (!url) return {};
+      return {
+        className: "bg-no-repeat",
+        style: {
+          backgroundImage: `url(${url})`,
+          backgroundPosition: "right bottom",
+          backgroundSize: "min(68%, 230px) auto",
+        },
+      };
+    }
+    case "initiatives": {
+      const url = ILLUSTRATIONS.resident.onboarding.initiatives;
+      if (!url) return {};
+      return {
+        className: "bg-no-repeat bg-bottom",
+        style: {
+          backgroundImage: `${ONBOARDING_ILLUSTRATION_OVERLAY}, url(${url})`,
+          backgroundOrigin: "border-box",
+          backgroundSize: "100% auto",
+        },
+      };
+    }
+    case "evenements": {
+      const url = ILLUSTRATIONS.resident.onboarding.evenements;
+      if (!url) return {};
+      return {
+        className: "bg-cover bg-left bg-no-repeat",
+        style: {
+          backgroundImage: `${ONBOARDING_EVENEMENTS_OVERLAY}, url(${url})`,
+        },
+      };
+    }
+    default:
+      return {};
+  }
+}
 
 type Props = {
   open: boolean;
@@ -25,8 +84,7 @@ export function OnboardingModal({ open, onComplete, communeName }: Props) {
 
   const isLast = current === TOTAL - 1;
   const activeSlide = SLIDES[current];
-  const welcomeBackground = ILLUSTRATIONS.resident.onboarding.welcome;
-  const showWelcomeBackground = activeSlide === "welcome" && Boolean(welcomeBackground);
+  const slideBackground = getSlideBackground(activeSlide);
 
   const goNext = useCallback(() => {
     if (isLast) {
@@ -68,7 +126,7 @@ export function OnboardingModal({ open, onComplete, communeName }: Props) {
       <DialogPrimitive.Portal>
         <DialogPrimitive.Backdrop className="fixed inset-0 z-1100 bg-text/40 backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
         <DialogPrimitive.Popup
-          className="fixed inset-x-0 bottom-0 z-1100 mx-auto flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl bg-surface shadow-elevated sm:inset-auto sm:top-1/2 sm:left-1/2 sm:max-h-[min(90dvh,calc(100%-2rem))] sm:w-full sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl"
+          className="fixed inset-x-0 bottom-0 z-1100 mx-auto flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl bg-surface shadow-elevated sm:inset-auto sm:top-1/2 sm:left-1/2 sm:max-h-[min(90dvh,calc(100%-2rem))] sm:w-full sm:max-w-sm sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl"
           ref={containerRef}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
@@ -90,48 +148,39 @@ export function OnboardingModal({ open, onComplete, communeName }: Props) {
           )}
 
           {/* Slide content */}
-          <div className="relative flex-1 overflow-y-auto px-6 py-8 pb-4 sm:px-8 sm:py-10">
-            {showWelcomeBackground ? (
-              <>
-                <Image
-                  src={welcomeBackground}
-                  alt=""
-                  fill
-                  priority
-                  sizes="(max-width: 640px) 100vw, 448px"
-                  className="object-cover object-center"
-                />
-                <div className="absolute inset-0 bg-background/75" aria-hidden />
-              </>
-            ) : null}
-            <div className="relative">
-              <OnboardingSlideContent
-                slide={activeSlide}
-                communeName={communeName}
-                mode="full"
-              />
-            </div>
+          <div
+            className={cn(
+              "relative flex-1 overflow-y-auto pt-8 pr-5 pb-4 pl-4 sm:pt-10 sm:pr-6 sm:pb-5 sm:pl-5",
+              slideBackground.className,
+            )}
+            style={slideBackground.style}
+          >
+            <OnboardingSlideContent
+              slide={activeSlide}
+              communeName={communeName}
+              mode="full"
+            />
           </div>
 
           {/* Footer: navigation + progress on one row */}
-          <div className="flex shrink-0 items-center gap-3 border-t border-border/40 px-6 py-5 sm:px-8">
+          <div className="flex shrink-0 items-center gap-2 border-t border-border/40 px-4 py-3 sm:px-5">
             <Button
               type="button"
               variant="ghost"
-              size="sm"
+              size="xs"
               onClick={goPrev}
               disabled={current === 0}
-              className="shrink-0 gap-1"
+              className="shrink-0"
             >
-              <ChevronLeft className="size-4" />
+              <ChevronLeft className="size-3" />
               Précédent
             </Button>
 
-            <div className="flex min-w-0 flex-1 flex-col items-center gap-2">
-              <span className="text-xs font-medium text-muted">
+            <div className="flex min-w-0 flex-1 flex-col items-center gap-1">
+              <span className="text-[11px] font-medium text-muted">
                 {current + 1}/{TOTAL}
               </span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 {SLIDES.map((_, i) => (
                   <button
                     key={i}
@@ -139,7 +188,7 @@ export function OnboardingModal({ open, onComplete, communeName }: Props) {
                     onClick={() => setCurrent(i)}
                     aria-label={`Aller au slide ${i + 1}`}
                     className={cn(
-                      "size-2.5 cursor-pointer rounded-full transition-all duration-200",
+                      "size-2 cursor-pointer rounded-full transition-all duration-200",
                       i === current
                         ? "scale-110 bg-purple"
                         : "border border-border bg-transparent hover:border-purple/40",
@@ -152,12 +201,12 @@ export function OnboardingModal({ open, onComplete, communeName }: Props) {
             <Button
               type="button"
               variant="primary"
-              size="sm"
+              size="xs"
               onClick={goNext}
-              className="shrink-0 gap-1"
+              className="shrink-0"
             >
               {isLast ? "C'est parti !" : "Suivant"}
-              {!isLast && <ChevronRight className="size-4" />}
+              {!isLast && <ChevronRight className="size-3" />}
             </Button>
           </div>
         </DialogPrimitive.Popup>

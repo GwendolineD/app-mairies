@@ -1,25 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Manrope, Homemade_Apple, Permanent_Marker } from "next/font/google";
+import { homemadeApple, manrope, permanentMarker } from "@/lib/fonts";
 import { PWA_ICON_VERSION } from "@/lib/constants/pwa-icons";
 import { THEME_COLORS } from "@/lib/constants/theme";
 import "./globals.css";
-
-const manrope = Manrope({
-  variable: "--font-manrope",
-  subsets: ["latin"],
-});
-
-const permanentMarker = Permanent_Marker({
-  variable: "--font-permanent-marker",
-  weight: "400",
-  subsets: ["latin"],
-});
-
-const homemadeApple = Homemade_Apple({
-  variable: "--font-homemade-apple",
-  weight: "400",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: {

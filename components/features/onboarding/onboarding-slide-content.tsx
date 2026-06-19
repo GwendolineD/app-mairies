@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { Handshake, Gift, MessageCircle, PartyPopper, HandHeart, Lightbulb, Rocket } from "lucide-react";
+import { Handshake, MessageCircle, PartyPopper, HandHeart, Lightbulb, Rocket } from "lucide-react";
 import { ILLUSTRATIONS } from "@/lib/constants/illustrations";
-import { AssetPlaceholder } from "@/components/ui/asset-placeholder";
+import { homemadeApple } from "@/lib/fonts";
 import { cn } from "@/lib/utils/cn";
 
 export type OnboardingSlideId = "welcome" | "annonces" | "initiatives" | "evenements";
@@ -15,49 +15,33 @@ type Props = {
   mode?: "full" | "compact";
 };
 
-function SlideIllustration({ slide }: { slide: OnboardingSlideId }) {
-  const url = ILLUSTRATIONS.resident.onboarding[slide];
-  if (!url) {
-    return (
-      <AssetPlaceholder
-        description={`Illustration onboarding — ${slide}`}
-        className="mx-auto h-36 w-56 shrink-0"
-      />
-    );
-  }
-  return (
-    <Image
-      src={url}
-      alt=""
-      width={224}
-      height={144}
-      className="mx-auto h-36 w-auto shrink-0 object-contain"
-    />
-  );
-}
-
 function WelcomeSlide({ communeName }: { communeName: string }) {
   const heartUrl = ILLUSTRATIONS.resident.onboarding.heart;
 
   return (
     <div className="flex flex-col items-start text-left">
-      <p className="mb-8 text-2xl">Bienvenue 👋</p>
-      <h2 className="text-xl font-bold text-text">
+      <p className="mb-5 text-2xl font-bold">Bienvenue 👋</p>
+      <h2 className="w-[70%] text-xl font-bold text-purple">
         {communeName} prend vie grâce à vous !
       </h2>
-      <p className="mt-3 text-sm font-medium leading-relaxed text-muted">
+      <p className="mt-3 w-4/5 text-sm font-medium leading-relaxed text-text">
         Ici, vos voisins partagent, s&apos;entraident et font bouger les choses
         ensemble. Rejoignez-les.
       </p>
-      <p className="mt-4 inline-flex -rotate-2 items-center gap-1.5 font-handwritten text-lg text-text/80">
+      <p
+        className={cn(
+          "mt-4 inline-flex -rotate-2 items-center gap-2 text-base font-bold text-text/80",
+          homemadeApple.className,
+        )}
+      >
         Chaque petit geste compte
         {heartUrl ? (
           <Image
             src={heartUrl}
             alt=""
-            width={20}
-            height={20}
-            className="size-5 shrink-0 object-contain"
+            width={36}
+            height={36}
+            className="size-9 shrink-0 object-contain"
           />
         ) : null}
       </p>
@@ -67,32 +51,54 @@ function WelcomeSlide({ communeName }: { communeName: string }) {
 
 function AnnoncesSlide({ mode }: { mode: "full" | "compact" }) {
   return (
-    <div className="flex flex-col">
-      {mode === "full" && <SlideIllustration slide="annonces" />}
-      <h2 className={cn("font-bold text-text", mode === "full" ? "mt-4 text-xl text-center" : "text-base")}>
-        Besoin d&apos;aide ? Envie d&apos;aider ?
+    <div className={cn("flex flex-col", mode === "full" && "items-start text-left")}>
+      <h2
+        className={cn(
+          "font-bold text-text",
+          mode === "full" ? "mb-2 text-2xl" : "text-base",
+        )}
+      >
+        {mode === "full" ? (
+          <>
+            Besoin d&apos;aide ?
+            <br />
+            Envie d&apos;aider ?
+          </>
+        ) : (
+          <>Besoin d&apos;aide ? Envie d&apos;aider ?</>
+        )}
       </h2>
-      <p className={cn("font-medium text-muted", mode === "full" ? "mt-1 text-sm text-center" : "mt-1 text-xs")}>
+      <p
+        className={cn(
+          "font-medium",
+          mode === "full"
+            ? "mt-2 mb-2 w-4/5 text-sm text-purple"
+            : "mt-1 text-xs text-muted",
+        )}
+      >
         En quelques clics, publiez ou répondez.
       </p>
-      <div className={cn("flex flex-col", mode === "full" ? "mt-5 gap-3" : "mt-3 gap-2")}>
+      <div className={cn("flex flex-col", mode === "full" ? "mt-5 w-[85%] gap-4" : "mt-3 w-full gap-2")}>
         <ActionBlock
-          icon={<Handshake className="size-5 text-orange" />}
-          title="Un coup de main, ça change tout"
-          subtitle="Publiez votre demande"
-          mode={mode}
-        />
-        <ActionBlock
-          icon={<Gift className="size-5 text-pink" />}
+          icon={<HandHeart className="size-4 text-pink" />}
           title="Vous avez du temps ou du matériel ?"
           subtitle="Proposez votre aide"
           mode={mode}
+          size="sm"
         />
         <ActionBlock
-          icon={<MessageCircle className="size-5 text-turquoise" />}
+          icon={<Handshake className="size-4 text-orange" />}
+          title="Un coup de main, ça change tout"
+          subtitle="Publiez votre demande"
+          mode={mode}
+          size="sm"
+        />
+        <ActionBlock
+          icon={<MessageCircle className="size-4 text-turquoise" />}
           title="Un voisin a besoin de vous"
           subtitle="Répondez à son annonce"
           mode={mode}
+          size="sm"
         />
       </div>
     </div>
@@ -101,43 +107,68 @@ function AnnoncesSlide({ mode }: { mode: "full" | "compact" }) {
 
 function InitiativesSlide({ mode }: { mode: "full" | "compact" }) {
   return (
-    <div className="flex flex-col">
-      {mode === "full" && <SlideIllustration slide="initiatives" />}
-      <h2 className={cn("font-bold text-text", mode === "full" ? "mt-4 text-xl text-center" : "text-base")}>
-        Une idée ? Partagez-la !
+    <div className={cn("flex flex-col", mode === "full" && "items-start text-left")}>
+      <h2
+        className={cn(
+          "font-bold text-text",
+          mode === "full" ? "mb-3 text-2xl" : "text-base",
+        )}
+      >
+        {mode === "full" ? (
+          <>
+            Une idée ?
+            <br />
+            Partagez-la !
+          </>
+        ) : (
+          <>Une idée ? Partagez-la !</>
+        )}
       </h2>
-      <p className={cn("font-medium text-muted", mode === "full" ? "mt-2 text-sm text-center" : "mt-1 text-xs")}>
+      <p
+        className={cn(
+          "font-medium",
+          mode === "full" ? "mt-[15px] mb-[20px] w-4/5 text-sm text-purple" : "mt-1 text-xs text-muted",
+        )}
+      >
         Un jardin partagé, un vide-grenier, un apéro de quartier…
       </p>
-      <div className={cn("flex flex-col items-center", mode === "full" ? "mt-4 gap-2" : "mt-3 gap-1.5")}>
-        <div className="flex items-center gap-2">
-          <Lightbulb className="size-4 text-sun" />
-          <span className="text-sm font-medium text-text">
-            Vos voisins peuvent la <strong>soutenir</strong>, en <strong>discuter</strong> avec vous, et vous aider à la <strong>concrétiser</strong>.
-          </span>
-        </div>
-        <div className="mt-2 flex items-center gap-2">
-          <Rocket className="size-4 text-purple" />
-          <span className="text-sm font-medium text-muted">
-            Les meilleures initiatives deviennent de vrais événements 🚀
-          </span>
-        </div>
+      <div
+        className={cn(
+          "flex flex-col",
+          mode === "full" ? "mb-[50px] mt-4 w-full gap-4" : "mt-3 items-center gap-1.5",
+        )}
+      >
+        <ActionBlock
+          icon={<Lightbulb className="size-5 text-sun" />}
+          title={
+            <>
+              Vos voisins peuvent la <strong>soutenir</strong>, en <strong>discuter</strong> avec vous, et vous aider à la <strong>concrétiser</strong>.
+            </>
+          }
+          mode={mode}
+        />
+        <ActionBlock
+          icon={<Rocket className="size-5 text-purple" />}
+          title="Les meilleures initiatives deviennent de vrais événements 🚀"
+          mode={mode}
+        />
       </div>
     </div>
   );
 }
 
 function EvenementsSlide({ communeName, mode }: { communeName: string; mode: "full" | "compact" }) {
+  const heartUrl = ILLUSTRATIONS.resident.onboarding.heart;
+
   return (
-    <div className="flex flex-col">
-      {mode === "full" && <SlideIllustration slide="evenements" />}
-      <h2 className={cn("font-bold text-text", mode === "full" ? "mt-4 text-xl text-center" : "text-base")}>
+    <div className={cn("flex flex-col", mode === "full" && "items-start text-left")}>
+      <h2 className={cn("font-bold text-text", mode === "full" ? "mb-3 w-[60%] text-xl" : "text-base")}>
         Restez connecté·e à votre commune
       </h2>
-      <p className={cn("font-medium text-muted", mode === "full" ? "mt-1 text-sm text-center" : "mt-1 text-xs")}>
+      <p className={cn("font-medium", mode === "full" ? "mb-4 mt-2 w-[70%] text-sm text-purple" : "mt-1 text-xs text-muted")}>
         Découvrez les événements près de chez vous
       </p>
-      <div className={cn("flex flex-col", mode === "full" ? "mt-5 gap-3" : "mt-3 gap-2")}>
+      <div className={cn("flex flex-col", mode === "full" ? "mt-5 w-full gap-4" : "mt-3 gap-2")}>
         <ActionBlock
           icon={<PartyPopper className="size-5 text-orange" />}
           title="Participez"
@@ -145,14 +176,41 @@ function EvenementsSlide({ communeName, mode }: { communeName: string; mode: "fu
           mode={mode}
         />
         <ActionBlock
-          icon={<HandHeart className="size-5 text-mint" />}
+          icon={<HandHeart className="size-5 text-[color-mix(in_srgb,var(--mint)_80%,var(--text))]" />}
           title="Donnez un coup de main"
           subtitle="Devenez bénévole"
           mode={mode}
         />
       </div>
-      <p className={cn("italic text-text/80", mode === "full" ? "mt-5 text-center text-base" : "mt-3 text-sm")}>
-        Ensemble, faisons vivre {communeName} 💛
+      <p
+        className={cn(
+          mode === "full"
+            ? cn(
+                "my-6 flex -rotate-2 items-center self-center gap-2 text-base font-bold text-text/80",
+                homemadeApple.className,
+              )
+            : "mt-3 text-sm italic text-text/80",
+        )}
+      >
+        {mode === "full" ? (
+          <>
+            <span className="flex flex-col gap-0.5 text-left">
+              <span>Ensemble,</span>
+              <span>faisons vivre {communeName}</span>
+            </span>
+            {heartUrl ? (
+              <Image
+                src={heartUrl}
+                alt=""
+                width={36}
+                height={36}
+                className="size-9 shrink-0 object-contain"
+              />
+            ) : null}
+          </>
+        ) : (
+          <>Ensemble, faisons vivre {communeName}</>
+        )}
       </p>
     </div>
   );
@@ -163,25 +221,47 @@ function ActionBlock({
   title,
   subtitle,
   mode,
+  size = "default",
 }: {
   icon: React.ReactNode;
-  title: string;
-  subtitle: string;
+  title: React.ReactNode;
+  subtitle?: string;
   mode: "full" | "compact";
+  size?: "default" | "sm";
 }) {
+  const isSmall = size === "sm";
+
   return (
     <div className={cn(
-      "flex items-center gap-3 rounded-xl border border-border/60 bg-warm/50",
-      mode === "full" ? "px-4 py-3" : "px-3 py-2",
+      "flex items-center border border-border/60",
+      isSmall ? "rounded-lg" : "rounded-xl",
+      isSmall ? "gap-2 bg-warm/70 px-3 py-2" : mode === "full" ? "gap-3 bg-warm/70 px-4 py-3" : "gap-2 bg-warm/50 px-3 py-2",
     )}>
       <div className="shrink-0">{icon}</div>
       <div className="min-w-0 flex-1">
-        <p className={cn("font-semibold text-text", mode === "full" ? "text-sm" : "text-xs")}>
-          {title}
-        </p>
-        <p className={cn("text-muted", mode === "full" ? "text-xs" : "text-[11px]")}>
-          {subtitle}
-        </p>
+        {subtitle ? (
+          <>
+            <p className={cn(
+              "font-semibold text-text",
+              isSmall ? "text-xs" : mode === "full" ? "text-sm" : "text-xs",
+            )}>
+              {title}
+            </p>
+            <p className={cn(
+              "text-muted",
+              isSmall ? "text-[11px]" : mode === "full" ? "text-xs" : "text-[11px]",
+            )}>
+              {subtitle}
+            </p>
+          </>
+        ) : (
+          <p className={cn(
+            "font-medium text-text",
+            isSmall ? "text-xs" : mode === "full" ? "text-sm" : "text-xs",
+          )}>
+            {title}
+          </p>
+        )}
       </div>
     </div>
   );
