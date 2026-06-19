@@ -182,6 +182,71 @@ export async function reactivateContent(
   return { success: true };
 }
 
+export async function suspendMembershipByStaff(
+  membershipId: string,
+  reason: string,
+): Promise<ModerationActionResult> {
+  const trimmedReason = reason.trim();
+  if (!membershipId || !trimmedReason) {
+    return { success: false, error: "Paramètres invalides." };
+  }
+
+  const ctx = await requireCommuneStaff();
+  const supabase = await createClient();
+
+  const { data: membership, error: fetchError } = await supabase
+    .from("memberships")
+    .select("id, user_id, commune_id, status")
+    .eq("id", membershipId)
+    .maybeSingle();
+
+  if (fetchError || !membership) {
+    return { success: false, error: "Adhésion introuvable." };
+  }
+
+  if (membership.commune_id !== ctx.communeId) {
+    return { success: false, error: "Cette adhésion n'appartient pas à votre commune." };
+  }
+
+  if (membership.status !== MEMBERSHIP_STATUS.active) {
+    return { success: false, error: "Seule une adhésion active peut être suspendue." };
+  }
+
+  if (membership.user_id === ctx.userId) {
+    return { success: false, error: "Vous ne pouvez pas suspendre votre propre compte." };
+  }
+
+  const now = new Date().toISOString();
+  const { error: updateError } = await supabase
+    .from("memberships")
+    .update({
+      status: MEMBERSHIP_STATUS.suspended,
+      suspended_at: now,
+      suspension_reason: trimmedReason,
+    })
+    .eq("id", membershipId);
+
+  if (updateError) {
+    return { success: false, error: updateError.message };
+  }
+
+  await supabase.from("moderation_actions").insert({
+    actor_user_id: ctx.userId,
+    target_type: "membership",
+    target_id: membershipId,
+    commune_id: membership.commune_id,
+    action: "suspend",
+    reason: trimmedReason,
+  });
+
+  revalidatePath(ROUTES.mairie.habitants);
+  revalidatePath(ROUTES.mairie.signalements);
+  revalidatePath(ROUTES.backoffice.userDetail(membership.user_id));
+  revalidatePath(ROUTES.backoffice.communeDetail(membership.commune_id));
+
+  return { success: true };
+}
+
 export async function reactivateMembership(
   membershipId: string,
 ): Promise<ModerationActionResult> {
@@ -240,9 +305,10 @@ export async function reactivateMembership(
     reason: null,
   });
 
+  revalidatePath(ROUTES.mairie.habitants);
+  revalidatePath(ROUTES.mairie.signalements);
   revalidatePath(ROUTES.backoffice.userDetail(membership.user_id));
   revalidatePath(ROUTES.backoffice.communeDetail(membership.commune_id));
-  revalidatePath(ROUTES.mairie.signalements);
 
   return { success: true };
 }

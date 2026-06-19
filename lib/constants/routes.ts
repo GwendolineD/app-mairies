@@ -104,6 +104,8 @@ export type AdminNavItem = {
   href: string;
   label: string;
   icon: AdminNavIcon;
+  /** Keeps the route in nav config but hides it from sidebar / mobile nav. */
+  hidden?: boolean;
 };
 
 export const MUNICIPALITY_SIDEBAR_STORAGE_KEY = "vl:municipality-sidebar-collapsed";
@@ -112,10 +114,10 @@ export const BACKOFFICE_SIDEBAR_STORAGE_KEY = "vl:backoffice-sidebar-collapsed";
 export const MUNICIPALITY_NAV: readonly AdminNavItem[] = [
   { href: ROUTES.mairie.dashboard, label: "Tableau mairie", icon: "layout-dashboard" },
   { href: ROUTES.mairie.habitants, label: "Habitant·es", icon: "users" },
-  { href: ROUTES.mairie.parametres, label: "Paramètres", icon: "settings" },
+  { href: ROUTES.mairie.parametres, label: "Paramètres", icon: "settings", hidden: true },
   { href: ROUTES.mairie.signalements, label: "Signalements", icon: "flag" },
   { href: ROUTES.mairie.evenements, label: "Événements", icon: "calendar-days" },
-  { href: ROUTES.mairie.abonnement, label: "Abonnement", icon: "credit-card" },
+  { href: ROUTES.mairie.abonnement, label: "Abonnement", icon: "credit-card", hidden: true },
 ];
 
 export const BACKOFFICE_NAV: readonly AdminNavItem[] = [

@@ -1,39 +1,96 @@
-import { requireCommuneStaff } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { HabitantsSearch } from "./_components/habitants-search";
+import { MembershipModerationButton } from "./_components/membership-moderation-button";
+import { MembershipStatusBadge } from "@/components/features/backoffice/membership-status-badge";
+import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
-import { CategoryTag } from "@/components/ui/category-tag";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
+import { requireCommuneStaff } from "@/lib/auth/session";
+import { listCommuneMembersPage } from "@/lib/queries/backoffice-memberships";
+import { formatDay } from "@/lib/utils/date";
+import { createClient } from "@/lib/supabase/server";
 
-export default async function MairieHabitantsPage() {
-  const { communeId } = await requireCommuneStaff();
+export const dynamic = "force-dynamic";
+
+const MAIRIE_HABITANTS_LIST_LIMIT = 500;
+
+function parseSearchQuery(
+  searchParams: Record<string, string | string[] | undefined>,
+): string {
+  const raw = searchParams.q;
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  return (value ?? "").trim();
+}
+
+export default async function MairieHabitantsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const { communeId, userId } = await requireCommuneStaff();
+  const params = await searchParams;
+  const q = parseSearchQuery(params);
 
   const supabase = await createClient();
-
-  const { data } = await supabase
-    .from("memberships")
-    .select("*")
-    .eq("commune_id", communeId)
-    .order("created_at", { ascending: false });
+  const membersPage = await listCommuneMembersPage(supabase, communeId, {
+    q,
+    page: 1,
+    limit: MAIRIE_HABITANTS_LIST_LIMIT,
+  });
 
   return (
     <PageStack>
-      <PageHeading
-        title="Habitant·es suivis localement"
-        subtitle="Les profils nominatifs sont visibles depuis les politiques RLS — cet écran liste l'essentiel : statuts d'adhésion et adresses approximatives."
-      />
+      <PageHeading title="Habitant·es inscrit·es" />
+
+      <div className="flex justify-end">
+        <HabitantsSearch initialQuery={q} />
+      </div>
 
       <div className="space-y-2">
-        {(data ?? []).length === 0 ? (
-          <p className="text-sm font-medium text-muted">Aucune adhésion pour l&apos;instant.</p>
+        {membersPage.items.length === 0 ? (
+          <p className="text-sm font-medium text-muted">
+            {q
+              ? "Aucun·e habitant·e ne correspond à votre recherche."
+              : "Aucune adhésion pour l'instant."}
+          </p>
         ) : (
-          (data ?? []).map((m) => (
-            <Card key={m.id} className="flex flex-wrap justify-between gap-2 p-4 text-sm">
-              <div className="space-y-1">
-                <p className="font-semibold text-text">Adresse : {m.address_street ?? m.address_city}</p>
-                <p className="text-[10px] font-medium text-muted">Postal : {m.address_postcode}</p>
+          membersPage.items.map((member) => (
+            <Card
+              key={member.membershipId}
+              className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-lg p-4"
+            >
+              <Avatar
+                profile={{
+                  first_name: member.firstName,
+                  last_name: member.lastName,
+                  display_name: member.fullName,
+                  avatar_url: member.avatarUrl,
+                }}
+                size="sm"
+              />
+              <div className="min-w-0 space-y-1">
+                <p className="font-semibold text-text">
+                  <span>{member.firstName}</span>
+                  <span className="text-muted"> · </span>
+                  <span>{member.lastName}</span>
+                </p>
+                <p className="text-xs font-medium leading-4 text-subtle">
+                  Membre depuis le {formatDay(member.joinedAt)}
+                </p>
               </div>
-              <CategoryTag label={m.status} className="self-start bg-soft-pink" />
+              <div className="flex flex-col items-end gap-4">
+                <MembershipStatusBadge
+                  status={member.status}
+                  suspendedAt={member.suspendedAt}
+                  suspendedByName={member.suspendedByName}
+                  suspendedReason={member.suspendedReason}
+                />
+                <MembershipModerationButton
+                  membershipId={member.membershipId}
+                  status={member.status}
+                  isSelf={member.userId === userId}
+                />
+              </div>
             </Card>
           ))
         )}

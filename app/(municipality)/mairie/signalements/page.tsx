@@ -1,19 +1,26 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireCommuneStaff } from "@/lib/auth/session";
+import { getReportResolutionLabel, getReportStatusBadgeClassName } from "@/lib/constants/statuses";
 import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
 import { formatShortDate } from "@/lib/utils/format-date";
+import { formatDisplayName } from "@/lib/utils/display-name";
+import {
+  buildReportListQuery,
+  filterReports,
+  hasActiveReportFilters,
+  isReportListUrlCanonical,
+  parseReportListParams,
+} from "@/lib/utils/report-list-params";
 import { ReportActionsClient } from "./_components/report-actions-client";
+import { ReportContextPastille } from "./_components/report-context-pastille";
+import { ReportListToolbar } from "./_components/report-list-toolbar";
 
-const CONTEXT_TYPE_LABELS: Record<string, string> = {
-  announcement: "Annonce",
-  initiative: "Initiative",
-  event: "Événement",
-  user: "Utilisateur",
-};
+export const dynamic = "force-dynamic";
 
 function contextLink(
   contextType: string,
@@ -25,8 +32,31 @@ function contextLink(
   return null;
 }
 
-export default async function MairieSignalementsPage() {
-  const { communeId } = await requireCommuneStaff();
+function resolveReporterName(profile: {
+  display_name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+} | null | undefined): string {
+  if (profile?.first_name && profile?.last_name) {
+    return formatDisplayName(profile.first_name, profile.last_name);
+  }
+  return profile?.display_name ?? "Inconnu";
+}
+
+export default async function MairieSignalementsPage(props: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const { communeId, userId } = await requireCommuneStaff();
+  const rawSearchParams = await props.searchParams;
+
+  if (!isReportListUrlCanonical(rawSearchParams)) {
+    const canonicalParams = parseReportListParams(rawSearchParams);
+    redirect(
+      `${ROUTES.mairie.signalements}${buildReportListQuery(canonicalParams)}`,
+    );
+  }
+
+  const listParams = parseReportListParams(rawSearchParams);
   const supabase = await createClient();
 
   const { data: reports } = await supabase
@@ -37,15 +67,15 @@ export default async function MairieSignalementsPage() {
       )`,
     )
     .eq("commune_id", communeId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: listParams.tri === "oldest" });
 
-  // Fetch content titles in batch
   const contentIds = (reports ?? [])
     .filter((r) => r.context_type !== "user")
     .map((r) => ({ type: r.context_type, id: r.context_id }));
 
   const titleMap: Record<string, string> = {};
   const authorMembershipIdMap: Record<string, string> = {};
+  const announcementTypeMap: Record<string, string> = {};
 
   for (const table of ["announcements", "initiatives", "events"] as const) {
     const ctxType =
@@ -53,16 +83,44 @@ export default async function MairieSignalementsPage() {
       table === "initiatives" ? "initiative" : "event";
     const ids = contentIds.filter((c) => c.type === ctxType).map((c) => c.id);
     if (ids.length > 0) {
+      const selectFields =
+        table === "announcements"
+          ? "id, title, author_membership_id, type"
+          : "id, title, author_membership_id";
       const { data } = await supabase
         .from(table)
-        .select("id, title, author_membership_id")
+        .select(selectFields)
         .in("id", ids);
       for (const row of data ?? []) {
         titleMap[row.id] = row.title;
         authorMembershipIdMap[row.id] = row.author_membership_id;
+        if (table === "announcements" && "type" in row) {
+          announcementTypeMap[row.id] = row.type;
+        }
       }
     }
   }
+
+  const authorUserIdMap: Record<string, string> = {};
+  const authorMembershipIds = [
+    ...new Set(Object.values(authorMembershipIdMap)),
+  ];
+  if (authorMembershipIds.length > 0) {
+    const { data: authorMemberships } = await supabase
+      .from("memberships")
+      .select("id, user_id")
+      .in("id", authorMembershipIds);
+    for (const row of authorMemberships ?? []) {
+      authorUserIdMap[row.id] = row.user_id;
+    }
+  }
+
+  const filteredReports = filterReports(
+    reports ?? [],
+    listParams,
+    announcementTypeMap,
+    titleMap,
+  );
 
   return (
     <PageStack>
@@ -71,76 +129,108 @@ export default async function MairieSignalementsPage() {
         subtitle="Gérez les signalements de contenus et d'utilisateurs de votre commune."
       />
 
+      <ReportListToolbar
+        params={listParams}
+        totalCount={filteredReports.length}
+      />
+
       <div className="space-y-3">
-        {(reports ?? []).length === 0 ? (
-          <Card className="p-6 text-center text-sm text-muted">
-            Aucun signalement pour le moment.
+        {filteredReports.length === 0 ? (
+          <Card className="rounded-2xl p-6 text-center text-sm text-muted">
+            {hasActiveReportFilters(listParams)
+              ? listParams.q
+                ? "Aucun signalement ne correspond à votre recherche."
+                : "Aucun signalement ne correspond à ces filtres."
+              : "Aucun signalement pour le moment."}
+            {hasActiveReportFilters(listParams) ? (
+              <>
+                {" "}
+                <Link
+                  href={`${ROUTES.mairie.signalements}${buildReportListQuery({
+                    tri: listParams.tri,
+                    statuses: ["pending"],
+                    contentTypes: [],
+                    q: "",
+                  })}`}
+                  className="font-semibold text-purple hover:underline"
+                >
+                  Réinitialiser les filtres
+                </Link>
+              </>
+            ) : null}
           </Card>
         ) : (
-          (reports ?? []).map((report) => {
+          filteredReports.map((report) => {
             const reporterProfile = report.reporter_membership?.profiles;
-            const reporterName =
-              reporterProfile?.display_name ??
-              [reporterProfile?.first_name, reporterProfile?.last_name]
-                .filter(Boolean)
-                .join(" ") ??
-              "Inconnu";
+            const reporterName = resolveReporterName(reporterProfile);
             const contentTitle = titleMap[report.context_id] ?? null;
             const link = contextLink(report.context_type, report.context_id);
             const isPending = report.status === "pending";
 
+            const authorMembershipId =
+              authorMembershipIdMap[report.context_id] ?? null;
+            const isAuthorSelf = authorMembershipId
+              ? authorUserIdMap[authorMembershipId] === userId
+              : false;
+
             return (
-              <Card key={report.id} className="space-y-3 p-4">
+              <Card key={report.id} className="gap-3 rounded-2xl p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-purple/10 px-2.5 py-0.5 text-[10px] font-bold uppercase text-purple">
-                      {CONTEXT_TYPE_LABELS[report.context_type] ?? report.context_type}
-                    </span>
-                    {isPending ? (
-                      <span className="rounded-full bg-coral/10 px-2.5 py-0.5 text-[10px] font-bold uppercase text-coral">
-                        En attente
-                      </span>
-                    ) : (
-                      <span className="rounded-full bg-mint/10 px-2.5 py-0.5 text-[10px] font-bold uppercase text-mint">
-                        {report.resolution ?? "Traité"}
-                      </span>
+                  {contentTitle ? (
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                      <ReportContextPastille
+                        contextType={report.context_type}
+                        announcementType={announcementTypeMap[report.context_id]}
+                      />
+                      <p className="text-sm font-semibold text-text">
+                        {contentTitle}
+                        {link && (
+                          <Link
+                            href={link}
+                            className="ml-2 text-xs font-medium text-purple hover:underline"
+                          >
+                            Voir →
+                          </Link>
+                        )}
+                      </p>
+                    </div>
+                  ) : (
+                    <span className="min-w-0 flex-1" aria-hidden />
+                  )}
+                  <span
+                    className={getReportStatusBadgeClassName(
+                      report.status,
+                      report.resolution,
                     )}
-                  </div>
-                  <span className="text-xs text-muted">
-                    {formatShortDate(report.created_at)}
+                  >
+                    {report.status === "pending"
+                      ? "En attente"
+                      : getReportResolutionLabel(report.resolution)}
                   </span>
                 </div>
 
-                {contentTitle && (
-                  <p className="text-sm font-semibold text-text">
-                    {contentTitle}
-                    {link && (
-                      <Link
-                        href={link}
-                        className="ml-2 text-xs font-medium text-purple hover:underline"
-                      >
-                        Voir →
-                      </Link>
-                    )}
-                  </p>
-                )}
-
-                <p className="text-sm text-muted">
+                <p className="my-3 text-sm text-muted">
                   <span className="font-medium text-text">Motif :</span>{" "}
                   {report.reason}
                 </p>
 
-                <p className="text-xs text-subtle">
-                  Signalé par {reporterName}
-                </p>
-
-                {isPending && (
-                  <ReportActionsClient
-                    reportId={report.id}
-                    contextType={report.context_type}
-                    contextId={report.context_id}
-                  />
-                )}
+                <div className="flex flex-wrap items-end justify-between gap-2">
+                  {isPending ? (
+                    <ReportActionsClient
+                      reportId={report.id}
+                      contextType={report.context_type}
+                      contextId={report.context_id}
+                      authorMembershipId={authorMembershipId}
+                      isAuthorSelf={isAuthorSelf}
+                    />
+                  ) : (
+                    <span aria-hidden className="flex-1" />
+                  )}
+                  <span className="ml-auto shrink-0 text-xs text-muted">
+                    Signalé par {reporterName}, le{" "}
+                    {formatShortDate(report.created_at)}
+                  </span>
+                </div>
               </Card>
             );
           })

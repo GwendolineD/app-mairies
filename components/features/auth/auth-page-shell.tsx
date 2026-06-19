@@ -42,15 +42,21 @@ export function AuthPageShell({ children }: Props) {
               <ArrowLeft className="size-5" strokeWidth={2.25} />
             </Link>
             {logo ? (
-              <Image
-                src={logo}
-                alt={`Logo ${APP_NAME}`}
-                width={168}
-                height={48}
-                priority
-                style={{ width: "auto" }}
-                className="mx-auto h-12 object-contain"
-              />
+              <Link
+                href={ROUTES.home}
+                className="mx-auto rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-purple/30"
+                aria-label={`${APP_NAME} — Accueil`}
+              >
+                <Image
+                  src={logo}
+                  alt={`Logo ${APP_NAME}`}
+                  width={168}
+                  height={48}
+                  priority
+                  style={{ width: "auto" }}
+                  className="h-12 object-contain"
+                />
+              </Link>
             ) : null}
           </header>
 

@@ -223,9 +223,10 @@ export function AdminSidebarNav({
   title,
 }: AdminSidebarNavProps) {
   const pathname = usePathname();
+  const visibleNavItems = navItems.filter((item) => !item.hidden);
   const activeHref = resolveActiveNavHref(
     pathname,
-    navItems.map((item) => item.href),
+    visibleNavItems.map((item) => item.href),
   );
 
   return (
@@ -245,7 +246,7 @@ export function AdminSidebarNav({
         <p className="mb-2 px-4 text-lg font-bold leading-7 text-text">{title}</p>
       ) : null}
 
-      {navItems.map(({ href, label, icon }) => {
+      {visibleNavItems.map(({ href, label, icon }) => {
         const Icon = ADMIN_NAV_ICONS[icon];
         return (
           <AdminNavLink
@@ -288,9 +289,10 @@ export function AdminMobileNav({
   backHref = ROUTES.accueil,
 }: AdminMobileNavProps) {
   const pathname = usePathname();
+  const visibleNavItems = navItems.filter((item) => !item.hidden);
   const activeHref = resolveActiveNavHref(
     pathname,
-    navItems.map((item) => item.href),
+    visibleNavItems.map((item) => item.href),
   );
 
   return (
@@ -300,7 +302,7 @@ export function AdminMobileNav({
     >
       <BackToAppLink href={backHref} variant="pill" />
       <div className="flex flex-wrap gap-2">
-        {navItems.map(({ href, label, icon }) => {
+        {visibleNavItems.map(({ href, label, icon }) => {
           const Icon = ADMIN_NAV_ICONS[icon];
           return (
             <AdminNavLink

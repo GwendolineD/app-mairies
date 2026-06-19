@@ -30,6 +30,57 @@ export const REPORT_RESOLUTION = {
   dismissed: "dismissed",
 } as const;
 
+export type ReportResolutionValue =
+  (typeof REPORT_RESOLUTION)[keyof typeof REPORT_RESOLUTION];
+
+const REPORT_RESOLUTION_LABELS: Record<ReportResolutionValue, string> = {
+  content_suspended: "Contenu suspendu",
+  user_suspended: "Auteur suspendu",
+  dismissed: "Ignoré",
+};
+
+const REPORT_STATUS_BADGE_BASE =
+  "ml-auto shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase";
+
+const REPORT_STATUS_BADGE_CLASSES = {
+  pending: `${REPORT_STATUS_BADGE_BASE} bg-coral/10 text-coral`,
+  content_suspended: `${REPORT_STATUS_BADGE_BASE} bg-orange/10 text-orange`,
+  user_suspended: `${REPORT_STATUS_BADGE_BASE} bg-pink/10 text-pink`,
+  dismissed: `${REPORT_STATUS_BADGE_BASE} bg-mint/30 text-mint`,
+  reviewed: `${REPORT_STATUS_BADGE_BASE} bg-purple/10 text-purple`,
+} as const;
+
+export function getReportResolutionLabel(
+  resolution: string | null | undefined,
+): string {
+  if (!resolution) return "Traité";
+  if (resolution in REPORT_RESOLUTION_LABELS) {
+    return REPORT_RESOLUTION_LABELS[resolution as ReportResolutionValue];
+  }
+  return "Traité";
+}
+
+export function getReportStatusBadgeClassName(
+  status: string,
+  resolution: string | null | undefined,
+): string {
+  if (status === "pending") {
+    return REPORT_STATUS_BADGE_CLASSES.pending;
+  }
+
+  if (resolution === REPORT_RESOLUTION.content_suspended) {
+    return REPORT_STATUS_BADGE_CLASSES.content_suspended;
+  }
+  if (resolution === REPORT_RESOLUTION.user_suspended) {
+    return REPORT_STATUS_BADGE_CLASSES.user_suspended;
+  }
+  if (resolution === REPORT_RESOLUTION.dismissed) {
+    return REPORT_STATUS_BADGE_CLASSES.dismissed;
+  }
+
+  return REPORT_STATUS_BADGE_CLASSES.reviewed;
+}
+
 export const MODERATION_ACTION = {
   suspend: "suspend",
   reactivate: "reactivate",
