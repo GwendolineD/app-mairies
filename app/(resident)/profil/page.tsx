@@ -13,8 +13,6 @@ import type { AnnouncementWithAuthor } from "@/lib/queries/announcements";
 import type { InitiativeWithAuthor } from "@/lib/queries/initiatives";
 import { enrichInitiativesWithMeta } from "@/lib/queries/initiatives";
 import type { AgendaEventRecord } from "@/lib/types";
-import { NEIGHBOR_INVITE_TEMPLATE_KEY } from "@/lib/constants/email-templates";
-import { normalizeNeighborInviteTemplate } from "@/lib/utils/email-template";
 import { formatAddressLabel } from "@/lib/utils/format-address";
 
 type SearchParams = Promise<{ tab?: string }> | undefined;
@@ -53,7 +51,6 @@ async function ProfilContent({
     activeInitiativesResult,
     activeEventsResult,
     invitesResult,
-    templateResult,
     notificationPrefs,
     pushPublicKey,
   ] = await Promise.all([
@@ -92,12 +89,6 @@ async function ProfilContent({
       .eq("inviter_membership_id", membershipId)
       .order("created_at", { ascending: false })
       .limit(3),
-    supabase
-      .from("commune_email_templates")
-      .select("subject, preheader, body_markdown, cta_label")
-      .eq("commune_id", communeId)
-      .eq("template_key", NEIGHBOR_INVITE_TEMPLATE_KEY)
-      .maybeSingle(),
     getNotificationPreferences(supabase, ctx.userId),
     getPushPublicKey(),
   ]);
@@ -118,7 +109,6 @@ async function ProfilContent({
     membership.address_city,
   );
 
-  const template = normalizeNeighborInviteTemplate(templateResult.data);
   const inviteCount = invitesResult.count ?? (invitesResult.data?.length ?? 0);
 
   return (
@@ -155,7 +145,6 @@ async function ProfilContent({
       initiatives={initiatives}
       events={events}
       invite={{
-        template,
         senderName: displayName,
         communeName,
         inviteCount,

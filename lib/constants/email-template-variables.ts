@@ -1,3 +1,5 @@
+import { ILLUSTRATIONS } from "@/lib/constants/illustrations";
+
 export const EMAIL_TEMPLATE_VARIABLES: Record<string, string[]> = {
   "cancellation-request-admin": [
     "commune_name",
@@ -46,6 +48,13 @@ export const EMAIL_TEMPLATE_VARIABLES: Record<string, string[]> = {
     "logo_url",
     "app_name",
   ],
+  "neighbor-invite": [
+    "sender_name",
+    "commune_name",
+    "invite_link",
+    "logo_url",
+    "app_name",
+  ],
 };
 
 export function getEmailTemplateVariables(slug: string): string[] {
@@ -69,7 +78,9 @@ export function getEmailTemplateMockValue(variable: string): string {
     reason: "Contenu inapproprié ou trompeur.",
     report_date: "17 juin 2026",
     moderation_url: "https://app.vielocale.fr/mairie/signalements",
-    logo_url: "https://via.placeholder.com/120x40?text=Vie+Locale",
+    sender_name: "Marie Dupont",
+    invite_link: "http://localhost:3000/inscription?invite=abc123def456",
+    logo_url: ILLUSTRATIONS.auth.logoHorizontal,
     app_name: "Vie Locale",
   };
   return mocks[variable] ?? `[${variable}]`;

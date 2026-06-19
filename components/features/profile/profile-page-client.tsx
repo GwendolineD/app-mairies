@@ -27,7 +27,6 @@ import type {
   AgendaEventRecord,
   NotificationPreferences,
 } from "@/lib/types";
-import type { NeighborInviteTemplateView } from "@/lib/utils/email-template";
 
 type ProfileData = {
   displayName: string;
@@ -53,7 +52,6 @@ type MembershipData = {
 };
 
 type InviteData = {
-  template: NeighborInviteTemplateView;
   senderName: string;
   communeName: string;
   inviteCount: number;
@@ -116,7 +114,6 @@ export function ProfilePageClient({
 
         <aside className="space-y-5 px-4 md:px-0">
           <NeighborInviteBlock
-            template={invite.template}
             senderName={invite.senderName}
             communeName={invite.communeName}
             inviteCount={invite.inviteCount}

@@ -8,7 +8,6 @@ import {
   createNeighborInvite,
   type NeighborInviteState,
 } from "@/lib/actions/messages";
-import type { NeighborInviteTemplateView } from "@/lib/utils/email-template";
 import { APP_NAME } from "@/lib/constants/app";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -16,7 +15,6 @@ import { Input } from "@/components/ui/form-field";
 import { ILLUSTRATIONS } from "@/lib/constants/illustrations";
 
 type Props = {
-  template: NeighborInviteTemplateView;
   senderName: string;
   communeName: string;
   inviteCount: number;
