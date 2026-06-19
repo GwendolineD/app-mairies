@@ -8,7 +8,7 @@ export const ILLUSTRATIONS = {
 
   auth: {
     background:
-      "https://res.cloudinary.com/du3ko16j1/image/upload/v1779987275/app-mairies/illustrations/autres/accueil-bg3_nnlo1u.png",
+      "https://res.cloudinary.com/du3ko16j1/image/upload/v1781859089/app-mairies/illustrations/autres/accueil-bg3_wth5dx.png",
     logoHorizontal:
       "https://res.cloudinary.com/du3ko16j1/image/upload/v1781795228/app-mairies/logos/logo-horizontal_uxovbe.png",
     inscription: {
@@ -29,7 +29,7 @@ export const ILLUSTRATIONS = {
     },
     onboarding: {
       welcome:
-        "https://res.cloudinary.com/du3ko16j1/image/upload/v1779987275/app-mairies/illustrations/autres/accueil-bg3_nnlo1u.png",
+        "https://res.cloudinary.com/du3ko16j1/image/upload/v1781859089/app-mairies/illustrations/autres/accueil-bg3_wth5dx.png",
       heart:
         "https://res.cloudinary.com/du3ko16j1/image/upload/v1781848731/app-mairies/illustrations/autres/coeur_n9sseg.png",
       annonces:

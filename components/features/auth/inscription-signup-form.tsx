@@ -44,11 +44,13 @@ type AddressDraft = {
 type Props = {
   prefillInseeCode?: string;
   prefillTrialCode?: string;
+  prefillEmail?: string;
 };
 
 export function InscriptionSignupForm({
   prefillInseeCode,
   prefillTrialCode,
+  prefillEmail,
 }: Props = {}) {
   const { email, password, setCredentials } = useAuthCredentials();
   const [communeFeature, setCommuneFeature] = useState<BanFeature | null>(null);
@@ -72,6 +74,12 @@ export function InscriptionSignupForm({
   );
 
   const prefillDone = useRef(false);
+
+  useEffect(() => {
+    if (prefillEmail && !email) {
+      setCredentials({ email: prefillEmail });
+    }
+  }, [prefillEmail, email, setCredentials]);
 
   useEffect(() => {
     if (!prefillInseeCode || prefillDone.current) return;

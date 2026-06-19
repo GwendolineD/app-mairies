@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import { toast } from "sonner";
 import { sendContextMessage } from "@/lib/actions/messages";
 import { ROUTES } from "@/lib/constants/routes";
 import { Button } from "@/components/ui/button";
@@ -60,11 +61,13 @@ export function ContactAnnouncementButton({
       const result = await sendContextMessage(formData);
       if (result.error) {
         setError(result.error);
+        toast.error(result.error);
         return;
       }
       if (result.conversationId) {
         setSentConversationId(result.conversationId);
         formRef.current?.reset();
+        toast.success("Message envoyé !");
       }
     });
   }

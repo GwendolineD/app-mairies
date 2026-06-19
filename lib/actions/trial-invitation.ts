@@ -148,16 +148,16 @@ export async function sendTrialInvitations(
 
   const emails = parsed.data;
   const baseUrl = getAppUrl();
-  const signupUrl = `${baseUrl}/inscription?commune=${encodeURIComponent(commune.insee_code)}&code=${encodeURIComponent(commune.trial_access_code)}`;
 
   const results = await Promise.allSettled(
-    emails.map((email) =>
-      sendTemplatedEmail(email, "trial-invitation", {
+    emails.map((email) => {
+      const signupUrl = `${baseUrl}/inscription?commune=${encodeURIComponent(commune.insee_code)}&code=${encodeURIComponent(commune.trial_access_code!)}&email=${encodeURIComponent(email)}`;
+      return sendTemplatedEmail(email, "trial-invitation", {
         commune_name: commune.name,
         access_code: commune.trial_access_code!,
         signup_url: signupUrl,
-      }),
-    ),
+      });
+    }),
   );
 
   const sentCount = results.filter(
@@ -209,16 +209,16 @@ export async function sendTrialInvitationsAsAdmin(
 
   const emails = parsed.data;
   const baseUrl = getAppUrl();
-  const signupUrl = `${baseUrl}/inscription?commune=${encodeURIComponent(commune.insee_code)}&code=${encodeURIComponent(commune.trial_access_code)}`;
 
   const results = await Promise.allSettled(
-    emails.map((email) =>
-      sendTemplatedEmail(email, "trial-invitation", {
+    emails.map((email) => {
+      const signupUrl = `${baseUrl}/inscription?commune=${encodeURIComponent(commune.insee_code)}&code=${encodeURIComponent(commune.trial_access_code!)}&email=${encodeURIComponent(email)}`;
+      return sendTemplatedEmail(email, "trial-invitation", {
         commune_name: commune.name,
         access_code: commune.trial_access_code!,
         signup_url: signupUrl,
-      }),
-    ),
+      });
+    }),
   );
 
   const sentCount = results.filter(

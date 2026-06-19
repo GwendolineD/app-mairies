@@ -7,12 +7,14 @@ export default async function InscriptionPage(props: {
   const sp = (await props.searchParams) ?? {};
   const prefillCommune = typeof sp.commune === "string" ? sp.commune : undefined;
   const prefillCode = typeof sp.code === "string" ? sp.code : undefined;
+  const prefillEmail = typeof sp.email === "string" ? sp.email : undefined;
 
   return (
     <InscriptionLayoutShell>
       <InscriptionSignupForm
         prefillInseeCode={prefillCommune}
         prefillTrialCode={prefillCode}
+        prefillEmail={prefillEmail}
       />
     </InscriptionLayoutShell>
   );
