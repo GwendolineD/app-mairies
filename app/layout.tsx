@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { APP_NAME } from "@/lib/constants/app";
 import { homemadeApple, manrope, permanentMarker } from "@/lib/fonts";
 import { PWA_ICON_VERSION } from "@/lib/constants/pwa-icons";
 import { THEME_COLORS } from "@/lib/constants/theme";
@@ -6,8 +7,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Tous Voisins",
-    template: "%s | Tous Voisins",
+    default: APP_NAME,
+    template: `%s | ${APP_NAME}`,
   },
   description: "Découvrir, Partager, S'entraider — la vie de votre commune",
   manifest: "/manifest.webmanifest",
@@ -40,7 +41,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Tous Voisins",
+    title: APP_NAME,
   },
 };
 

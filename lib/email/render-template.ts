@@ -1,3 +1,4 @@
+import { APP_NAME } from "@/lib/constants/app";
 import { createServiceClient } from "@/lib/supabase/server";
 
 export type TemplateVariables = Record<string, string | number | undefined>;
@@ -8,7 +9,7 @@ export type RenderedTemplate = {
 };
 
 const GLOBAL_VARIABLES: TemplateVariables = {
-  app_name: "Vie Locale",
+  app_name: APP_NAME,
 };
 
 function getGlobalVariables(): TemplateVariables {

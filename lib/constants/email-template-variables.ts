@@ -1,3 +1,4 @@
+import { APP_NAME } from "@/lib/constants/app";
 import { ILLUSTRATIONS } from "@/lib/constants/illustrations";
 
 export const EMAIL_TEMPLATE_VARIABLES: Record<string, string[]> = {
@@ -81,7 +82,7 @@ export function getEmailTemplateMockValue(variable: string): string {
     sender_name: "Marie Dupont",
     invite_link: "http://localhost:3000/inscription?invite=abc123def456",
     logo_url: ILLUSTRATIONS.auth.logoHorizontal,
-    app_name: "Vie Locale",
+    app_name: APP_NAME,
   };
   return mocks[variable] ?? `[${variable}]`;
 }
