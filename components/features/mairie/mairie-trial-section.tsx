@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useState, useTransition } from "react";
-import { Copy, Mail, RefreshCw, Users } from "lucide-react";
+import { useMemo, useState, useTransition } from "react";
+import { Copy, Loader2, Mail, RefreshCw, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
@@ -11,6 +11,7 @@ import {
   sendTrialInvitations,
 } from "@/lib/actions/trial-invitation";
 import type { AccessStatus } from "@/lib/types";
+import { hasAtLeastOneValidEmail } from "@/lib/utils/parse-email-list";
 
 type Props = {
   communeId: string;
@@ -32,7 +33,12 @@ export function MairieTrialSection({
   const [inviteOpen, setInviteOpen] = useState(false);
   const [emails, setEmails] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [sendingInvites, setSendingInvites] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const canSendInvites = useMemo(
+    () => hasAtLeastOneValidEmail(emails),
+    [emails],
+  );
 
   if (accessStatus !== "trial") return null;
 
@@ -55,8 +61,9 @@ export function MairieTrialSection({
     });
   };
 
-  const handleSendInvitations = () => {
-    startTransition(async () => {
+  const handleSendInvitations = async () => {
+    setSendingInvites(true);
+    try {
       const res = await sendTrialInvitations(communeId, emails);
       if (!res.success) {
         setFeedback(res.error);
@@ -65,7 +72,9 @@ export function MairieTrialSection({
         setEmails("");
         setInviteOpen(false);
       }
-    });
+    } finally {
+      setSendingInvites(false);
+    }
   };
 
   return (
@@ -153,7 +162,7 @@ export function MairieTrialSection({
             Toute personne tentant de s&apos;inscrire avec l&apos;ancien code
             sera bloquée. Les adhérent·es existant·es ne sont pas affecté·es.
           </p>
-          <div className="flex gap-2">
+          <div className="flex justify-end gap-2">
             <Button
               variant="ghost"
               size="sm"
@@ -192,21 +201,26 @@ export function MairieTrialSection({
               onChange={(e) => setEmails(e.target.value)}
             />
           </FormField>
-          <div className="flex gap-2">
+          <div className="flex justify-end gap-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setInviteOpen(false)}
+              disabled={sendingInvites}
             >
               Annuler
             </Button>
             <Button
               size="sm"
               onClick={handleSendInvitations}
-              disabled={isPending || !emails.trim()}
+              disabled={sendingInvites || !canSendInvites}
             >
-              <Mail className="size-4" />
-              Envoyer
+              {sendingInvites ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <Mail className="size-4" aria-hidden />
+              )}
+              {sendingInvites ? "Envoi…" : "Envoyer"}
             </Button>
           </div>
         </div>

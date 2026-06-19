@@ -14,7 +14,12 @@ export const PROFILE_TABS = [
   { key: "annonces", label: "Annonces", icon: Megaphone },
   { key: "initiatives", label: "Initiatives", icon: Sparkles },
   { key: "evenements", label: "Événements", icon: CalendarDays },
-  { key: "participations", label: "Participations", icon: HeartHandshake },
+  {
+    key: "participations",
+    label: "Participations",
+    icon: HeartHandshake,
+    hidden: true,
+  },
   { key: "parametres", label: "Paramètres", icon: Settings },
 ] as const;
 
@@ -56,7 +61,7 @@ export function ProfileTabs({ activeTab }: { activeTab: ProfileTabKey }) {
       className="mt-2.5 flex gap-0 overflow-x-auto border-b border-border md:gap-8"
       aria-label="Sections du profil"
     >
-      {PROFILE_TABS.map((tab) => (
+      {PROFILE_TABS.filter((tab) => !("hidden" in tab && tab.hidden)).map((tab) => (
         <ProfileTabLink key={tab.key} tab={tab} active={tab.key === activeTab} />
       ))}
     </nav>

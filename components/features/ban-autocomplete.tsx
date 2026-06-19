@@ -230,7 +230,7 @@ export function BanAutocomplete({
                     "w-full cursor-pointer px-4 py-2.5 text-left hover:bg-warm",
                     isActive && "bg-warm",
                   )}
-                  onMouseDown={() => selectSuggestion(feature)}
+                  onPointerDown={() => selectSuggestion(feature)}
                   onMouseEnter={() => setActiveIndex(index)}
                 >
                   <span className="block text-sm font-medium text-text">{streetLine}</span>

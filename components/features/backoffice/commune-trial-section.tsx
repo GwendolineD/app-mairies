@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useState, useTransition } from "react";
-import { Copy, Mail, RefreshCw, Users } from "lucide-react";
+import { useCallback, useMemo, useState, useTransition } from "react";
+import { Copy, Loader2, Mail, RefreshCw, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FormField, Input } from "@/components/ui/form-field";
@@ -12,6 +12,7 @@ import {
   updateTrialMaxMembers,
 } from "@/lib/actions/trial-invitation";
 import type { AccessStatus } from "@/lib/types";
+import { hasAtLeastOneValidEmail } from "@/lib/utils/parse-email-list";
 
 type Props = {
   communeId: string;
@@ -34,9 +35,14 @@ export function CommuneTrialSection({
   const [emails, setEmails] = useState("");
   const [maxMembers, setMaxMembers] = useState(String(trialMaxMembers));
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [sendingInvites, setSendingInvites] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const isTrial = accessStatus === "trial";
+  const canSendInvites = useMemo(
+    () => hasAtLeastOneValidEmail(emails),
+    [emails],
+  );
 
   const copyCode = useCallback(async () => {
     if (!trialAccessCode) return;
@@ -57,8 +63,9 @@ export function CommuneTrialSection({
     });
   }, [communeId]);
 
-  const handleSendInvitations = useCallback(() => {
-    startTransition(async () => {
+  const handleSendInvitations = useCallback(async () => {
+    setSendingInvites(true);
+    try {
       const res = await sendTrialInvitationsAsAdmin(communeId, emails);
       if (!res.success) {
         setFeedback(res.error);
@@ -67,7 +74,9 @@ export function CommuneTrialSection({
         setEmails("");
         setInviteOpen(false);
       }
-    });
+    } finally {
+      setSendingInvites(false);
+    }
   }, [communeId, emails]);
 
   const handleUpdateMaxMembers = useCallback(() => {
@@ -191,7 +200,7 @@ export function CommuneTrialSection({
             bloquée à partir de maintenant. Les adhérent·es existant·es ne sont pas
             affecté·es.
           </p>
-          <div className="flex gap-2">
+          <div className="flex justify-end gap-2">
             <Button
               variant="ghost"
               size="sm"
@@ -230,21 +239,26 @@ export function CommuneTrialSection({
               onChange={(e) => setEmails(e.target.value)}
             />
           </FormField>
-          <div className="flex gap-2">
+          <div className="flex justify-end gap-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setInviteOpen(false)}
+              disabled={sendingInvites}
             >
               Annuler
             </Button>
             <Button
               size="sm"
               onClick={handleSendInvitations}
-              disabled={isPending || !emails.trim()}
+              disabled={sendingInvites || !canSendInvites}
             >
-              <Mail className="size-4" />
-              Envoyer
+              {sendingInvites ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <Mail className="size-4" aria-hidden />
+              )}
+              {sendingInvites ? "Envoi…" : "Envoyer"}
             </Button>
           </div>
         </div>
