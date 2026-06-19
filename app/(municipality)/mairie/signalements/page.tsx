@@ -12,6 +12,7 @@ import { formatDisplayName } from "@/lib/utils/display-name";
 import {
   buildReportListQuery,
   filterReports,
+  getReportContextLabel,
   hasActiveReportFilters,
   isReportListUrlCanonical,
   parseReportListParams,
@@ -19,6 +20,7 @@ import {
 import { ReportActionsClient } from "./_components/report-actions-client";
 import { ReportContextPastille } from "./_components/report-context-pastille";
 import { ReportListToolbar } from "./_components/report-list-toolbar";
+import { ReportRelatedCountLink } from "./_components/report-related-count-link";
 
 export const dynamic = "force-dynamic";
 
@@ -115,6 +117,13 @@ export default async function MairieSignalementsPage(props: {
     }
   }
 
+  const reportCountByContext = new Map<string, number>();
+  for (const report of reports ?? []) {
+    if (report.context_type === "user") continue;
+    const key = `${report.context_type}:${report.context_id}`;
+    reportCountByContext.set(key, (reportCountByContext.get(key) ?? 0) + 1);
+  }
+
   const filteredReports = filterReports(
     reports ?? [],
     listParams,
@@ -173,6 +182,12 @@ export default async function MairieSignalementsPage(props: {
               ? authorUserIdMap[authorMembershipId] === userId
               : false;
 
+            const contextKey = `${report.context_type}:${report.context_id}`;
+            const relatedCount = reportCountByContext.get(contextKey) ?? 1;
+            const contextLabel = getReportContextLabel(report.context_type);
+            const showRelatedLink =
+              relatedCount > 1 && contentTitle && contextLabel !== null;
+
             return (
               <Card key={report.id} className="gap-3 rounded-2xl p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -208,6 +223,15 @@ export default async function MairieSignalementsPage(props: {
                       : getReportResolutionLabel(report.resolution)}
                   </span>
                 </div>
+
+                {showRelatedLink ? (
+                  <ReportRelatedCountLink
+                    count={relatedCount}
+                    contextLabel={contextLabel}
+                    title={contentTitle}
+                    tri={listParams.tri}
+                  />
+                ) : null}
 
                 <p className="my-3 text-sm text-muted">
                   <span className="font-medium text-text">Motif :</span>{" "}

@@ -130,6 +130,25 @@ export function buildReportListQuery(
   return `?${sp.toString()}`;
 }
 
+export function getReportContextLabel(contextType: string): string | null {
+  if (contextType === "announcement") return "cette annonce";
+  if (contextType === "initiative") return "cette initiative";
+  if (contextType === "event") return "cet événement";
+  return null;
+}
+
+export function buildRelatedReportsListQuery(
+  title: string,
+  tri: SortMode,
+): string {
+  return buildReportListQuery({
+    tri,
+    statuses: [],
+    contentTypes: [],
+    q: title,
+  });
+}
+
 export function isReportListUrlCanonical(
   searchParams: Record<string, string | string[] | undefined>,
 ): boolean {
