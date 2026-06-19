@@ -27,7 +27,7 @@ export function AuthHeroContent({ className }: Props) {
           height={96}
           priority
           style={{ width: "auto" }}
-          className="h-20 max-w-[min(100%,20rem)] shrink-0 object-contain object-left md:ml-12 md:h-24 md:max-w-[22rem]"
+          className="h-16 max-w-[min(100%,16rem)] shrink-0 object-contain object-left md:ml-12 md:h-20 md:max-w-[18rem]"
         />
       ) : null}
 

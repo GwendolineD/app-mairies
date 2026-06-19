@@ -17,27 +17,32 @@ const permanentMarker = Permanent_Marker({
 
 export const metadata: Metadata = {
   title: {
-    default: "Vie Locale",
-    template: "%s | Vie Locale",
+    default: "Tous Voisins",
+    template: "%s | Tous Voisins",
   },
   description: "Découvrir, Partager, S'entraider — la vie de votre commune",
   manifest: "/manifest.webmanifest",
   icons: {
     apple: [
       {
-        url: `/apple-touch-icon.png?v=${PWA_ICON_VERSION}`,
+        url: "/apple-touch-icon.png",
         sizes: "180x180",
         type: "image/png",
       },
     ],
     icon: [
       {
-        url: `/icons/icon-192.png?v=${PWA_ICON_VERSION}`,
+        url: `/favicon-16x16.png?v=${PWA_ICON_VERSION}`,
+        sizes: "16x16",
+        type: "image/png",
+      },
+      {
+        url: "/icons/icon-192.png",
         sizes: "192x192",
         type: "image/png",
       },
       {
-        url: `/icons/icon-512.png?v=${PWA_ICON_VERSION}`,
+        url: "/icons/icon-512.png",
         sizes: "512x512",
         type: "image/png",
       },

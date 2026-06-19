@@ -52,11 +52,11 @@ export function AuthFeaturesBlock({
           {title}
         </h2>
       ) : null}
-      <ul className="grid grid-cols-3 gap-4 md:gap-6">
+      <ul className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-6">
         {FEATURES.map((feature) => (
           <li
             key={feature.title}
-            className="flex min-w-0 flex-col items-center gap-2 text-center"
+            className="flex min-w-0 flex-row items-center gap-3 text-left md:flex-col md:items-center md:gap-2 md:text-center"
           >
             <div
               className={cn(
@@ -70,11 +70,11 @@ export function AuthFeaturesBlock({
                 aria-hidden
               />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-xs font-bold text-text md:text-sm">
                 {feature.title}
               </p>
-              <p className="mt-0.5 hidden text-[9px] font-medium leading-snug text-muted md:block md:text-[10px]">
+              <p className="mt-0.5 text-[10px] font-medium leading-snug text-muted md:text-[10px]">
                 {feature.description}
               </p>
             </div>
