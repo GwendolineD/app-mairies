@@ -39,8 +39,24 @@ export async function renderTemplate(
     .eq("slug", slug)
     .maybeSingle();
 
-  if (error || !template) {
-    console.error(`[email] Template "${slug}" not found:`, error?.message);
+  if (error) {
+    console.error(
+      `[email] Template "${slug}" query error:`,
+      error.message,
+      "| code:", error.code,
+      "| hint:", error.hint,
+      "| SUPABASE_SERVICE_ROLE_KEY set:", !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      "| NEXT_PUBLIC_SUPABASE_URL:", process.env.NEXT_PUBLIC_SUPABASE_URL,
+    );
+    return null;
+  }
+
+  if (!template) {
+    console.error(
+      `[email] Template "${slug}" returned null (no matching row).`,
+      "| SUPABASE_SERVICE_ROLE_KEY set:", !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      "| NEXT_PUBLIC_SUPABASE_URL:", process.env.NEXT_PUBLIC_SUPABASE_URL,
+    );
     return null;
   }
 
