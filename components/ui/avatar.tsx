@@ -17,7 +17,7 @@ type Props = {
   className?: string;
 };
 
-/** Round avatar — shows the photo when available, gradient initials otherwise. */
+/** Round avatar — shows the photo when available, gradient initials otherwise.. */
 export function Avatar({ profile, size = "md", className }: Props) {
   if (profile?.avatar_url) {
     return (
