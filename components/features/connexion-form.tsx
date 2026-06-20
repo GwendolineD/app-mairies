@@ -28,7 +28,7 @@ export function ConnexionForm({
       : undefined);
 
   return (
-    <div className="mx-auto flex w-full max-w-[500px] flex-1 flex-col rounded-3xl bg-surface px-8 py-14 shadow-elevated md:min-h-0 md:px-12 md:py-16">
+    <div className="mx-auto flex w-full max-w-[500px] flex-1 flex-col rounded-none bg-transparent px-0 py-0 shadow-none md:min-h-0 md:rounded-3xl md:bg-surface md:px-12 md:py-16 md:shadow-elevated">
       <div className="flex shrink-0 flex-col items-center text-center">
         <div className="mb-3 flex size-11 items-center justify-center rounded-full bg-purple/15 md:size-12">
           <Lock

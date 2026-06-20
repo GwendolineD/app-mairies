@@ -153,7 +153,7 @@ export function AnnouncementListToolbar({
       </div>
 
       {/* Mobile: view toggle + create button */}
-      <div className="flex items-center justify-between gap-3 md:hidden">
+      <div className="mb-4 flex items-center justify-between gap-3 md:mb-0 md:hidden">
         {viewToggle}
         {createButtonMobile}
       </div>

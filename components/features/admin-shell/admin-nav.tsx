@@ -198,10 +198,38 @@ function BackToAppLink({
   return (
     <Link
       href={href}
-      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2 text-xs font-semibold text-purple transition hover:bg-warm"
+      className="inline-flex items-center gap-1.5 text-xs font-semibold text-purple transition hover:text-purple/80"
     >
       <Icon className="size-3.5 shrink-0" aria-hidden />
       {label}
+    </Link>
+  );
+}
+
+function AdminMobileTabLink({
+  href,
+  label,
+  icon: Icon,
+  active,
+}: {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  active: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "relative flex min-h-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[10px] font-semibold leading-tight transition",
+        active
+          ? "text-coral after:absolute after:inset-x-0 after:top-0 after:h-0.5 after:bg-coral"
+          : "text-text hover:text-purple",
+      )}
+      aria-current={active ? "page" : undefined}
+    >
+      <Icon className="size-5 shrink-0" aria-hidden />
+      <span className="w-full truncate text-center">{label}</span>
     </Link>
   );
 }
@@ -283,11 +311,21 @@ type AdminMobileNavProps = {
   backHref?: string;
 };
 
-/** Mobile only — horizontal pill nav (< md). */
-export function AdminMobileNav({
-  navItems,
+/** Mobile only — back link below header (< md). */
+export function AdminMobileBackBar({
   backHref = ROUTES.accueil,
-}: AdminMobileNavProps) {
+}: Pick<AdminMobileNavProps, "backHref">) {
+  return (
+    <div className="shrink-0 border-b border-border/60 px-5 py-3 md:hidden">
+      <BackToAppLink href={backHref} variant="pill" />
+    </div>
+  );
+}
+
+/** Mobile only — fixed bottom tab bar (< md). */
+export function AdminMobileBottomNav({
+  navItems,
+}: Pick<AdminMobileNavProps, "navItems">) {
   const pathname = usePathname();
   const visibleNavItems = navItems.filter((item) => !item.hidden);
   const activeHref = resolveActiveNavHref(
@@ -297,25 +335,25 @@ export function AdminMobileNav({
 
   return (
     <nav
-      className="flex flex-col gap-3 border-b border-border/60 px-4 py-4 md:hidden"
+      className={cn(
+        "fixed inset-x-0 bottom-0 z-[1100] flex w-full items-stretch border-t border-border/80 bg-surface/95 backdrop-blur md:hidden",
+        "supports-[backdrop-filter]:bg-surface/80",
+        "pb-[max(env(safe-area-inset-bottom),8px)]",
+      )}
       aria-label="Navigation administration"
     >
-      <BackToAppLink href={backHref} variant="pill" />
-      <div className="flex flex-wrap gap-2">
-        {visibleNavItems.map(({ href, label, icon }) => {
-          const Icon = ADMIN_NAV_ICONS[icon];
-          return (
-            <AdminNavLink
-              key={href}
-              href={href}
-              label={label}
-              icon={Icon}
-              active={href === activeHref}
-              variant="pill"
-            />
-          );
-        })}
-      </div>
+      {visibleNavItems.map(({ href, label, icon }) => {
+        const Icon = ADMIN_NAV_ICONS[icon];
+        return (
+          <AdminMobileTabLink
+            key={href}
+            href={href}
+            label={label}
+            icon={Icon}
+            active={href === activeHref}
+          />
+        );
+      })}
     </nav>
   );
 }

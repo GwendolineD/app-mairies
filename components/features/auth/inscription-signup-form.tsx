@@ -192,7 +192,7 @@ export function InscriptionSignupForm({
 
   return (
     <>
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-3xl bg-surface px-8 py-7 shadow-elevated md:px-12 md:py-8">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-none bg-transparent px-0 py-0 shadow-none md:rounded-3xl md:bg-surface md:px-12 md:py-8 md:shadow-elevated">
         <div className="flex shrink-0 flex-col items-center text-center">
           <div className="mb-3 flex size-11 items-center justify-center rounded-full bg-purple/15 md:size-12">
             <Users
@@ -303,14 +303,19 @@ export function InscriptionSignupForm({
               disabled={!communeActive || !communeFeature}
             />
 
-            <div className="grid grid-cols-4 gap-3">
-              <FormField label="Code postal" className="col-span-1">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+              <FormField
+                label="Code postal"
+                className="w-2/5 md:col-span-1 md:w-auto"
+                labelClassName="whitespace-nowrap"
+              >
                 <Input
                   name="addressPostcode"
                   required
                   autoComplete="postal-code"
                   inputMode="numeric"
                   placeholder="27000"
+                  className="text-right md:text-left"
                   value={addr.postcode}
                   onChange={(e) =>
                     setAddr((prev) => ({ ...prev, postcode: e.target.value }))
@@ -319,7 +324,7 @@ export function InscriptionSignupForm({
                 />
               </FormField>
 
-              <FormField label="Lieu-dit (optionnel)" className="col-span-3">
+              <FormField label="Lieu-dit (optionnel)" className="md:col-span-3">
                 <Input
                   name="addressLieuDit"
                   autoComplete="off"
@@ -398,7 +403,7 @@ export function InscriptionSignupForm({
                     href={PRIVACY_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="cursor-pointer text-[9px] font-semibold text-pink hover:underline md:text-[10px]"
+                    className="cursor-pointer font-semibold text-pink hover:underline"
                   >
                     Politique de confidentialité
                   </a>

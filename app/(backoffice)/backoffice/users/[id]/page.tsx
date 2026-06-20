@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { MembershipStatusBadge } from "@/components/features/backoffice/membership-status-badge";
+import { ChangeRoleButton } from "@/components/features/backoffice/change-role-button";
+import { MembershipRoleBadge } from "@/components/features/backoffice/membership-role-badge";
 import { SuspendUserButton } from "@/components/features/backoffice/suspend-user-button";
 import { HistoryBackLink } from "@/components/ui/history-back-link";
 import { Card } from "@/components/ui/card";
@@ -13,12 +15,6 @@ import { getBackofficeUserDetail } from "@/lib/queries/backoffice-users";
 import { formatShortDate } from "@/lib/utils/format-date";
 
 export const dynamic = "force-dynamic";
-
-const ROLE_LABELS = {
-  member: "Résident·e",
-  staff: "Staff mairie",
-  mayor: "Maire",
-} as const;
 
 export default async function BackofficeUserDetailPage(props: {
   params: Promise<{ id: string }>;
@@ -86,20 +82,33 @@ export default async function BackofficeUserDetailPage(props: {
                   </Link>
                   <p className="text-sm font-medium text-muted">{membership.addressLabel}</p>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-soft-pink px-2.5 py-1 text-xs font-semibold text-purple">
-                      {ROLE_LABELS[membership.role]}
-                    </span>
+                    <MembershipRoleBadge
+                      role={membership.role}
+                      isPlatformAdmin={user.isPlatformAdmin}
+                    />
                     <MembershipStatusBadge status={membership.status} />
                   </div>
                 </div>
 
-                <SuspendUserButton
-                  mode="membership"
-                  membershipId={membership.membershipId}
-                  userId={user.userId}
-                  label="Suspendre de cette commune"
-                  disabled={membership.status !== MEMBERSHIP_STATUS.active}
-                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <ChangeRoleButton
+                    membershipId={membership.membershipId}
+                    userId={user.userId}
+                    communeId={membership.communeId}
+                    role={membership.role}
+                    isPlatformAdmin={user.isPlatformAdmin}
+                    memberName={user.fullName}
+                    currentUserIsPlatformAdmin
+                    size="sm"
+                  />
+                  <SuspendUserButton
+                    mode="membership"
+                    membershipId={membership.membershipId}
+                    userId={user.userId}
+                    label="Suspendre de cette commune"
+                    disabled={membership.status !== MEMBERSHIP_STATUS.active}
+                  />
+                </div>
               </div>
             </Card>
           ))

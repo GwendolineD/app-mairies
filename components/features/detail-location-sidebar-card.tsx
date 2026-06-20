@@ -9,8 +9,8 @@ type Props = {
 
 export function DetailLocationSidebarCard({ className, children }: Props) {
   return (
-    <Card className={cn("gap-2 md:p-5", className)}>
-      <h2 className="hidden items-center gap-2 text-base font-semibold leading-6 text-text md:flex">
+    <Card className={cn("gap-4 md:gap-2 md:p-5", className)}>
+      <h2 className="flex items-center gap-2 text-lg font-semibold text-text md:text-base md:leading-6">
         <MapPin className="size-5 shrink-0 text-orange" aria-hidden />
         Localisation
       </h2>

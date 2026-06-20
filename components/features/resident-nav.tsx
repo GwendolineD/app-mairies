@@ -148,11 +148,12 @@ function ResidentNavLink({ href, label, active, variant, collapsed, badge }: Nav
     <Link
       href={href}
       className={cn(
-        "relative flex flex-col items-center gap-0.5 rounded-xl px-2 py-1 text-[10px] font-semibold transition",
+        "relative flex min-h-0 flex-1 flex-col items-center justify-center gap-0.5 px-2 py-2 text-[10px] font-semibold transition",
         active
-          ? "bg-soft-pink text-purple"
+          ? "text-purple after:absolute after:inset-x-0 after:top-0 after:h-0.5 after:bg-purple"
           : "text-muted hover:text-text",
       )}
+      aria-current={active ? "page" : undefined}
     >
       <span className="relative">
         <Icon className="size-6" aria-hidden />
@@ -190,9 +191,9 @@ export function BottomNav({
   return (
     <nav
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-30 grid grid-cols-5 border-t border-border/80 bg-surface/95 backdrop-blur md:hidden",
+        "fixed bottom-0 left-0 right-0 z-50 flex items-stretch border-t border-border/80 bg-surface/95 backdrop-blur md:hidden",
         "supports-[backdrop-filter]:bg-surface/80",
-        "pb-[max(env(safe-area-inset-bottom),8px)] pt-2",
+        "pb-[max(env(safe-area-inset-bottom),8px)]",
       )}
       aria-label="Navigation principale"
     >

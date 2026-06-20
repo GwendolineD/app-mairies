@@ -249,7 +249,7 @@ export default async function AnnonceDetailPage(props: {
         </Card>
 
         {/* --- Sidebar --- */}
-        <aside className="space-y-4">
+        <aside className="space-y-8 md:space-y-4">
           <AnnouncementSidebarActions
             isAuthor={isAuthor}
             announcementId={ann.id}

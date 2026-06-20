@@ -36,7 +36,9 @@ export function PasswordField({
   const isControlled = value !== undefined;
   const [uncontrolledValue, setUncontrolledValue] = useState("");
   const inputValue = isControlled ? value : uncontrolledValue;
+  const isEmpty = inputValue.length === 0;
   const isValid = PASSWORD_RULE.test(inputValue);
+  const showInvalidHint = !isEmpty && !isValid;
 
   useEffect(() => {
     onValidityChange?.(isValid);
@@ -92,7 +94,9 @@ export function PasswordField({
             "flex items-center gap-1.5 text-xs font-medium",
             isValid
               ? "text-[color-mix(in_srgb,var(--mint)_82%,var(--text))]"
-              : "text-muted",
+              : showInvalidHint
+                ? "text-coral"
+                : "text-muted",
           )}
         >
           {isValid ? (
@@ -101,7 +105,13 @@ export function PasswordField({
               aria-hidden
             />
           ) : (
-            <X className="size-3.5 shrink-0 text-subtle" aria-hidden />
+            <X
+              className={cn(
+                "size-3.5 shrink-0",
+                showInvalidHint ? "text-coral" : "text-subtle",
+              )}
+              aria-hidden
+            />
           )}
           Utilisez 8 caractères minimum avec lettres et chiffres
         </p>

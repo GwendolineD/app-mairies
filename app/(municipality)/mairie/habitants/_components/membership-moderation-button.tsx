@@ -15,6 +15,7 @@ import {
   reactivateMembership,
 } from "@/lib/actions/moderation";
 import type { MembershipStatus } from "@/lib/types";
+import { cn } from "@/lib/utils/cn";
 
 type Props = {
   membershipId: string;
@@ -74,11 +75,12 @@ export function MembershipModerationButton({
       type="button"
       variant="secondary"
       size="xs"
-      className={
+      className={cn(
+        "h-auto px-4 py-1.5 text-sm md:h-6 md:px-2 md:py-0 md:text-xs",
         isSuspend
           ? "border-coral bg-surface text-coral hover:bg-coral/10"
-          : undefined
-      }
+          : undefined,
+      )}
       disabled={suspendDisabled}
       onClick={() => setOpen(true)}
     >

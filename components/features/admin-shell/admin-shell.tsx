@@ -1,5 +1,8 @@
 import { AdminHeader } from "@/components/features/admin-shell/admin-header";
-import { AdminMobileNav } from "@/components/features/admin-shell/admin-nav";
+import {
+  AdminMobileBackBar,
+  AdminMobileBottomNav,
+} from "@/components/features/admin-shell/admin-nav";
 import { AdminSidebar } from "@/components/features/admin-shell/admin-sidebar";
 import type { AdminNavItem } from "@/lib/constants/routes";
 import { ROUTES } from "@/lib/constants/routes";
@@ -25,7 +28,7 @@ export function AdminShell({
     <div className="flex h-dvh w-full flex-col overflow-hidden bg-background text-text">
       <AdminHeader />
 
-      <AdminMobileNav navItems={navItems} backHref={backHref} />
+      <AdminMobileBackBar backHref={backHref} />
 
       <div className="flex min-h-0 w-full flex-1">
         <AdminSidebar
@@ -36,10 +39,12 @@ export function AdminShell({
           title={sidebarTitle}
         />
 
-        <main className="min-w-0 flex-1 overflow-y-auto bg-surface px-4 py-4 md:px-6 md:py-6 lg:px-8">
+        <main className="min-w-0 flex-1 overflow-y-auto bg-surface px-5 py-4 pb-28 md:px-6 md:py-6 md:pb-6 lg:px-8">
           {children}
         </main>
       </div>
+
+      <AdminMobileBottomNav navItems={navItems} />
     </div>
   );
 }

@@ -1,5 +1,7 @@
 import { HabitantsSearch } from "./_components/habitants-search";
 import { MembershipModerationButton } from "./_components/membership-moderation-button";
+import { ChangeRoleButton } from "@/components/features/backoffice/change-role-button";
+import { MembershipRoleBadge } from "@/components/features/backoffice/membership-role-badge";
 import { MembershipStatusBadge } from "@/components/features/backoffice/membership-status-badge";
 import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
@@ -27,7 +29,7 @@ export default async function MairieHabitantsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { communeId, userId } = await requireCommuneStaff();
+  const { communeId, userId, profile } = await requireCommuneStaff();
   const params = await searchParams;
   const q = parseSearchQuery(params);
 
@@ -57,18 +59,39 @@ export default async function MairieHabitantsPage({
           membersPage.items.map((member) => (
             <Card
               key={member.membershipId}
-              className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-lg p-4"
+              className="flex flex-col gap-3 rounded-lg p-4 md:grid md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:gap-4"
             >
-              <Avatar
-                profile={{
-                  first_name: member.firstName,
-                  last_name: member.lastName,
-                  display_name: member.fullName,
-                  avatar_url: member.avatarUrl,
-                }}
-                size="sm"
-              />
-              <div className="min-w-0 space-y-1">
+              <div className="flex flex-wrap items-center justify-end gap-2 md:col-start-3 md:row-start-1">
+                <MembershipRoleBadge
+                  role={member.role}
+                  isPlatformAdmin={member.isPlatformAdmin}
+                />
+                <MembershipStatusBadge
+                  status={member.status}
+                  suspendedAt={member.suspendedAt}
+                  suspendedByName={member.suspendedByName}
+                  suspendedReason={member.suspendedReason}
+                />
+              </div>
+
+              <div className="flex min-w-0 items-center gap-3 md:contents">
+                <Avatar
+                  profile={{
+                    first_name: member.firstName,
+                    last_name: member.lastName,
+                    display_name: member.fullName,
+                    avatar_url: member.avatarUrl,
+                  }}
+                  size="sm"
+                  className="shrink-0 md:col-start-1 md:row-start-1"
+                />
+                <p className="min-w-0 font-semibold text-text md:hidden">
+                  <span>{member.firstName}</span>{" "}
+                  <span>{member.lastName}</span>
+                </p>
+              </div>
+
+              <div className="hidden min-w-0 space-y-1 md:block md:col-start-2 md:row-start-1">
                 <p className="font-semibold text-text">
                   <span>{member.firstName}</span>
                   <span className="text-muted"> · </span>
@@ -78,12 +101,21 @@ export default async function MairieHabitantsPage({
                   Membre depuis le {formatDay(member.joinedAt)}
                 </p>
               </div>
-              <div className="flex flex-col items-end gap-4">
-                <MembershipStatusBadge
-                  status={member.status}
-                  suspendedAt={member.suspendedAt}
-                  suspendedByName={member.suspendedByName}
-                  suspendedReason={member.suspendedReason}
+
+              <p className="text-xs font-medium leading-4 text-subtle md:hidden">
+                Membre depuis le {formatDay(member.joinedAt)}
+              </p>
+
+              <div className="flex flex-wrap items-center justify-end gap-2 md:col-start-3 md:row-start-2">
+                <ChangeRoleButton
+                  membershipId={member.membershipId}
+                  userId={member.userId}
+                  communeId={communeId}
+                  role={member.role}
+                  isPlatformAdmin={member.isPlatformAdmin}
+                  memberName={member.fullName}
+                  currentUserIsPlatformAdmin={profile.is_platform_admin}
+                  className="h-auto px-4 py-1.5 text-sm md:h-6 md:px-2 md:py-0 md:text-xs"
                 />
                 <MembershipModerationButton
                   membershipId={member.membershipId}

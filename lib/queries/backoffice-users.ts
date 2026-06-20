@@ -14,6 +14,7 @@ export type BackofficeUserDetail = {
   userId: string;
   fullName: string;
   createdAt: string;
+  isPlatformAdmin: boolean;
   memberships: BackofficeUserMembershipRow[];
   totalAnnouncementsCount: number;
   totalInitiativesCount: number;
@@ -45,7 +46,7 @@ export async function getBackofficeUserDetail(
 ): Promise<BackofficeUserDetail | null> {
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("user_id, first_name, last_name, display_name, created_at")
+    .select("user_id, first_name, last_name, display_name, created_at, is_platform_admin")
     .eq("user_id", userId)
     .maybeSingle();
 
@@ -118,6 +119,7 @@ export async function getBackofficeUserDetail(
       profile.display_name,
     ),
     createdAt: profile.created_at,
+    isPlatformAdmin: profile.is_platform_admin ?? false,
     memberships: mappedMemberships,
     totalAnnouncementsCount,
     totalInitiativesCount,

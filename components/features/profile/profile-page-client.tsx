@@ -198,9 +198,9 @@ function ProfileHero({
           </Button>
         </div>
         <div className="flex min-w-0 flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div className="flex flex-col items-center gap-1 text-center text-xs font-semibold text-muted md:items-start md:text-left">
-            <span className="inline-flex items-start gap-1">
-              <MapPin className="mt-0.5 size-4 shrink-0" aria-hidden />
+          <div className="flex flex-col items-center gap-2.5 text-center text-xs font-semibold text-muted md:items-start md:gap-1 md:text-left">
+            <span className="inline-flex items-center gap-1">
+              <MapPin className="size-4 shrink-0" aria-hidden />
               {membership.addressStreet ||
               membership.addressPostcode ||
               membership.addressCity ? (

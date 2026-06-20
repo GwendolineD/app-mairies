@@ -10,6 +10,7 @@ export type CommuneMemberRow = {
   lastName: string;
   avatarUrl: string | null;
   role: MembershipRole;
+  isPlatformAdmin: boolean;
   status: MembershipStatus;
   joinedAt: string;
   suspendedAt: string | null;
@@ -59,7 +60,7 @@ export async function listCommuneMembersPage(
   let dataQuery = supabase
     .from("memberships")
     .select(
-      "id, user_id, role, status, created_at, suspended_at, suspension_reason, profile:profiles!memberships_profiles_user_id_fkey(first_name, last_name, display_name, avatar_url)",
+      "id, user_id, role, status, created_at, suspended_at, suspension_reason, profile:profiles!memberships_profiles_user_id_fkey(first_name, last_name, display_name, avatar_url, is_platform_admin)",
     )
     .eq("commune_id", communeId)
     .neq("status", "left")
@@ -152,6 +153,7 @@ export async function listCommuneMembersPage(
       lastName,
       avatarUrl: profile?.avatar_url ?? null,
       role: row.role as MembershipRole,
+      isPlatformAdmin: profile?.is_platform_admin ?? false,
       status: row.status as MembershipStatus,
       joinedAt: row.created_at,
       suspendedAt: row.suspended_at ?? null,

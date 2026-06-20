@@ -29,7 +29,7 @@ export default function Loading() {
           </div>
         </Card>
 
-        <aside className="space-y-4">
+        <aside className="space-y-8 md:space-y-4">
           <Card className="space-y-4 p-5">
             <Skeleton className="h-6 w-24" />
             <div className="flex items-center gap-3">

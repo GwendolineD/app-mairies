@@ -164,7 +164,7 @@ function AuthorActionsCard({
     <Card className={cn("gap-6 md:p-5", className)}>
       <div className="space-y-1">
         <h2 className="flex items-center gap-2 text-lg font-semibold text-text">
-          <Sparkles className="size-5 shrink-0 text-mint" aria-hidden />
+          <Sparkles className="size-5 shrink-0 text-orange" aria-hidden />
           Gérez votre initiative
         </h2>
         <p className="text-sm font-medium text-muted">
@@ -232,7 +232,7 @@ function SupportCard({
       <Card className={cn("gap-6 md:p-5", className)}>
         <div className="space-y-1">
           <h2 className="flex items-center gap-2 text-lg font-semibold text-text">
-            <Heart className="size-5 shrink-0 text-coral/85" aria-hidden />
+            <Heart className="size-5 shrink-0 text-orange" aria-hidden />
             Soutiens
           </h2>
           <p className="text-sm font-medium text-muted">
@@ -253,7 +253,7 @@ function SupportCard({
     <Card className={cn("space-y-3 md:p-5", className)}>
       <div className="space-y-1">
         <h2 className="flex items-center gap-2 text-lg font-semibold text-text">
-          <Heart className="size-5 shrink-0 text-coral/85" aria-hidden />
+          <Heart className="size-5 shrink-0 text-orange" aria-hidden />
           Soutien
         </h2>
         <p className="text-sm font-medium text-muted">

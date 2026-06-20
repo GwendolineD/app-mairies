@@ -273,7 +273,7 @@ export default async function InitiativeDetailPage(props: {
           </div>
         </Card>
 
-        <aside className="space-y-4">
+        <aside className="space-y-8 md:space-y-4">
           <InitiativeSidebarActions
             isAuthor={isAuthor}
             initiativeId={initiative.id}

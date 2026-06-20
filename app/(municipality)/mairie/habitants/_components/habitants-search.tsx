@@ -43,6 +43,7 @@ export function HabitantsSearch({ initialQuery }: Props) {
         onChange={(event) => setSearch(event.target.value)}
         placeholder="Rechercher par nom ou prénom…"
         aria-label="Rechercher par nom ou prénom"
+        className="h-10 py-0 text-sm placeholder:text-xs md:h-8 md:py-1 md:text-base md:placeholder:text-sm"
       />
       {search ? (
         <button

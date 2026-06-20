@@ -54,7 +54,7 @@ export function EventListToolbar({
       size="icon-sm"
       onClick={onCreateClick}
       aria-label="Créer un événement"
-      className="size-[34px] shrink-0 p-0 md:hidden"
+      className="size-[42px] shrink-0 p-0 md:hidden [&_svg]:size-5"
     >
       <Plus aria-hidden />
     </Button>
@@ -63,7 +63,7 @@ export function EventListToolbar({
       href={`${pathname}${buildEventListQuery({ ...params, create: "event" })}`}
       size="icon-sm"
       aria-label="Créer un événement"
-      className="size-[34px] shrink-0 p-0 md:hidden"
+      className="size-[42px] shrink-0 p-0 md:hidden [&_svg]:size-5"
     >
       <Plus aria-hidden />
     </Button>
@@ -130,7 +130,7 @@ export function EventListToolbar({
         </p>
       </div>
 
-      <div className="flex items-center justify-between gap-3 md:hidden">
+      <div className="mb-4 flex items-center justify-between gap-3 md:mb-0 md:hidden">
         {viewToggle}
         {createButtonMobile}
       </div>

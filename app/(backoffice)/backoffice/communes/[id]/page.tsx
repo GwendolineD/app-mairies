@@ -10,11 +10,14 @@ import { CommuneDetailHeader } from "@/components/features/backoffice/commune-de
 import { CommuneSubscriptionSection } from "@/components/features/backoffice/commune-subscription-section";
 import { CommuneTrialSection } from "@/components/features/backoffice/commune-trial-section";
 import { CommuneWelcomeMessageEditor } from "@/components/features/backoffice/commune-welcome-message-editor";
+import { ChangeRoleButton } from "@/components/features/backoffice/change-role-button";
+import { MembershipRoleBadge } from "@/components/features/backoffice/membership-role-badge";
 import { MembershipStatusBadge } from "@/components/features/backoffice/membership-status-badge";
 import { HistoryBackLink } from "@/components/ui/history-back-link";
 import { Card } from "@/components/ui/card";
 import { PageStack } from "@/components/ui/page-stack";
 import { ROUTES } from "@/lib/constants/routes";
+import { ROLE_LABELS } from "@/lib/constants/roles";
 import { getCommuneDetailStats } from "@/lib/queries/backoffice-communes";
 import { getCommuneSubscriptionInfo } from "@/lib/queries/commune-subscription";
 import { listCommuneMembersPage } from "@/lib/queries/backoffice-memberships";
@@ -22,12 +25,6 @@ import { formatShortDate } from "@/lib/utils/format-date";
 import { parseBackofficeMembersListParams } from "@/lib/utils/backoffice-search-params";
 
 export const dynamic = "force-dynamic";
-
-const ROLE_LABELS = {
-  member: "Résident·e",
-  staff: "Staff mairie",
-  mayor: "Maire",
-} as const;
 
 export default async function BackofficeCommuneDetailPage(props: {
   params: Promise<{ id: string }>;
@@ -194,19 +191,43 @@ export default async function BackofficeCommuneDetailPage(props: {
         ) : (
           <div className="space-y-2">
             {membersPage.items.map((member) => (
-              <BackofficeListLinkCard
+              <div
                 key={member.membershipId}
-                href={ROUTES.backoffice.userDetail(member.userId)}
-                title={member.fullName}
-                titleAside={<MembershipStatusBadge status={member.status} />}
-                fields={[
-                  { label: "Rôle", value: ROLE_LABELS[member.role] },
-                  {
-                    label: "Adhésion",
-                    value: formatShortDate(member.joinedAt),
-                  },
-                ]}
-              />
+                className="flex flex-col gap-2 sm:flex-row sm:items-stretch"
+              >
+                <BackofficeListLinkCard
+                  href={ROUTES.backoffice.userDetail(member.userId)}
+                  title={member.fullName}
+                  titleAside={
+                    <div className="flex flex-wrap items-center gap-2">
+                      <MembershipRoleBadge
+                        role={member.role}
+                        isPlatformAdmin={member.isPlatformAdmin}
+                      />
+                      <MembershipStatusBadge status={member.status} />
+                    </div>
+                  }
+                  fields={[
+                    {
+                      label: "Adhésion",
+                      value: formatShortDate(member.joinedAt),
+                    },
+                  ]}
+                  className="min-w-0 flex-1"
+                />
+                <div className="flex shrink-0 items-center sm:px-1">
+                  <ChangeRoleButton
+                    membershipId={member.membershipId}
+                    userId={member.userId}
+                    communeId={id}
+                    role={member.role}
+                    isPlatformAdmin={member.isPlatformAdmin}
+                    memberName={member.fullName}
+                    currentUserIsPlatformAdmin
+                    size="sm"
+                  />
+                </div>
+              </div>
             ))}
           </div>
         )}

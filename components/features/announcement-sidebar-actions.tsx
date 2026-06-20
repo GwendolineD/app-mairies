@@ -66,30 +66,26 @@ export function AnnouncementSidebarActions({
   }
 
   return (
-    <>
-      <div className="md:hidden">
-        <ContactAnnouncementButton
-          contextId={announcementId}
-          label={contactLabel}
-          icon={<MessageCircle className="size-4" aria-hidden />}
-          className="py-4"
+    <Card className={cn("space-y-4 md:p-5", className)}>
+      <h2 className="text-lg font-semibold text-text">Contact</h2>
+      <div className="flex items-center gap-3">
+        <UserAvatar
+          name={authorName}
+          url={authorAvatarUrl}
+          size="sm"
+          className="md:size-10"
         />
-      </div>
-      <Card className={cn("hidden space-y-4 md:block md:p-5", className)}>
-        <h2 className="text-lg font-semibold text-text">Contact</h2>
-        <div className="flex items-center gap-3">
-          <UserAvatar name={authorName} url={authorAvatarUrl} />
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-text">{authorName}</p>
-            <p className="text-xs text-muted">{memberSince}</p>
-          </div>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-text">{authorName}</p>
+          <p className="text-xs text-muted">{memberSince}</p>
         </div>
-        <ContactAnnouncementButton
-          contextId={announcementId}
-          label={contactLabel}
-          icon={<MessageCircle className="size-4" aria-hidden />}
-        />
-      </Card>
-    </>
+      </div>
+      <ContactAnnouncementButton
+        contextId={announcementId}
+        label={contactLabel}
+        icon={<MessageCircle className="size-4" aria-hidden />}
+        className="py-4 md:py-0"
+      />
+    </Card>
   );
 }

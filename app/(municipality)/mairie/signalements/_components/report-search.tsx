@@ -46,7 +46,7 @@ export function ReportSearch({ params }: Props) {
         onChange={(event) => setSearch(event.target.value)}
         placeholder="Rechercher par titre…"
         aria-label="Rechercher par titre"
-        className="pr-9"
+        className="h-10 py-0 pr-9 text-sm placeholder:text-xs md:h-8 md:py-1 md:text-base md:placeholder:text-sm"
       />
       {search ? (
         <button

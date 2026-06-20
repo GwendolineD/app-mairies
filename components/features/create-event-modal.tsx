@@ -230,9 +230,15 @@ export function CreateEventModal({
   const [submitPhase, setSubmitPhase] = useState<SubmitPhase>("idle");
   const [formError, setFormError] = useState<string | null>(null);
 
+  const citycode =
+    addressData.citycode?.trim() || membershipAddress.citycode?.trim() || "";
+
   const fetchStreetSuggestions = useCallback(
-    (query: string) => searchAddresses(query),
-    [],
+    (query: string) => {
+      if (!citycode) return Promise.resolve([]);
+      return searchAddresses(query, citycode);
+    },
+    [citycode],
   );
 
   const resetForm = useCallback(() => {
@@ -677,6 +683,7 @@ export function CreateEventModal({
               value={addressData.street || undefined}
               formatSuggestion={(feature) => formatStreetDisplay(feature.label)}
               leadingIcon={MapPin}
+              disabled={!citycode}
             />
             {addressStreetError ? (
               <p className="mt-1.5 text-xs font-medium text-coral" role="alert">

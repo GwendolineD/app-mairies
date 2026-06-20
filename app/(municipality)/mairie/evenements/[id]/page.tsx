@@ -213,7 +213,7 @@ export default async function MairieEvenementDetailPage(props: {
           </div>
         </Card>
 
-        <aside className="space-y-4">
+        <aside className="space-y-8 md:space-y-4">
           <EventSidebarActions
             isAuthor
             eventId={event.id}

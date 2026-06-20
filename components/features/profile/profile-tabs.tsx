@@ -42,15 +42,15 @@ function ProfileTabLink({
     <Link
       href={`${ROUTES.profil}?tab=${tab.key}`}
       className={cn(
-        "relative inline-flex shrink-0 flex-col items-center gap-1 px-2 pb-3 text-[10px] font-semibold leading-tight transition md:flex-row md:gap-2 md:px-1 md:text-sm md:leading-normal",
+        "relative flex min-w-0 flex-1 flex-col items-center gap-1 px-1 pb-3 text-[10px] font-semibold leading-tight transition md:inline-flex md:shrink-0 md:flex-none md:flex-row md:gap-2 md:px-1 md:text-sm md:leading-normal",
         active
           ? "text-magenta after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-magenta"
           : "text-text hover:text-purple",
       )}
       aria-current={active ? "page" : undefined}
     >
-      <Icon className="size-5 md:size-4" aria-hidden />
-      {tab.label}
+      <Icon className="size-5 shrink-0 md:size-4" aria-hidden />
+      <span className="w-full truncate text-center md:w-auto md:truncate">{tab.label}</span>
     </Link>
   );
 }
@@ -58,7 +58,7 @@ function ProfileTabLink({
 export function ProfileTabs({ activeTab }: { activeTab: ProfileTabKey }) {
   return (
     <nav
-      className="mt-2.5 flex gap-0 overflow-x-auto border-b border-border md:gap-8"
+      className="mt-2.5 flex w-full gap-0 border-b border-border md:w-auto md:gap-8"
       aria-label="Sections du profil"
     >
       {PROFILE_TABS.filter((tab) => !("hidden" in tab && tab.hidden)).map((tab) => (

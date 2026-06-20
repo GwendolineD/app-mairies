@@ -41,26 +41,26 @@ export default function LandingPage() {
           />
         ) : null}
 
-        <div className="flex shrink-0 flex-col items-stretch gap-1.5 md:flex-row md:items-start md:gap-3">
+        <div className="hidden shrink-0 flex-col items-stretch gap-2.5 md:flex md:flex-row md:items-start md:gap-3">
           <Button
             href={ROUTES.connexion}
             variant="secondary"
             size="sm"
-            className="shadow-card px-3 py-1 text-xs md:px-4 md:py-1.5 md:text-sm"
+            className="shadow-card px-4 py-2 text-sm md:px-4 md:py-1.5 md:text-sm"
           >
             Connexion
           </Button>
           <Button
             href={ROUTES.inscription.root}
             size="sm"
-            className="px-3 py-1 text-xs md:px-4 md:py-1.5 md:text-sm"
+            className="px-4 py-2 text-sm md:px-4 md:py-1.5 md:text-sm"
           >
             Créer un compte
           </Button>
         </div>
       </header>
 
-      <main className="relative mx-auto flex w-full max-w-lg flex-col gap-8 px-5 pb-10 pt-4 sm:max-w-xl sm:pt-6">
+      <main className="relative mx-auto flex w-full max-w-lg flex-col gap-4 px-5 pb-10 pt-4 sm:max-w-xl md:gap-8 sm:pt-6">
         <div className="flex flex-col items-center gap-4 text-center">
           <div className="mx-auto w-full max-w-xs sm:max-w-sm">
             <h1 className="mb-6 text-balance text-[2rem] font-extrabold leading-[1.2] tracking-tight text-text sm:text-[2.5rem]">
@@ -74,9 +74,27 @@ export default function LandingPage() {
           </div>
         </div>
 
-        <section className="mt-8">
+        <section className="md:mt-8">
           <AuthFeaturesBlock title="Comment ça marche ?" />
         </section>
+
+        <div className="flex gap-2.5 md:hidden">
+          <Button
+            href={ROUTES.connexion}
+            variant="secondary"
+            size="sm"
+            className="shadow-card flex-1 px-4 py-2.5 text-sm"
+          >
+            Connexion
+          </Button>
+          <Button
+            href={ROUTES.inscription.root}
+            size="sm"
+            className="flex-1 px-4 py-2.5 text-sm"
+          >
+            Créer un compte
+          </Button>
+        </div>
       </main>
     </div>
   );
