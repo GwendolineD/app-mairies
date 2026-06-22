@@ -250,7 +250,8 @@ export async function requestPasswordReset(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const redirectTo = `${getAppUrl()}${ROUTES.authCallback}`;
+  // type=recovery is preserved when Supabase redirects back with ?code=… (PKCE flow).
+  const redirectTo = `${getAppUrl()}${ROUTES.authCallback}?type=recovery`;
 
   const { error } = await supabase.auth.resetPasswordForEmail(
     parsed.data.email,
