@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import {
@@ -159,6 +159,42 @@ function CategoryCard({
 
 const initialState: CategoryFormState = { success: false };
 
+type CategoryFormValues = {
+  label: string;
+  color_hex: string;
+  sort_order: number;
+  icon_name: string;
+  map_pin_url: string;
+  default_image_url: string;
+};
+
+function getCategoryFormValues(
+  defaultValues?: AnnouncementCategoryRow,
+): CategoryFormValues {
+  return {
+    label: defaultValues?.label ?? "",
+    color_hex: defaultValues?.color_hex ?? "#A8A8A8",
+    sort_order: defaultValues?.sort_order ?? 0,
+    icon_name: defaultValues?.icon_name ?? "more-horizontal",
+    map_pin_url: defaultValues?.map_pin_url ?? "",
+    default_image_url: defaultValues?.default_image_url ?? "",
+  };
+}
+
+function isCategoryFormDirty(
+  initial: CategoryFormValues,
+  current: CategoryFormValues,
+): boolean {
+  return (
+    current.label !== initial.label ||
+    current.color_hex.toLowerCase() !== initial.color_hex.toLowerCase() ||
+    current.sort_order !== initial.sort_order ||
+    current.icon_name !== initial.icon_name ||
+    current.map_pin_url !== initial.map_pin_url ||
+    current.default_image_url !== initial.default_image_url
+  );
+}
+
 function CreateCategoryModal({
   open,
   onClose,
@@ -208,6 +244,12 @@ function EditCategoryModal({
   const router = useRouter();
   const boundAction = updateAnnouncementCategory.bind(null, category.slug);
   const [state, formAction, isPending] = useActionState(boundAction, initialState);
+  const [isDirty, setIsDirty] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setIsDirty(false);
+  }, [open, category.slug]);
 
   useEffect(() => {
     if (state.success) {
@@ -218,13 +260,23 @@ function EditCategoryModal({
 
   return (
     <Modal open={open} onClose={onClose} title="Modifier la catégorie" size="lg">
-      <form action={formAction}>
-        <CategoryFormFields state={state} defaultValues={category} isEdit />
+      <form action={formAction} key={category.slug}>
+        <CategoryFormFields
+          state={state}
+          defaultValues={category}
+          isEdit
+          onDirtyChange={setIsDirty}
+        />
         <div className="mt-6 flex justify-end gap-2 border-t border-border pt-4">
           <Button type="button" variant="ghost" size="sm" onClick={onClose}>
             Annuler
           </Button>
-          <Button type="submit" variant="primary" size="sm" disabled={isPending}>
+          <Button
+            type="submit"
+            variant="primary"
+            size="sm"
+            disabled={isPending || !isDirty}
+          >
             {isPending ? "Enregistrement…" : "Enregistrer"}
           </Button>
         </div>
@@ -299,13 +351,34 @@ function CategoryFormFields({
   state,
   defaultValues,
   isEdit,
+  onDirtyChange,
 }: {
   state: CategoryFormState;
   defaultValues?: AnnouncementCategoryRow;
   isEdit?: boolean;
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
-  const [selectedIcon, setSelectedIcon] = useState(defaultValues?.icon_name ?? "more-horizontal");
-  const [color, setColor] = useState(defaultValues?.color_hex ?? "#A8A8A8");
+  const initialValues = useMemo(
+    () => getCategoryFormValues(defaultValues),
+    [defaultValues],
+  );
+  const [values, setValues] = useState(initialValues);
+
+  useEffect(() => {
+    setValues(initialValues);
+  }, [initialValues]);
+
+  useEffect(() => {
+    if (!isEdit || !onDirtyChange) return;
+    onDirtyChange(isCategoryFormDirty(initialValues, values));
+  }, [initialValues, isEdit, onDirtyChange, values]);
+
+  const selectedIcon = values.icon_name;
+  const color = values.color_hex;
+
+  function updateValues(partial: Partial<CategoryFormValues>) {
+    setValues((current) => ({ ...current, ...partial }));
+  }
 
   return (
     <div className="space-y-4">
@@ -318,8 +391,10 @@ function CategoryFormFields({
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField
           label="Slug"
+          error={state.fieldErrors?.slug}
         >
           <Input
+            name="slug"
             defaultValue={defaultValues?.slug}
             placeholder="ex: bricolage"
             readOnly={isEdit}
@@ -329,38 +404,57 @@ function CategoryFormFields({
 
         <FormField
           label="Libellé"
+          error={state.fieldErrors?.label}
         >
           <Input
-            defaultValue={defaultValues?.label}
+            name="label"
+            value={isEdit ? values.label : undefined}
+            defaultValue={isEdit ? undefined : defaultValues?.label}
+            onChange={
+              isEdit
+                ? (event) => updateValues({ label: event.target.value })
+                : undefined
+            }
             placeholder="ex: Bricolage"
           />
         </FormField>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <FormField label="Couleur">
+        <FormField label="Couleur" error={state.fieldErrors?.color_hex}>
+          <input type="hidden" name="color_hex" value={color} />
           <div className="flex items-center gap-2">
             <input
               type="color"
               value={color}
-              onChange={(e) => setColor(e.target.value)}
+              onChange={(event) => updateValues({ color_hex: event.target.value })}
               className="size-10 cursor-pointer rounded-sm border border-border"
             />
             <span className="text-sm font-medium text-muted">{color}</span>
           </div>
         </FormField>
 
-        <FormField label="Ordre">
+        <FormField label="Ordre" error={state.fieldErrors?.sort_order}>
           <Input
+            name="sort_order"
             type="number"
-            defaultValue={defaultValues?.sort_order ?? 0}
+            value={isEdit ? values.sort_order : undefined}
+            defaultValue={isEdit ? undefined : (defaultValues?.sort_order ?? 0)}
+            onChange={
+              isEdit
+                ? (event) =>
+                    updateValues({
+                      sort_order: Number.parseInt(event.target.value, 10) || 0,
+                    })
+                : undefined
+            }
             min={0}
           />
         </FormField>
       </div>
 
-      <FormField label="Icône">
-        <input type="hidden" value={selectedIcon} />
+      <FormField label="Icône" error={state.fieldErrors?.icon_name}>
+        <input type="hidden" name="icon_name" value={selectedIcon} />
         <div className="grid grid-cols-6 gap-2 rounded-sm border border-border bg-surface p-2 sm:grid-cols-8 md:grid-cols-12">
           {ALLOWED_ICON_NAMES.map((name) => {
             const Icon = resolveIcon(name);
@@ -369,7 +463,7 @@ function CategoryFormFields({
               <button
                 key={name}
                 type="button"
-                onClick={() => setSelectedIcon(name)}
+                onClick={() => updateValues({ icon_name: name })}
                 className={cn(
                   "flex size-9 cursor-pointer items-center justify-center rounded-sm border transition",
                   isSelected
@@ -387,24 +481,36 @@ function CategoryFormFields({
 
       <FormField
         label="URL image pin carte"
-       
-       
+        error={state.fieldErrors?.map_pin_url}
       >
         <Input
+          name="map_pin_url"
           type="url"
-          defaultValue={defaultValues?.map_pin_url ?? ""}
+          value={isEdit ? values.map_pin_url : undefined}
+          defaultValue={isEdit ? undefined : (defaultValues?.map_pin_url ?? "")}
+          onChange={
+            isEdit
+              ? (event) => updateValues({ map_pin_url: event.target.value })
+              : undefined
+          }
           placeholder="https://..."
         />
       </FormField>
 
       <FormField
         label="URL image par défaut"
-       
-       
+        error={state.fieldErrors?.default_image_url}
       >
         <Input
+          name="default_image_url"
           type="url"
-          defaultValue={defaultValues?.default_image_url ?? ""}
+          value={isEdit ? values.default_image_url : undefined}
+          defaultValue={isEdit ? undefined : (defaultValues?.default_image_url ?? "")}
+          onChange={
+            isEdit
+              ? (event) => updateValues({ default_image_url: event.target.value })
+              : undefined
+          }
           placeholder="https://..."
         />
       </FormField>

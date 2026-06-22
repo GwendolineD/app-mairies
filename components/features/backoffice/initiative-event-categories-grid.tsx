@@ -317,8 +317,10 @@ function CategoryFormFields({
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField
           label="Slug"
+          error={state.fieldErrors?.slug}
         >
           <Input
+            name="slug"
             defaultValue={defaultValues?.slug}
             placeholder="ex: solidarite"
             readOnly={isEdit}
@@ -328,8 +330,10 @@ function CategoryFormFields({
 
         <FormField
           label="Libellé"
+          error={state.fieldErrors?.label}
         >
           <Input
+            name="label"
             defaultValue={defaultValues?.label}
             placeholder="ex: Solidarité"
           />
@@ -337,7 +341,8 @@ function CategoryFormFields({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <FormField label="Couleur">
+        <FormField label="Couleur" error={state.fieldErrors?.color_hex}>
+          <input type="hidden" name="color_hex" value={color} />
           <div className="flex items-center gap-2">
             <input
               type="color"
@@ -349,8 +354,9 @@ function CategoryFormFields({
           </div>
         </FormField>
 
-        <FormField label="Ordre">
+        <FormField label="Ordre" error={state.fieldErrors?.sort_order}>
           <Input
+            name="sort_order"
             type="number"
             defaultValue={defaultValues?.sort_order ?? 0}
             min={0}
@@ -358,8 +364,8 @@ function CategoryFormFields({
         </FormField>
       </div>
 
-      <FormField label="Icône">
-        <input type="hidden" value={selectedIcon} />
+      <FormField label="Icône" error={state.fieldErrors?.icon_name}>
+        <input type="hidden" name="icon_name" value={selectedIcon} />
         <div className="grid grid-cols-6 gap-2 rounded-sm border border-border bg-surface p-2 sm:grid-cols-8 md:grid-cols-12">
           {ALLOWED_ICON_NAMES.map((name) => {
             const Icon = resolveIcon(name);
@@ -386,10 +392,10 @@ function CategoryFormFields({
 
       <FormField
         label="URL image pin carte"
-       
-       
+        error={state.fieldErrors?.map_pin_url}
       >
         <Input
+          name="map_pin_url"
           type="url"
           defaultValue={defaultValues?.map_pin_url ?? ""}
           placeholder="https://..."
@@ -398,10 +404,10 @@ function CategoryFormFields({
 
       <FormField
         label="URL image par défaut"
-       
-       
+        error={state.fieldErrors?.default_image_url}
       >
         <Input
+          name="default_image_url"
           type="url"
           defaultValue={defaultValues?.default_image_url ?? ""}
           placeholder="https://..."
