@@ -1,5 +1,7 @@
 import { createTransport, type Transporter } from "nodemailer";
 
+import { APP_NAME } from "@/lib/constants/app";
+
 let transporter: Transporter | null = null;
 
 function isLocalInbucket(host: string, port: number): boolean {
@@ -61,6 +63,19 @@ export function getTransporter(): Transporter | null {
   return transporter;
 }
 
-export function getFromAddress(): string {
-  return process.env.SMTP_FROM ?? "notifications@vielocale.fr";
+function extractEmailAddress(rawFrom: string): string {
+  const trimmed = rawFrom.trim();
+  const angleMatch = trimmed.match(/<([^>]+)>/);
+  if (angleMatch) {
+    return angleMatch[1].trim();
+  }
+  return trimmed;
+}
+
+export function getFromAddress(): { name: string; address: string } {
+  const rawFrom = process.env.SMTP_FROM ?? "notifications@vielocale.fr";
+  return {
+    name: APP_NAME,
+    address: extractEmailAddress(rawFrom),
+  };
 }
