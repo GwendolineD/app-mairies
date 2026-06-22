@@ -1,10 +1,11 @@
 // @ts-nocheck
 "use server";
 
-import { revalidateTag } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
+import { ROUTES } from "@/lib/constants/routes";
 import { ANNOUNCEMENT_CATEGORIES_CACHE_TAG } from "@/lib/queries/announcement-categories";
 import { ALLOWED_ICON_NAMES } from "@/lib/utils/lucide-icon-map";
 
@@ -29,6 +30,11 @@ export type CategoryFormState = {
   error?: string;
   fieldErrors?: Record<string, string>;
 };
+
+function invalidateAnnouncementCategoriesCache() {
+  updateTag(ANNOUNCEMENT_CATEGORIES_CACHE_TAG);
+  revalidatePath(ROUTES.backoffice.categories);
+}
 
 function parseFormData(formData: FormData) {
   return {
@@ -94,7 +100,7 @@ export async function createAnnouncementCategory(
     return { success: false, error: "Erreur lors de la création" };
   }
 
-  revalidateTag(ANNOUNCEMENT_CATEGORIES_CACHE_TAG, "max");
+  invalidateAnnouncementCategoriesCache();
   return { success: true };
 }
 
@@ -139,7 +145,7 @@ export async function updateAnnouncementCategory(
     return { success: false, error: "Erreur lors de la mise à jour" };
   }
 
-  revalidateTag(ANNOUNCEMENT_CATEGORIES_CACHE_TAG, "max");
+  invalidateAnnouncementCategoriesCache();
   return { success: true };
 }
 
@@ -182,7 +188,7 @@ export async function deleteAnnouncementCategory(
     return { success: false, error: "Erreur lors de la suppression" };
   }
 
-  revalidateTag(ANNOUNCEMENT_CATEGORIES_CACHE_TAG, "max");
+  invalidateAnnouncementCategoriesCache();
   return { success: true };
 }
 

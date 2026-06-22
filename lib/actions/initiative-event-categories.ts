@@ -1,9 +1,10 @@
 "use server";
 
-import { revalidateTag } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
+import { ROUTES } from "@/lib/constants/routes";
 import { INITIATIVE_EVENT_CATEGORIES_CACHE_TAG } from "@/lib/queries/initiative-event-categories";
 
 const categorySchema = z.object({
@@ -27,6 +28,11 @@ export type InitiativeEventCategoryFormState = {
   error?: string;
   fieldErrors?: Record<string, string>;
 };
+
+function invalidateInitiativeEventCategoriesCache() {
+  updateTag(INITIATIVE_EVENT_CATEGORIES_CACHE_TAG);
+  revalidatePath(ROUTES.backoffice.categoriesInitiatives);
+}
 
 function parseFormData(formData: FormData) {
   return {
@@ -92,7 +98,7 @@ export async function createInitiativeEventCategory(
     return { success: false, error: "Erreur lors de la création" };
   }
 
-  revalidateTag(INITIATIVE_EVENT_CATEGORIES_CACHE_TAG, "max");
+  invalidateInitiativeEventCategoriesCache();
   return { success: true };
 }
 
@@ -137,7 +143,7 @@ export async function updateInitiativeEventCategory(
     return { success: false, error: "Erreur lors de la mise à jour" };
   }
 
-  revalidateTag(INITIATIVE_EVENT_CATEGORIES_CACHE_TAG, "max");
+  invalidateInitiativeEventCategoriesCache();
   return { success: true };
 }
 
@@ -186,6 +192,6 @@ export async function deleteInitiativeEventCategory(
     return { success: false, error: "Erreur lors de la suppression" };
   }
 
-  revalidateTag(INITIATIVE_EVENT_CATEGORIES_CACHE_TAG, "max");
+  invalidateInitiativeEventCategoriesCache();
   return { success: true };
 }
