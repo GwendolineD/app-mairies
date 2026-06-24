@@ -15,6 +15,7 @@ type Props = {
 };
 
 export function ChangePasswordForm({ cardClassName }: Props) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -49,6 +50,7 @@ export function ChangePasswordForm({ cardClassName }: Props) {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+      setIsExpanded(false);
     });
   }
 
@@ -63,6 +65,16 @@ export function ChangePasswordForm({ cardClassName }: Props) {
         </p>
       </div>
 
+      {!isExpanded ? (
+        <Button
+          type="button"
+          variant="secondary"
+          className="w-fit self-end"
+          onClick={() => setIsExpanded(true)}
+        >
+          Changer mon mot de passe
+        </Button>
+      ) : (
       <form onSubmit={handleSubmit} className="space-y-4">
         <PasswordField
           name="currentPassword"
@@ -100,13 +112,31 @@ export function ChangePasswordForm({ cardClassName }: Props) {
           </p>
         ) : null}
 
-        <Button type="submit" disabled={!canSubmit || isPending}>
-          {isPending ? (
-            <Loader2 className="size-4 animate-spin" aria-hidden />
-          ) : null}
-          Enregistrer le mot de passe
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button type="submit" disabled={!canSubmit || isPending}>
+            {isPending ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+            ) : null}
+            Enregistrer le mot de passe
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={isPending}
+            onClick={() => {
+              setIsExpanded(false);
+              setFormError(null);
+              setCurrentPassword("");
+              setNewPassword("");
+              setConfirmPassword("");
+            }}
+          >
+            Annuler
+          </Button>
+        </div>
       </form>
+      )}
     </Card>
   );
 }
