@@ -13,7 +13,7 @@
  * Required env vars to actually deliver:
  *   - VAPID_PUBLIC_KEY  (also exposed as NEXT_PUBLIC_VAPID_PUBLIC_KEY for client)
  *   - VAPID_PRIVATE_KEY
- *   - VAPID_SUBJECT     (mailto:contact@example.com)
+ *   - VAPID_SUBJECT     (mailto:contact@tous-voisins.fr)
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -38,7 +38,7 @@ function getVapid() {
   const publicKey =
     process.env.VAPID_PUBLIC_KEY ?? process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
-  const subject = process.env.VAPID_SUBJECT ?? "mailto:no-reply@vie-locale.fr";
+  const subject = process.env.VAPID_SUBJECT ?? "mailto:contact@tous-voisins.fr";
   if (!publicKey || !privateKey) return null;
   return { publicKey, privateKey, subject };
 }
