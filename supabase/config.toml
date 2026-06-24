@@ -160,6 +160,8 @@ additional_redirect_urls = [
   "http://127.0.0.1:3000/auth/callback",
   "http://localhost:3000/auth/callback?type=recovery",
   "http://127.0.0.1:3000/auth/callback?type=recovery",
+  "http://localhost:3000/auth/callback?type=email_change",
+  "http://127.0.0.1:3000/auth/callback?type=email_change",
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
@@ -221,7 +223,7 @@ web3 = 30
 enable_signup = true
 # If enabled, a user will be required to confirm any email change on both the old, and new email
 # addresses. If disabled, only the new email is required to confirm.
-double_confirm_changes = true
+double_confirm_changes = false
 # If enabled, users need to confirm their email address before signing in.
 enable_confirmations = false
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
@@ -251,6 +253,10 @@ otp_expiry = 3600
 [auth.email.template.recovery]
 subject = "Réinitialisez votre mot de passe — Vie Locale"
 content_path = "./templates/recovery.html"
+
+[auth.email.template.email_change]
+subject = "Confirmez votre nouvelle adresse e-mail — Vie Locale"
+content_path = "./templates/email_change.html"
 
 [auth.email.notification.password_changed]
 enabled = true

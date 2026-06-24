@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Confirmez votre nouvelle adresse e-mail</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #252630;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="text-align: center; margin-bottom: 30px;">
+      <img src="https://res.cloudinary.com/du3ko16j1/image/upload/v1781795228/app-mairies/logos/logo-horizontal_uxovbe.png" alt="Vie Locale" style="height: 40px;">
+    </div>
+    <h2 style="margin: 0 0 16px; font-size: 22px; font-weight: 700; color: #252630;">Confirmez votre nouvelle adresse e-mail</h2>
+    <div style="background: #f5f5f6; border-radius: 12px; padding: 24px;">
+      <p style="margin-top: 0;">Bonjour,</p>
+      <p>Vous avez demandé à utiliser <strong>{{ .NewEmail }}</strong> comme nouvelle adresse e-mail sur Vie Locale.</p>
+      <p style="text-align: center; margin: 24px 0 16px;">
+        <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=email_change" style="display: inline-block; background: linear-gradient(135deg, #FF7FCB, #9A52FF); color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600;">Confirmer ma nouvelle adresse</a>
+      </p>
+      <p style="font-size: 14px; color: #7d7e8d; margin-bottom: 0;">Tant que vous n'avez pas cliqué sur ce lien, votre adresse actuelle reste inchangée.</p>
+    </div>
+    <p style="margin-top: 20px; font-size: 14px; color: #7d7e8d;">Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail — aucune modification ne sera effectuée.</p>
+    <p style="font-size: 14px; color: #7d7e8d;">Ce lien expire dans une heure.</p>
+    <div style="text-align: center; margin-top: 30px; font-size: 12px; color: #7d7e8d;">
+      <p style="margin: 0;">Vie Locale — Découvrir · Partager · S'entraider</p>
+    </div>
+  </div>
+</body>
+</html>

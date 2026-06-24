@@ -12,6 +12,8 @@ import { formatDisplayName } from "@/lib/utils/display-name";
 import { normalizeTrialCode } from "@/lib/utils/trial-code";
 import { checkTrialCodeRateLimit } from "@/lib/utils/trial-rate-limit";
 import {
+  changePasswordSchema,
+  emailChangeSchema,
   forgotPasswordSchema,
   joinCommuneSchema,
   resetPasswordSchema,
@@ -317,6 +319,105 @@ export async function updatePassword(formData: FormData) {
 
   cookieStore.delete(RECOVERY_COOKIE_NAME);
   redirect(ROUTES.accueil);
+}
+
+export type AuthActionResult = { success: true } | { error: string };
+
+export async function requestEmailChange(
+  newEmail: string,
+): Promise<AuthActionResult> {
+  const parsed = emailChangeSchema.safeParse({ email: newEmail });
+  if (!parsed.success) {
+    return {
+      error: parsed.error.flatten().fieldErrors.email?.[0] ?? "Email invalide",
+    };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Session expirée." };
+  }
+
+  if (user.email?.toLowerCase() === parsed.data.email.toLowerCase()) {
+    return { error: "Cette adresse e-mail est déjà la vôtre." };
+  }
+
+  const redirectTo = `${getAppUrl()}${ROUTES.authCallback}`;
+  const { error } = await supabase.auth.updateUser(
+    { email: parsed.data.email },
+    { emailRedirectTo: redirectTo },
+  );
+
+  if (error) {
+    if (isRateLimitError(error)) {
+      return {
+        error: formatAuthError(
+          error,
+          "Trop de demandes envoyées. Patientez quelques instants et réessayez.",
+        ),
+      };
+    }
+    return {
+      error: formatAuthError(error, "Impossible de modifier l'email."),
+    };
+  }
+
+  return { success: true };
+}
+
+export async function changePassword(input: {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}): Promise<AuthActionResult> {
+  const parsed = changePasswordSchema.safeParse(input);
+  if (!parsed.success) {
+    const fieldErrors = parsed.error.flatten().fieldErrors;
+    return {
+      error:
+        fieldErrors.currentPassword?.[0] ??
+        fieldErrors.newPassword?.[0] ??
+        fieldErrors.confirmPassword?.[0] ??
+        "Les informations saisies sont invalides.",
+    };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.email) {
+    return { error: "Session expirée." };
+  }
+
+  const { error: verifyError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: parsed.data.currentPassword,
+  });
+
+  if (verifyError) {
+    return { error: "Mot de passe actuel incorrect." };
+  }
+
+  const { error } = await supabase.auth.updateUser({
+    password: parsed.data.newPassword,
+  });
+
+  if (error) {
+    return {
+      error: formatAuthError(
+        error,
+        "Impossible de modifier le mot de passe.",
+      ),
+    };
+  }
+
+  return { success: true };
 }
 
 export async function signOut() {

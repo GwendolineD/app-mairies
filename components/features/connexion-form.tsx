@@ -13,7 +13,7 @@ import { PasswordField } from "@/components/ui/password-field";
 export function ConnexionForm({
   callbackError,
 }: {
-  callbackError?: boolean;
+  callbackError?: "recovery" | "generic";
 }) {
   const { email, password, setCredentials } = useAuthCredentials();
   const [state, formAction, isPending] = useActionState(
@@ -23,9 +23,11 @@ export function ConnexionForm({
 
   const displayError =
     state?.error ??
-    (callbackError
+    (callbackError === "recovery"
       ? "Lien invalide ou expiré. Demandez un nouveau mot de passe."
-      : undefined);
+      : callbackError === "generic"
+        ? "Lien de connexion invalide ou expiré. Réessayez."
+        : undefined);
 
   return (
     <div className="mx-auto flex w-full max-w-[500px] flex-1 flex-col rounded-none bg-transparent px-0 py-0 shadow-none md:min-h-0 md:rounded-3xl md:bg-surface md:px-12 md:py-16 md:shadow-elevated">

@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 import { requireActiveMembership } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
-import { profileUpdateSchema } from "@/lib/validations/schemas";
+import {
+  addressUpdateSchema,
+  avatarUpdateSchema,
+  nameUpdateSchema,
+} from "@/lib/validations/schemas";
 import { formatDisplayName } from "@/lib/utils/display-name";
 
 export async function updateNotificationPreferences(formData: FormData): Promise<void> {
@@ -31,28 +35,14 @@ export async function updateNotificationPreferences(formData: FormData): Promise
   revalidatePath(ROUTES.profil);
 }
 
-export type UpdateProfileResult = { success: true } | { error: string };
+export type ProfileActionResult = { success: true } | { error: string };
 
-export async function updateProfile(
-  input: {
-    firstName: string;
-    lastName: string;
-    avatarUrl?: string;
-    addressStreet: string;
-    addressCity: string;
-    addressPostcode: string;
-    addressLat: number;
-    addressLng: number;
-  },
-): Promise<UpdateProfileResult> {
+export async function updateName(input: {
+  firstName: string;
+  lastName: string;
+}): Promise<ProfileActionResult> {
   const ctx = await requireActiveMembership();
-  const membership = ctx.activeMembership;
-
-  if (!membership) {
-    return { error: "Adhésion active introuvable." };
-  }
-
-  const parsed = profileUpdateSchema.safeParse(input);
+  const parsed = nameUpdateSchema.safeParse(input);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Données invalides" };
   }
@@ -63,22 +53,44 @@ export async function updateProfile(
   );
 
   const supabase = await createClient();
-
-  const { error: profileError } = await supabase
+  const { error } = await supabase
     .from("profiles")
     .update({
       first_name: parsed.data.firstName,
       last_name: parsed.data.lastName,
       display_name: displayName,
-      avatar_url: parsed.data.avatarUrl || null,
     })
     .eq("user_id", ctx.userId);
 
-  if (profileError) {
-    return { error: "Impossible de mettre à jour le profil." };
+  if (error) {
+    return { error: "Impossible de mettre à jour le nom." };
   }
 
-  const { error: membershipError } = await supabase
+  revalidatePath(ROUTES.profil);
+  return { success: true };
+}
+
+export async function updateAddress(input: {
+  addressStreet: string;
+  addressCity: string;
+  addressPostcode: string;
+  addressLat: number;
+  addressLng: number;
+}): Promise<ProfileActionResult> {
+  const ctx = await requireActiveMembership();
+  const membership = ctx.activeMembership;
+
+  if (!membership) {
+    return { error: "Adhésion active introuvable." };
+  }
+
+  const parsed = addressUpdateSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Données invalides" };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
     .from("memberships")
     .update({
       address_street: parsed.data.addressStreet,
@@ -90,8 +102,33 @@ export async function updateProfile(
     .eq("id", membership.id)
     .eq("commune_id", membership.commune_id);
 
-  if (membershipError) {
+  if (error) {
     return { error: "Impossible de mettre à jour l'adresse." };
+  }
+
+  revalidatePath(ROUTES.profil);
+  return { success: true };
+}
+
+export async function updateAvatar(input: {
+  avatarUrl: string;
+}): Promise<ProfileActionResult> {
+  const ctx = await requireActiveMembership();
+  const parsed = avatarUpdateSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Données invalides" };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      avatar_url: parsed.data.avatarUrl || null,
+    })
+    .eq("user_id", ctx.userId);
+
+  if (error) {
+    return { error: "Impossible de mettre à jour la photo." };
   }
 
   revalidatePath(ROUTES.profil);
