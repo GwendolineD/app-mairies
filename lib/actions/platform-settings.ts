@@ -42,5 +42,5 @@ export async function getPlatformSupportEmail(): Promise<string> {
     .select("support_email")
     .eq("id", 1)
     .single();
-  return data?.support_email ?? "contact@vielocale.fr";
+  return data?.support_email ?? "contact@tous-voisins.fr";
 }
