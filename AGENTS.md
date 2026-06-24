@@ -21,6 +21,10 @@ This version has breaking changes — APIs, conventions, and file structure may 
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY` (= `ANON_KEY`)
    - `SUPABASE_SERVICE_ROLE_KEY` (= `SERVICE_ROLE_KEY`)
    - `CRON_SECRET` (valeur arbitraire en local pour tester le cron)
+   - **Web Push (VAPID)** — générer avec `npx web-push generate-vapid-keys` :
+     - `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (clé publique)
+     - `VAPID_PRIVATE_KEY` (clé privée, serveur uniquement)
+     - `VAPID_SUBJECT` (ex. `mailto:contact@tous-voisins.fr`)
 4. **App** : `npm run dev`.
 
 Comptes seed locaux (mot de passe **`VieLocaleDev2026!`**) : voir tableau dans `README.md` / `supabase/seed.sql` (ex. `dubois.gwendoline@hotmail.fr` → backoffice plateforme, commune pilote **Les Authieux**).
@@ -42,3 +46,16 @@ Comptes seed locaux (mot de passe **`VieLocaleDev2026!`**) : voir tableau dans `
 - `npm run dev` (de préférence dans une session **tmux** pour les agents Cloud).
 
 L’API **BAN** (`api-adresse.data.gouv.fr`) et les tuiles carte sont des dépendances HTTPS externes ; pas de service local supplémentaire pour l’auth ou les annonces de base.
+
+### Notifications push (production)
+
+Sur l’hébergeur (Vercel Dashboard, variables Docker, etc.) :
+
+1. Générer une paire VAPID **dédiée à la prod** : `npx web-push generate-vapid-keys`
+2. Configurer :
+   - `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (clé publique)
+   - `VAPID_PRIVATE_KEY` (clé privée, jamais côté client)
+   - `VAPID_SUBJECT=mailto:contact@tous-voisins.fr`
+3. HTTPS obligatoire en prod ; `SUPABASE_SERVICE_ROLE_KEY` requise pour l’envoi.
+
+Changer les clés VAPID invalide les abonnements existants — les utilisateurs devront réactiver.

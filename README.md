@@ -87,6 +87,42 @@ Authorization: Bearer $CRON_SECRET
 - Alerte J-3 avant expiration
 - Passage en `expiree` à J+7 après `target_date`
 
+## Notifications push (Web Push)
+
+Les notifications push utilisent le protocole **Web Push** (service worker `public/sw.js`, package `web-push`, table `push_subscriptions`).
+
+### Local
+
+1. Générer une paire de clés VAPID :
+
+```bash
+npx web-push generate-vapid-keys
+```
+
+2. Ajouter dans `.env.local` :
+
+```env
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=<clé publique générée>
+VAPID_PRIVATE_KEY=<clé privée générée>
+VAPID_SUBJECT=mailto:contact@tous-voisins.fr
+```
+
+3. Redémarrer `npm run dev`, puis **Profil → Préférences de notification → Activer**.
+
+`localhost` est un contexte sécurisé : push + service worker fonctionnent en HTTP. Pour tester sur mobile, exposer l’app via ngrok (déjà autorisé dans `next.config.ts`).
+
+### Production
+
+- Générer une **paire VAPID dédiée à la prod** (ne pas réutiliser les clés dev).
+- Configurer sur l’hébergeur (Vercel, Docker, etc.) :
+  - `NEXT_PUBLIC_VAPID_PUBLIC_KEY`
+  - `VAPID_PRIVATE_KEY`
+  - `VAPID_SUBJECT=mailto:contact@tous-voisins.fr`
+- Le site doit être servi en **HTTPS** (obligatoire pour Web Push hors localhost).
+- `SUPABASE_SERVICE_ROLE_KEY` doit être présente (lecture des abonnements push).
+
+**Important :** changer les clés VAPID invalide tous les abonnements existants — les utilisateurs devront réactiver les push.
+
 ## Cursor rules
 
 Dans `.cursor/rules/` : engineering, multi-tenant, design system, analytics, copy FR, destructive actions, ethical nudge UX.

@@ -69,6 +69,7 @@ export function ChangePasswordForm({ cardClassName }: Props) {
         <Button
           type="button"
           variant="secondary"
+          size="sm"
           className="w-fit self-end"
           onClick={() => setIsExpanded(true)}
         >
