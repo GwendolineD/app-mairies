@@ -14,6 +14,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { JoinCommuneModal } from "@/components/features/join-commune-modal";
+import { AssistanceModal } from "@/components/features/assistance/assistance-modal";
+import { AssistanceTrigger } from "@/components/features/assistance/assistance-trigger";
 import { switchCommune, signOut } from "@/lib/actions/auth";
 import type { BackofficeNavLink } from "@/lib/auth/permissions";
 import { ROUTES } from "@/lib/constants/routes";
@@ -37,6 +39,7 @@ type Props = {
   memberships: Membership[];
   activeCommuneId: string | null | undefined;
   backofficeLinks?: BackofficeNavLink[];
+  supportEmail: string;
 };
 
 function firstName(profile: Props["profile"]) {
@@ -62,9 +65,11 @@ export function ResidentMobileHeaderMenu({
   memberships,
   activeCommuneId,
   backofficeLinks = [],
+  supportEmail,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
+  const [assistanceOpen, setAssistanceOpen] = useState(false);
   const [busy, run] = useTransition();
 
   const selectable = memberships.filter(
@@ -187,6 +192,13 @@ export function ResidentMobileHeaderMenu({
               <User className="size-4 shrink-0 text-muted" aria-hidden />
               Mon profil
             </Link>
+            <AssistanceTrigger
+              variant="menu"
+              onOpen={() => {
+                setOpen(false);
+                setAssistanceOpen(true);
+              }}
+            />
             {backofficeLinks.map((link) => {
               const Icon = USER_MENU_ITEM_ICONS[link.label] ?? LampDesk;
               return (
@@ -220,6 +232,12 @@ export function ResidentMobileHeaderMenu({
         open={joinOpen}
         onClose={() => setJoinOpen(false)}
         existingMemberships={memberships}
+      />
+
+      <AssistanceModal
+        open={assistanceOpen}
+        onClose={() => setAssistanceOpen(false)}
+        supportEmail={supportEmail}
       />
     </>
   );

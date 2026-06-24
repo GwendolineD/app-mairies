@@ -27,7 +27,7 @@ export function PlatformSettingsForm({ initialSupportEmail }: Props) {
       action={handleSubmit}
       className="space-y-4"
     >
-      <FormField label="Email d'assistance (affiché aux utilisateurs suspendus)">
+      <FormField label="Email d'assistance (contact utilisateurs)">
         <Input
           type="email"
           value={email}
@@ -35,7 +35,7 @@ export function PlatformSettingsForm({ initialSupportEmail }: Props) {
             setEmail(e.target.value);
             setSaved(false);
           }}
-          placeholder="contact@vielocale.fr"
+          placeholder="contact@tous-voisins.fr"
           required
         />
       </FormField>

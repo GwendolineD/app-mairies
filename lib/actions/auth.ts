@@ -229,7 +229,7 @@ export async function signIn(formData: FormData) {
         .select("support_email")
         .eq("id", 1)
         .single();
-      const supportEmail = settings?.support_email ?? "contact@vielocale.fr";
+      const supportEmail = settings?.support_email ?? "contact@tous-voisins.fr";
       return {
         error: `Votre compte a été suspendu. Contactez l'assistance : ${supportEmail}`,
       };

@@ -1,6 +1,12 @@
 import { z } from "zod";
 import { ANNOUNCEMENT_CATEGORY_SLUGS } from "@/lib/constants/announcement-categories";
 import { ANNOUNCEMENT_TYPE_SLUGS } from "@/lib/constants/announcement-types";
+import {
+  MESSAGE_MAX,
+  MESSAGE_MIN,
+  SUBJECT_MAX,
+  SUBJECT_MIN,
+} from "@/lib/constants/support-request";
 
 export const passwordSchema = z
   .string()
@@ -218,6 +224,19 @@ export const reportSchema = z.object({
 
 export const appealSchema = z.object({
   message: z.string().min(10).max(2000),
+});
+
+export const supportRequestSchema = z.object({
+  subject: z
+    .string()
+    .trim()
+    .min(SUBJECT_MIN, `Objet requis (${SUBJECT_MIN} caractères minimum).`)
+    .max(SUBJECT_MAX, `Objet trop long (${SUBJECT_MAX} caractères maximum).`),
+  message: z
+    .string()
+    .trim()
+    .min(MESSAGE_MIN, `Message requis (${MESSAGE_MIN} caractères minimum).`)
+    .max(MESSAGE_MAX, `Message trop long (${MESSAGE_MAX} caractères maximum).`),
 });
 
 export const communeSettingsSchema = z.object({

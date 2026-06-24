@@ -311,6 +311,26 @@ export type PlatformSettings = {
   updated_at: string;
 };
 
+export type SupportRequestStatus = "new" | "in_progress" | "resolved" | "dismissed";
+
+export type SupportRequest = {
+  id: string;
+  user_id: string;
+  membership_id: string | null;
+  commune_id: string | null;
+  user_email: string;
+  first_name: string | null;
+  last_name: string | null;
+  subject: string;
+  message: string;
+  status: SupportRequestStatus;
+  admin_comment: string | null;
+  reviewed_at: string | null;
+  reviewed_by_user_id: string | null;
+  created_at: string;
+  commune?: { name: string } | null;
+};
+
 export type LegalDocument = {
   slug: string;
   title: string;

@@ -21,6 +21,7 @@ import {
   Flag,
   Flame,
   LayoutDashboard,
+  LifeBuoy,
   Mail,
   Settings,
   Sparkles,
@@ -43,6 +44,7 @@ const ADMIN_NAV_ICONS: Record<AdminNavItem["icon"], LucideIcon> = {
   tags: Tags,
   sparkles: Sparkles,
   "file-text": FileText,
+  "life-buoy": LifeBuoy,
 };
 
 type NavLinkProps = {

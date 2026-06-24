@@ -14,6 +14,7 @@ type Props = {
   memberships: Membership[];
   activeCommuneId: string | null | undefined;
   backofficeLinks?: BackofficeNavLink[];
+  supportEmail: string;
 };
 
 export function ResidentHeader({
@@ -21,6 +22,7 @@ export function ResidentHeader({
   memberships,
   activeCommuneId,
   backofficeLinks = [],
+  supportEmail,
 }: Props) {
   const logo = ILLUSTRATIONS.resident.header.logoHorizontal;
 
@@ -50,6 +52,7 @@ export function ResidentHeader({
               memberships={memberships}
               activeCommuneId={activeCommuneId}
               backofficeLinks={backofficeLinks}
+              supportEmail={supportEmail}
             />
           </div>
           <div className="hidden items-center gap-2 md:flex md:gap-3">

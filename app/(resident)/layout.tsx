@@ -5,6 +5,7 @@ import { ResidentHeader } from "@/components/features/resident-header";
 import { ResidentShellClient } from "@/components/features/resident-shell-client";
 import { getResidentBackofficeNav } from "@/lib/auth/permissions";
 import { requireActiveMembership } from "@/lib/auth/session";
+import { getPlatformSupportEmail } from "@/lib/actions/platform-settings";
 import { membershipToAddress } from "@/lib/types";
 import { countUnreadMessages } from "@/lib/queries/messages";
 import { createClient } from "@/lib/supabase/server";
@@ -22,10 +23,11 @@ export default async function ResidentRootLayout({
   const backofficeLinks = getResidentBackofficeNav(ctx);
   const supabase = await createClient();
 
-  const [unreadMessages, categoryRows, initiativeCategoryRows] = await Promise.all([
+  const [unreadMessages, categoryRows, initiativeCategoryRows, supportEmail] = await Promise.all([
     countUnreadMessages(supabase, ctx.activeMembership!.commune_id),
     getAnnouncementCategories(),
     getInitiativeEventCategories(),
+    getPlatformSupportEmail(),
   ]);
 
   initCategories(categoryRows);
@@ -40,10 +42,11 @@ export default async function ResidentRootLayout({
           ctx.profile.active_commune_id ?? ctx.activeMembership?.commune_id
         }
         backofficeLinks={backofficeLinks}
+        supportEmail={supportEmail}
       />
 
       <div className="flex min-h-0 w-full flex-1">
-        <ResidentSidebar unreadMessages={unreadMessages} />
+        <ResidentSidebar unreadMessages={unreadMessages} supportEmail={supportEmail} />
 
         <main className="min-w-0 flex-1 overflow-y-auto bg-surface px-5 py-4 pb-28 md:px-6 md:py-6 md:pb-6 lg:px-8">
           <ResidentShellClient

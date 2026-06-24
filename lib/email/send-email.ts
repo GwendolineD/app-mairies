@@ -5,6 +5,7 @@ export type EmailPayload = {
   subject: string;
   html: string;
   text?: string;
+  replyTo?: string;
 };
 
 export type SendEmailResult = {
@@ -27,6 +28,7 @@ export async function sendEmail(payload: EmailPayload): Promise<SendEmailResult>
       subject: payload.subject,
       html: payload.html,
       text: payload.text,
+      ...(payload.replyTo ? { replyTo: payload.replyTo } : {}),
     });
 
     return { success: true };

@@ -24,7 +24,7 @@ export default async function BackofficeSettingsPage() {
 
       <Card className="max-w-lg space-y-6 p-6">
         <PlatformSettingsForm
-          initialSupportEmail={settings?.support_email ?? "contact@vielocale.fr"}
+          initialSupportEmail={settings?.support_email ?? "contact@tous-voisins.fr"}
         />
       </Card>
     </PageStack>
