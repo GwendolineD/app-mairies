@@ -15,7 +15,9 @@ import { enrichInitiativesWithMeta } from "@/lib/queries/initiatives";
 import type { AgendaEventRecord } from "@/lib/types";
 import { formatAddressLabel } from "@/lib/utils/format-address";
 
-type SearchParams = Promise<{ tab?: string }> | undefined;
+type SearchParams =
+  | Promise<{ tab?: string; email_changed?: string; email_change_error?: string }>
+  | undefined;
 
 export default function ProfilPage({
   searchParams,
@@ -45,6 +47,10 @@ async function ProfilContent({
   const membershipId = membership.id;
 
   const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const [
     activeAnnouncementsResult,
@@ -118,6 +124,7 @@ async function ProfilContent({
         firstName: profile.first_name,
         lastName: profile.last_name,
         avatarUrl: profile.avatar_url,
+        email: user?.email ?? null,
       }}
       membership={{
         fullAddress,
@@ -153,6 +160,8 @@ async function ProfilContent({
         notificationPrefs,
         pushPublicKey,
       }}
+      emailChanged={sp.email_changed === "1"}
+      emailChangeError={sp.email_change_error === "1"}
     />
   );
 }

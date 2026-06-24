@@ -9,10 +9,26 @@ import {
 import { ROUTES } from "@/lib/constants/routes";
 import { getAppUrl } from "@/lib/utils/app-url";
 
-function authCallbackErrorRedirect(appOrigin: string) {
+type AuthCallbackFlow = "recovery" | "email_change" | "default";
+
+function authCallbackErrorRedirect(appOrigin: string, flow: AuthCallbackFlow) {
+  if (flow === "email_change") {
+    return NextResponse.redirect(
+      `${appOrigin}${ROUTES.profil}?email_change_error=1`,
+    );
+  }
+
+  const errorParam =
+    flow === "recovery" ? "auth_callback_recovery" : "auth_callback";
   return NextResponse.redirect(
-    `${appOrigin}${ROUTES.connexion}?error=auth_callback`,
+    `${appOrigin}${ROUTES.connexion}?error=${errorParam}`,
   );
+}
+
+function resolveFlow(type: string | null): AuthCallbackFlow {
+  if (type === "recovery") return "recovery";
+  if (type === "email_change") return "email_change";
+  return "default";
 }
 
 export async function GET(request: NextRequest) {
@@ -22,17 +38,23 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get("type");
   const next = searchParams.get("next") ?? ROUTES.accueil;
   const appOrigin = getAppUrl();
+  const flow = resolveFlow(type);
 
   if (searchParams.get("error")) {
-    return authCallbackErrorRedirect(appOrigin);
+    return authCallbackErrorRedirect(appOrigin, flow);
   }
 
   if (!code && !(tokenHash && type)) {
-    return authCallbackErrorRedirect(appOrigin);
+    return authCallbackErrorRedirect(appOrigin, flow);
   }
 
-  const isRecovery = type === "recovery";
-  const destination = isRecovery ? ROUTES.connexionNewPassword : next;
+  const isRecovery = flow === "recovery";
+  const isEmailChange = flow === "email_change";
+  const destination = isRecovery
+    ? ROUTES.connexionNewPassword
+    : isEmailChange
+      ? `${ROUTES.profil}?email_changed=1`
+      : next;
   let response = NextResponse.redirect(`${appOrigin}${destination}`);
 
   const supabase = createServerClient(
@@ -58,19 +80,20 @@ export async function GET(request: NextRequest) {
 
   let exchangeError: Error | null = null;
 
-  if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (error) exchangeError = error;
-  } else if (tokenHash && type) {
+  // Prefer token_hash + verifyOtp for SSR email flows (email change, etc.)
+  if (tokenHash && type) {
     const { error } = await supabase.auth.verifyOtp({
       type: type as EmailOtpType,
       token_hash: tokenHash,
     });
     if (error) exchangeError = error;
+  } else if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) exchangeError = error;
   }
 
   if (exchangeError) {
-    return authCallbackErrorRedirect(appOrigin);
+    return authCallbackErrorRedirect(appOrigin, flow);
   }
 
   if (isRecovery) {

@@ -17,6 +17,7 @@ import {
   CalendarPlus,
   CalendarDays,
   CreditCard,
+  FileText,
   Flag,
   Flame,
   LayoutDashboard,
@@ -41,6 +42,7 @@ const ADMIN_NAV_ICONS: Record<AdminNavItem["icon"], LucideIcon> = {
   "credit-card": CreditCard,
   tags: Tags,
   sparkles: Sparkles,
+  "file-text": FileText,
 };
 
 type NavLinkProps = {

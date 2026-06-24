@@ -62,6 +62,13 @@ export const ROUTES = {
     categoriesInitiatives: "/backoffice/categories-initiatives",
     signalements: "/backoffice/signalements",
     settings: "/backoffice/settings",
+    legal: "/backoffice/legal",
+    legalDetail: (slug: string) => `/backoffice/legal/${slug}`,
+  },
+  legal: {
+    cgu: "/legal/cgu",
+    privacy: "/legal/politique-confidentialite",
+    document: (slug: string) => `/legal/${slug}`,
   },
 } as const;
 
@@ -98,7 +105,8 @@ export type AdminNavIcon =
   | "flame"
   | "credit-card"
   | "tags"
-  | "sparkles";
+  | "sparkles"
+  | "file-text";
 
 export type AdminNavItem = {
   href: string;
@@ -128,5 +136,6 @@ export const BACKOFFICE_NAV: readonly AdminNavItem[] = [
   { href: ROUTES.backoffice.categoriesInitiatives, label: "Catégories initiatives", icon: "sparkles" },
   { href: ROUTES.backoffice.leads, label: "Leads pré-inscription", icon: "flame" },
   { href: ROUTES.backoffice.emails, label: "Templates email", icon: "mail" },
+  { href: ROUTES.backoffice.legal, label: "Documents juridiques", icon: "file-text" },
   { href: ROUTES.backoffice.settings, label: "Réglages", icon: "settings" },
 ];

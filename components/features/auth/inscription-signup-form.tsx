@@ -24,7 +24,6 @@ import {
   formatStreetDisplay,
 } from "@/lib/ban/display";
 import { signUp } from "@/lib/actions/auth";
-import { PRIVACY_URL, TERMS_URL } from "@/lib/constants/app";
 import { ROUTES } from "@/lib/constants/routes";
 import type { Commune } from "@/lib/types";
 
@@ -383,35 +382,23 @@ export function InscriptionSignupForm({
               />
               <span>
                 J&apos;accepte les{" "}
-                {TERMS_URL ? (
-                  <a
-                    href={TERMS_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="cursor-pointer font-semibold text-pink hover:underline"
-                  >
-                    Conditions d&apos;utilisation
-                  </a>
-                ) : (
-                  <span className="font-semibold text-pink">
-                    Conditions d&apos;utilisation
-                  </span>
-                )}{" "}
+                <Link
+                  href={ROUTES.legal.cgu}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="cursor-pointer font-semibold text-pink hover:underline"
+                >
+                  Conditions d&apos;utilisation
+                </Link>{" "}
                 et la{" "}
-                {PRIVACY_URL ? (
-                  <a
-                    href={PRIVACY_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="cursor-pointer font-semibold text-pink hover:underline"
-                  >
-                    Politique de confidentialité
-                  </a>
-                ) : (
-                  <span className="font-semibold text-pink">
-                    Politique de confidentialité
-                  </span>
-                )}
+                <Link
+                  href={ROUTES.legal.privacy}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="cursor-pointer font-semibold text-pink hover:underline"
+                >
+                  Politique de confidentialité
+                </Link>
               </span>
             </label>
 

@@ -154,10 +154,12 @@ export const userReportSchema = z.object({
   reason: z.string().min(10).max(1000),
 });
 
-export const profileUpdateSchema = z.object({
+export const nameUpdateSchema = z.object({
   firstName: z.string().trim().min(1, "Prénom requis").max(80),
   lastName: z.string().trim().min(1, "Nom requis").max(80),
-  avatarUrl: z.string().url().optional().or(z.literal("")),
+});
+
+export const addressUpdateSchema = z.object({
   addressStreet: z.string().trim().min(1, "Rue requise"),
   addressCity: z.string().trim().min(1, "Ville requise"),
   addressPostcode: z.string().trim().min(4, "Code postal invalide"),
@@ -168,6 +170,25 @@ export const profileUpdateSchema = z.object({
     .number({ error: "Localisation invalide : sélectionnez une adresse dans la liste." })
     .finite("Localisation invalide : sélectionnez une adresse dans la liste."),
 });
+
+export const avatarUpdateSchema = z.object({
+  avatarUrl: z.string().url().optional().or(z.literal("")),
+});
+
+export const emailChangeSchema = z.object({
+  email: z.string().email("Email invalide"),
+});
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Mot de passe actuel requis"),
+    newPassword: passwordSchema,
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Les mots de passe ne correspondent pas",
+    path: ["confirmPassword"],
+  });
 
 export const messageSchema = z.object({
   body: z.string().min(1).max(5000),

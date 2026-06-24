@@ -311,6 +311,16 @@ export type PlatformSettings = {
   updated_at: string;
 };
 
+export type LegalDocument = {
+  slug: string;
+  title: string;
+  content_html: string;
+  content_json: Record<string, unknown>;
+  version: number;
+  published_at: string | null;
+  updated_at: string;
+};
+
 export type BannedEmail = {
   email: string;
   reason: string | null;

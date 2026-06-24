@@ -10,6 +10,7 @@ export const PASSWORD_RULE = /(?=.*[A-Za-z])(?=.*\d).{8,}/;
 
 type Props = {
   name?: string;
+  label?: string;
   required?: boolean;
   autoComplete?: string;
   placeholder?: string;
@@ -22,6 +23,7 @@ type Props = {
 
 export function PasswordField({
   name = "password",
+  label = "Mot de passe",
   required = true,
   autoComplete = "new-password",
   placeholder = "Minimum 8 caractères",
@@ -54,7 +56,7 @@ export function PasswordField({
   return (
     <div className={showValidation ? "space-y-2" : undefined}>
       <Label htmlFor={id} className="mb-1.5 block text-xs font-semibold text-text">
-        Mot de passe
+        {label}
       </Label>
       <div className="relative">
         {showLeadingIcon ? (

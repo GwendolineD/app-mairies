@@ -7,7 +7,12 @@ type Props = {
 
 export default async function ConnexionPage({ searchParams }: Props) {
   const params = await searchParams;
-  const callbackError = params.error === "auth_callback";
+  const callbackError =
+    params.error === "auth_callback_recovery"
+      ? ("recovery" as const)
+      : params.error === "auth_callback"
+        ? ("generic" as const)
+        : undefined;
 
   return (
     <ConnexionLayoutShell>
