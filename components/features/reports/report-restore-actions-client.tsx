@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import {
@@ -16,6 +17,7 @@ type Props = {
   contextType: string;
   contextId: string;
   authorMembershipId: string | null;
+  onRestored?: (info: { at: string; actorName: string }) => void;
 };
 
 const restoreButtonClassName =
@@ -51,7 +53,9 @@ export function ReportRestoreActionsClient({
   contextType,
   contextId,
   authorMembershipId,
+  onRestored,
 }: Props) {
+  const router = useRouter();
   const [busy, run] = useTransition();
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,15 +89,28 @@ export function ReportRestoreActionsClient({
           setError(result.error ?? "Impossible de restaurer le contenu.");
           return;
         }
+        if (result.restoredAt && result.actorName) {
+          onRestored?.({
+            at: result.restoredAt,
+            actorName: result.actorName,
+          });
+        }
       } else if (authorMembershipId) {
         const result = await reactivateMembership(authorMembershipId);
         if (!result.success) {
           setError(result.error ?? "Impossible de restaurer l'auteur.");
           return;
         }
+        if (result.restoredAt && result.actorName) {
+          onRestored?.({
+            at: result.restoredAt,
+            actorName: result.actorName,
+          });
+        }
       }
 
       handleClose();
+      router.refresh();
     });
   }
 

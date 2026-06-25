@@ -21,10 +21,15 @@ import {
   parseReportListParams,
 } from "@/lib/utils/report-list-params";
 import { ReportActionsClient } from "@/components/features/reports/report-actions-client";
-import { ReportRestoreActionsClient } from "@/components/features/reports/report-restore-actions-client";
+import { ReportRestoreStatus } from "@/components/features/reports/report-restore-status";
 import { ReportContextPastille } from "@/components/features/reports/report-context-pastille";
 import { ReportListToolbar } from "@/components/features/reports/report-list-toolbar";
 import { ReportRelatedCountLink } from "@/components/features/reports/report-related-count-link";
+import {
+  buildReportRestoreContextMaps,
+  buildRestoredByNameMap,
+  getReportRestoreContext,
+} from "@/lib/queries/report-restore-context";
 
 export const dynamic = "force-dynamic";
 
@@ -79,6 +84,7 @@ export default async function BackofficeSignalementsPage(props: {
   const titleMap: Record<string, string> = {};
   const authorMembershipIdMap: Record<string, string> = {};
   const announcementTypeMap: Record<string, string> = {};
+  const contentSuspendedAtById: Record<string, string | null> = {};
 
   for (const table of ["announcements", "initiatives", "events"] as const) {
     const ctxType =
@@ -92,37 +98,41 @@ export default async function BackofficeSignalementsPage(props: {
       if (table === "announcements") {
         const { data } = await supabase
           .from("announcements")
-          .select("id, title, author_membership_id, type")
+          .select("id, title, author_membership_id, type, suspended_at")
           .in("id", ids);
         for (const row of data ?? []) {
           titleMap[row.id] = row.title;
           authorMembershipIdMap[row.id] = row.author_membership_id;
           announcementTypeMap[row.id] = row.type;
+          contentSuspendedAtById[row.id] = row.suspended_at;
         }
       } else {
         const { data } = await supabase
           .from(table)
-          .select("id, title, author_membership_id")
+          .select("id, title, author_membership_id, suspended_at")
           .in("id", ids);
         for (const row of data ?? []) {
           titleMap[row.id] = row.title;
           authorMembershipIdMap[row.id] = row.author_membership_id;
+          contentSuspendedAtById[row.id] = row.suspended_at;
         }
       }
     }
   }
 
   const authorUserIdMap: Record<string, string> = {};
+  const membershipStatusById: Record<string, string> = {};
   const authorMembershipIds = [
     ...new Set(Object.values(authorMembershipIdMap)),
   ];
   if (authorMembershipIds.length > 0) {
     const { data: authorMemberships } = await supabase
       .from("memberships")
-      .select("id, user_id")
+      .select("id, user_id, status")
       .in("id", authorMembershipIds);
     for (const row of authorMemberships ?? []) {
       authorUserIdMap[row.id] = row.user_id;
+      membershipStatusById[row.id] = row.status;
     }
   }
 
@@ -137,12 +147,28 @@ export default async function BackofficeSignalementsPage(props: {
   if (userReportUserIds.length > 0) {
     const { data: userReportMemberships } = await supabase
       .from("memberships")
-      .select("id, user_id, commune_id")
+      .select("id, user_id, commune_id, status")
       .in("user_id", userReportUserIds);
     for (const row of userReportMemberships ?? []) {
       userReportMembershipIdMap[`${row.commune_id}:${row.user_id}`] = row.id;
+      membershipStatusById[row.id] = row.status;
     }
   }
+
+  const restoreContextMaps = await buildReportRestoreContextMaps(supabase, {
+    contentIds: contentIds.map((entry) => entry.id),
+    membershipIds: [
+      ...authorMembershipIds,
+      ...Object.values(userReportMembershipIdMap),
+    ],
+    contentSuspendedAtById,
+    membershipStatusById,
+  });
+
+  const restoredByNameMap = await buildRestoredByNameMap(
+    supabase,
+    reports ?? [],
+  );
 
   const reportCountByContext = new Map<string, number>();
   for (const report of reports ?? []) {
@@ -219,6 +245,24 @@ export default async function BackofficeSignalementsPage(props: {
             const contextLabel = getReportContextLabel(report.context_type);
             const showRelatedLink =
               relatedCount > 1 && contentTitle && contextLabel !== null;
+            const restoredByUserId = (
+              report as { restored_by_user_id?: string | null }
+            ).restored_by_user_id;
+            const restoredAt = (report as { restored_at?: string | null })
+              .restored_at;
+            const restoreContext = getReportRestoreContext(
+              {
+                resolution: report.resolution,
+                context_type: report.context_type,
+                context_id: report.context_id,
+                restored_at: restoredAt,
+                restored_by_name: restoredByUserId
+                  ? restoredByNameMap[restoredByUserId] ?? "Modérateur"
+                  : null,
+              },
+              authorMembershipId,
+              restoreContextMaps,
+            );
 
             return (
               <Card key={report.id} className="gap-3 rounded-2xl p-4">
@@ -282,10 +326,11 @@ export default async function BackofficeSignalementsPage(props: {
                       authorMembershipId={authorMembershipId}
                       isAuthorSelf={isAuthorSelf}
                     />
-                  ) : report.resolution === "content_suspended" ||
-                    report.resolution === "user_suspended" ? (
-                    <ReportRestoreActionsClient
-                      resolution={report.resolution}
+                  ) : restoreContext ? (
+                    <ReportRestoreStatus
+                      isStillSuspended={restoreContext.isStillSuspended}
+                      lastRestore={restoreContext.lastRestore}
+                      resolution={report.resolution as "content_suspended" | "user_suspended"}
                       contextType={report.context_type}
                       contextId={report.context_id}
                       authorMembershipId={authorMembershipId}

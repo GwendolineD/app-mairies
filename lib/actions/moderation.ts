@@ -7,16 +7,72 @@ import {
 } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import {
+  markReportsRestoredForContent,
+  markReportsRestoredForUser,
   resolvePendingReportsForContent,
   resolvePendingReportsForUser,
 } from "@/lib/actions/municipality";
 import { MEMBERSHIP_STATUS } from "@/lib/constants/statuses";
+import { formatDisplayName } from "@/lib/utils/display-name";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { ConversationContextType } from "@/lib/types";
 
 export type ModerationActionResult =
-  | { success: true }
+  | { success: true; restoredAt?: string; actorName?: string }
   | { success: false; error: string };
+
+const CONTENT_TARGET_TYPES = new Set([
+  "announcement",
+  "initiative",
+  "event",
+]);
+
+async function resolveModerationActorName(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+): Promise<string> {
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("first_name, last_name, display_name")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (profile?.first_name && profile?.last_name) {
+    return formatDisplayName(profile.first_name, profile.last_name);
+  }
+
+  return profile?.display_name?.trim() || "Modérateur";
+}
+
+async function logModerationReactivate(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  entry: {
+    actorUserId: string;
+    targetType: string;
+    targetId: string;
+    communeId: string;
+  },
+): Promise<boolean> {
+  const { error } = await supabase.from("moderation_actions").insert({
+    actor_user_id: entry.actorUserId,
+    target_type: entry.targetType as "announcement" | "initiative" | "event" | "membership",
+    target_id: entry.targetId,
+    commune_id: entry.communeId,
+    action: "reactivate",
+    reason: null,
+  });
+
+  if (error) {
+    console.error(
+      "[moderation] Failed to log reactivate action:",
+      error.message,
+      error.code,
+    );
+    return false;
+  }
+
+  return true;
+}
 
 type ContentType = ConversationContextType;
 
@@ -187,17 +243,23 @@ export async function reactivateContent(
     return { success: false, error: updateError.message };
   }
 
-  await supabase.from("moderation_actions").insert({
-    actor_user_id: actorUserId,
-    target_type: type,
-    target_id: contentId,
-    commune_id: content.commune_id,
-    action: "reactivate",
-    reason: null,
+  const restoredAt = new Date().toISOString();
+  await logModerationReactivate(supabase, {
+    actorUserId,
+    targetType: type,
+    targetId: contentId,
+    communeId: content.commune_id,
   });
+  const actorName = await resolveModerationActorName(supabase, actorUserId);
+  await markReportsRestoredForContent(
+    type,
+    contentId,
+    restoredAt,
+    actorUserId,
+  );
 
   revalidateContentPaths(type, contentId, content.commune_id);
-  return { success: true };
+  return { success: true, restoredAt, actorName };
 }
 
 export async function suspendMembershipByStaff(
@@ -331,14 +393,21 @@ export async function reactivateMembership(
     return { success: false, error: updateError.message };
   }
 
-  await supabase.from("moderation_actions").insert({
-    actor_user_id: actorUserId,
-    target_type: "membership",
-    target_id: membershipId,
-    commune_id: membership.commune_id,
-    action: "reactivate",
-    reason: null,
+  const restoredAt = new Date().toISOString();
+  await logModerationReactivate(supabase, {
+    actorUserId,
+    targetType: "membership",
+    targetId: membershipId,
+    communeId: membership.commune_id,
   });
+  const actorName = await resolveModerationActorName(supabase, actorUserId);
+  await markReportsRestoredForUser(
+    membershipId,
+    membership.user_id,
+    membership.commune_id,
+    restoredAt,
+    actorUserId,
+  );
 
   revalidatePath(ROUTES.mairie.habitants);
   revalidatePath(ROUTES.mairie.signalements);
@@ -346,7 +415,7 @@ export async function reactivateMembership(
   revalidatePath(ROUTES.backoffice.userDetail(membership.user_id));
   revalidatePath(ROUTES.backoffice.communeDetail(membership.commune_id));
 
-  return { success: true };
+  return { success: true, restoredAt, actorName };
 }
 
 export async function banUserFromPlatform(
