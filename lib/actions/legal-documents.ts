@@ -3,12 +3,14 @@
 import { revalidatePath, updateTag } from "next/cache";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
+import type { Json } from "@/lib/types/database.types";
 import { LEGAL_DOCUMENTS_CACHE_TAG } from "@/lib/legal/cache-tags";
 import {
   isLegalDocumentSlug,
   type LegalDocumentSlug,
 } from "@/lib/legal/seed-content";
 import { createClient } from "@/lib/supabase/server";
+import { sanitizeHtml } from "@/lib/utils/sanitize-html";
 
 type UpdateInput = {
   slug: LegalDocumentSlug;
@@ -30,7 +32,9 @@ export async function updateLegalDocument(
     return { success: false, error: "Le titre est requis." };
   }
 
-  if (!input.contentHtml.trim()) {
+  const sanitizedHtml = sanitizeHtml(input.contentHtml);
+
+  if (!sanitizedHtml.trim()) {
     return { success: false, error: "Le contenu ne peut pas être vide." };
   }
 
@@ -53,8 +57,8 @@ export async function updateLegalDocument(
     {
       slug: input.slug,
       title: input.title.trim(),
-      content_html: input.contentHtml,
-      content_json: input.contentJson,
+      content_html: sanitizedHtml,
+      content_json: input.contentJson as unknown as Json,
       version: nextVersion,
       published_at: now,
       updated_at: now,

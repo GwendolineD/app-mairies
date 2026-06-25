@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
+import { APP_NAME } from "@/lib/constants/app";
 import { PILOT_ACCESS_STATUSES } from "@/lib/constants/access-status";
 
 export const dynamic = "force-dynamic";
@@ -47,7 +48,7 @@ export default async function BackofficeAdminHomePage() {
       </div>
       <p className="text-sm font-medium text-muted">
         Les agrégats détaillés (parcours inscription, carte, signalements) seront reliés aux
-        outils métier Vie Locale lors de la mise en ligne progressive.
+        outils métier {APP_NAME} lors de la mise en ligne progressive.
       </p>
     </PageStack>
   );

@@ -145,7 +145,7 @@ async function listEventMemberRows(
   eventId: string,
 ): Promise<EventVolunteer[]> {
   const { data, error } = await supabase
-    .from(table)
+    .from(table as "event_volunteers")
     .select(
       "membership_id, memberships(id, profiles(first_name, last_name, display_name, avatar_url))",
     )

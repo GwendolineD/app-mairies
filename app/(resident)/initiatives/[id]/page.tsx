@@ -119,27 +119,40 @@ export default async function InitiativeDetailPage(props: {
 
   const isAuthor = initiative.author_membership_id === membership.id;
 
-  const { count: supportCount } = await supabase
-    .from("initiative_responses")
-    .select("id", { count: "exact", head: true })
-    .eq("initiative_id", id)
-    .eq("response_type", "support");
-
-  const { data: userSupport } = await supabase
-    .from("initiative_responses")
-    .select("id")
-    .eq("initiative_id", id)
-    .eq("membership_id", membership.id)
-    .eq("response_type", "support")
-    .maybeSingle();
-
-  const { data: authorMembership } = await supabase
-    .from("memberships")
-    .select(
-      "id, created_at, address_postcode, profiles(first_name, last_name, display_name, avatar_url)",
-    )
-    .eq("id", initiative.author_membership_id)
-    .single();
+  const [
+    { count: supportCount },
+    { data: userSupport },
+    { data: authorMembership },
+    { data: linkedEvent },
+    supporters,
+  ] = await Promise.all([
+    supabase
+      .from("initiative_responses")
+      .select("id", { count: "exact", head: true })
+      .eq("initiative_id", id)
+      .eq("response_type", "support"),
+    supabase
+      .from("initiative_responses")
+      .select("id")
+      .eq("initiative_id", id)
+      .eq("membership_id", membership.id)
+      .eq("response_type", "support")
+      .maybeSingle(),
+    supabase
+      .from("memberships")
+      .select(
+        "id, created_at, address_postcode, profiles(first_name, last_name, display_name, avatar_url)",
+      )
+      .eq("id", initiative.author_membership_id)
+      .single(),
+    supabase
+      .from("events")
+      .select("id, title, starts_at, ends_at")
+      .eq("source_initiative_id", id)
+      .eq("status", "active")
+      .maybeSingle(),
+    listInitiativeSupporters(supabase, id),
+  ]);
 
   type AuthorMembership = {
     created_at: string;
@@ -168,16 +181,6 @@ export default async function InitiativeDetailPage(props: {
   const memberSince = authorData?.created_at
     ? formatMemberSince(authorData.created_at)
     : "Membre";
-
-  const [{ data: linkedEvent }, supporters] = await Promise.all([
-    supabase
-      .from("events")
-      .select("id, title, starts_at, ends_at")
-      .eq("source_initiative_id", id)
-      .eq("status", "active")
-      .maybeSingle(),
-    listInitiativeSupporters(supabase, id),
-  ]);
 
   const editData = isAuthor
     ? buildInitiativeEditData(initiative, membership)

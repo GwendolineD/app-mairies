@@ -6,21 +6,81 @@ import {
   requirePlatformAdmin,
 } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
+import {
+  markReportsRestoredForContent,
+  markReportsRestoredForUser,
+  resolvePendingReportsForContent,
+  resolvePendingReportsForUser,
+} from "@/lib/actions/municipality";
 import { MEMBERSHIP_STATUS } from "@/lib/constants/statuses";
+import { formatDisplayName } from "@/lib/utils/display-name";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { ConversationContextType } from "@/lib/types";
 
 export type ModerationActionResult =
-  | { success: true }
+  | { success: true; restoredAt?: string; actorName?: string }
   | { success: false; error: string };
+
+const CONTENT_TARGET_TYPES = new Set([
+  "announcement",
+  "initiative",
+  "event",
+]);
+
+async function resolveModerationActorName(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+): Promise<string> {
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("first_name, last_name, display_name")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (profile?.first_name && profile?.last_name) {
+    return formatDisplayName(profile.first_name, profile.last_name);
+  }
+
+  return profile?.display_name?.trim() || "Modérateur";
+}
+
+async function logModerationReactivate(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  entry: {
+    actorUserId: string;
+    targetType: string;
+    targetId: string;
+    communeId: string;
+  },
+): Promise<boolean> {
+  const { error } = await supabase.from("moderation_actions").insert({
+    actor_user_id: entry.actorUserId,
+    target_type: entry.targetType as "announcement" | "initiative" | "event" | "membership",
+    target_id: entry.targetId,
+    commune_id: entry.communeId,
+    action: "reactivate",
+    reason: null,
+  });
+
+  if (error) {
+    console.error(
+      "[moderation] Failed to log reactivate action:",
+      error.message,
+      error.code,
+    );
+    return false;
+  }
+
+  return true;
+}
 
 type ContentType = ConversationContextType;
 
-const TABLE_MAP: Record<ContentType, string> = {
+const TABLE_MAP = {
   announcement: "announcements",
   initiative: "initiatives",
   event: "events",
-};
+} as const satisfies Record<ContentType, "announcements" | "initiatives" | "events">;
 
 function revalidateContentPaths(type: ContentType, id: string, communeId: string) {
   revalidatePath(ROUTES.accueil);
@@ -57,7 +117,7 @@ export async function suspendContent(
   const supabase = await createClient();
 
   const { data: content, error: fetchError } = await supabase
-    .from(table)
+    .from(table as "announcements")
     .select("id, commune_id, suspended_at")
     .eq("id", contentId)
     .maybeSingle();
@@ -66,11 +126,6 @@ export async function suspendContent(
     return { success: false, error: "Contenu introuvable." };
   }
 
-  if (content.suspended_at) {
-    return { success: false, error: "Ce contenu est déjà suspendu." };
-  }
-
-  // Determine authorization (commune staff or platform admin)
   let actorUserId: string;
 
   try {
@@ -86,9 +141,21 @@ export async function suspendContent(
     actorUserId = adminCtx.userId;
   }
 
+  if (content.suspended_at) {
+    await resolvePendingReportsForContent(
+      type,
+      contentId,
+      content.commune_id,
+      "content_suspended",
+      actorUserId,
+    );
+    revalidateContentPaths(type, contentId, content.commune_id);
+    return { success: true };
+  }
+
   const now = new Date().toISOString();
   const { error: updateError } = await supabase
-    .from(table)
+    .from(table as "announcements")
     .update({
       suspended_at: now,
       suspended_by: actorUserId,
@@ -111,6 +178,14 @@ export async function suspendContent(
     related_report_id: relatedReportId || null,
   });
 
+  await resolvePendingReportsForContent(
+    type,
+    contentId,
+    content.commune_id,
+    "content_suspended",
+    actorUserId,
+  );
+
   revalidateContentPaths(type, contentId, content.commune_id);
   return { success: true };
 }
@@ -129,7 +204,7 @@ export async function reactivateContent(
   const supabase = await createClient();
 
   const { data: content, error: fetchError } = await supabase
-    .from(table)
+    .from(table as "announcements")
     .select("id, commune_id, suspended_at")
     .eq("id", contentId)
     .maybeSingle();
@@ -157,7 +232,7 @@ export async function reactivateContent(
   }
 
   const { error: updateError } = await supabase
-    .from(table)
+    .from(table as "announcements")
     .update({
       suspended_at: null,
       suspended_by: null,
@@ -169,17 +244,23 @@ export async function reactivateContent(
     return { success: false, error: updateError.message };
   }
 
-  await supabase.from("moderation_actions").insert({
-    actor_user_id: actorUserId,
-    target_type: type,
-    target_id: contentId,
-    commune_id: content.commune_id,
-    action: "reactivate",
-    reason: null,
+  const restoredAt = new Date().toISOString();
+  await logModerationReactivate(supabase, {
+    actorUserId,
+    targetType: type,
+    targetId: contentId,
+    communeId: content.commune_id,
   });
+  const actorName = await resolveModerationActorName(supabase, actorUserId);
+  await markReportsRestoredForContent(
+    type,
+    contentId,
+    restoredAt,
+    actorUserId,
+  );
 
   revalidateContentPaths(type, contentId, content.commune_id);
-  return { success: true };
+  return { success: true, restoredAt, actorName };
 }
 
 export async function suspendMembershipByStaff(
@@ -191,7 +272,6 @@ export async function suspendMembershipByStaff(
     return { success: false, error: "Paramètres invalides." };
   }
 
-  const ctx = await requireCommuneStaff();
   const supabase = await createClient();
 
   const { data: membership, error: fetchError } = await supabase
@@ -204,15 +284,26 @@ export async function suspendMembershipByStaff(
     return { success: false, error: "Adhésion introuvable." };
   }
 
-  if (membership.commune_id !== ctx.communeId) {
-    return { success: false, error: "Cette adhésion n'appartient pas à votre commune." };
-  }
-
   if (membership.status !== MEMBERSHIP_STATUS.active) {
     return { success: false, error: "Seule une adhésion active peut être suspendue." };
   }
 
-  if (membership.user_id === ctx.userId) {
+  let actorUserId: string;
+
+  try {
+    const ctx = await requireCommuneStaff();
+    if (membership.commune_id !== ctx.communeId) {
+      const adminCtx = await requirePlatformAdmin();
+      actorUserId = adminCtx.userId;
+    } else {
+      actorUserId = ctx.userId;
+    }
+  } catch {
+    const adminCtx = await requirePlatformAdmin();
+    actorUserId = adminCtx.userId;
+  }
+
+  if (membership.user_id === actorUserId) {
     return { success: false, error: "Vous ne pouvez pas suspendre votre propre compte." };
   }
 
@@ -231,7 +322,7 @@ export async function suspendMembershipByStaff(
   }
 
   await supabase.from("moderation_actions").insert({
-    actor_user_id: ctx.userId,
+    actor_user_id: actorUserId,
     target_type: "membership",
     target_id: membershipId,
     commune_id: membership.commune_id,
@@ -239,8 +330,16 @@ export async function suspendMembershipByStaff(
     reason: trimmedReason,
   });
 
+  await resolvePendingReportsForUser(
+    membershipId,
+    membership.user_id,
+    membership.commune_id,
+    actorUserId,
+  );
+
   revalidatePath(ROUTES.mairie.habitants);
   revalidatePath(ROUTES.mairie.signalements);
+  revalidatePath(ROUTES.backoffice.signalements);
   revalidatePath(ROUTES.backoffice.userDetail(membership.user_id));
   revalidatePath(ROUTES.backoffice.communeDetail(membership.commune_id));
 
@@ -296,21 +395,29 @@ export async function reactivateMembership(
     return { success: false, error: updateError.message };
   }
 
-  await supabase.from("moderation_actions").insert({
-    actor_user_id: actorUserId,
-    target_type: "membership",
-    target_id: membershipId,
-    commune_id: membership.commune_id,
-    action: "reactivate",
-    reason: null,
+  const restoredAt = new Date().toISOString();
+  await logModerationReactivate(supabase, {
+    actorUserId,
+    targetType: "membership",
+    targetId: membershipId,
+    communeId: membership.commune_id,
   });
+  const actorName = await resolveModerationActorName(supabase, actorUserId);
+  await markReportsRestoredForUser(
+    membershipId,
+    membership.user_id,
+    membership.commune_id,
+    restoredAt,
+    actorUserId,
+  );
 
   revalidatePath(ROUTES.mairie.habitants);
   revalidatePath(ROUTES.mairie.signalements);
+  revalidatePath(ROUTES.backoffice.signalements);
   revalidatePath(ROUTES.backoffice.userDetail(membership.user_id));
   revalidatePath(ROUTES.backoffice.communeDetail(membership.commune_id));
 
-  return { success: true };
+  return { success: true, restoredAt, actorName };
 }
 
 export async function banUserFromPlatform(

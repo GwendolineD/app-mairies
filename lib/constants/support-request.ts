@@ -5,3 +5,9 @@ export const MESSAGE_MAX = 2000;
 
 export const SUPPORT_REQUEST_RATE_LIMIT = 5;
 export const SUPPORT_REQUEST_RATE_WINDOW_MS = 60 * 60 * 1000;
+
+export const SUSPENSION_REVISION_SECTION_TITLE =
+  "Demande de révision de la décision";
+export const SUSPENSION_REVISION_SECTION_TITLE_SENT =
+  "Demande de révision de suspension de compte utilisateur";
+export const SUSPENSION_REVISION_SUBJECT = SUSPENSION_REVISION_SECTION_TITLE_SENT;

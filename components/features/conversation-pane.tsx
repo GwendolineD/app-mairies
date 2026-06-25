@@ -43,11 +43,11 @@ const CONTEXT_ICONS = {
   event: CalendarDays,
 } as const;
 
-const CONTEXT_TABLES: Record<ConversationContextType, string> = {
+const CONTEXT_TABLES = {
   announcement: "announcements",
   initiative: "initiatives",
   event: "events",
-};
+} as const satisfies Record<ConversationContextType, "announcements" | "initiatives" | "events">;
 
 async function fetchContextPhotoUrl(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -57,7 +57,7 @@ async function fetchContextPhotoUrl(
   if (!contextType || !contextId) return { photoUrl: null, available: true };
   const table = CONTEXT_TABLES[contextType];
   const { data } = await supabase
-    .from(table)
+    .from(table as "announcements")
     .select("photo_url, suspended_at")
     .eq("id", contextId)
     .maybeSingle();

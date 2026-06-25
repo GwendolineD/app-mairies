@@ -9,6 +9,7 @@ import { signUp, submitCommuneInterest } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
+import { APP_NAME } from "@/lib/constants/app";
 import type { Commune } from "@/lib/types";
 
 type LookupResponse = { commune: Commune | null; error?: string };
@@ -114,7 +115,7 @@ export function InscriptionFlow() {
                 <>
                   Nous cherchons «&nbsp;
                   <span className="text-purple">{communeMeta.city}</span>&nbsp;» mais la
-                  fiche officielle n&apos;est pas encore visible dans Vie Locale sous ce
+                  fiche officielle n&apos;est pas encore visible dans {APP_NAME} sous ce
                   code INSEE&nbsp;: vos coordonnées aident nos équipes et la mairie à
                   accélérer l&apos;ouverture locale.
                 </>

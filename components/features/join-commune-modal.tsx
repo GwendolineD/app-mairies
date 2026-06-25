@@ -229,13 +229,6 @@ export function JoinCommuneModal({
 
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Button
-                  type="submit"
-                  disabled={joinPending || !addr.postcode || !addr.city}
-                  className="flex-1"
-                >
-                  Adhérer à cette commune
-                </Button>
-                <Button
                   type="button"
                   variant="secondary"
                   className="flex-1"
@@ -245,6 +238,13 @@ export function JoinCommuneModal({
                   }}
                 >
                   Changer de commune
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={joinPending || !addr.postcode || !addr.city}
+                  className="flex-1"
+                >
+                  Adhérer à cette commune
                 </Button>
               </div>
             </form>

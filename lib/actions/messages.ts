@@ -35,11 +35,11 @@ type ContextRow = {
   author_membership_id: string;
 };
 
-const CONTEXT_TABLES: Record<ConversationContextType, string> = {
+const CONTEXT_TABLES = {
   announcement: "announcements",
   initiative: "initiatives",
   event: "events",
-};
+} as const satisfies Record<ConversationContextType, "announcements" | "initiatives" | "events">;
 
 /**
  * Generic helper: ensure a 1:1 conversation exists between the current user and
@@ -57,7 +57,7 @@ async function ensureConversation(
   const table = CONTEXT_TABLES[contextType];
 
   const { data: row, error: ctxError } = await supabase
-    .from(table)
+    .from(table as "announcements")
     .select("id, commune_id, title, author_membership_id, suspended_at")
     .eq("id", contextId)
     .eq("commune_id", communeId)

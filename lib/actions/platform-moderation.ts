@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requirePlatformAdmin } from "@/lib/auth/session";
+import { resolvePendingReportsForUser } from "@/lib/actions/municipality";
 import { ROUTES } from "@/lib/constants/routes";
 import { MEMBERSHIP_STATUS } from "@/lib/constants/statuses";
 import { createClient } from "@/lib/supabase/server";
@@ -60,7 +61,7 @@ export async function suspendUserFromAllCommunesAction(
   userId: string,
   reason: string,
 ): Promise<ModerationActionResult> {
-  await requirePlatformAdmin();
+  const { userId: actorUserId } = await requirePlatformAdmin();
 
   const trimmedReason = reason.trim();
   if (!userId || !trimmedReason) {
@@ -97,8 +98,19 @@ export async function suspendUserFromAllCommunesAction(
     return { success: false, error: error.message };
   }
 
+  for (const membership of memberships) {
+    await resolvePendingReportsForUser(
+      membership.id,
+      userId,
+      membership.commune_id,
+      actorUserId,
+    );
+  }
+
   revalidatePath(ROUTES.backoffice.userDetail(userId));
   revalidatePath(ROUTES.backoffice.communes);
+  revalidatePath(ROUTES.backoffice.signalements);
+  revalidatePath(ROUTES.mairie.signalements);
 
   for (const membership of memberships) {
     revalidatePath(ROUTES.backoffice.communeDetail(membership.commune_id));

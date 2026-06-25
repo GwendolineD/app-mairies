@@ -9,8 +9,9 @@ export default async function PlatformCommunesPage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("communes")
-    .select("*")
-    .order("name");
+    .select("id, name, insee_code, access_status, trial_max_members, created_at")
+    .order("name")
+    .limit(200);
 
   const rows = data ?? [];
 

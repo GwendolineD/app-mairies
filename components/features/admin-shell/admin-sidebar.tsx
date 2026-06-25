@@ -60,7 +60,7 @@ export function AdminSidebar({
   return (
     <aside
       className={cn(
-        "group/sidebar relative hidden shrink-0 flex-col overflow-visible bg-sidebar py-6 transition-[width] duration-200 ease-in-out md:flex",
+        "group/sidebar relative hidden min-h-0 shrink-0 flex-col overflow-visible bg-sidebar py-6 transition-[width] duration-200 ease-in-out md:flex",
         collapsed ? "px-2 md:w-16" : "px-4 md:w-56 lg:w-64",
         !hydrated && "md:w-56 lg:w-64",
       )}
@@ -83,7 +83,7 @@ export function AdminSidebar({
         )}
       </button>
 
-      <div className={cn("flex min-h-0 flex-1 flex-col", collapsed && "overflow-hidden")}>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <AdminSidebarNav
           navItems={navItems}
           collapsed={collapsed}

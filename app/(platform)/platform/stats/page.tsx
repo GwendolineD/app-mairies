@@ -1,3 +1,4 @@
+import { APP_NAME } from "@/lib/constants/app";
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
@@ -12,7 +13,7 @@ export default async function PlatformStatsPage() {
   const { count: communesActive } = await supabase
     .from("communes")
     .select("*", { count: "exact", head: true })
-    .eq("subscription_status", "active");
+    .eq("access_status", "active");
 
   return (
     <div className="space-y-4">
@@ -33,7 +34,7 @@ export default async function PlatformStatsPage() {
       </div>
       <p className="text-sm font-medium text-muted">
         Les agrégats détaillés (parcours inscription, carte, signalements) seront reliés aux
-        outils métier Vie Locale lors de la mise en ligne progressive.
+        outils métier {APP_NAME} lors de la mise en ligne progressive.
       </p>
     </div>
   );

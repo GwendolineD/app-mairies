@@ -78,7 +78,7 @@ export function getEmailTemplateMockValue(variable: string): string {
     reporter_name: "Marie Martin",
     reason: "Contenu inapproprié ou trompeur.",
     report_date: "17 juin 2026",
-    moderation_url: "https://app.vielocale.fr/mairie/signalements",
+    moderation_url: "https://app.tous-voisins.fr/mairie/signalements",
     sender_name: "Marie Dupont",
     invite_link: "http://localhost:3000/inscription?invite=abc123def456",
     logo_url: ILLUSTRATIONS.auth.logoHorizontal,

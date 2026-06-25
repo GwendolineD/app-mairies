@@ -1,5 +1,6 @@
 import { NavLink } from "@/components/ui/nav-link";
 import { requirePlatformAdmin } from "@/lib/auth/session";
+import { APP_NAME } from "@/lib/constants/app";
 import { BACKOFFICE_NAV } from "@/lib/constants/routes";
 
 export default async function PlatformLayout({
@@ -30,7 +31,7 @@ export default async function PlatformLayout({
               Backoffice plateforme
             </p>
             <h1 className="text-[28px] font-bold leading-9 text-text lg:text-3xl">
-              Administration Vie Locale
+              Administration {APP_NAME}
             </h1>
           </header>
           <nav className="flex flex-wrap gap-2 border-b border-border/60 px-4 py-4 lg:hidden">

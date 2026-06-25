@@ -41,7 +41,7 @@ BEGIN
     'active',
     jsonb_build_object(
       'welcomeMessage',
-      'Bienvenue sur Vie Locale Les Authieux — découvrir, partager, s''entraider.'
+      'Bienvenue sur Tous Voisins Les Authieux — découvrir, partager, s''entraider.'
     )
   )
   ON CONFLICT (insee_code) DO UPDATE SET

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { BackofficeMembersListParams } from "@/lib/utils/backoffice-search-params";
+import type { HabitantsSort } from "@/lib/utils/habitants-list-params";
 import type { MembershipRole, MembershipStatus } from "@/lib/types";
 
 export type CommuneMemberRow = {
@@ -28,10 +29,34 @@ function formatFullName(
   return displayName?.trim() || "Utilisateur·rice";
 }
 
+function sortCommuneMembers(
+  items: CommuneMemberRow[],
+  sort: HabitantsSort | undefined,
+): CommuneMemberRow[] {
+  if (!sort || sort === "recent") return items;
+
+  const direction = sort === "name_asc" ? 1 : -1;
+  return [...items].sort((a, b) => {
+    const lastNameCompare = a.lastName.localeCompare(b.lastName, "fr", {
+      sensitivity: "base",
+    });
+    if (lastNameCompare !== 0) return lastNameCompare * direction;
+
+    return (
+      a.firstName.localeCompare(b.firstName, "fr", { sensitivity: "base" }) *
+      direction
+    );
+  });
+}
+
 export async function listCommuneMembersPage(
   supabase: SupabaseClient,
   communeId: string,
-  params: BackofficeMembersListParams,
+  params: BackofficeMembersListParams & {
+    sort?: HabitantsSort;
+    roles?: MembershipRole[];
+    statuses?: MembershipStatus[];
+  },
 ): Promise<{ items: CommuneMemberRow[]; totalCount: number }> {
   const offset = (params.page - 1) * params.limit;
   let userIdsFilter: string[] | null = null;
@@ -72,14 +97,27 @@ export async function listCommuneMembersPage(
     dataQuery = dataQuery.in("user_id", userIdsFilter);
   }
 
-  if (params.role) {
-    countQuery = countQuery.eq("role", params.role);
-    dataQuery = dataQuery.eq("role", params.role);
+  const roleFilters =
+    params.roles && params.roles.length > 0
+      ? params.roles
+      : params.role
+        ? [params.role]
+        : null;
+  const statusFilters =
+    params.statuses && params.statuses.length > 0
+      ? params.statuses
+      : params.status
+        ? [params.status]
+        : null;
+
+  if (roleFilters) {
+    countQuery = countQuery.in("role", roleFilters);
+    dataQuery = dataQuery.in("role", roleFilters);
   }
 
-  if (params.status) {
-    countQuery = countQuery.eq("status", params.status);
-    dataQuery = dataQuery.eq("status", params.status);
+  if (statusFilters) {
+    countQuery = countQuery.in("status", statusFilters);
+    dataQuery = dataQuery.in("status", statusFilters);
   }
 
   const [{ count }, { data, error }] = await Promise.all([countQuery, dataQuery]);
@@ -162,5 +200,8 @@ export async function listCommuneMembersPage(
     };
   });
 
-  return { items, totalCount: count ?? 0 };
+  return {
+    items: sortCommuneMembers(items, params.sort),
+    totalCount: count ?? 0,
+  };
 }

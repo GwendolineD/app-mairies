@@ -5,6 +5,7 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
+import { APP_NAME } from "@/lib/constants/app";
 import { OnboardingSlideFrame } from "./onboarding-slide-frame";
 import type { OnboardingSlideId } from "./onboarding-slide-content";
 
@@ -71,7 +72,7 @@ export function OnboardingModal({ open, onComplete, communeName }: Props) {
           onTouchEnd={handleTouchEnd}
         >
           <DialogPrimitive.Title className="sr-only">
-            Bienvenue sur Vie Locale
+            Bienvenue sur {APP_NAME}
           </DialogPrimitive.Title>
 
           {!isLast && (

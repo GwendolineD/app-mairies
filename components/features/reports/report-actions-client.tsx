@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Textarea } from "@/components/ui/form-field";
@@ -31,23 +32,42 @@ export function ReportActionsClient({
   authorMembershipId,
   isAuthorSelf,
 }: Props) {
+  const router = useRouter();
   const [busy, run] = useTransition();
+  const [suspendContentOpen, setSuspendContentOpen] = useState(false);
   const [suspendAuthorOpen, setSuspendAuthorOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  function handleSuspendContent() {
+  function handleCloseContentModal() {
+    if (busy) return;
+    setSuspendContentOpen(false);
+    setReason("");
+    setError(null);
+  }
+
+  function handleConfirmSuspendContent() {
     if (contextType === "user") return;
+
+    const trimmedReason = reason.trim();
+    if (!trimmedReason) {
+      setError("Merci d'indiquer une raison de suspension.");
+      return;
+    }
+
     run(async () => {
       const result = await suspendContent(
         contextType as ConversationContextType,
         contextId,
-        "Suspendu suite à un signalement",
+        trimmedReason,
         reportId,
       );
-      if (result.success) {
-        await resolveReportAction(reportId, "content_suspended");
+      if (!result.success) {
+        setError(result.error ?? "Impossible de suspendre le contenu.");
+        return;
       }
+      handleCloseContentModal();
+      router.refresh();
     });
   }
 
@@ -78,8 +98,8 @@ export function ReportActionsClient({
         setError(result.error ?? "Impossible de suspendre l'auteur.");
         return;
       }
-      await resolveReportAction(reportId, "user_suspended");
       handleCloseAuthorModal();
+      router.refresh();
     });
   }
 
@@ -92,7 +112,11 @@ export function ReportActionsClient({
       size="xs"
       className={suspendButtonClassName}
       disabled={suspendAuthorDisabled}
-      onClick={() => setSuspendAuthorOpen(true)}
+      onClick={() => {
+        setReason("");
+        setError(null);
+        setSuspendAuthorOpen(true);
+      }}
     >
       Suspendre l&apos;auteur
     </Button>
@@ -108,7 +132,11 @@ export function ReportActionsClient({
             size="xs"
             className={suspendButtonClassName}
             disabled={busy}
-            onClick={handleSuspendContent}
+            onClick={() => {
+              setReason("");
+              setError(null);
+              setSuspendContentOpen(true);
+            }}
           >
             Suspendre le contenu
           </Button>
@@ -148,6 +176,56 @@ export function ReportActionsClient({
           Ignorer
         </Button>
       </div>
+
+      <Modal
+        open={suspendContentOpen}
+        onClose={handleCloseContentModal}
+        title="Suspendre le contenu"
+        closeDisabled={busy}
+      >
+        <div className="space-y-4">
+          <p className="text-sm font-medium text-muted">
+            Ce contenu ne sera plus visible par les résident·es de la commune.
+            Les signalements associés seront marqués comme traités.
+          </p>
+
+          <label className="block space-y-2">
+            <span className="text-sm font-semibold text-text">Raison</span>
+            <Textarea
+              value={reason}
+              onChange={(event) => {
+                setReason(event.target.value);
+                setError(null);
+              }}
+              placeholder="Expliquez brièvement la raison de la suspension."
+              rows={3}
+            />
+          </label>
+
+          {error ? <p className="text-sm font-medium text-coral">{error}</p> : null}
+
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={busy}
+              onClick={handleCloseContentModal}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              disabled={busy}
+              onClick={handleConfirmSuspendContent}
+            >
+              Confirmer la suspension
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       <Modal
         open={suspendAuthorOpen}

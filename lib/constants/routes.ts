@@ -50,6 +50,7 @@ export const ROUTES = {
     signalements: "/mairie/signalements",
     eventNew: "/mairie/evenements/nouveau",
     abonnement: "/mairie/abonnement",
+    communication: "/mairie/communication",
   },
   backoffice: {
     admin: "/backoffice/admin",
@@ -65,6 +66,7 @@ export const ROUTES = {
     settings: "/backoffice/settings",
     legal: "/backoffice/legal",
     legalDetail: (slug: string) => `/backoffice/legal/${slug}`,
+    communication: "/backoffice/communication",
   },
   legal: {
     cgu: "/legal/cgu",
@@ -108,7 +110,8 @@ export type AdminNavIcon =
   | "tags"
   | "sparkles"
   | "file-text"
-  | "life-buoy";
+  | "life-buoy"
+  | "megaphone";
 
 export type AdminNavItem = {
   href: string;
@@ -126,6 +129,7 @@ export const MUNICIPALITY_NAV: readonly AdminNavItem[] = [
   { href: ROUTES.mairie.habitants, label: "Habitant·es", icon: "users" },
   { href: ROUTES.mairie.parametres, label: "Paramètres", icon: "settings", hidden: true },
   { href: ROUTES.mairie.signalements, label: "Signalements", icon: "flag" },
+  { href: ROUTES.mairie.communication, label: "Communication", icon: "megaphone" },
   { href: ROUTES.mairie.evenements, label: "Événements", icon: "calendar-days" },
   { href: ROUTES.mairie.abonnement, label: "Abonnement", icon: "credit-card", hidden: true },
 ];
@@ -140,5 +144,6 @@ export const BACKOFFICE_NAV: readonly AdminNavItem[] = [
   { href: ROUTES.backoffice.leads, label: "Leads pré-inscription", icon: "flame" },
   { href: ROUTES.backoffice.emails, label: "Templates email", icon: "mail" },
   { href: ROUTES.backoffice.legal, label: "Documents juridiques", icon: "file-text" },
+  { href: ROUTES.backoffice.communication, label: "Communication", icon: "megaphone" },
   { href: ROUTES.backoffice.settings, label: "Réglages", icon: "settings" },
 ];

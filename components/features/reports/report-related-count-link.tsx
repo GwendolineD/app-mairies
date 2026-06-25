@@ -9,6 +9,7 @@ type Props = {
   contextLabel: string;
   title: string;
   tri: SortMode;
+  listPath?: string;
 };
 
 export function ReportRelatedCountLink({
@@ -16,10 +17,11 @@ export function ReportRelatedCountLink({
   contextLabel,
   title,
   tri,
+  listPath = ROUTES.mairie.signalements,
 }: Props) {
   return (
     <Link
-      href={`${ROUTES.mairie.signalements}${buildRelatedReportsListQuery(title, tri)}`}
+      href={`${listPath}${buildRelatedReportsListQuery(title, tri)}`}
       className="inline-flex items-center gap-1 text-xs font-medium text-purple hover:underline"
     >
       Déjà {count} signalement{count > 1 ? "s" : ""} pour {contextLabel}

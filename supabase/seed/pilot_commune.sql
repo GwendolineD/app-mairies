@@ -19,7 +19,7 @@ VALUES (
   'active',
   jsonb_build_object(
     'welcomeMessage',
-    'Bienvenue sur Vie Locale Les Authieux — découvrir, partager, s''entraider.'
+    'Bienvenue sur Tous Voisins Les Authieux — découvrir, partager, s''entraider.'
   )
 )
 ON CONFLICT (insee_code) DO UPDATE SET
@@ -42,18 +42,18 @@ INSERT INTO public.commune_email_templates (
 SELECT
   id,
   'neighbor_invite',
-  '{{sender_name}} vous invite sur Vie Locale {{commune_name}}',
+  '{{sender_name}} vous invite sur Tous Voisins {{commune_name}}',
   'Un espace local pour découvrir les initiatives, partager des annonces et s''entraider entre voisins.',
   'Bonjour,
 
-{{sender_name}} vous invite à rejoindre Vie Locale {{commune_name}}, l''espace convivial pour découvrir ce qui se passe près de chez vous, proposer un coup de main et rencontrer des voisins bienveillants.
+{{sender_name}} vous invite à rejoindre Tous Voisins {{commune_name}}, l''espace convivial pour découvrir ce qui se passe près de chez vous, proposer un coup de main et rencontrer des voisins bienveillants.
 
 En quelques minutes, vous pourrez voir les annonces utiles, les initiatives locales et les événements de la commune.
 
 {{invite_link}}
 
-À très vite sur Vie Locale !',
-  'Rejoindre Vie Locale'
+À très vite sur Tous Voisins !',
+  'Rejoindre Tous Voisins'
 FROM public.communes
 WHERE insee_code = '27027'
 ON CONFLICT (commune_id, template_key) DO UPDATE SET

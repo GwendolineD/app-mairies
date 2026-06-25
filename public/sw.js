@@ -1,4 +1,4 @@
-// Vie Locale — Web Push service worker
+// Tous Voisins — Web Push service worker
 // Receives push events, displays a notification, and routes clicks to the app.
 
 self.addEventListener("install", () => {
@@ -15,9 +15,9 @@ self.addEventListener("push", (event) => {
   try {
     payload = event.data.json();
   } catch {
-    payload = { title: "Vie Locale", body: event.data.text() };
+    payload = { title: "Tous Voisins", body: event.data.text() };
   }
-  const title = payload.title || "Vie Locale";
+  const title = payload.title || "Tous Voisins";
   const options = {
     body: payload.body,
     icon: payload.icon || "/favicon.ico",

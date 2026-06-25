@@ -36,7 +36,10 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type");
-  const next = searchParams.get("next") ?? ROUTES.accueil;
+  const rawNext = searchParams.get("next") ?? ROUTES.accueil;
+  const isValidPath =
+    /^\/[a-zA-Z0-9/_\-?=&.]*$/.test(rawNext) && !rawNext.startsWith("//");
+  const next = isValidPath ? rawNext : ROUTES.accueil;
   const appOrigin = getAppUrl();
   const flow = resolveFlow(type);
 

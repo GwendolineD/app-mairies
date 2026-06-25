@@ -3,6 +3,7 @@ import { FormField, Input, Textarea } from "@/components/ui/form-field";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
+import { APP_NAME } from "@/lib/constants/app";
 import { updateCommuneWelcomeMessage } from "@/lib/actions/municipality";
 
 export default function MairieParametresPage() {
@@ -15,7 +16,7 @@ export default function MairieParametresPage() {
 
       <Card className="space-y-3 p-6">
         <form action={updateCommuneWelcomeMessage} className="space-y-3">
-          <FormField label="Message d'accueil empathique affiché sur le portail Vie Locale communal">
+          <FormField label={`Message d'accueil empathique affiché sur le portail ${APP_NAME} communal`}>
             <Textarea
               name="welcomeMessage"
               rows={4}

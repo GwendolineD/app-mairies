@@ -81,6 +81,22 @@ export function CreationModalHost({
     stripCreateFromUrl();
   }, [closeModals, stripCreateFromUrl]);
 
+  const handleInitiativeCreated = useCallback(
+    (id: string) => {
+      router.push(ROUTES.initiatives.detail(id));
+      closeModals();
+    },
+    [closeModals, router],
+  );
+
+  const handleEventCreated = useCallback(
+    (id: string) => {
+      router.push(eventDetailHref(id));
+      closeModals();
+    },
+    [closeModals, eventDetailHref, router],
+  );
+
   useEffect(() => {
     const create = searchParams.get("create");
     if (create === "annonce") {
@@ -108,6 +124,7 @@ export function CreationModalHost({
       <CreateInitiativeModal
         open={initiativeOpen}
         onClose={handleClose}
+        onCreated={handleInitiativeCreated}
         communeId={communeId}
         membershipAddress={membershipAddress}
         editId={initiativeEditId}
@@ -116,6 +133,7 @@ export function CreationModalHost({
       <CreateEventModal
         open={eventOpen}
         onClose={handleClose}
+        onCreated={handleEventCreated}
         communeId={communeId}
         membershipAddress={membershipAddress}
         editId={eventEditId}

@@ -1,8 +1,8 @@
-import { HabitantsSearch } from "./_components/habitants-search";
 import { MembershipModerationButton } from "./_components/membership-moderation-button";
 import { ChangeRoleButton } from "@/components/features/backoffice/change-role-button";
 import { MembershipRoleBadge } from "@/components/features/backoffice/membership-role-badge";
 import { MembershipStatusBadge } from "@/components/features/backoffice/membership-status-badge";
+import { HabitantsListToolbar } from "@/components/features/habitants/habitants-list-toolbar";
 import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
@@ -10,19 +10,15 @@ import { PageStack } from "@/components/ui/page-stack";
 import { requireCommuneStaff } from "@/lib/auth/session";
 import { listCommuneMembersPage } from "@/lib/queries/backoffice-memberships";
 import { formatDay } from "@/lib/utils/date";
+import {
+  hasActiveHabitantsFilters,
+  parseHabitantsListParams,
+} from "@/lib/utils/habitants-list-params";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 const MAIRIE_HABITANTS_LIST_LIMIT = 500;
-
-function parseSearchQuery(
-  searchParams: Record<string, string | string[] | undefined>,
-): string {
-  const raw = searchParams.q;
-  const value = Array.isArray(raw) ? raw[0] : raw;
-  return (value ?? "").trim();
-}
 
 export default async function MairieHabitantsPage({
   searchParams,
@@ -30,29 +26,36 @@ export default async function MairieHabitantsPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { communeId, userId, profile } = await requireCommuneStaff();
-  const params = await searchParams;
-  const q = parseSearchQuery(params);
+  const rawParams = await searchParams;
+  const listParams = parseHabitantsListParams(rawParams);
 
   const supabase = await createClient();
   const membersPage = await listCommuneMembersPage(supabase, communeId, {
-    q,
+    q: listParams.q,
+    sort: listParams.tri,
+    roles: listParams.roles,
+    statuses: listParams.statuses,
     page: 1,
     limit: MAIRIE_HABITANTS_LIST_LIMIT,
   });
+
+  const hasFilters =
+    !!listParams.q || hasActiveHabitantsFilters(listParams);
 
   return (
     <PageStack>
       <PageHeading title="Habitant·es inscrit·es" />
 
-      <div className="flex justify-end">
-        <HabitantsSearch initialQuery={q} />
-      </div>
+      <HabitantsListToolbar
+        params={listParams}
+        totalCount={membersPage.totalCount}
+      />
 
       <div className="space-y-2">
         {membersPage.items.length === 0 ? (
           <p className="text-sm font-medium text-muted">
-            {q
-              ? "Aucun·e habitant·e ne correspond à votre recherche."
+            {hasFilters
+              ? "Aucun·e habitant·e ne correspond à votre recherche ou à vos filtres."
               : "Aucune adhésion pour l'instant."}
           </p>
         ) : (
@@ -86,16 +89,15 @@ export default async function MairieHabitantsPage({
                   className="shrink-0 md:col-start-1 md:row-start-1"
                 />
                 <p className="min-w-0 font-semibold text-text md:hidden">
-                  <span>{member.firstName}</span>{" "}
-                  <span>{member.lastName}</span>
+                  <span>{member.lastName}</span>{" "}
+                  <span>{member.firstName}</span>
                 </p>
               </div>
 
               <div className="hidden min-w-0 space-y-1 md:block md:col-start-2 md:row-start-1">
                 <p className="font-semibold text-text">
+                  <span>{member.lastName}</span>{" "}
                   <span>{member.firstName}</span>
-                  <span className="text-muted"> · </span>
-                  <span>{member.lastName}</span>
                 </p>
                 <p className="text-xs font-medium leading-4 text-subtle">
                   Membre depuis le {formatDay(member.joinedAt)}

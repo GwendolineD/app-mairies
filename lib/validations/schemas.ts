@@ -17,6 +17,11 @@ export const forgotPasswordSchema = z.object({
   email: z.string().email("Email invalide"),
 });
 
+export const signInSchema = z.object({
+  email: z.string().email("Email invalide"),
+  password: z.string().min(1, "Mot de passe requis"),
+});
+
 export const resetPasswordSchema = z
   .object({
     password: passwordSchema,
@@ -274,4 +279,27 @@ export const updateCommuneInfoSchema = z.object({
   mairieAddressPostcode: z.string().trim().optional(),
   mairieAddressLat: z.coerce.number().optional(),
   mairieAddressLng: z.coerce.number().optional(),
+});
+
+export const communicationAssetSchema = z.object({
+  title: z.string().trim().min(1, "Titre requis").max(200, "Titre trop long"),
+  description: z
+    .string()
+    .trim()
+    .max(500, "Description trop longue")
+    .optional()
+    .transform((value) => (value ? value : null)),
+  preview_url: z.string().trim().url("URL de preview invalide"),
+  file_url: z.string().trim().url("URL de fichier invalide"),
+  sort_order: z.coerce.number().int().min(0).default(0),
+  published: z
+    .union([z.boolean(), z.literal("true"), z.literal("false"), z.literal("on")])
+    .transform((value) => value === true || value === "true" || value === "on")
+    .default(true),
+  commune_id: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => (value && value.length > 0 ? value : null))
+    .pipe(z.string().uuid().nullable()),
 });
