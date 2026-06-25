@@ -129,7 +129,7 @@ export function JoinCommuneFlow({ existingMemberships }: Props) {
           </Card>
         )}
 
-        {step === "address" && communeMeta ? (
+        {step === "address" && communeMeta && (
           <Card className="p-6">
             <div className="space-y-4">
               <p className="text-sm font-semibold text-text">
