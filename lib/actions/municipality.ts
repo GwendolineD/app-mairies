@@ -72,7 +72,7 @@ export async function setReportReviewed(reportId: string): Promise<void> {
 }
 
 export async function resolvePendingReportsForContent(
-  contextType: string,
+  contextType: "announcement" | "initiative" | "event" | "user",
   contextId: string,
   communeId: string,
   resolution: "content_suspended" | "user_suspended" | "dismissed",

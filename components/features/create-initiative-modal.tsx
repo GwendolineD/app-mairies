@@ -48,7 +48,7 @@ const INITIATIVE_TIPS = [
   "Quand elle sera prête, vous pourrez la transformer en événement 🤩.",
 ] as const;
 
-type SubmitPhase = "idle" | "uploading" | "publishing";
+type SubmitPhase = "idle" | "uploading" | "publishing" | "redirecting";
 
 type AddressFormState = {
   street: string;
@@ -68,6 +68,7 @@ type Draft = {
 type Props = {
   open: boolean;
   onClose: () => void;
+  onCreated?: (id: string) => void;
   communeId: string;
   membershipAddress: MembershipAddress;
   editId?: string;
@@ -130,6 +131,7 @@ function SectionHeading({
 export function CreateInitiativeModal({
   open,
   onClose,
+  onCreated,
   communeId,
   membershipAddress,
   editId,
@@ -334,8 +336,14 @@ export function CreateInitiativeModal({
 
       const { id } = await createInitiative(fd);
       if (draftKey) clearFormDraft(draftKey);
-      setSubmitting(false);
-      setSubmitPhase("idle");
+
+      if (onCreated) {
+        setSubmitPhase("redirecting");
+        onCreated(id);
+        return;
+      }
+
+      setSubmitPhase("redirecting");
       onClose();
       router.push(ROUTES.initiatives.detail(id));
     } catch (error) {
@@ -369,10 +377,7 @@ export function CreateInitiativeModal({
     >
       <form
         onSubmit={handleSubmit}
-        className={cn(
-          "flex flex-col gap-8 pb-2",
-          submitting && "pointer-events-none opacity-70",
-        )}
+        className="flex flex-col gap-8 pb-2"
       >
         <div className="rounded-xl border border-mint/30 bg-mint/5 px-4 py-3">
           <p className="text-sm font-bold text-text">
@@ -564,6 +569,8 @@ export function CreateInitiativeModal({
                 <Loader2 className="size-4 animate-spin" aria-hidden />
                 {submitPhase === "uploading"
                   ? "Envoi de la photo…"
+                  : submitPhase === "redirecting"
+                    ? "Ouverture…"
                   : isEditMode
                     ? "Enregistrement…"
                     : "Publication…"}

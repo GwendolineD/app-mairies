@@ -20,11 +20,11 @@ export type ModerationActionResult =
 
 type ContentType = ConversationContextType;
 
-const TABLE_MAP: Record<ContentType, string> = {
+const TABLE_MAP = {
   announcement: "announcements",
   initiative: "initiatives",
   event: "events",
-};
+} as const satisfies Record<ContentType, "announcements" | "initiatives" | "events">;
 
 function revalidateContentPaths(type: ContentType, id: string, communeId: string) {
   revalidatePath(ROUTES.accueil);
@@ -61,7 +61,7 @@ export async function suspendContent(
   const supabase = await createClient();
 
   const { data: content, error: fetchError } = await supabase
-    .from(table)
+    .from(table as "announcements")
     .select("id, commune_id, suspended_at")
     .eq("id", contentId)
     .maybeSingle();
@@ -99,7 +99,7 @@ export async function suspendContent(
 
   const now = new Date().toISOString();
   const { error: updateError } = await supabase
-    .from(table)
+    .from(table as "announcements")
     .update({
       suspended_at: now,
       suspended_by: actorUserId,
@@ -147,7 +147,7 @@ export async function reactivateContent(
   const supabase = await createClient();
 
   const { data: content, error: fetchError } = await supabase
-    .from(table)
+    .from(table as "announcements")
     .select("id, commune_id, suspended_at")
     .eq("id", contentId)
     .maybeSingle();
@@ -175,7 +175,7 @@ export async function reactivateContent(
   }
 
   const { error: updateError } = await supabase
-    .from(table)
+    .from(table as "announcements")
     .update({
       suspended_at: null,
       suspended_by: null,

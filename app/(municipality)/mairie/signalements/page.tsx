@@ -70,7 +70,8 @@ export default async function MairieSignalementsPage(props: {
       )`,
     )
     .eq("commune_id", communeId)
-    .order("created_at", { ascending: listParams.tri === "oldest" });
+    .order("created_at", { ascending: listParams.tri === "oldest" })
+    .limit(200);
 
   const contentIds = (reports ?? [])
     .filter((r) => r.context_type !== "user")
@@ -80,33 +81,34 @@ export default async function MairieSignalementsPage(props: {
   const authorMembershipIdMap: Record<string, string> = {};
   const announcementTypeMap: Record<string, string> = {};
 
-  for (const table of ["announcements", "initiatives", "events"] as const) {
-    const ctxType =
-      table === "announcements" ? "announcement" :
-      table === "initiatives" ? "initiative" : "event";
-    const ids = contentIds.filter((c) => c.type === ctxType).map((c) => c.id);
-    if (ids.length > 0) {
-      if (table === "announcements") {
-        const { data } = await supabase
-          .from("announcements")
-          .select("id, title, author_membership_id, type")
-          .in("id", ids);
-        for (const row of data ?? []) {
-          titleMap[row.id] = row.title;
-          authorMembershipIdMap[row.id] = row.author_membership_id;
-          announcementTypeMap[row.id] = row.type;
-        }
-      } else {
-        const { data } = await supabase
-          .from(table)
-          .select("id, title, author_membership_id")
-          .in("id", ids);
-        for (const row of data ?? []) {
-          titleMap[row.id] = row.title;
-          authorMembershipIdMap[row.id] = row.author_membership_id;
-        }
-      }
-    }
+  const annIds = contentIds.filter((c) => c.type === "announcement").map((c) => c.id);
+  const iniIds = contentIds.filter((c) => c.type === "initiative").map((c) => c.id);
+  const evtIds = contentIds.filter((c) => c.type === "event").map((c) => c.id);
+
+  const [announcementsResult, initiativesResult, eventsResult] = await Promise.all([
+    annIds.length > 0
+      ? supabase.from("announcements").select("id, title, author_membership_id, type").in("id", annIds)
+      : Promise.resolve({ data: null }),
+    iniIds.length > 0
+      ? supabase.from("initiatives").select("id, title, author_membership_id").in("id", iniIds)
+      : Promise.resolve({ data: null }),
+    evtIds.length > 0
+      ? supabase.from("events").select("id, title, author_membership_id").in("id", evtIds)
+      : Promise.resolve({ data: null }),
+  ]);
+
+  for (const row of announcementsResult.data ?? []) {
+    titleMap[row.id] = row.title;
+    authorMembershipIdMap[row.id] = row.author_membership_id;
+    announcementTypeMap[row.id] = row.type;
+  }
+  for (const row of initiativesResult.data ?? []) {
+    titleMap[row.id] = row.title;
+    authorMembershipIdMap[row.id] = row.author_membership_id;
+  }
+  for (const row of eventsResult.data ?? []) {
+    titleMap[row.id] = row.title;
+    authorMembershipIdMap[row.id] = row.author_membership_id;
   }
 
   const authorUserIdMap: Record<string, string> = {};

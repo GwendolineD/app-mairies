@@ -39,6 +39,7 @@ export async function submitContentReport(
 
   const supabase = await createClient();
   const { error } = await supabase.from("reports").insert({
+    commune_id: ctx.activeMembership!.commune_id,
     reporter_membership_id: ctx.activeMembership!.id,
     context_type: parsed.data.contextType,
     context_id: parsed.data.contextId,
@@ -79,6 +80,7 @@ export async function submitUserReport(formData: FormData): Promise<void> {
 
   const supabase = await createClient();
   const { error } = await supabase.from("reports").insert({
+    commune_id: ctx.activeMembership!.commune_id,
     reporter_membership_id: ctx.activeMembership!.id,
     context_type: "user",
     context_id: parsed.data.reportedUserId,
@@ -108,7 +110,7 @@ async function sendReportNotificationEmails(
         ? "initiatives"
         : "events";
   const { data: content } = await serviceClient
-    .from(table)
+    .from(table as "announcements")
     .select("title")
     .eq("id", contextId)
     .maybeSingle();

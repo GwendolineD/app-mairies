@@ -79,7 +79,7 @@ export function ReportButton({
         description="Votre signalement sera étudié avec soin."
         size="md"
         footer={
-          <div className="flex gap-2">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button
               type="button"
               variant="ghost"
@@ -94,7 +94,7 @@ export function ReportButton({
               type="submit"
               form={formId}
               size="sm"
-              className="flex-1 gap-1.5 py-2 text-sm"
+              className="w-fit gap-1.5 py-2 text-sm"
               disabled={pending || !canSubmit}
             >
               {pending ? (

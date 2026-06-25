@@ -52,7 +52,7 @@ const EVENT_TIPS = [
   "Soyez accueillant : tout le monde est bienvenu !",
 ] as const;
 
-type SubmitPhase = "idle" | "uploading" | "publishing";
+type SubmitPhase = "idle" | "uploading" | "publishing" | "redirecting";
 
 type AddressFormState = {
   street: string;
@@ -77,6 +77,7 @@ type Draft = {
 type Props = {
   open: boolean;
   onClose: () => void;
+  onCreated?: (id: string) => void;
   communeId: string;
   membershipAddress: MembershipAddress;
   editId?: string;
@@ -177,6 +178,7 @@ function SectionHeading({
 export function CreateEventModal({
   open,
   onClose,
+  onCreated,
   communeId,
   membershipAddress,
   editId,
@@ -456,8 +458,14 @@ export function CreateEventModal({
       }
 
       if (draftKey) clearFormDraft(draftKey);
-      setSubmitting(false);
-      setSubmitPhase("idle");
+
+      if (onCreated) {
+        setSubmitPhase("redirecting");
+        onCreated(result.id);
+        return;
+      }
+
+      setSubmitPhase("redirecting");
       onClose();
       router.push(detailHref(result.id));
     } catch (error) {
@@ -497,10 +505,7 @@ export function CreateEventModal({
     >
       <form
         onSubmit={handleSubmit}
-        className={cn(
-          "flex flex-col gap-8 pb-2",
-          submitting && "pointer-events-none opacity-70",
-        )}
+        className="flex flex-col gap-8 pb-2"
       >
         <div className="rounded-xl border border-orange/30 bg-orange/5 px-4 py-3">
           <p className="text-sm font-bold text-text">
@@ -749,6 +754,8 @@ export function CreateEventModal({
                 <Loader2 className="size-4 animate-spin" aria-hidden />
                 {submitPhase === "uploading"
                   ? "Envoi de la photo…"
+                  : submitPhase === "redirecting"
+                    ? "Ouverture…"
                   : isEditMode
                     ? "Enregistrement…"
                     : "Publication…"}

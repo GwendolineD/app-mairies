@@ -13,7 +13,7 @@ export default async function PlatformStatsPage() {
   const { count: communesActive } = await supabase
     .from("communes")
     .select("*", { count: "exact", head: true })
-    .eq("subscription_status", "active");
+    .eq("access_status", "active");
 
   return (
     <div className="space-y-4">

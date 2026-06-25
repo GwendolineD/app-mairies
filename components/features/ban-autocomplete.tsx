@@ -2,7 +2,8 @@
 
 import type { LucideIcon } from "lucide-react";
 import { ChevronDown } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Input } from "@/components/ui/form-field";
 import { cn } from "@/lib/utils";
 import type { BanFeature } from "@/lib/ban/client";
@@ -20,6 +21,12 @@ type Props = {
   leadingIcon?: LucideIcon;
   showChevron?: boolean;
   formatSuggestion?: (feature: BanFeature) => string;
+};
+
+type DropdownPosition = {
+  top: number;
+  left: number;
+  width: number;
 };
 
 function suggestionLabel(
@@ -44,19 +51,57 @@ export function BanAutocomplete({
   formatSuggestion,
 }: Props) {
   const listboxId = useId();
+  const anchorRef = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState(value ?? "");
   const [suggestions, setSuggestions] = useState<BanFeature[]>([]);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [dropdownPosition, setDropdownPosition] = useState<DropdownPosition | null>(
+    null,
+  );
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const listRef = useRef<HTMLUListElement>(null);
   const isFocusedRef = useRef(false);
+
+  const updateDropdownPosition = useCallback(() => {
+    const anchor = anchorRef.current;
+    if (!anchor) return;
+
+    const rect = anchor.getBoundingClientRect();
+    setDropdownPosition({
+      top: rect.bottom + 4,
+      left: rect.left,
+      width: rect.width,
+    });
+  }, []);
 
   useEffect(() => {
     if (value !== undefined && !isFocusedRef.current) {
       setQuery(value);
     }
   }, [value]);
+
+  useEffect(() => {
+    return () => {
+      clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!open) {
+      setDropdownPosition(null);
+      return;
+    }
+
+    updateDropdownPosition();
+    window.addEventListener("scroll", updateDropdownPosition, true);
+    window.addEventListener("resize", updateDropdownPosition);
+
+    return () => {
+      window.removeEventListener("scroll", updateDropdownPosition, true);
+      window.removeEventListener("resize", updateDropdownPosition);
+    };
+  }, [open, suggestions.length, updateDropdownPosition]);
 
   useEffect(() => {
     if (activeIndex < 0 || !listRef.current) return;
@@ -154,6 +199,54 @@ export function BanAutocomplete({
   const activeOptionId =
     activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined;
 
+  const dropdown =
+    open && dropdownPosition && suggestions.length > 0 ? (
+      <ul
+        ref={listRef}
+        id={listboxId}
+        role="listbox"
+        style={{
+          position: "fixed",
+          top: dropdownPosition.top,
+          left: dropdownPosition.left,
+          width: dropdownPosition.width,
+          zIndex: 1200,
+        }}
+        className="max-h-56 overflow-auto rounded-sm border border-border bg-surface shadow-elevated"
+      >
+        {suggestions.map((feature, index) => {
+          const streetLine = suggestionLabel(feature, formatSuggestion);
+          const locationLine = [feature.postcode?.trim(), feature.city?.trim()]
+            .filter(Boolean)
+            .join(" ");
+          const isActive = index === activeIndex;
+          return (
+            <li key={`${feature.citycode}-${feature.label}-${index}`} role="presentation">
+              <button
+                type="button"
+                id={`${listboxId}-option-${index}`}
+                role="option"
+                aria-selected={isActive}
+                className={cn(
+                  "w-full cursor-pointer px-4 py-2.5 text-left hover:bg-warm",
+                  isActive && "bg-warm",
+                )}
+                onPointerDown={() => selectSuggestion(feature)}
+                onMouseEnter={() => setActiveIndex(index)}
+              >
+                <span className="block text-sm font-medium text-text">{streetLine}</span>
+                {locationLine ? (
+                  <span className="mt-0.5 block text-xs font-medium text-muted">
+                    {locationLine}
+                  </span>
+                ) : null}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    ) : null;
+
   return (
     <div className="relative w-full">
       {hideLabel ? null : (
@@ -161,7 +254,7 @@ export function BanAutocomplete({
           {label}
         </label>
       )}
-      <div className="relative">
+      <div ref={anchorRef} className="relative">
         {LeadingIcon ? (
           <LeadingIcon
             className="pointer-events-none absolute left-3.5 top-1/2 size-[18px] -translate-y-1/2 text-subtle"
@@ -206,45 +299,9 @@ export function BanAutocomplete({
           />
         ) : null}
       </div>
-      {open ? (
-        <ul
-          ref={listRef}
-          id={listboxId}
-          role="listbox"
-          className="absolute z-1200 mt-1 max-h-56 w-full overflow-auto rounded-sm border border-border bg-surface shadow-elevated"
-        >
-          {suggestions.map((feature, index) => {
-            const streetLine = suggestionLabel(feature, formatSuggestion);
-            const locationLine = [feature.postcode?.trim(), feature.city?.trim()]
-              .filter(Boolean)
-              .join(" ");
-            const isActive = index === activeIndex;
-            return (
-              <li key={`${feature.citycode}-${feature.label}-${index}`} role="presentation">
-                <button
-                  type="button"
-                  id={`${listboxId}-option-${index}`}
-                  role="option"
-                  aria-selected={isActive}
-                  className={cn(
-                    "w-full cursor-pointer px-4 py-2.5 text-left hover:bg-warm",
-                    isActive && "bg-warm",
-                  )}
-                  onPointerDown={() => selectSuggestion(feature)}
-                  onMouseEnter={() => setActiveIndex(index)}
-                >
-                  <span className="block text-sm font-medium text-text">{streetLine}</span>
-                  {locationLine ? (
-                    <span className="mt-0.5 block text-xs font-medium text-muted">
-                      {locationLine}
-                    </span>
-                  ) : null}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      ) : null}
+      {typeof document !== "undefined" && dropdown
+        ? createPortal(dropdown, document.body)
+        : null}
     </div>
   );
 }

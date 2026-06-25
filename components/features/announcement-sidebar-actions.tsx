@@ -84,7 +84,6 @@ export function AnnouncementSidebarActions({
         contextId={announcementId}
         label={contactLabel}
         icon={<MessageCircle className="size-4" aria-hidden />}
-        className="py-4 md:py-0"
       />
     </Card>
   );

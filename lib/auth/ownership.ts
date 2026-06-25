@@ -9,7 +9,7 @@ export async function assertAuthorMembership(
   membershipId: string,
 ): Promise<{ error?: string }> {
   const { data: row } = await supabase
-    .from(table)
+    .from(table as "announcements")
     .select("author_membership_id")
     .eq("id", id)
     .single();

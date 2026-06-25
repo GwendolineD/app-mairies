@@ -123,13 +123,46 @@ export default async function EvenementDetailPage(props: {
 
   const isAuthor = event.author_membership_id === ctx.activeMembership?.id;
 
-  const { data: authorMembership } = await supabase
-    .from("memberships")
-    .select(
-      "id, created_at, profiles(first_name, last_name, display_name, avatar_url)",
-    )
-    .eq("id", event.author_membership_id)
-    .single();
+  const [
+    { data: authorMembership },
+    sourceInitiative,
+    volunteers,
+    { data: userVolunteer },
+    participants,
+    participantsCount,
+    { data: userParticipant },
+  ] = await Promise.all([
+    supabase
+      .from("memberships")
+      .select(
+        "id, created_at, profiles(first_name, last_name, display_name, avatar_url)",
+      )
+      .eq("id", event.author_membership_id)
+      .single(),
+    event.source_initiative_id
+      ? supabase
+          .from("initiatives")
+          .select("id, title")
+          .eq("id", event.source_initiative_id)
+          .maybeSingle()
+          .then((r) => r.data)
+      : Promise.resolve(null),
+    listEventVolunteers(supabase, event.id),
+    supabase
+      .from("event_volunteers")
+      .select("id")
+      .eq("event_id", event.id)
+      .eq("membership_id", ctx.activeMembership!.id)
+      .maybeSingle(),
+    listEventParticipants(supabase, event.id),
+    countEventParticipants(supabase, event.id),
+    supabase
+      .from("event_participants")
+      .select("id")
+      .eq("event_id", event.id)
+      .eq("membership_id", ctx.activeMembership!.id)
+      .maybeSingle(),
+  ]);
 
   type AuthorMembership = {
     created_at: string;
@@ -159,16 +192,6 @@ export default async function EvenementDetailPage(props: {
     ? formatMemberSince(authorData.created_at)
     : "Membre";
 
-  let sourceInitiative: { id: string; title: string } | null = null;
-  if (event.source_initiative_id) {
-    const { data: initiative } = await supabase
-      .from("initiatives")
-      .select("id, title")
-      .eq("id", event.source_initiative_id)
-      .maybeSingle();
-    sourceInitiative = initiative;
-  }
-
   const editData = isAuthor ? buildEventEditData(event) : undefined;
 
   const imageUrl =
@@ -189,26 +212,8 @@ export default async function EvenementDetailPage(props: {
     parsedAddress.city,
   );
 
-  const volunteers = await listEventVolunteers(supabase, event.id);
   const volunteersRegistered = volunteers.length;
-
-  const { data: userVolunteer } = await supabase
-    .from("event_volunteers")
-    .select("id")
-    .eq("event_id", event.id)
-    .eq("membership_id", ctx.activeMembership!.id)
-    .maybeSingle();
   const initialVolunteering = !!userVolunteer;
-
-  const participants = await listEventParticipants(supabase, event.id);
-  const participantsCount = await countEventParticipants(supabase, event.id);
-
-  const { data: userParticipant } = await supabase
-    .from("event_participants")
-    .select("id")
-    .eq("event_id", event.id)
-    .eq("membership_id", ctx.activeMembership!.id)
-    .maybeSingle();
   const initialParticipating = !!userParticipant;
 
   return (

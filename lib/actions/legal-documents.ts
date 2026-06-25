@@ -3,6 +3,7 @@
 import { revalidatePath, updateTag } from "next/cache";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
+import type { Json } from "@/lib/types/database.types";
 import { LEGAL_DOCUMENTS_CACHE_TAG } from "@/lib/legal/cache-tags";
 import {
   isLegalDocumentSlug,
@@ -57,7 +58,7 @@ export async function updateLegalDocument(
       slug: input.slug,
       title: input.title.trim(),
       content_html: sanitizedHtml,
-      content_json: input.contentJson,
+      content_json: input.contentJson as unknown as Json,
       version: nextVersion,
       published_at: now,
       updated_at: now,
