@@ -61,7 +61,7 @@ export async function suspendUserFromAllCommunesAction(
   userId: string,
   reason: string,
 ): Promise<ModerationActionResult> {
-  await requirePlatformAdmin();
+  const { userId: actorUserId } = await requirePlatformAdmin();
 
   const trimmedReason = reason.trim();
   if (!userId || !trimmedReason) {
@@ -103,6 +103,7 @@ export async function suspendUserFromAllCommunesAction(
       membership.id,
       userId,
       membership.commune_id,
+      actorUserId,
     );
   }
 

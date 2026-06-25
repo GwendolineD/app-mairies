@@ -1,13 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireCommuneStaff } from "@/lib/auth/session";
-import { getReportResolutionLabel, getReportStatusBadgeClassName } from "@/lib/constants/statuses";
 import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
-import { formatShortDate } from "@/lib/utils/format-date";
+import { formatCompactShortDate } from "@/lib/utils/format-date";
 import { formatDisplayName } from "@/lib/utils/display-name";
 import {
   buildReportListQuery,
@@ -17,11 +16,16 @@ import {
   isReportListUrlCanonical,
   parseReportListParams,
 } from "@/lib/utils/report-list-params";
+import { ReportResolutionBadge } from "@/components/features/reports/report-resolution-badge";
 import { ReportActionsClient } from "@/components/features/reports/report-actions-client";
 import { ReportRestoreStatus } from "@/components/features/reports/report-restore-status";
 import { ReportContextPastille } from "@/components/features/reports/report-context-pastille";
 import { ReportListToolbar } from "@/components/features/reports/report-list-toolbar";
 import { ReportRelatedCountLink } from "@/components/features/reports/report-related-count-link";
+import {
+  buildReportResolutionMetaMaps,
+  getReportResolutionMeta,
+} from "@/lib/queries/report-resolution-meta";
 import {
   buildReportRestoreContextMaps,
   buildRestoredByNameMap,
@@ -86,6 +90,7 @@ export default async function MairieSignalementsPage(props: {
   const authorMembershipIdMap: Record<string, string> = {};
   const announcementTypeMap: Record<string, string> = {};
   const contentSuspendedAtById: Record<string, string | null> = {};
+  const contentSuspendedByUserIdById: Record<string, string | null> = {};
 
   const annIds = contentIds.filter((c) => c.type === "announcement").map((c) => c.id);
   const iniIds = contentIds.filter((c) => c.type === "initiative").map((c) => c.id);
@@ -95,19 +100,19 @@ export default async function MairieSignalementsPage(props: {
     annIds.length > 0
       ? supabase
           .from("announcements")
-          .select("id, title, author_membership_id, type, suspended_at")
+          .select("id, title, author_membership_id, type, suspended_at, suspended_by")
           .in("id", annIds)
       : Promise.resolve({ data: null }),
     iniIds.length > 0
       ? supabase
           .from("initiatives")
-          .select("id, title, author_membership_id, suspended_at")
+          .select("id, title, author_membership_id, suspended_at, suspended_by")
           .in("id", iniIds)
       : Promise.resolve({ data: null }),
     evtIds.length > 0
       ? supabase
           .from("events")
-          .select("id, title, author_membership_id, suspended_at")
+          .select("id, title, author_membership_id, suspended_at, suspended_by")
           .in("id", evtIds)
       : Promise.resolve({ data: null }),
   ]);
@@ -117,31 +122,36 @@ export default async function MairieSignalementsPage(props: {
     authorMembershipIdMap[row.id] = row.author_membership_id;
     announcementTypeMap[row.id] = row.type;
     contentSuspendedAtById[row.id] = row.suspended_at;
+    contentSuspendedByUserIdById[row.id] = row.suspended_by;
   }
   for (const row of initiativesResult.data ?? []) {
     titleMap[row.id] = row.title;
     authorMembershipIdMap[row.id] = row.author_membership_id;
     contentSuspendedAtById[row.id] = row.suspended_at;
+    contentSuspendedByUserIdById[row.id] = row.suspended_by;
   }
   for (const row of eventsResult.data ?? []) {
     titleMap[row.id] = row.title;
     authorMembershipIdMap[row.id] = row.author_membership_id;
     contentSuspendedAtById[row.id] = row.suspended_at;
+    contentSuspendedByUserIdById[row.id] = row.suspended_by;
   }
 
   const authorUserIdMap: Record<string, string> = {};
   const membershipStatusById: Record<string, string> = {};
+  const membershipSuspendedAtById: Record<string, string | null> = {};
   const authorMembershipIds = [
     ...new Set(Object.values(authorMembershipIdMap)),
   ];
   if (authorMembershipIds.length > 0) {
     const { data: authorMemberships } = await supabase
       .from("memberships")
-      .select("id, user_id, status")
+      .select("id, user_id, status, suspended_at")
       .in("id", authorMembershipIds);
     for (const row of authorMemberships ?? []) {
       authorUserIdMap[row.id] = row.user_id;
       membershipStatusById[row.id] = row.status;
+      membershipSuspendedAtById[row.id] = row.suspended_at;
     }
   }
 
@@ -156,14 +166,27 @@ export default async function MairieSignalementsPage(props: {
   if (userReportUserIds.length > 0) {
     const { data: userReportMemberships } = await supabase
       .from("memberships")
-      .select("id, user_id, status")
+      .select("id, user_id, status, suspended_at")
       .eq("commune_id", communeId)
       .in("user_id", userReportUserIds);
     for (const row of userReportMemberships ?? []) {
       userReportMembershipIdMap[row.user_id] = row.id;
       membershipStatusById[row.id] = row.status;
+      membershipSuspendedAtById[row.id] = row.suspended_at;
     }
   }
+
+  const resolutionMetaMaps = await buildReportResolutionMetaMaps(supabase, {
+    reports: reports ?? [],
+    contentIds: contentIds.map((entry) => entry.id),
+    membershipIds: [
+      ...authorMembershipIds,
+      ...Object.values(userReportMembershipIdMap),
+    ],
+    contentSuspendedAtById,
+    contentSuspendedByUserIdById,
+    membershipSuspendedAtById,
+  });
 
   const restoreContextMaps = await buildReportRestoreContextMaps(supabase, {
     contentIds: contentIds.map((entry) => entry.id),
@@ -252,11 +275,13 @@ export default async function MairieSignalementsPage(props: {
             const contextLabel = getReportContextLabel(report.context_type);
             const showRelatedLink =
               relatedCount > 1 && contentTitle && contextLabel !== null;
-            const restoredByUserId = (
-              report as { restored_by_user_id?: string | null }
-            ).restored_by_user_id;
-            const restoredAt = (report as { restored_at?: string | null })
-              .restored_at;
+            const restoredByUserId = report.restored_by_user_id;
+            const restoredAt = report.restored_at;
+            const resolutionMeta = getReportResolutionMeta(
+              report,
+              authorMembershipId,
+              resolutionMetaMaps,
+            );
             const restoreContext = getReportRestoreContext(
               {
                 resolution: report.resolution,
@@ -295,16 +320,11 @@ export default async function MairieSignalementsPage(props: {
                   ) : (
                     <span className="min-w-0 flex-1" aria-hidden />
                   )}
-                  <span
-                    className={getReportStatusBadgeClassName(
-                      report.status,
-                      report.resolution,
-                    )}
-                  >
-                    {report.status === "pending"
-                      ? "En attente"
-                      : getReportResolutionLabel(report.resolution)}
-                  </span>
+                  <ReportResolutionBadge
+                    status={report.status}
+                    resolution={report.resolution}
+                    meta={resolutionMeta}
+                  />
                 </div>
 
                 {showRelatedLink ? (
@@ -344,7 +364,7 @@ export default async function MairieSignalementsPage(props: {
                   )}
                   <span className="ml-auto shrink-0 text-xs text-muted">
                     Signalé par {reporterName}, le{" "}
-                    {formatShortDate(report.created_at)}
+                    {formatCompactShortDate(report.created_at)}
                   </span>
                 </div>
               </Card>

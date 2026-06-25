@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { ReportRestoreActionsClient } from "@/components/features/reports/report-restore-actions-client";
 import type { ReportRestoreInfo } from "@/lib/queries/report-restore-context";
-import { formatShortDate } from "@/lib/utils/format-date";
+import { formatCompactShortDate } from "@/lib/utils/format-date";
 
 type RestorableResolution = "content_suspended" | "user_suspended";
 
@@ -84,7 +84,7 @@ export function ReportRestoreStatus({
   if (displayRestore) {
     return (
       <span className="text-xs text-muted">
-        Restauré le {formatShortDate(displayRestore.at)} par{" "}
+        Restauré le {formatCompactShortDate(displayRestore.at)} par{" "}
         {displayRestore.actorName}
       </span>
     );

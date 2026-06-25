@@ -126,18 +126,6 @@ export async function suspendContent(
     return { success: false, error: "Contenu introuvable." };
   }
 
-  if (content.suspended_at) {
-    await resolvePendingReportsForContent(
-      type,
-      contentId,
-      content.commune_id,
-      "content_suspended",
-    );
-    revalidateContentPaths(type, contentId, content.commune_id);
-    return { success: true };
-  }
-
-  // Determine authorization (commune staff or platform admin)
   let actorUserId: string;
 
   try {
@@ -151,6 +139,18 @@ export async function suspendContent(
   } catch {
     const adminCtx = await requirePlatformAdmin();
     actorUserId = adminCtx.userId;
+  }
+
+  if (content.suspended_at) {
+    await resolvePendingReportsForContent(
+      type,
+      contentId,
+      content.commune_id,
+      "content_suspended",
+      actorUserId,
+    );
+    revalidateContentPaths(type, contentId, content.commune_id);
+    return { success: true };
   }
 
   const now = new Date().toISOString();
@@ -183,6 +183,7 @@ export async function suspendContent(
     contentId,
     content.commune_id,
     "content_suspended",
+    actorUserId,
   );
 
   revalidateContentPaths(type, contentId, content.commune_id);
@@ -333,6 +334,7 @@ export async function suspendMembershipByStaff(
     membershipId,
     membership.user_id,
     membership.commune_id,
+    actorUserId,
   );
 
   revalidatePath(ROUTES.mairie.habitants);

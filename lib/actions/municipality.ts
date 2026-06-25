@@ -46,16 +46,18 @@ export async function updateCommuneWelcomeMessage(formData: FormData): Promise<v
   revalidatePath(ROUTES.mairie.dashboard);
 }
 
-async function requireReportResolverAuth(): Promise<void> {
+async function requireReportResolverAuth(): Promise<{ userId: string }> {
   try {
-    await requireCommuneStaff();
+    const ctx = await requireCommuneStaff();
+    return { userId: ctx.userId };
   } catch {
-    await requirePlatformAdmin();
+    const ctx = await requirePlatformAdmin();
+    return { userId: ctx.userId };
   }
 }
 
 export async function setReportReviewed(reportId: string): Promise<void> {
-  await requireReportResolverAuth();
+  const { userId } = await requireReportResolverAuth();
   const supabase = await createClient();
 
   const { error } = await supabase
@@ -63,6 +65,7 @@ export async function setReportReviewed(reportId: string): Promise<void> {
     .update({
       status: "reviewed",
       reviewed_at: new Date().toISOString(),
+      reviewed_by_user_id: userId,
     })
     .eq("id", reportId);
 
@@ -76,6 +79,7 @@ export async function resolvePendingReportsForContent(
   contextId: string,
   communeId: string,
   resolution: "content_suspended" | "user_suspended" | "dismissed",
+  reviewedByUserId: string,
 ): Promise<void> {
   const supabase = await createClient();
   const now = new Date().toISOString();
@@ -85,6 +89,7 @@ export async function resolvePendingReportsForContent(
     .update({
       status: "reviewed",
       reviewed_at: now,
+      reviewed_by_user_id: reviewedByUserId,
       resolution,
     })
     .eq("context_type", contextType)
@@ -109,6 +114,7 @@ export async function resolvePendingReportsForUser(
   membershipId: string,
   userId: string,
   communeId: string,
+  reviewedByUserId: string,
 ): Promise<void> {
   const supabase = await createClient();
   const now = new Date().toISOString();
@@ -142,6 +148,7 @@ export async function resolvePendingReportsForUser(
     .update({
       status: "reviewed",
       reviewed_at: now,
+      reviewed_by_user_id: reviewedByUserId,
       resolution: "user_suspended",
     })
     .eq("commune_id", communeId)
@@ -244,7 +251,7 @@ export async function resolveReportAction(
   reportId: string,
   resolution: "content_suspended" | "user_suspended" | "dismissed",
 ): Promise<void> {
-  await requireReportResolverAuth();
+  const { userId } = await requireReportResolverAuth();
   const supabase = await createClient();
 
   const { error } = await supabase
@@ -252,6 +259,7 @@ export async function resolveReportAction(
     .update({
       status: "reviewed",
       reviewed_at: new Date().toISOString(),
+      reviewed_by_user_id: userId,
       resolution,
     })
     .eq("id", reportId);

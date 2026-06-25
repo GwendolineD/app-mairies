@@ -1,3 +1,5 @@
+WARN: config section [inbucket] is deprecated. Please use [local_smtp] instead.
+Connecting to db 5432
 export type Json =
   | string
   | number
@@ -1483,6 +1485,8 @@ export type Database = {
           reason: string
           reporter_membership_id: string
           resolution: Database["public"]["Enums"]["report_resolution"] | null
+          restored_at: string | null
+          restored_by_user_id: string | null
           reviewed_at: string | null
           reviewed_by_user_id: string | null
           status: Database["public"]["Enums"]["report_status"]
@@ -1496,6 +1500,8 @@ export type Database = {
           reason: string
           reporter_membership_id: string
           resolution?: Database["public"]["Enums"]["report_resolution"] | null
+          restored_at?: string | null
+          restored_by_user_id?: string | null
           reviewed_at?: string | null
           reviewed_by_user_id?: string | null
           status?: Database["public"]["Enums"]["report_status"]
@@ -1509,6 +1515,8 @@ export type Database = {
           reason?: string
           reporter_membership_id?: string
           resolution?: Database["public"]["Enums"]["report_resolution"] | null
+          restored_at?: string | null
+          restored_by_user_id?: string | null
           reviewed_at?: string | null
           reviewed_by_user_id?: string | null
           status?: Database["public"]["Enums"]["report_status"]
