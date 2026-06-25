@@ -101,7 +101,7 @@ async function buildSuspendMetaFromActions(
 export async function buildReportResolutionMetaMaps(
   supabase: SupabaseClient,
   params: {
-    reports: Array<{ id: string }>;
+    reports: Array<{ id: string; reviewed_by_user_id?: string | null }>;
     contentIds: string[];
     membershipIds: string[];
     contentSuspendedAtById: Record<string, string | null>;
