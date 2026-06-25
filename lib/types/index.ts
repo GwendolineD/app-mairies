@@ -341,6 +341,20 @@ export type LegalDocument = {
   updated_at: string;
 };
 
+export type CommunicationAsset = {
+  id: string;
+  commune_id: string | null;
+  title: string;
+  description: string | null;
+  preview_url: string;
+  file_url: string;
+  sort_order: number;
+  published: boolean;
+  created_at: string;
+  updated_at: string;
+  commune?: Pick<Commune, "id" | "name"> | null;
+};
+
 export type BannedEmail = {
   email: string;
   reason: string | null;

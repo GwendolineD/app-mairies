@@ -1,5 +1,3 @@
-WARN: config section [inbucket] is deprecated. Please use [local_smtp] instead.
-Connecting to db 5432
 export type Json =
   | string
   | number
@@ -535,6 +533,53 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      communication_assets: {
+        Row: {
+          commune_id: string | null
+          created_at: string
+          description: string | null
+          file_url: string
+          id: string
+          preview_url: string
+          published: boolean
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          commune_id?: string | null
+          created_at?: string
+          description?: string | null
+          file_url: string
+          id?: string
+          preview_url: string
+          published?: boolean
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          commune_id?: string | null
+          created_at?: string
+          description?: string | null
+          file_url?: string
+          id?: string
+          preview_url?: string
+          published?: boolean
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "communication_assets_commune_id_fkey"
+            columns: ["commune_id"]
+            isOneToOne: false
+            referencedRelation: "communes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       content_categories: {
         Row: {

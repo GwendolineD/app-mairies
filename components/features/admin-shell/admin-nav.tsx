@@ -23,6 +23,7 @@ import {
   LayoutDashboard,
   LifeBuoy,
   Mail,
+  Megaphone,
   Settings,
   Sparkles,
   Tags,
@@ -45,6 +46,7 @@ const ADMIN_NAV_ICONS: Record<AdminNavItem["icon"], LucideIcon> = {
   sparkles: Sparkles,
   "file-text": FileText,
   "life-buoy": LifeBuoy,
+  megaphone: Megaphone,
 };
 
 type NavLinkProps = {
