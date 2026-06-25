@@ -1,3 +1,4 @@
+import { APP_NAME } from "@/lib/constants/app";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
@@ -19,7 +20,7 @@ export default async function BackofficeSettingsPage() {
     <PageStack>
       <PageHeading
         title="Réglages plateforme"
-        subtitle="Paramètres globaux de la plateforme Vie Locale."
+        subtitle={`Paramètres globaux de la plateforme ${APP_NAME}.`}
       />
 
       <Card className="max-w-lg space-y-6 p-6">

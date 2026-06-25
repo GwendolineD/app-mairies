@@ -6,6 +6,10 @@ import {
   requirePlatformAdmin,
 } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
+import {
+  resolvePendingReportsForContent,
+  resolvePendingReportsForUser,
+} from "@/lib/actions/municipality";
 import { MEMBERSHIP_STATUS } from "@/lib/constants/statuses";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { ConversationContextType } from "@/lib/types";
@@ -67,7 +71,14 @@ export async function suspendContent(
   }
 
   if (content.suspended_at) {
-    return { success: false, error: "Ce contenu est déjà suspendu." };
+    await resolvePendingReportsForContent(
+      type,
+      contentId,
+      content.commune_id,
+      "content_suspended",
+    );
+    revalidateContentPaths(type, contentId, content.commune_id);
+    return { success: true };
   }
 
   // Determine authorization (commune staff or platform admin)
@@ -110,6 +121,13 @@ export async function suspendContent(
     reason: trimmedReason,
     related_report_id: relatedReportId || null,
   });
+
+  await resolvePendingReportsForContent(
+    type,
+    contentId,
+    content.commune_id,
+    "content_suspended",
+  );
 
   revalidateContentPaths(type, contentId, content.commune_id);
   return { success: true };
@@ -191,7 +209,6 @@ export async function suspendMembershipByStaff(
     return { success: false, error: "Paramètres invalides." };
   }
 
-  const ctx = await requireCommuneStaff();
   const supabase = await createClient();
 
   const { data: membership, error: fetchError } = await supabase
@@ -204,15 +221,26 @@ export async function suspendMembershipByStaff(
     return { success: false, error: "Adhésion introuvable." };
   }
 
-  if (membership.commune_id !== ctx.communeId) {
-    return { success: false, error: "Cette adhésion n'appartient pas à votre commune." };
-  }
-
   if (membership.status !== MEMBERSHIP_STATUS.active) {
     return { success: false, error: "Seule une adhésion active peut être suspendue." };
   }
 
-  if (membership.user_id === ctx.userId) {
+  let actorUserId: string;
+
+  try {
+    const ctx = await requireCommuneStaff();
+    if (membership.commune_id !== ctx.communeId) {
+      const adminCtx = await requirePlatformAdmin();
+      actorUserId = adminCtx.userId;
+    } else {
+      actorUserId = ctx.userId;
+    }
+  } catch {
+    const adminCtx = await requirePlatformAdmin();
+    actorUserId = adminCtx.userId;
+  }
+
+  if (membership.user_id === actorUserId) {
     return { success: false, error: "Vous ne pouvez pas suspendre votre propre compte." };
   }
 
@@ -231,7 +259,7 @@ export async function suspendMembershipByStaff(
   }
 
   await supabase.from("moderation_actions").insert({
-    actor_user_id: ctx.userId,
+    actor_user_id: actorUserId,
     target_type: "membership",
     target_id: membershipId,
     commune_id: membership.commune_id,
@@ -239,8 +267,15 @@ export async function suspendMembershipByStaff(
     reason: trimmedReason,
   });
 
+  await resolvePendingReportsForUser(
+    membershipId,
+    membership.user_id,
+    membership.commune_id,
+  );
+
   revalidatePath(ROUTES.mairie.habitants);
   revalidatePath(ROUTES.mairie.signalements);
+  revalidatePath(ROUTES.backoffice.signalements);
   revalidatePath(ROUTES.backoffice.userDetail(membership.user_id));
   revalidatePath(ROUTES.backoffice.communeDetail(membership.commune_id));
 
@@ -307,6 +342,7 @@ export async function reactivateMembership(
 
   revalidatePath(ROUTES.mairie.habitants);
   revalidatePath(ROUTES.mairie.signalements);
+  revalidatePath(ROUTES.backoffice.signalements);
   revalidatePath(ROUTES.backoffice.userDetail(membership.user_id));
   revalidatePath(ROUTES.backoffice.communeDetail(membership.commune_id));
 

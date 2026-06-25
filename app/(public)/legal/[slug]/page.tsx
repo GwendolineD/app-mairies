@@ -7,6 +7,7 @@ import { legalDocumentProseClassName } from "@/lib/legal/editor-config";
 import { isLegalDocumentSlug } from "@/lib/legal/seed-content";
 import { getCachedLegalDocument } from "@/lib/queries/legal-documents";
 import { cn } from "@/lib/utils/cn";
+import { sanitizeHtml } from "@/lib/utils/sanitize-html";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -49,7 +50,9 @@ export default async function LegalDocumentPage({ params }: Props) {
         <LegalDocumentLogo />
         <article
           className={cn(legalDocumentProseClassName, "legal-document-print")}
-          dangerouslySetInnerHTML={{ __html: document.content_html }}
+          dangerouslySetInnerHTML={{
+            __html: sanitizeHtml(document.content_html),
+          }}
         />
       </Card>
 

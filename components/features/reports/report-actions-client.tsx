@@ -39,15 +39,12 @@ export function ReportActionsClient({
   function handleSuspendContent() {
     if (contextType === "user") return;
     run(async () => {
-      const result = await suspendContent(
+      await suspendContent(
         contextType as ConversationContextType,
         contextId,
         "Suspendu suite à un signalement",
         reportId,
       );
-      if (result.success) {
-        await resolveReportAction(reportId, "content_suspended");
-      }
     });
   }
 
@@ -78,7 +75,6 @@ export function ReportActionsClient({
         setError(result.error ?? "Impossible de suspendre l'auteur.");
         return;
       }
-      await resolveReportAction(reportId, "user_suspended");
       handleCloseAuthorModal();
     });
   }

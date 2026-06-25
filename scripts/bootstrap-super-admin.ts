@@ -18,7 +18,7 @@ const COMMUNE = {
   centroidLat: 48.8978,
   centroidLng: 1.2338,
   welcomeMessage:
-    "Bienvenue sur Vie Locale Les Authieux — découvrir, partager, s'entraider.",
+    "Bienvenue sur Tous Voisins Les Authieux — découvrir, partager, s'entraider.",
 } as const;
 
 const ADMIN = {

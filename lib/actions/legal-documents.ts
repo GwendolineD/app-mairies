@@ -9,6 +9,7 @@ import {
   type LegalDocumentSlug,
 } from "@/lib/legal/seed-content";
 import { createClient } from "@/lib/supabase/server";
+import { sanitizeHtml } from "@/lib/utils/sanitize-html";
 
 type UpdateInput = {
   slug: LegalDocumentSlug;
@@ -30,7 +31,9 @@ export async function updateLegalDocument(
     return { success: false, error: "Le titre est requis." };
   }
 
-  if (!input.contentHtml.trim()) {
+  const sanitizedHtml = sanitizeHtml(input.contentHtml);
+
+  if (!sanitizedHtml.trim()) {
     return { success: false, error: "Le contenu ne peut pas être vide." };
   }
 
@@ -53,7 +56,7 @@ export async function updateLegalDocument(
     {
       slug: input.slug,
       title: input.title.trim(),
-      content_html: input.contentHtml,
+      content_html: sanitizedHtml,
       content_json: input.contentJson,
       version: nextVersion,
       published_at: now,

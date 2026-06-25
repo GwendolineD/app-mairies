@@ -17,10 +17,11 @@ import {
   isReportListUrlCanonical,
   parseReportListParams,
 } from "@/lib/utils/report-list-params";
-import { ReportActionsClient } from "./_components/report-actions-client";
-import { ReportContextPastille } from "./_components/report-context-pastille";
-import { ReportListToolbar } from "./_components/report-list-toolbar";
-import { ReportRelatedCountLink } from "./_components/report-related-count-link";
+import { ReportActionsClient } from "@/components/features/reports/report-actions-client";
+import { ReportRestoreActionsClient } from "@/components/features/reports/report-restore-actions-client";
+import { ReportContextPastille } from "@/components/features/reports/report-context-pastille";
+import { ReportListToolbar } from "@/components/features/reports/report-list-toolbar";
+import { ReportRelatedCountLink } from "@/components/features/reports/report-related-count-link";
 
 export const dynamic = "force-dynamic";
 
@@ -122,6 +123,25 @@ export default async function MairieSignalementsPage(props: {
     }
   }
 
+  const userReportUserIds = [
+    ...new Set(
+      (reports ?? [])
+        .filter((report) => report.context_type === "user")
+        .map((report) => report.context_id),
+    ),
+  ];
+  const userReportMembershipIdMap: Record<string, string> = {};
+  if (userReportUserIds.length > 0) {
+    const { data: userReportMemberships } = await supabase
+      .from("memberships")
+      .select("id, user_id")
+      .eq("commune_id", communeId)
+      .in("user_id", userReportUserIds);
+    for (const row of userReportMemberships ?? []) {
+      userReportMembershipIdMap[row.user_id] = row.id;
+    }
+  }
+
   const reportCountByContext = new Map<string, number>();
   for (const report of reports ?? []) {
     if (report.context_type === "user") continue;
@@ -182,7 +202,9 @@ export default async function MairieSignalementsPage(props: {
             const isPending = report.status === "pending";
 
             const authorMembershipId =
-              authorMembershipIdMap[report.context_id] ?? null;
+              report.context_type === "user"
+                ? userReportMembershipIdMap[report.context_id] ?? null
+                : authorMembershipIdMap[report.context_id] ?? null;
             const isAuthorSelf = authorMembershipId
               ? authorUserIdMap[authorMembershipId] === userId
               : false;
@@ -251,6 +273,14 @@ export default async function MairieSignalementsPage(props: {
                       contextId={report.context_id}
                       authorMembershipId={authorMembershipId}
                       isAuthorSelf={isAuthorSelf}
+                    />
+                  ) : report.resolution === "content_suspended" ||
+                    report.resolution === "user_suspended" ? (
+                    <ReportRestoreActionsClient
+                      resolution={report.resolution}
+                      contextType={report.context_type}
+                      contextId={report.context_id}
+                      authorMembershipId={authorMembershipId}
                     />
                   ) : (
                     <span aria-hidden className="flex-1" />

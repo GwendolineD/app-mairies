@@ -17,6 +17,11 @@ export const forgotPasswordSchema = z.object({
   email: z.string().email("Email invalide"),
 });
 
+export const signInSchema = z.object({
+  email: z.string().email("Email invalide"),
+  password: z.string().min(1, "Mot de passe requis"),
+});
+
 export const resetPasswordSchema = z
   .object({
     password: passwordSchema,

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { APP_NAME } from "@/lib/constants/app";
 import { cancelSubscription } from "@/lib/actions/cancellation";
 import { formatShortDate } from "@/lib/utils/format-date";
 import { Button } from "@/components/ui/button";
@@ -72,7 +73,7 @@ export function CancellationRequestModal({
           </p>
           <p className="mt-2 text-xs text-muted">
             Un email de confirmation sera envoyé à tous les administrateurs de
-            la commune et à l&apos;équipe Vie Locale.
+            la commune et à l&apos;équipe {APP_NAME}.
           </p>
         </div>
 

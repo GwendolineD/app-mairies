@@ -1,17 +1,18 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireAuth, requireActiveMembership } from "@/lib/auth/session";
+import { requireActiveMembership } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { sendTemplatedEmail } from "@/lib/email";
 import { getAppUrl } from "@/lib/utils/app-url";
 import { formatShortDate } from "@/lib/utils/format-date";
-import {
-  appealSchema,
-  reportSchema,
-  userReportSchema,
-} from "@/lib/validations/schemas";
+import { reportSchema, userReportSchema } from "@/lib/validations/schemas";
+
+export type ContentReportActionState = {
+  error?: string;
+  success?: boolean;
+} | undefined;
 
 const CONTEXT_TYPE_LABELS: Record<string, string> = {
   announcement: "Annonce",
@@ -19,7 +20,10 @@ const CONTEXT_TYPE_LABELS: Record<string, string> = {
   event: "Événement",
 };
 
-export async function submitContentReport(formData: FormData): Promise<void> {
+export async function submitContentReport(
+  _state: ContentReportActionState,
+  formData: FormData,
+): Promise<ContentReportActionState> {
   const ctx = await requireActiveMembership();
 
   const raw = {
@@ -28,7 +32,10 @@ export async function submitContentReport(formData: FormData): Promise<void> {
     reason: formData.get("reason") as string,
   };
   const parsed = reportSchema.safeParse(raw);
-  if (!parsed.success) return;
+  if (!parsed.success) {
+    const firstIssue = parsed.error.issues[0]?.message;
+    return { error: firstIssue ?? "Vérifiez le motif du signalement." };
+  }
 
   const supabase = await createClient();
   const { error } = await supabase.from("reports").insert({
@@ -38,7 +45,10 @@ export async function submitContentReport(formData: FormData): Promise<void> {
     reason: parsed.data.reason,
   });
 
-  if (error) return;
+  if (error) {
+    console.error("[reports] Failed to insert report:", error.message, error.code);
+    return { error: "Impossible d'envoyer le signalement. Réessayez plus tard." };
+  }
 
   // Send notification emails (best-effort, non-blocking)
   sendReportNotificationEmails(
@@ -52,6 +62,7 @@ export async function submitContentReport(formData: FormData): Promise<void> {
   });
 
   revalidatePath("/", "layout");
+  return { success: true };
 }
 
 export async function submitUserReport(formData: FormData): Promise<void> {
@@ -77,27 +88,6 @@ export async function submitUserReport(formData: FormData): Promise<void> {
   if (error) return;
   revalidatePath(ROUTES.mairie.signalements);
   revalidatePath(ROUTES.backoffice.admin);
-}
-
-/** Stores structured appeal telemetry for moderator review using service_role. */
-export async function submitSuspensionAppeal(formData: FormData): Promise<void> {
-  const message = formData.get("message") as string;
-  const parsed = appealSchema.safeParse({ message });
-  if (!parsed.success) return;
-
-  const ctx = await requireAuth();
-  if (!ctx.profile.active_commune_id) return;
-
-  const service = await createServiceClient();
-
-  await service.from("analytics_events").insert({
-    commune_id: ctx.profile.active_commune_id,
-    user_id: ctx.userId,
-    event_name: "suspension_appeal",
-    properties: { message: parsed.data.message },
-  });
-
-  revalidatePath(ROUTES.suspendu);
 }
 
 async function sendReportNotificationEmails(

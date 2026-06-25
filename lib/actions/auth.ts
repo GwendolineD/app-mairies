@@ -9,7 +9,6 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getAppUrl } from "@/lib/utils/app-url";
 import { formatAuthError } from "@/lib/utils/auth-errors";
 import { formatDisplayName } from "@/lib/utils/display-name";
-import { normalizeTrialCode } from "@/lib/utils/trial-code";
 import { checkTrialCodeRateLimit } from "@/lib/utils/trial-rate-limit";
 import {
   changePasswordSchema,
@@ -17,6 +16,7 @@ import {
   forgotPasswordSchema,
   joinCommuneSchema,
   resetPasswordSchema,
+  signInSchema,
   signupSchema,
 } from "@/lib/validations/schemas";
 
@@ -55,7 +55,7 @@ export async function signUp(formData: FormData) {
   const supabase = await createClient();
   const { data: commune } = await supabase
     .from("communes")
-    .select("id, access_status, trial_access_code, trial_max_members")
+    .select("id, access_status, trial_max_members")
     .eq("insee_code", parsed.data.inseeCode)
     .single();
 
@@ -75,12 +75,23 @@ export async function signUp(formData: FormData) {
       };
     }
 
-    if (
-      !parsed.data.trialAccessCode ||
-      !commune.trial_access_code ||
-      normalizeTrialCode(parsed.data.trialAccessCode) !==
-        normalizeTrialCode(commune.trial_access_code)
-    ) {
+    if (!parsed.data.trialAccessCode) {
+      return {
+        error: {
+          trialAccessCode: ["Code d'accès invalide."],
+        },
+      };
+    }
+
+    const { data: isValidCode, error: trialCodeError } = await supabase.rpc(
+      "validate_trial_access_code",
+      {
+        p_commune_id: commune.id,
+        p_code: parsed.data.trialAccessCode,
+      },
+    );
+
+    if (trialCodeError || !isValidCode) {
       return {
         error: {
           trialAccessCode: ["Code d'accès invalide."],
@@ -195,11 +206,27 @@ export async function signUp(formData: FormData) {
 }
 
 export async function signIn(formData: FormData) {
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
+  const parsed = signInSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
+
+  if (!parsed.success) {
+    const fieldErrors = parsed.error.flatten().fieldErrors;
+    return {
+      error:
+        fieldErrors.email?.[0] ??
+        fieldErrors.password?.[0] ??
+        "Identifiants invalides.",
+    };
+  }
+
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { error } = await supabase.auth.signInWithPassword({
+    email: parsed.data.email,
+    password: parsed.data.password,
+  });
   if (error) {
     return {
       error: formatAuthError(
@@ -535,7 +562,7 @@ export async function joinCommune(formData: FormData) {
 
   const { data: commune } = await supabase
     .from("communes")
-    .select("id, access_status, trial_access_code, trial_max_members")
+    .select("id, access_status, trial_max_members")
     .eq("insee_code", parsed.data.inseeCode)
     .single();
 
@@ -555,12 +582,23 @@ export async function joinCommune(formData: FormData) {
       };
     }
 
-    if (
-      !parsed.data.trialAccessCode ||
-      !commune.trial_access_code ||
-      normalizeTrialCode(parsed.data.trialAccessCode) !==
-        normalizeTrialCode(commune.trial_access_code)
-    ) {
+    if (!parsed.data.trialAccessCode) {
+      return {
+        error: {
+          trialAccessCode: ["Code d'accès invalide."],
+        },
+      };
+    }
+
+    const { data: isValidCode, error: trialCodeError } = await supabase.rpc(
+      "validate_trial_access_code",
+      {
+        p_commune_id: commune.id,
+        p_code: parsed.data.trialAccessCode,
+      },
+    );
+
+    if (trialCodeError || !isValidCode) {
       return {
         error: {
           trialAccessCode: ["Code d'accès invalide."],

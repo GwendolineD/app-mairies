@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
+import { sanitizeHtml } from "@/lib/utils/sanitize-html";
 import { createPilotCommuneSchema, updateCommuneInfoSchema } from "@/lib/validations/schemas";
 import type { AccessStatus } from "@/lib/types";
 
@@ -436,12 +437,17 @@ export async function updateEmailTemplate(
     return { success: false, error: "Sujet et contenu HTML requis." };
   }
 
+  const sanitizedHtml = sanitizeHtml(data.bodyHtml);
+  if (!sanitizedHtml.trim()) {
+    return { success: false, error: "Sujet et contenu HTML requis." };
+  }
+
   const supabase = await createClient();
   const { error } = await supabase
     .from("email_templates")
     .update({
       subject: data.subject.trim(),
-      body_html: data.bodyHtml.trim(),
+      body_html: sanitizedHtml,
     })
     .eq("slug", slug);
 

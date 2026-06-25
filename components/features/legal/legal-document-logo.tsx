@@ -13,7 +13,7 @@ export function LegalDocumentLogo({ className }: Props) {
   return (
     <div
       className={cn(
-        "legal-document-logo flex justify-center pb-6 print:pb-4",
+        "legal-document-logo flex justify-start pb-6 print:pb-4",
         className,
       )}
     >

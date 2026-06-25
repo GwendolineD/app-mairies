@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { ANALYTICS_EVENTS, type AnalyticsEventName } from "@/lib/analytics/events";
 
 export async function POST(request: Request) {
@@ -16,13 +16,20 @@ export async function POST(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const service = await createServiceClient();
-  await service.from("analytics_events").insert({
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { error } = await supabase.from("analytics_events").insert({
     event_name: eventName,
     commune_id: communeId ?? null,
-    user_id: user?.id ?? null,
-    props: props ?? {},
+    user_id: user.id,
+    properties: props ?? {},
   });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 403 });
+  }
 
   return NextResponse.json({ ok: true });
 }

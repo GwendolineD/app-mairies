@@ -1,3 +1,4 @@
+import { APP_NAME } from "@/lib/constants/app";
 import { ROUTES } from "@/lib/constants/routes";
 import { sendEmail } from "@/lib/email/send-email";
 import { createServiceClient } from "@/lib/supabase/server";
@@ -47,7 +48,7 @@ export async function sendSupportRequestNotification(
   const sentAt = formatDateTime(input.createdAt);
 
   const text = [
-    "Nouvelle demande d'assistance Vie Locale",
+    `Nouvelle demande d'assistance ${APP_NAME}`,
     "",
     `Objet : ${input.subject}`,
     "",
@@ -63,7 +64,7 @@ export async function sendSupportRequestNotification(
   ].join("\n");
 
   const html = `
-    <h2>Nouvelle demande d'assistance Vie Locale</h2>
+    <h2>Nouvelle demande d'assistance ${APP_NAME}</h2>
     <p><strong>Objet :</strong> ${escapeHtml(input.subject)}</p>
     <p><strong>Message :</strong></p>
     <p>${escapeHtml(input.message).replace(/\n/g, "<br>")}</p>

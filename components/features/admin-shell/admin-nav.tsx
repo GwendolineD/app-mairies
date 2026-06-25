@@ -264,38 +264,40 @@ export function AdminSidebarNav({
   return (
     <nav
       className={cn(
-        "flex min-h-0 flex-1 flex-col gap-2",
+        "flex min-h-0 flex-1 flex-col",
         collapsed && "overflow-hidden",
       )}
       aria-label="Navigation administration"
     >
-      {!collapsed && sectionLabel ? (
-        <p className="px-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-subtle">
-          {sectionLabel}
-        </p>
-      ) : null}
-      {!collapsed && title ? (
-        <p className="mb-2 px-4 text-lg font-bold leading-7 text-text">{title}</p>
-      ) : null}
+      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
+        {!collapsed && sectionLabel ? (
+          <p className="px-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-subtle">
+            {sectionLabel}
+          </p>
+        ) : null}
+        {!collapsed && title ? (
+          <p className="mb-2 px-4 text-lg font-bold leading-7 text-text">{title}</p>
+        ) : null}
 
-      {visibleNavItems.map(({ href, label, icon }) => {
-        const Icon = ADMIN_NAV_ICONS[icon];
-        return (
-          <AdminNavLink
-            key={href}
-            href={href}
-            label={label}
-            icon={Icon}
-            active={href === activeHref}
-            variant="sidebar"
-            collapsed={collapsed}
-          />
-        );
-      })}
+        {visibleNavItems.map(({ href, label, icon }) => {
+          const Icon = ADMIN_NAV_ICONS[icon];
+          return (
+            <AdminNavLink
+              key={href}
+              href={href}
+              label={label}
+              icon={Icon}
+              active={href === activeHref}
+              variant="sidebar"
+              collapsed={collapsed}
+            />
+          );
+        })}
+      </div>
 
       <div
         className={cn(
-          "mt-auto flex flex-col gap-2 border-t border-border pt-4",
+          "mt-auto shrink-0 flex flex-col gap-2 border-t border-border pt-4",
           collapsed && "items-center",
         )}
       >
