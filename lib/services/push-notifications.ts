@@ -59,32 +59,14 @@ export async function sendPushToUser(
   const vapid = getVapid();
   if (!vapid) return;
 
-  // web-push is an optional runtime dependency. Loaded dynamically so that
-  // the app keeps building/working even when the package is not installed
-  // (e.g. local dev or environments without push). We avoid a static `import`
-  // (which would require type declarations) and instead resolve via Function eval.
-  type WebPushModule = {
-    setVapidDetails: (subject: string, pub: string, priv: string) => void;
-    sendNotification: (
-      sub: { endpoint: string; keys: { p256dh: string; auth: string } },
-      body: string,
-      options?: { TTL?: number },
-    ) => Promise<unknown>;
-  };
-  let webpush: WebPushModule | null = null;
+  // web-push relies on native Node APIs. It is loaded with a literal dynamic
+  // import (not a Function-wrapped indirection) so Next.js file tracing keeps
+  // it in the standalone/serverless output. It is also declared in
+  // `serverExternalPackages` so it is required natively instead of bundled.
+  let webpush: typeof import("web-push") | null = null;
   try {
-    const dynamicImport = new Function("m", "return import(m)") as (
-      m: string,
-    ) => Promise<unknown>;
-    const mod = (await dynamicImport("web-push").catch(() => null)) as
-      | { default?: WebPushModule }
-      | WebPushModule
-      | null;
-    webpush = mod
-      ? (("default" in (mod as Record<string, unknown>)
-          ? (mod as { default: WebPushModule }).default
-          : (mod as WebPushModule)))
-      : null;
+    const mod = await import("web-push");
+    webpush = (mod.default ?? mod) as typeof import("web-push");
   } catch {
     webpush = null;
   }
