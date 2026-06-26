@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Bell, BellOff, CalendarDays, Megaphone, Sparkles } from "lucide-react";
 import { updateNotificationPreferences } from "@/lib/actions/notifications";
 import {
@@ -140,6 +140,24 @@ function PushSubscriptionRow({ pushPublicKey }: { pushPublicKey: string | null }
     typeof window !== "undefined" &&
     "serviceWorker" in navigator &&
     "PushManager" in window;
+
+  useEffect(() => {
+    if (!supported) return;
+    async function checkExisting() {
+      try {
+        const reg = await navigator.serviceWorker.getRegistration("/sw.js");
+        if (!reg) return;
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) {
+          setState("on");
+        }
+      } catch {
+        // Silently ignore — stay in idle
+      }
+    }
+    checkExisting();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function enable() {
     setError(null);
