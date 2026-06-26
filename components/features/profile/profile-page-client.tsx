@@ -25,6 +25,7 @@ import {
 import { ProfileTabs, type ProfileTabKey } from "@/components/features/profile/profile-tabs";
 import { ProfileEmptyState } from "@/components/features/profile/profile-empty-state";
 import { NeighborInviteBlock } from "@/components/features/profile/neighbor-invite-block";
+import { PwaInstallCard } from "@/components/features/pwa/pwa-install-card";
 import { NotificationPreferencesForm } from "@/components/features/notification-preferences-form";
 import { ProfileEditableRow } from "@/components/features/profile/profile-editable-row";
 import { EditNameModal } from "@/components/features/profile/edit-name-modal";
@@ -147,6 +148,7 @@ export function ProfilePageClient({
             communeName={invite.communeName}
             inviteCount={invite.inviteCount}
           />
+          <PwaInstallCard />
         </aside>
       </div>
     </PageStack>
