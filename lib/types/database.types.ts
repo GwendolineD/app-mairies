@@ -1439,6 +1439,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           first_name: string | null
+          has_dismissed_notification_prompt: boolean
           has_seen_onboarding: boolean
           is_platform_admin: boolean
           last_name: string | null
@@ -1455,6 +1456,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           first_name?: string | null
+          has_dismissed_notification_prompt?: boolean
           has_seen_onboarding?: boolean
           is_platform_admin?: boolean
           last_name?: string | null
@@ -1471,6 +1473,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           first_name?: string | null
+          has_dismissed_notification_prompt?: boolean
           has_seen_onboarding?: boolean
           is_platform_admin?: boolean
           last_name?: string | null

@@ -42,6 +42,7 @@ export type Profile = {
   active_commune_id: string | null;
   is_platform_admin: boolean;
   has_seen_onboarding: boolean;
+  has_dismissed_notification_prompt: boolean;
   banned_at: string | null;
   ban_reason: string | null;
   banned_by: string | null;

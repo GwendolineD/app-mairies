@@ -3,10 +3,12 @@ import { BottomNav } from "@/components/features/resident-nav";
 import { ResidentSidebar } from "@/components/features/resident-sidebar";
 import { ResidentHeader } from "@/components/features/resident-header";
 import { PwaInstallBanner } from "@/components/features/pwa/pwa-install-banner";
+import { NotificationPromptBanner } from "@/components/features/notification-prompt-banner";
 import { ResidentShellClient } from "@/components/features/resident-shell-client";
 import { getResidentBackofficeNav } from "@/lib/auth/permissions";
 import { requireActiveMembership } from "@/lib/auth/session";
 import { getPlatformSupportEmail } from "@/lib/actions/platform-settings";
+import { getPushPublicKey } from "@/lib/actions/notifications";
 import { membershipToAddress } from "@/lib/types";
 import { countUnreadMessages } from "@/lib/queries/messages";
 import { createClient } from "@/lib/supabase/server";
@@ -24,11 +26,13 @@ export default async function ResidentRootLayout({
   const backofficeLinks = getResidentBackofficeNav(ctx);
   const supabase = await createClient();
 
-  const [unreadMessages, categoryRows, initiativeCategoryRows, supportEmail] = await Promise.all([
+  const [unreadMessages, categoryRows, initiativeCategoryRows, supportEmail, pushPublicKey] =
+    await Promise.all([
     countUnreadMessages(supabase, ctx.activeMembership!.commune_id),
     getAnnouncementCategories(),
     getInitiativeEventCategories(),
     getPlatformSupportEmail(),
+    getPushPublicKey(),
   ]);
 
   initCategories(categoryRows);
@@ -52,6 +56,13 @@ export default async function ResidentRootLayout({
         <main className="min-w-0 flex-1 overflow-y-auto bg-surface px-5 py-4 pb-28 md:px-6 md:py-6 md:pb-6 lg:px-8">
           <PwaInstallBanner
             hasSeenOnboarding={ctx.profile.has_seen_onboarding ?? false}
+          />
+          <NotificationPromptBanner
+            hasSeenOnboarding={ctx.profile.has_seen_onboarding ?? false}
+            hasDismissedNotificationPrompt={
+              ctx.profile.has_dismissed_notification_prompt ?? false
+            }
+            pushPublicKey={pushPublicKey}
           />
           <ResidentShellClient
             communeId={ctx.activeMembership!.commune_id}
