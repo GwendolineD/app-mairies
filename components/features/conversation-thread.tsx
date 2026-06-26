@@ -39,6 +39,26 @@ function formatTime(iso: string): string {
 
 type GroupedMessages = { dateKey: string; dateLabel: string; messages: MessageRow[] }[];
 
+function ArchiveConversationButton({
+  onClick,
+  disabled,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-muted underline-offset-2 hover:text-coral hover:underline disabled:cursor-not-allowed"
+    >
+      <Trash2 className="size-3.5" aria-hidden />
+      Supprimer la conversation
+    </button>
+  );
+}
+
 type Props = {
   conversationId: string;
   messages: MessageRow[];
@@ -198,10 +218,16 @@ export function ConversationThread({
           </div>
         </div>
       ) : readOnly ? (
-        <div className="border-t border-border/60 bg-warm/50 p-3">
+        <div className="border-t border-border/60 bg-warm/50 px-3 pt-3 pb-6">
           <p className="text-center text-sm text-muted">
             Le contenu lié à cette conversation a été suspendu. Vous ne pouvez plus envoyer de messages.
           </p>
+          <div className="mt-6 flex justify-center">
+            <ArchiveConversationButton
+              onClick={handleArchive}
+              disabled={archiving}
+            />
+          </div>
         </div>
       ) : (
         <form
@@ -231,15 +257,10 @@ export function ConversationThread({
             <p className="mt-1 text-xs text-coral">{error}</p>
           ) : null}
           <div className="mt-2 flex items-center justify-between gap-3">
-            <button
-              type="button"
+            <ArchiveConversationButton
               onClick={handleArchive}
               disabled={archiving || sending}
-              className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-muted underline-offset-2 hover:text-coral hover:underline disabled:cursor-not-allowed"
-            >
-              <Trash2 className="size-3.5" aria-hidden />
-              Supprimer la conversation
-            </button>
+            />
             <Button type="submit" size="sm" disabled={sending || !bodyValue.trim()}>
               {sending ? "Envoi…" : "Envoyer"}
             </Button>

@@ -1,15 +1,12 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { Bell, BellOff, CalendarDays, Megaphone, Sparkles } from "lucide-react";
 import { updateNotificationPreferences } from "@/lib/actions/notifications";
-import {
-  registerPushSubscription,
-  unregisterPushSubscription,
-} from "@/lib/actions/notifications";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { usePushSubscription } from "@/lib/hooks/use-push-subscription";
 import type { NotificationPreferences } from "@/lib/types";
 import { cn } from "@/lib/utils/cn";
 
@@ -130,90 +127,8 @@ export function NotificationPreferencesForm({
   );
 }
 
-type PushState = "idle" | "loading" | "on" | "off" | "blocked";
-
 function PushSubscriptionRow({ pushPublicKey }: { pushPublicKey: string | null }) {
-  const [state, setState] = useState<PushState>("idle");
-  const [error, setError] = useState<string | null>(null);
-
-  const supported =
-    typeof window !== "undefined" &&
-    "serviceWorker" in navigator &&
-    "PushManager" in window;
-
-  useEffect(() => {
-    if (!supported) return;
-    async function checkExisting() {
-      try {
-        const reg = await navigator.serviceWorker.getRegistration("/sw.js");
-        if (!reg) return;
-        const sub = await reg.pushManager.getSubscription();
-        if (sub) {
-          setState("on");
-        }
-      } catch {
-        // Silently ignore — stay in idle
-      }
-    }
-    checkExisting();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  async function enable() {
-    setError(null);
-    if (!pushPublicKey) {
-      setError(
-        "Notifications push non configurées sur ce serveur (clé VAPID manquante).",
-      );
-      return;
-    }
-    if (!supported) {
-      setError("Votre navigateur ne supporte pas les notifications push.");
-      return;
-    }
-    setState("loading");
-    try {
-      const permission = await Notification.requestPermission();
-      if (permission !== "granted") {
-        setState("blocked");
-        return;
-      }
-      const registration =
-        (await navigator.serviceWorker.getRegistration("/sw.js")) ??
-        (await navigator.serviceWorker.register("/sw.js"));
-      await navigator.serviceWorker.ready;
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(pushPublicKey).buffer as ArrayBuffer,
-      });
-      const json = subscription.toJSON();
-      await registerPushSubscription({
-        endpoint: subscription.endpoint,
-        p256dh: json.keys?.p256dh ?? "",
-        auth: json.keys?.auth ?? "",
-        userAgent: navigator.userAgent,
-      });
-      setState("on");
-    } catch (e) {
-      setError((e as Error).message);
-      setState("idle");
-    }
-  }
-
-  async function disable() {
-    setState("loading");
-    try {
-      const registration = await navigator.serviceWorker.getRegistration("/sw.js");
-      const sub = await registration?.pushManager.getSubscription();
-      if (sub) {
-        await unregisterPushSubscription(sub.endpoint);
-        await sub.unsubscribe();
-      }
-      setState("off");
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  }
+  const { state, error, enable, disable } = usePushSubscription(pushPublicKey);
 
   return (
     <section className="space-y-2 rounded-2xl border border-border/60 bg-warm/40 p-4">
@@ -261,13 +176,4 @@ function PushSubscriptionRow({ pushPublicKey }: { pushPublicKey: string | null }
       {error ? <p className="text-xs text-coral">{error}</p> : null}
     </section>
   );
-}
-
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const rawData = atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
-  return outputArray;
 }

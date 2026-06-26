@@ -91,3 +91,15 @@ export async function unregisterPushSubscription(
     .eq("endpoint", endpoint);
   return { success: true };
 }
+
+export async function dismissNotificationPrompt(): Promise<void> {
+  const ctx = await requireActiveMembership();
+  const supabase = await createClient();
+
+  await supabase
+    .from("profiles")
+    .update({ has_dismissed_notification_prompt: true })
+    .eq("user_id", ctx.userId);
+
+  revalidatePath("/accueil");
+}
