@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
 import { APP_NAME } from "@/lib/constants/app";
@@ -74,17 +74,6 @@ export function OnboardingModal({ open, onComplete, communeName }: Props) {
           <DialogPrimitive.Title className="sr-only">
             Bienvenue sur {APP_NAME}
           </DialogPrimitive.Title>
-
-          {!isLast && (
-            <button
-              type="button"
-              onClick={onComplete}
-              className="absolute right-4 top-4 z-10 flex cursor-pointer items-center gap-1 rounded-sm px-2 py-1 text-xs font-medium text-muted transition hover:text-text"
-            >
-              Passer
-              <X className="size-3.5" />
-            </button>
-          )}
 
           <OnboardingSlideFrame
             slide={activeSlide}
