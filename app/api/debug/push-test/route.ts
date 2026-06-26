@@ -36,31 +36,15 @@ export async function GET() {
       !!serverPublic && !!nextPublic && serverPublic === nextPublic,
   };
 
-  // Load web-push dynamically (optional runtime dependency).
-  type WebPushModule = {
-    setVapidDetails: (subject: string, pub: string, priv: string) => void;
-    sendNotification: (
-      sub: { endpoint: string; keys: { p256dh: string; auth: string } },
-      body: string,
-      options?: { TTL?: number },
-    ) => Promise<unknown>;
-  };
-  let webpush: WebPushModule | null = null;
+  // Literal dynamic import so Next.js file tracing keeps web-push in the output.
+  let webpush: typeof import("web-push") | null = null;
+  let webPushLoadError: string | null = null;
   try {
-    const dynamicImport = new Function("m", "return import(m)") as (
-      m: string,
-    ) => Promise<unknown>;
-    const mod = (await dynamicImport("web-push").catch(() => null)) as
-      | { default?: WebPushModule }
-      | WebPushModule
-      | null;
-    webpush = mod
-      ? "default" in (mod as Record<string, unknown>)
-        ? (mod as { default: WebPushModule }).default
-        : (mod as WebPushModule)
-      : null;
-  } catch {
+    const mod = await import("web-push");
+    webpush = (mod.default ?? mod) as typeof import("web-push");
+  } catch (e) {
     webpush = null;
+    webPushLoadError = String((e as Error)?.message ?? e).slice(0, 300);
   }
 
   const service = await createServiceClient();
@@ -80,6 +64,7 @@ export async function GET() {
     userId: ctx.userId,
     env,
     webPushLoaded: !!webpush,
+    webPushLoadError,
     subscriptions: {
       count: subscriptions.length,
       error: subsError?.message ?? null,

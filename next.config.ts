@@ -2,6 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // web-push relies on native Node APIs and must not be bundled; keeping it
+  // external ensures it is traced into the standalone server output (otherwise
+  // the dynamic import resolves to null in production and no push is sent).
+  serverExternalPackages: ["web-push"],
   allowedDevOrigins: ["*.ngrok-free.app", "*.ngrok.io"],
   experimental: {
     serverActions: {
