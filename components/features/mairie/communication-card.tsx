@@ -1,19 +1,13 @@
 import Image from "next/image";
-import { Download } from "lucide-react";
 import type { CommunicationAsset } from "@/lib/types";
 import { Card } from "@/components/ui/card";
-import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils/cn";
+import { CommunicationDownloadButton } from "@/components/features/mairie/communication-download-button";
 
 type Props = {
   asset: CommunicationAsset;
 };
 
 export function CommunicationCard({ asset }: Props) {
-  const iconButtonClass = cn(
-    buttonVariants({ variant: "secondary", size: "icon-sm" }),
-  );
-
   return (
     <Card className="flex h-full flex-col overflow-hidden p-0">
       <div className="relative aspect-4/3 w-full bg-warm">
@@ -38,16 +32,10 @@ export function CommunicationCard({ asset }: Props) {
         </div>
 
         <div className="flex items-center justify-end gap-2">
-          <a
-            href={asset.file_url}
-            download
-            target="_blank"
-            rel="noopener noreferrer"
-            className={iconButtonClass}
-            aria-label={`Télécharger ${asset.title}`}
-          >
-            <Download className="size-4" aria-hidden />
-          </a>
+          <CommunicationDownloadButton
+            fileUrl={asset.file_url}
+            title={asset.title}
+          />
         </div>
       </div>
     </Card>
