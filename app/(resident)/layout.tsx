@@ -2,6 +2,7 @@ import { Toaster } from "sonner";
 import { BottomNav } from "@/components/features/resident-nav";
 import { ResidentSidebar } from "@/components/features/resident-sidebar";
 import { ResidentHeader } from "@/components/features/resident-header";
+import { PwaInstallBanner } from "@/components/features/pwa/pwa-install-banner";
 import { ResidentShellClient } from "@/components/features/resident-shell-client";
 import { getResidentBackofficeNav } from "@/lib/auth/permissions";
 import { requireActiveMembership } from "@/lib/auth/session";
@@ -49,6 +50,9 @@ export default async function ResidentRootLayout({
         <ResidentSidebar unreadMessages={unreadMessages} supportEmail={supportEmail} />
 
         <main className="min-w-0 flex-1 overflow-y-auto bg-surface px-5 py-4 pb-28 md:px-6 md:py-6 md:pb-6 lg:px-8">
+          <PwaInstallBanner
+            hasSeenOnboarding={ctx.profile.has_seen_onboarding ?? false}
+          />
           <ResidentShellClient
             communeId={ctx.activeMembership!.commune_id}
             membershipAddress={membershipToAddress(ctx.activeMembership!)}
