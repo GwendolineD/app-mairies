@@ -2,7 +2,7 @@
   "name": "Tous Voisins",
   "short_name": "Tous Voisins",
   "description": "Découvrir, Partager, S'entraider",
-  "start_url": "/",
+  "start_url": "/accueil",
   "display": "standalone",
   "background_color": "#9A52FF",
   "theme_color": "#9A52FF",
