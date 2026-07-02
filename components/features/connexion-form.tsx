@@ -4,11 +4,19 @@ import Link from "next/link";
 import { startTransition, useActionState } from "react";
 import { ArrowRight, Lock, Mail } from "lucide-react";
 import { useAuthCredentials } from "@/components/features/auth/auth-credentials-provider";
-import { signIn } from "@/lib/actions/auth";
+import { resendVerificationEmail, signIn } from "@/lib/actions/auth";
 import { ROUTES } from "@/lib/constants/routes";
 import { Button } from "@/components/ui/button";
 import { IconField, IconInput } from "@/components/ui/icon-field";
 import { PasswordField } from "@/components/ui/password-field";
+
+type SignInState =
+  | { error?: string; emailNotConfirmed?: boolean }
+  | undefined;
+
+type ResendState =
+  | { error?: string; success?: boolean }
+  | undefined;
 
 export function ConnexionForm({
   callbackError,
@@ -19,8 +27,12 @@ export function ConnexionForm({
 }) {
   const { email, password, setCredentials } = useAuthCredentials();
   const [state, formAction, isPending] = useActionState(
-    async (_: { error?: string } | undefined, fd: FormData) => signIn(fd),
-    undefined as { error?: string } | undefined,
+    async (_: SignInState, fd: FormData) => signIn(fd) as Promise<SignInState>,
+    undefined as SignInState,
+  );
+  const [resendState, resendAction, resendPending] = useActionState(
+    async (_: ResendState, fd: FormData) => resendVerificationEmail(fd),
+    undefined as ResendState,
   );
 
   const displayError =
@@ -30,6 +42,8 @@ export function ConnexionForm({
       : callbackError === "generic"
         ? "Lien de connexion invalide ou expiré. Réessayez."
         : undefined);
+
+  const showResendVerification = Boolean(state?.emailNotConfirmed);
 
   return (
     <div className="mx-auto flex w-full max-w-[500px] flex-1 flex-col rounded-none bg-transparent px-0 py-0 shadow-none md:min-h-0 md:rounded-3xl md:bg-surface md:px-12 md:py-16 md:shadow-elevated">
@@ -95,12 +109,54 @@ export function ConnexionForm({
           </Link>
 
           {displayError ? (
-            <p
-              className="rounded-md bg-soft-pink px-3 py-2 text-xs font-medium text-coral"
-              role="alert"
-            >
-              {displayError}
-            </p>
+            <div className="space-y-3">
+              <p
+                className="rounded-md bg-soft-pink px-3 py-2 text-xs font-medium text-coral"
+                role="alert"
+              >
+                {displayError}
+              </p>
+              {showResendVerification ? (
+                <div className="space-y-2">
+                  {resendState?.success ? (
+                    <p
+                      className="rounded-md border border-mint/30 bg-mint/10 px-3 py-2 text-xs font-medium text-text"
+                      role="status"
+                    >
+                      Si un compte non confirmé existe avec cette adresse, un
+                      nouvel e-mail de vérification vient d&apos;être envoyé.
+                      Pensez à vérifier vos spams.
+                    </p>
+                  ) : null}
+                  {resendState?.error ? (
+                    <p
+                      className="rounded-md bg-soft-pink px-3 py-2 text-xs font-medium text-coral"
+                      role="alert"
+                    >
+                      {resendState.error}
+                    </p>
+                  ) : null}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={resendPending || !email.trim()}
+                    className="w-full"
+                    onClick={() => {
+                      const formData = new FormData();
+                      formData.set("email", email);
+                      startTransition(() => {
+                        resendAction(formData);
+                      });
+                    }}
+                  >
+                    {resendPending
+                      ? "Envoi en cours…"
+                      : "Renvoyer l'e-mail de vérification"}
+                  </Button>
+                </div>
+              ) : null}
+            </div>
           ) : null}
         </div>
 

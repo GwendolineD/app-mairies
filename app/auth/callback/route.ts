@@ -28,7 +28,9 @@ function authCallbackErrorRedirect(appOrigin: string, flow: AuthCallbackFlow) {
 function resolveFlow(type: string | null): AuthCallbackFlow {
   if (type === "recovery") return "recovery";
   if (type === "email_change") return "email_change";
-  if (type === "signup") return "signup";
+  if (type === "signup" || type === "magiclink" || type === "invite") {
+    return "signup";
+  }
   return "default";
 }
 

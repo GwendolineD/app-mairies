@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { RECOVERY_COOKIE_NAME } from "@/lib/constants/auth";
 import { ROUTES } from "@/lib/constants/routes";
+import { resendVerificationEmailIfNeeded, sendVerificationEmail } from "@/lib/email/send-verification-email";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getAppUrl } from "@/lib/utils/app-url";
 import { formatAuthError } from "@/lib/utils/auth-errors";
@@ -176,6 +177,19 @@ export async function signUp(formData: FormData) {
     status: "active",
   });
 
+  const emailResult = await sendVerificationEmail({
+    email: parsed.data.email,
+    userName: displayName,
+    password: parsed.data.password,
+  });
+
+  if (!emailResult.success) {
+    return {
+      emailConfirmationRequired: true,
+      emailSendWarning: true,
+    };
+  }
+
   return { emailConfirmationRequired: true };
 }
 
@@ -214,6 +228,7 @@ export async function signIn(formData: FormData) {
         error,
         "Connexion impossible. Vérifiez vos identifiants et réessayez.",
       ),
+      emailNotConfirmed: error.code === "email_not_confirmed",
     };
   }
 
@@ -277,6 +292,44 @@ export async function requestPasswordReset(formData: FormData) {
         "Trop de demandes envoyées. Patientez quelques instants et réessayez.",
       ),
     };
+  }
+
+  return { success: true as const };
+}
+
+export async function resendVerificationEmail(formData: FormData) {
+  const parsed = forgotPasswordSchema.safeParse({
+    email: formData.get("email"),
+  });
+
+  if (!parsed.success) {
+    return {
+      error:
+        parsed.error.flatten().fieldErrors.email?.[0] ?? "Email invalide",
+    };
+  }
+
+  const normalizedEmail = parsed.data.email.toLowerCase();
+  const rateLimitKey = `resend-verification:${normalizedEmail}`;
+  if (!checkRateLimit(rateLimitKey)) {
+    return {
+      error: "Trop de demandes envoyées. Patientez quelques instants et réessayez.",
+    };
+  }
+
+  const result = await resendVerificationEmailIfNeeded(normalizedEmail);
+
+  if (!result.success && result.error) {
+    if (isRateLimitError({ message: result.error })) {
+      return {
+        error: formatAuthError(
+          { message: result.error },
+          "Trop de demandes envoyées. Patientez quelques instants et réessayez.",
+        ),
+      };
+    }
+
+    console.error("[auth] resendVerificationEmail failed:", result.error);
   }
 
   return { success: true as const };

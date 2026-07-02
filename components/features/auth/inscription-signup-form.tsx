@@ -23,7 +23,7 @@ import {
   formatMunicipalityDisplay,
   formatStreetDisplay,
 } from "@/lib/ban/display";
-import { signUp } from "@/lib/actions/auth";
+import { signUp, resendVerificationEmail } from "@/lib/actions/auth";
 import { ROUTES } from "@/lib/constants/routes";
 import type { Commune } from "@/lib/types";
 
@@ -32,7 +32,11 @@ type LookupResponse = { commune: Commune | null; error?: string };
 type SignupErrorField = Partial<Record<string, string[] | undefined>>;
 type SignUpState =
   | { error: SignupErrorField }
-  | { emailConfirmationRequired: true }
+  | { emailConfirmationRequired: true; emailSendWarning?: boolean }
+  | undefined;
+
+type ResendState =
+  | { error?: string; success?: boolean }
   | undefined;
 
 type AddressDraft = {
@@ -128,6 +132,10 @@ export function InscriptionSignupForm({
       signUp(formData) as Promise<SignUpState>,
     undefined,
   );
+  const [resendState, resendAction, resendPending] = useActionState(
+    async (_: ResendState, fd: FormData) => resendVerificationEmail(fd),
+    undefined as ResendState,
+  );
 
   const onPickCommune = useCallback(async (feature: BanFeature) => {
     setCommuneFeature(feature);
@@ -218,16 +226,58 @@ export function InscriptionSignupForm({
           Un email de confirmation vous a été envoyé. Cliquez sur le lien qu'il
           contient pour activer votre compte et accéder à l'application.
         </p>
-        <p className="mt-6 text-xs text-subtle">
-          Vous n'avez rien reçu ? Vérifiez vos spams ou{" "}
-          <Link
-            href={ROUTES.connexion}
-            className="cursor-pointer font-semibold text-purple hover:underline"
+        {signupState.emailSendWarning ? (
+          <p
+            className="mt-4 max-w-sm rounded-md bg-soft-pink px-3 py-2 text-xs font-medium text-coral"
+            role="alert"
           >
-            réessayez de vous connecter
-          </Link>
-          .
-        </p>
+            L&apos;envoi de l&apos;e-mail a échoué. Utilisez le bouton
+            ci-dessous pour le renvoyer.
+          </p>
+        ) : null}
+        <div className="mt-6 space-y-3">
+          {resendState?.success ? (
+            <p
+              className="max-w-sm rounded-md border border-mint/30 bg-mint/10 px-3 py-2 text-xs font-medium text-text"
+              role="status"
+            >
+              Si un compte non confirmé existe avec cette adresse, un nouvel
+              e-mail de vérification vient d&apos;être envoyé. Pensez à
+              vérifier vos spams.
+            </p>
+          ) : null}
+          {resendState?.error ? (
+            <p
+              className="max-w-sm rounded-md bg-soft-pink px-3 py-2 text-xs font-medium text-coral"
+              role="alert"
+            >
+              {resendState.error}
+            </p>
+          ) : null}
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            disabled={resendPending || !email.trim()}
+            onClick={() => {
+              const formData = new FormData();
+              formData.set("email", email);
+              startTransition(() => {
+                resendAction(formData);
+              });
+            }}
+          >
+            {resendPending ? "Envoi en cours…" : "Renvoyer l'e-mail"}
+          </Button>
+          <p className="text-xs text-subtle">
+            <Link
+              href={ROUTES.connexion}
+              className="cursor-pointer font-semibold text-purple hover:underline"
+            >
+              Retour à la connexion
+            </Link>
+          </p>
+        </div>
       </div>
     );
   }
