@@ -151,7 +151,9 @@ async function sendReportNotificationEmails(
         reason,
         report_date: reportDate,
         moderation_url: `${appUrl}${ROUTES.mairie.signalements}`,
-      }).catch(() => {});
+      }).catch((err) =>
+        console.error("[reports] Failed to send staff notification email:", err),
+      );
     }
   }
 
@@ -177,7 +179,9 @@ async function sendReportNotificationEmails(
         reason,
         report_date: reportDate,
         moderation_url: `${appUrl}${ROUTES.backoffice.signalements}`,
-      }).catch(() => {});
+      }).catch((err) =>
+        console.error("[reports] Failed to send admin notification email:", err),
+      );
     }
   }
 }

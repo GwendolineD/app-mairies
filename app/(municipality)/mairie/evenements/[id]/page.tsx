@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { requireCommuneStaff } from "@/lib/auth/session";
 import {
@@ -183,12 +184,15 @@ export default async function MairieEvenementDetailPage(props: {
             </header>
 
             {imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={imageUrl}
-                alt=""
-                className="aspect-[16/10] w-full rounded-lg border border-border object-cover"
-              />
+              <div className="relative aspect-[16/10] w-full overflow-hidden rounded-lg border border-border">
+                <Image
+                  src={imageUrl}
+                  alt=""
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 640px"
+                />
+              </div>
             ) : null}
 
             <p className="text-base font-semibold text-orange">

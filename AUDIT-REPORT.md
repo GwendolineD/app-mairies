@@ -1,20 +1,22 @@
 # Audit Sécurité, Performance & Maintenabilité — Tous Voisins
 
-**Date :** 24 juin 2026  
+**Date audit initial :** 24 juin 2026  
+**Dernière révision :** 2 juillet 2026  
 **Stack :** Next.js 16.2.6 · React 19 · Supabase · Tailwind v4 · TypeScript strict  
-**Scope :** ~469 fichiers source, 40 migrations SQL, 4 API routes, 21 server actions
+**Scope :** ~469 fichiers source, 56 migrations SQL, 4 API routes, 21 server actions
 
 ---
 
 ## Table des matières
 
 1. [Résumé exécutif](#résumé-exécutif)
-2. [Problèmes à corriger — par urgence](#problèmes-à-corriger)
+2. [Tableau de suivi global](#tableau-de-suivi-global)
+3. [Problèmes à corriger — par urgence](#problèmes-à-corriger)
    - [P0 — Critique (à corriger immédiatement)](#p0--critique)
    - [P1 — Élevé (court terme)](#p1--élevé)
    - [P2 — Moyen (moyen terme)](#p2--moyen)
    - [P3 — Faible (amélioration continue)](#p3--faible)
-3. [Points forts](#points-forts)
+4. [Points forts](#points-forts)
 
 ---
 
@@ -22,9 +24,53 @@
 
 | Domaine | Évaluation | Commentaire |
 |---------|:----------:|-------------|
-| **Sécurité** | ⚠️ Critique | 2 failles RLS permettant une élévation de privilèges, route API non protégée |
-| **Performance** | ⚠️ Moyen | Requêtes non bornées sur la carte, waterfalls évitables, session dupliquée |
-| **Maintenabilité** | ⚠️ Moyen | Bonne architecture mais 12 fichiers `@ts-nocheck`, zéro tests, erreurs silencieuses |
+| **Sécurité** | ✅ Maîtrisé | Failles RLS P0 corrigées (triggers), API analytics sécurisée, headers HTTP en place, XSS sanitisé |
+| **Performance** | ⚠️ Moyen | Requêtes carte sans borne, session dupliquée, images non optimisées (P2 en cours) |
+| **Maintenabilité** | ⚠️ Moyen | Bonne architecture, types DB générés, mais 11 fichiers `@ts-nocheck`, zéro tests, erreurs silencieuses |
+
+---
+
+## Tableau de suivi global
+
+| # | Priorité | Domaine | Statut | Référence fix |
+|---|----------|---------|--------|---------------|
+| 1 | P0 | 🔒 | ✅ Corrigé | `20260625000000_security_hardening.sql` — trigger `protect_profile_sensitive_columns` |
+| 2 | P0 | 🔒 | ✅ Corrigé | `20260625000000_security_hardening.sql` — trigger `protect_membership_sensitive_columns` |
+| 3 | P0 | 🔒 | ✅ Corrigé | `app/api/analytics/route.ts` — auth `getUser()` + client utilisateur |
+| 4 | P0 | ⚡ | ⚠️ Ouvert | Requêtes carte sans `.limit()` |
+| 5 | P0 | ⚡ | ⚠️ Ouvert | `countUnreadMessages` n'utilise pas la RPC dédiée |
+| 6 | P0 | ⚡ | ⚠️ Ouvert | Session auth dupliquée (pas de `React.cache()`) |
+| 7 | P1 | 🔒 | ✅ Corrigé | `20260625200000_hide_trial_code_column.sql` + `validate_trial_access_code` RPC |
+| 8 | P1 | 🔒 | ✅ Corrigé | `lib/utils/sanitize-html.ts` (isomorphic-dompurify) |
+| 9 | P1 | 🔒 | ✅ Corrigé | `next.config.ts` — headers HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy |
+| 10 | P1 | 🔒 | ✅ Corrigé | `app/auth/callback/route.ts` — regex `isValidPath` |
+| 11 | P1 | 🔒 | ✅ Corrigé | `signInSchema` Zod dans `lib/actions/auth.ts` |
+| 12 | P1 | ⚡ | ✅ Corrigé | `Promise.all` sur pages détail événements, initiatives, signalements |
+| 13 | P1 | ⚡ | ✅ Corrigé | `20260625200100_performance_indexes.sql` |
+| 14 | P1 | ⚡ | 🟡 Partiel | `.limit(200)` ajouté sur communes plateforme + signalements (pas de pagination complète) |
+| 15 | P1 | 🛠️ | 🟡 Partiel | 11 fichiers `@ts-nocheck` restants (−1 : `lib/push/send.ts` supprimé) |
+| 16 | P1 | 🛠️ | ✅ Corrigé | `lib/types/database.types.ts` généré, branché sur les clients Supabase |
+| 17 | P1 | 🛠️ | ⚠️ Ouvert | Zéro test automatisé, pas de CI |
+| 18 | P2 | 🔒 | ⚠️ Ouvert | RPC `increment_membership_counter` sans garde ownership |
+| 19 | P2 | 🔒 | 🔄 Atténué | Rate limit trial in-memory ; risque réduit par RPC + masquage colonne |
+| 20 | P2 | 🔒 | ⚠️ Ouvert | `enable_confirmations = false` |
+| 21 | P2 | ⚡ | ⚠️ Ouvert | Dashboard : scan complet `created_at` sans filtre SQL |
+| 22 | P2 | ⚡ | 🟡 Partiel | `remotePatterns` Cloudinary configuré ; cartes toujours en `<img>` brut |
+| 23 | P2 | ⚡ | ⚠️ Ouvert | TipTap / Recharts non lazy-loadés |
+| 24 | P2 | 🛠️ | ⚠️ Ouvert | Retours d'actions incohérents (void vs `{ error }` vs throw) |
+| 25 | P2 | 🛠️ | ⚠️ Ouvert | Erreurs Supabase ignorées dans pages RSC |
+| 26 | P2 | 🛠️ | ⚠️ Ouvert | Aucun `error.tsx` / `global-error.tsx` |
+| 27 | P2 | 🛠️ | ⚠️ Ouvert | Actions catégories dupliquées (~200 lignes) |
+| 28 | P2 | 🛠️ | 🟡 Partiel | `.catch` parent logue ; boucles email staff/admin toujours silencieuses |
+| 29 | P3 | 🔒 | ⚠️ Ouvert | `allowedOrigins` ngrok à retirer en prod |
+| 30 | P3 | ⚡ | ⚠️ Ouvert | `ban-autocomplete.tsx` : pas de cleanup `useEffect` |
+| 31 | P3 | ⚡ | ⚠️ Ouvert | `listAnnouncementMarkers` code mort |
+| 32 | P3 | ⚡ | ⚠️ Ouvert | `accueil-sections.tsx` : boundary `'use client'` inutile |
+| 33 | P3 | 🛠️ | ⚠️ Ouvert | `use-sync-external-store` dependency inutilisée |
+| 34 | P3 | 🛠️ | ⚠️ Ouvert | README référence `vie-locale` au lieu de `tous-voisins` |
+| 35 | P3 | 🛠️ | ⚠️ Ouvert | `CONTEXT_TYPE_LABELS` dupliqué |
+| 36 | P3 | 🛠️ | ⚠️ Ouvert | Double chemin d'import `cn()` |
+| 37 | P3 | 🛠️ | ⚠️ Ouvert | Variables env absentes de `.env.example` |
 
 ---
 
@@ -34,7 +80,7 @@
 
 > Failles exploitables ou risques de dégradation grave en production.
 
-#### 1. 🔒 Élévation de privilèges via RLS `profiles_update`
+#### 1. 🔒 Élévation de privilèges via RLS `profiles_update` — ✅ Corrigé
 
 **Fichier :** `supabase/migrations/20260522000000_initial_schema.sql` (l.719–721)
 
@@ -42,9 +88,11 @@ Un utilisateur authentifié peut modifier **toutes les colonnes** de son profil,
 
 **Correction :** Trigger `BEFORE UPDATE` ou policy `WITH CHECK` bloquant `is_platform_admin`, `banned_at`, `banned_by`.
 
+**Fix livré :** `supabase/migrations/20260625000000_security_hardening.sql` — trigger `trg_protect_profile_sensitive` (BEFORE UPDATE) qui gèle `is_platform_admin`, `banned_at`, `banned_by`, `ban_reason` pour les non-admins.
+
 ---
 
-#### 2. 🔒 Élévation de privilèges via RLS `memberships_update`
+#### 2. 🔒 Élévation de privilèges via RLS `memberships_update` — ✅ Corrigé
 
 **Fichier :** `supabase/migrations/20260522000000_initial_schema.sql` (l.734–739)
 
@@ -52,15 +100,19 @@ Un membre ordinaire peut modifier sa propre adhésion : `role = 'mayor'` ou `'st
 
 **Correction :** Séparer self-update (adresse uniquement) et staff-update (role/status), ou trigger bloquant.
 
+**Fix livré :** `supabase/migrations/20260625000000_security_hardening.sql` — trigger `trg_protect_membership_sensitive` (BEFORE UPDATE) qui gèle `role`, `status`, `suspended_at`, `suspension_reason` pour les self-updates non staff.
+
 ---
 
-#### 3. 🔒 Route `/api/analytics` non authentifiée + `service_role`
+#### 3. 🔒 Route `/api/analytics` non authentifiée + `service_role` — ✅ Corrigé
 
 **Fichier :** `app/api/analytics/route.ts` (l.5–27)
 
 Aucune vérification d'identité, insertion via `service_role` (bypass RLS), `communeId` fourni par le client sans validation. Permet pollution illimitée de la table analytics.
 
 **Correction :** Exiger auth, utiliser le client utilisateur, valider `communeId` contre les memberships.
+
+**Fix livré :** `app/api/analytics/route.ts` — `getUser()` requis (401 si absent), insertion via client utilisateur (RLS actif), validation `eventName` contre whitelist.
 
 ---
 
@@ -98,7 +150,7 @@ Appelle `list_my_conversations` (toutes les conversations) puis somme en JS. La 
 
 > Problèmes de sécurité ou performance significatifs, à traiter rapidement.
 
-#### 7. 🔒 Fuite des codes d'accès trial via SELECT public
+#### 7. 🔒 Fuite des codes d'accès trial via SELECT public — ✅ Corrigé
 
 **Fichier :** `supabase/migrations/20260618400000_trial_access_code.sql`
 
@@ -106,9 +158,11 @@ La policy `communes_select_public` expose `trial_access_code` à tout client (an
 
 **Correction :** Vue sans colonnes sensibles, ou colonne exclue du SELECT anon.
 
+**Fix livré :** `supabase/migrations/20260625200000_hide_trial_code_column.sql` — REVOKE SELECT sur `trial_access_code` pour `anon`, GRANT colonne par colonne. Validation via RPC `validate_trial_access_code` côté serveur.
+
 ---
 
-#### 8. 🔒 XSS via documents légaux (`dangerouslySetInnerHTML`)
+#### 8. 🔒 XSS via documents légaux (`dangerouslySetInnerHTML`) — ✅ Corrigé
 
 **Fichier :** `app/(public)/legal/[slug]/page.tsx` (l.52)
 
@@ -116,9 +170,11 @@ HTML éditable par admin (TipTap) injecté sans sanitization. Un admin compromis
 
 **Correction :** DOMPurify côté serveur à la sauvegarde et/ou à l'affichage.
 
+**Fix livré :** `lib/utils/sanitize-html.ts` (isomorphic-dompurify) appliqué à l'affichage dans `app/(public)/legal/[slug]/page.tsx`.
+
 ---
 
-#### 9. 🔒 Absence de security headers
+#### 9. 🔒 Absence de security headers — ✅ Corrigé
 
 **Fichier :** `next.config.ts`
 
@@ -126,9 +182,11 @@ Aucun en-tête HTTP de sécurité configuré : pas de CSP, HSTS, X-Frame-Options
 
 **Correction :** Ajouter un bloc `headers()` dans `next.config.ts`.
 
+**Fix livré :** `next.config.ts` — bloc `headers()` avec X-Frame-Options (DENY), X-Content-Type-Options (nosniff), Referrer-Policy, Permissions-Policy, HSTS. CSP non ajouté (complexe avec inline styles Tailwind).
+
 ---
 
-#### 10. 🔒 Open redirect partiel dans auth callback
+#### 10. 🔒 Open redirect partiel dans auth callback — ✅ Corrigé
 
 **Fichier :** `app/auth/callback/route.ts` (l.39–57)
 
@@ -136,9 +194,11 @@ Le paramètre `next` n'est pas validé (pas de whitelist ni regex restrictive).
 
 **Correction :** Regex `^/[a-zA-Z0-9/_-]*$` ou whitelist de chemins.
 
+**Fix livré :** `app/auth/callback/route.ts` — regex `isValidPath` + blocage des `//` (l.40–42). Fallback vers `ROUTES.accueil` si invalide.
+
 ---
 
-#### 11. 🔒 Pas de validation Zod sur `signIn`
+#### 11. 🔒 Pas de validation Zod sur `signIn` — ✅ Corrigé
 
 **Fichier :** `lib/actions/auth.ts` (l.197–210)
 
@@ -146,9 +206,11 @@ Email et mot de passe extraits de FormData sans validation, envoyés directement
 
 **Correction :** Passer par un schéma Zod minimal.
 
+**Fix livré :** `lib/actions/auth.ts` — `signInSchema.safeParse()` appliqué avant `signInWithPassword`.
+
 ---
 
-#### 12. ⚡ Waterfalls séquentiels sur pages détail
+#### 12. ⚡ Waterfalls séquentiels sur pages détail — ✅ Corrigé
 
 **Fichiers :** `app/(resident)/evenements/[id]/page.tsx`, `initiatives/[id]/page.tsx`, `mairie/signalements/page.tsx`
 
@@ -156,17 +218,21 @@ Requêtes séquentielles (event → auteur → initiative → volunteers → par
 
 **Correction :** Regrouper les fetches indépendants dans un `Promise.all`.
 
+**Fix livré :** `Promise.all` dans les 3 pages (événements l.134, initiatives l.128, signalements l.99).
+
 ---
 
-#### 13. ⚡ Index DB manquants sur requêtes fréquentes
+#### 13. ⚡ Index DB manquants sur requêtes fréquentes — ✅ Corrigé
 
 **Tables concernées :** `reports(commune_id, created_at)`, `event_volunteers(event_id)`, `event_participants(event_id)`, `initiative_responses(initiative_id, response_type)`, `events(commune_id, ends_at)`
 
 **Correction :** Migration ajoutant les index composites.
 
+**Fix livré :** `supabase/migrations/20260625200100_performance_indexes.sql` — 5 index composites créés.
+
 ---
 
-#### 14. ⚡ Communes plateforme et signalements mairie sans pagination
+#### 14. ⚡ Communes plateforme et signalements mairie sans pagination — 🟡 Partiel
 
 **Fichiers :** `app/(platform)/platform/communes/page.tsx` (l.10–13), `app/(municipality)/mairie/signalements/page.tsx` (l.64–72)
 
@@ -174,23 +240,29 @@ Requêtes séquentielles (event → auteur → initiative → volunteers → par
 
 **Correction :** Pagination ou `.limit()`.
 
+**Fix partiel :** `.limit(200)` ajouté sur les deux requêtes. Pagination complète avec curseur non implémentée (suffisant tant que le volume reste < 200).
+
 ---
 
-#### 15. 🛠️ 12 fichiers `@ts-nocheck` — perte du typage sur du code critique
+#### 15. 🛠️ 12 fichiers `@ts-nocheck` — perte du typage sur du code critique — 🟡 Partiel
 
-**Fichiers :** `lib/queries/announcements.ts`, `lib/queries/initiatives.ts`, `lib/actions/announcements.ts`, `lib/actions/announcement-categories.ts`, `lib/push/send.ts`, `lib/utils/names.ts`, `lib/utils/lucide-icon-map.ts`, `lib/utils/conversation.ts`, `components/ui/avatar.tsx`, `components/features/backoffice/categories-grid.tsx`, `components/features/initiatives-page-client.tsx`, `components/features/evenements-page-client.tsx`
+**Fichiers (11 restants) :** `lib/queries/announcements.ts`, `lib/queries/initiatives.ts`, `lib/actions/announcements.ts`, `lib/actions/announcement-categories.ts`, `lib/utils/names.ts`, `lib/utils/lucide-icon-map.ts`, `lib/utils/conversation.ts`, `components/ui/avatar.tsx`, `components/features/backoffice/categories-grid.tsx`, `components/features/initiatives-page-client.tsx`, `components/features/evenements-page-client.tsx`
 
 Le compilateur est aveugle sur les zones les plus critiques (queries, actions, push).
 
 **Correction :** Générer les types Supabase (`Database`) et résoudre les erreurs progressivement.
 
+**Fix partiel :** `lib/push/send.ts` supprimé (push refactoré vers `lib/services/push-notifications.ts` sans `@ts-nocheck`). 11 fichiers restants.
+
 ---
 
-#### 16. 🛠️ Types Supabase non générés — dérive schema/code
+#### 16. 🛠️ Types Supabase non générés — dérive schema/code — ✅ Corrigé
 
 Aucun `database.types.ts`, aucune référence au type `Database`. Les clients Supabase ne sont pas typés. Les types domaine sont maintenus manuellement dans `lib/types/index.ts`.
 
 **Correction :** `supabase gen types typescript --local` + brancher sur les clients.
+
+**Fix livré :** `lib/types/database.types.ts` généré et branché sur `lib/supabase/server.ts`, `client.ts` et `middleware.ts` via `createServerClient<Database>(…)`.
 
 ---
 
@@ -290,19 +362,21 @@ L'application présente une base solide sur de nombreux axes :
 
 ## Métriques clés
 
-| Indicateur | Valeur |
-|------------|--------|
-| Fichiers source | ~469 |
-| Migrations SQL | 40 |
-| Server Actions | 21 fichiers |
-| Composants UI (shadcn) | 41 |
-| Composants features | 138 |
-| `'use client'` | ~130 fichiers |
-| Tests automatisés | 0 |
-| Fichiers `@ts-nocheck` | 12 |
-| Findings critiques (P0) | 6 |
-| Findings élevés (P1) | 11 |
+| Indicateur | Valeur initiale (24 juin) | Valeur actuelle (2 juillet) |
+|------------|:-------------------------:|:---------------------------:|
+| Fichiers source | ~469 | ~469 |
+| Migrations SQL | 40 | 56 |
+| Server Actions | 21 fichiers | 21 fichiers |
+| Composants UI (shadcn) | 41 | 41 |
+| Composants features | 138 | 138 |
+| `'use client'` | ~130 fichiers | ~130 fichiers |
+| Tests automatisés | 0 | 0 |
+| Fichiers `@ts-nocheck` | 12 | 11 |
+| Findings critiques (P0) | 6 (6 ouverts) | 6 (3 corrigés, 3 ouverts) |
+| Findings élevés (P1) | 11 (11 ouverts) | 11 (7 corrigés, 2 partiels, 2 ouverts) |
+| Findings moyens (P2) | 11 (11 ouverts) | 11 (0 corrigés, 3 partiels/atténués, 8 ouverts) |
+| Findings faibles (P3) | 9 (9 ouverts) | 9 (0 corrigés, 9 ouverts) |
 
 ---
 
-*Rapport généré automatiquement — audit en lecture seule, aucune modification du code.*
+*Rapport d'audit initial : 24 juin 2026. Dernière mise à jour : 2 juillet 2026.*

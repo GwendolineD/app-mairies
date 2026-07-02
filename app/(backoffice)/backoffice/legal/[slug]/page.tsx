@@ -1,6 +1,18 @@
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { LegalDocumentEditor } from "@/components/features/backoffice/legal-document-editor";
+
+const LegalDocumentEditor = dynamic(
+  () =>
+    import("@/components/features/backoffice/legal-document-editor").then(
+      (m) => m.LegalDocumentEditor,
+    ),
+  {
+    loading: () => (
+      <div className="h-[420px] animate-pulse rounded-sm bg-warm" />
+    ),
+  },
+);
 import { LegalDocumentLogo } from "@/components/features/legal/legal-document-logo";
 import { Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";

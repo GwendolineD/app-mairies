@@ -48,20 +48,24 @@ export async function fetchWeeklyContentCreation(
   communeId: string,
   since: Date,
 ): Promise<WeeklyContentRow[]> {
+  const sinceIso = since.toISOString();
   const [{ data: annDates }, { data: iniDates }, { data: evtDates }] =
     await Promise.all([
       supabase
         .from("announcements")
         .select("created_at")
-        .eq("commune_id", communeId),
+        .eq("commune_id", communeId)
+        .gte("created_at", sinceIso),
       supabase
         .from("initiatives")
         .select("created_at")
-        .eq("commune_id", communeId),
+        .eq("commune_id", communeId)
+        .gte("created_at", sinceIso),
       supabase
         .from("events")
         .select("created_at")
-        .eq("commune_id", communeId),
+        .eq("commune_id", communeId)
+        .gte("created_at", sinceIso),
     ]);
 
   const buckets = buildWeekBuckets(since);
@@ -85,7 +89,8 @@ export async function fetchWeeklyMembershipGrowth(
   const { data: memDates } = await supabase
     .from("memberships")
     .select("created_at")
-    .eq("commune_id", communeId);
+    .eq("commune_id", communeId)
+    .gte("created_at", since.toISOString());
 
   const buckets = buildWeekBuckets(since);
   const weekMap = countByWeek(memDates ?? [], buckets);

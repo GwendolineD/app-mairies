@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { RECOVERY_COOKIE_NAME } from "@/lib/constants/auth";
 import { ROUTES } from "@/lib/constants/routes";
@@ -9,7 +9,7 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getAppUrl } from "@/lib/utils/app-url";
 import { formatAuthError } from "@/lib/utils/auth-errors";
 import { formatDisplayName } from "@/lib/utils/display-name";
-import { checkTrialCodeRateLimit } from "@/lib/utils/trial-rate-limit";
+import { checkRateLimit, resetRateLimit } from "@/lib/utils/rate-limit";
 import {
   changePasswordSchema,
   emailChangeSchema,
@@ -64,17 +64,6 @@ export async function signUp(formData: FormData) {
   }
 
   if (commune.access_status === "trial") {
-    const reqHeaders = await headers();
-    const ip = reqHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-
-    if (!checkTrialCodeRateLimit(ip, commune.id)) {
-      return {
-        error: {
-          form: ["Trop de tentatives. Réessayez dans quelques minutes."],
-        },
-      };
-    }
-
     if (!parsed.data.trialAccessCode) {
       return {
         error: {
@@ -138,7 +127,11 @@ export async function signUp(formData: FormData) {
     await serviceClient.auth.admin.createUser({
       email: parsed.data.email,
       password: parsed.data.password,
-      email_confirm: true,
+      email_confirm: false,
+      user_metadata: {
+        first_name: parsed.data.firstName,
+        last_name: parsed.data.lastName,
+      },
     });
 
   if (adminError || !adminData.user) {
@@ -183,26 +176,7 @@ export async function signUp(formData: FormData) {
     status: "active",
   });
 
-  // Sign in the newly created user to establish a session
-  const { error: signInError } = await supabase.auth.signInWithPassword({
-    email: parsed.data.email,
-    password: parsed.data.password,
-  });
-
-  if (signInError) {
-    return {
-      error: {
-        form: [
-          formatAuthError(
-            signInError,
-            "Compte créé mais connexion impossible. Essayez de vous connecter.",
-          ),
-        ],
-      },
-    };
-  }
-
-  redirect(ROUTES.accueil);
+  return { emailConfirmationRequired: true };
 }
 
 export async function signIn(formData: FormData) {
@@ -221,6 +195,13 @@ export async function signIn(formData: FormData) {
     };
   }
 
+  const rateLimitKey = `signin:${parsed.data.email.toLowerCase()}`;
+  if (!checkRateLimit(rateLimitKey)) {
+    return {
+      error: "Trop de tentatives de connexion. Réessayez dans quelques minutes.",
+    };
+  }
+
   const supabase = await createClient();
 
   const { error } = await supabase.auth.signInWithPassword({
@@ -235,6 +216,8 @@ export async function signIn(formData: FormData) {
       ),
     };
   }
+
+  resetRateLimit(rateLimitKey);
 
   // Check if the user is platform-banned after successful auth
   const {
@@ -571,17 +554,6 @@ export async function joinCommune(formData: FormData) {
   }
 
   if (commune.access_status === "trial") {
-    const reqHeaders = await headers();
-    const ip = reqHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-
-    if (!checkTrialCodeRateLimit(ip, commune.id)) {
-      return {
-        error: {
-          form: ["Trop de tentatives. Réessayez dans quelques minutes."],
-        },
-      };
-    }
-
     if (!parsed.data.trialAccessCode) {
       return {
         error: {

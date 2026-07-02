@@ -1,5 +1,7 @@
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { requireActiveMembership } from "@/lib/auth/session";
+import { unwrapOrThrow } from "@/lib/queries/helpers";
 import {
   getInitiativeCategoryLabel,
   getInitiativeCategoryDefaultImageUrl,
@@ -73,13 +75,14 @@ export default async function InitiativeDetailPage(props: {
   const supabase = await createClient();
   const membership = ctx.activeMembership!;
 
-  const { data } = await supabase
+  const result = await supabase
     .from("initiatives")
     .select("*")
     .eq("commune_id", membership.commune_id)
     .eq("id", id)
     .single();
-  if (!data) notFound();
+  if (!result.data && !result.error) notFound();
+  const data = unwrapOrThrow(result, "initiative-detail");
 
   const initiative = data as InitiativeRecord;
 
@@ -250,12 +253,15 @@ export default async function InitiativeDetailPage(props: {
             </header>
 
             {imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={imageUrl}
-                alt=""
-                className="aspect-[16/10] w-full rounded-lg border border-border object-cover"
-              />
+              <div className="relative aspect-[16/10] w-full overflow-hidden rounded-lg border border-border">
+                <Image
+                  src={imageUrl}
+                  alt=""
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 640px"
+                />
+              </div>
             ) : null}
 
             <section className={DESCRIPTION_SECTION_CLASS}>

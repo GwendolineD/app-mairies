@@ -30,7 +30,10 @@ import type { Commune } from "@/lib/types";
 type LookupResponse = { commune: Commune | null; error?: string };
 
 type SignupErrorField = Partial<Record<string, string[] | undefined>>;
-type SignUpState = { error: SignupErrorField } | undefined;
+type SignUpState =
+  | { error: SignupErrorField }
+  | { emailConfirmationRequired: true }
+  | undefined;
 
 type AddressDraft = {
   city: string;
@@ -188,6 +191,46 @@ export function InscriptionSignupForm({
     acceptedTerms &&
     passwordValid &&
     !signupPending;
+
+  if (signupState && "emailConfirmationRequired" in signupState) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto rounded-none bg-transparent px-6 py-12 text-center shadow-none md:rounded-3xl md:bg-surface md:px-12 md:py-8 md:shadow-elevated">
+        <div className="mb-4 flex size-14 items-center justify-center rounded-full bg-mint/20">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="size-7 text-mint"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+            />
+          </svg>
+        </div>
+        <h2 className="text-xl font-bold text-text">
+          Vérifiez votre boîte mail
+        </h2>
+        <p className="mt-3 max-w-sm text-sm text-muted">
+          Un email de confirmation vous a été envoyé. Cliquez sur le lien qu'il
+          contient pour activer votre compte et accéder à l'application.
+        </p>
+        <p className="mt-6 text-xs text-subtle">
+          Vous n'avez rien reçu ? Vérifiez vos spams ou{" "}
+          <Link
+            href={ROUTES.connexion}
+            className="cursor-pointer font-semibold text-purple hover:underline"
+          >
+            réessayez de vous connecter
+          </Link>
+          .
+        </p>
+      </div>
+    );
+  }
 
   return (
     <>

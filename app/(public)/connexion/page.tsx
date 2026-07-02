@@ -2,7 +2,7 @@ import { ConnexionLayoutShell } from "@/components/features/auth/connexion-layou
 import { ConnexionForm } from "@/components/features/connexion-form";
 
 type Props = {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; confirmed?: string }>;
 };
 
 export default async function ConnexionPage({ searchParams }: Props) {
@@ -13,10 +13,14 @@ export default async function ConnexionPage({ searchParams }: Props) {
       : params.error === "auth_callback"
         ? ("generic" as const)
         : undefined;
+  const emailConfirmed = params.confirmed === "1";
 
   return (
     <ConnexionLayoutShell>
-      <ConnexionForm callbackError={callbackError} />
+      <ConnexionForm
+        callbackError={callbackError}
+        emailConfirmed={emailConfirmed}
+      />
     </ConnexionLayoutShell>
   );
 }

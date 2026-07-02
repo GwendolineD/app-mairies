@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, CalendarDays, Heart, MapPin } from "lucide-react";
+import { CloudImage } from "@/components/ui/cloud-image";
 import { ROUTES } from "@/lib/constants/routes";
 import {
   getInitiativeCategoryColorHex,
@@ -139,8 +140,7 @@ export function InitiativeCard({
         >
           <div className="relative size-28 shrink-0 overflow-hidden">
             {imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={imageUrl} alt="" className="size-full object-cover" />
+              <CloudImage src={imageUrl} alt="" />
             ) : (
               <div className="flex size-full items-center justify-center bg-warm text-[10px] font-semibold text-muted">
                 Initiative
@@ -177,11 +177,10 @@ export function InitiativeCard({
             <div className="mt-auto flex items-center justify-between gap-1">
               <div className="flex min-w-0 items-center gap-1">
                 {profiles?.avatar_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <CloudImage
                     src={profiles.avatar_url}
                     alt=""
-                    className="size-4 shrink-0 rounded-full object-cover"
+                    className="size-4 shrink-0 rounded-full"
                   />
                 ) : (
                   <div className="flex size-4 shrink-0 items-center justify-center rounded-full bg-warm text-[8px] font-bold text-muted">
@@ -213,16 +212,11 @@ export function InitiativeCard({
           highlightRing,
         )}
       >
-        <div className="relative">
+        <div className="relative aspect-[16/10] w-full overflow-hidden">
           {imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={imageUrl}
-              alt=""
-              className="aspect-[16/10] w-full object-cover"
-            />
+            <CloudImage src={imageUrl} alt="" />
           ) : (
-            <div className="flex aspect-[16/10] w-full items-center justify-center bg-warm text-[11px] font-semibold text-muted">
+            <div className="flex size-full items-center justify-center bg-warm text-[11px] font-semibold text-muted">
               Initiative
             </div>
           )}
@@ -265,11 +259,10 @@ export function InitiativeCard({
             <SupportBadge count={supportCount} className="text-xs" />
             <div className="ml-auto flex min-w-0 items-center gap-2">
               {profiles?.avatar_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <CloudImage
                   src={profiles.avatar_url}
                   alt=""
-                  className="size-6 shrink-0 rounded-full object-cover"
+                  className="size-6 shrink-0 rounded-full"
                 />
               ) : (
                 <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-warm text-[10px] font-bold text-muted">
@@ -297,16 +290,11 @@ export function InitiativeMapCard({
 
   return (
     <div className="flex w-[260px] flex-col gap-2">
-      <div className="relative">
+      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl">
         {imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={imageUrl}
-            alt=""
-            className="aspect-[4/3] w-full rounded-2xl object-cover"
-          />
+          <CloudImage src={imageUrl} alt="" />
         ) : (
-          <div className="flex aspect-[4/3] w-full items-center justify-center rounded-2xl bg-warm text-xs font-semibold text-muted">
+          <div className="flex size-full items-center justify-center bg-warm text-xs font-semibold text-muted">
             Initiative
           </div>
         )}

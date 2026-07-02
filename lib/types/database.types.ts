@@ -1380,16 +1380,19 @@ export type Database = {
       }
       platform_settings: {
         Row: {
+          error_illustration_urls: Json
           id: number
           support_email: string
           updated_at: string
         }
         Insert: {
+          error_illustration_urls?: Json
           id?: number
           support_email?: string
           updated_at?: string
         }
         Update: {
+          error_illustration_urls?: Json
           id?: number
           support_email?: string
           updated_at?: string

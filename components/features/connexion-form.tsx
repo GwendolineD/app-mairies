@@ -12,8 +12,10 @@ import { PasswordField } from "@/components/ui/password-field";
 
 export function ConnexionForm({
   callbackError,
+  emailConfirmed,
 }: {
   callbackError?: "recovery" | "generic";
+  emailConfirmed?: boolean;
 }) {
   const { email, password, setCredentials } = useAuthCredentials();
   const [state, formAction, isPending] = useActionState(
@@ -43,6 +45,15 @@ export function ConnexionForm({
           Se connecter
         </h1>
       </div>
+
+      {emailConfirmed && (
+        <div
+          className="mt-4 rounded-sm border border-mint/30 bg-mint/10 px-4 py-3 text-center text-sm font-medium text-text"
+          role="status"
+        >
+          Email confirmé avec succès ! Vous pouvez maintenant vous connecter.
+        </div>
+      )}
 
       <form
         onSubmit={(e) => {
