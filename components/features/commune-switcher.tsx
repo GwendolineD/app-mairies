@@ -11,7 +11,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import type { Membership } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 type Props = {
   memberships: Membership[];

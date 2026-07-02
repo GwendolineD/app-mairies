@@ -4,7 +4,7 @@ import { Check, Eye, EyeOff, Lock, X } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { Input } from "@/components/ui/form-field";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 export const PASSWORD_RULE = /(?=.*[A-Za-z])(?=.*\d).{8,}/;
 

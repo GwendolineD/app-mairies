@@ -29,19 +29,6 @@ export type AnnouncementWithAuthor = Announcement & {
   }) | null;
 };
 
-export type AnnouncementMarker = {
-  id: string;
-  title: string;
-  category_slug: string;
-  address_lat: number;
-  address_lng: number;
-  /** Joined from announcement_categories */
-  announcement_categories: {
-    map_pin_url: string | null;
-    color_hex: string;
-  } | null;
-};
-
 export type AnnouncementMapItem = AnnouncementWithAuthor & {
   address_lat: number;
   address_lng: number;
@@ -167,23 +154,6 @@ export async function listAnnouncementsPage(
       : null;
 
   return { items, nextCursor, totalCount };
-}
-
-export async function listAnnouncementMarkers(
-  supabase: SupabaseClient,
-  filters: AnnouncementListFilters,
-): Promise<AnnouncementMarker[]> {
-  let query = supabase
-    .from("announcements")
-    .select(
-      "id, title, category_slug, address_lat, address_lng, announcement_categories(map_pin_url, color_hex)",
-    )
-    .not("address_lat", "is", null)
-    .not("address_lng", "is", null);
-
-  query = applyAnnouncementFilters(query, filters);
-  const { data } = await query;
-  return (data ?? []) as unknown as AnnouncementMarker[];
 }
 
 /**

@@ -7,18 +7,13 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { sendTemplatedEmail } from "@/lib/email";
 import { getAppUrl } from "@/lib/utils/app-url";
 import { formatShortDate } from "@/lib/utils/format-date";
+import { CONTEXT_TYPE_LABELS } from "@/lib/constants/context-types";
 import { reportSchema, userReportSchema } from "@/lib/validations/schemas";
 
 export type ContentReportActionState = {
   error?: string;
   success?: boolean;
 } | undefined;
-
-const CONTEXT_TYPE_LABELS: Record<string, string> = {
-  announcement: "Annonce",
-  initiative: "Initiative",
-  event: "Événement",
-};
 
 export async function submitContentReport(
   _state: ContentReportActionState,

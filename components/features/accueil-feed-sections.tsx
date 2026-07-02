@@ -9,8 +9,8 @@ import {
   formatEventAccueilDate,
   formatEventAccueilSchedule,
 } from "@/lib/utils/date";
-import { cn } from "@/lib/utils";
-import { AccueilSectionLink } from "@/components/features/accueil-sections";
+import { cn } from "@/lib/utils/cn";
+import { AccueilSectionLink } from "@/components/features/accueil-section-link";
 import { AnnouncementCard } from "@/components/features/announcement-card";
 import { InitiativeCard } from "@/components/features/initiative-card";
 

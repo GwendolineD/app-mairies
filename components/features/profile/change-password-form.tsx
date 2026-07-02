@@ -8,7 +8,7 @@ import { changePasswordSchema } from "@/lib/validations/schemas";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PasswordField } from "@/components/ui/password-field";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 type Props = {
   cardClassName?: string;

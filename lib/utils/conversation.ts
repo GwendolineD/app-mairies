@@ -1,12 +1,9 @@
 // @ts-nocheck
 import { ROUTES } from "@/lib/constants/routes";
+import { CONTEXT_TYPE_LABELS } from "@/lib/constants/context-types";
 import type { ConversationContextType } from "@/lib/types";
 
-export const CONTEXT_LABEL: Record<ConversationContextType, string> = {
-  announcement: "Annonce",
-  initiative: "Initiative",
-  event: "Événement",
-};
+export { CONTEXT_TYPE_LABELS as CONTEXT_LABEL };
 
 /** Link back to the announcement / initiative / event a thread is attached to. */
 export function contextHref(

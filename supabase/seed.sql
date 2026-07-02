@@ -9,7 +9,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- Fixed IDs for reproducible local dev
 -- Commune Les Authieux (INSEE 27027)
 -- Platform admin: dubois.gwendoline@hotmail.fr
--- Municipality staff: mairie.les-authieux@vie-locale.dev
+-- Municipality staff: mairie.les-authieux@tous-voisins.dev
 
 DO $$
 DECLARE
@@ -147,7 +147,7 @@ BEGIN
     '00000000-0000-0000-0000-000000000000',
     'authenticated',
     'authenticated',
-    'mairie.les-authieux@vie-locale.dev',
+    'mairie.les-authieux@tous-voisins.dev',
     v_pw,
     now(),
     now(),
@@ -180,7 +180,7 @@ BEGIN
   VALUES (
     v_mairie_id,
     v_mairie_id,
-    jsonb_build_object('sub', v_mairie_id::text, 'email', 'mairie.les-authieux@vie-locale.dev'),
+    jsonb_build_object('sub', v_mairie_id::text, 'email', 'mairie.les-authieux@tous-voisins.dev'),
     'email',
     v_mairie_id::text,
     now(),

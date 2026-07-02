@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { formatRelativeTime, formatShortDate } from "@/lib/utils/date";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 type Props = {
   iso: string;

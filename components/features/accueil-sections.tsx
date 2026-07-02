@@ -8,7 +8,7 @@ import { ILLUSTRATIONS } from "@/lib/constants/illustrations";
 import { getAnnouncementTypeConfig } from "@/lib/constants/announcement-types";
 import { ROUTES } from "@/lib/constants/routes";
 import { buildAnnouncementListQuery } from "@/lib/utils/search-params";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 import { StylizedUnderline } from "@/components/ui/stylized-underline";
 import { AnnouncementTypeIcon } from "@/components/ui/announcement-type-icon";
 import { useCreationModals } from "@/components/features/creation-modal-context";
@@ -168,27 +168,5 @@ export function AccueilQuickActions() {
         />
       </div>
     </div>
-  );
-}
-
-export function AccueilSectionLink({
-  href,
-  label,
-  size = "default",
-}: {
-  href: string;
-  label: string;
-  size?: "default" | "sm";
-}) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        "font-bold text-coral hover:underline",
-        size === "sm" ? "text-[10px] md:text-xs" : "text-sm",
-      )}
-    >
-      {label} →
-    </Link>
   );
 }
