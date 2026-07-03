@@ -10,6 +10,7 @@ import {
 } from "@/lib/actions/messages";
 import { Button } from "@/components/ui/button";
 import { FormField, Textarea } from "@/components/ui/form-field";
+import { LinkifiedText } from "@/components/ui/linkified-text";
 import { ROUTES } from "@/lib/constants/routes";
 import type { MessageRow } from "@/lib/types";
 import { cn } from "@/lib/utils/cn";
@@ -181,7 +182,15 @@ export function ConversationThread({
                             : "rounded-md rounded-bl-none bg-warm text-text",
                         )}
                       >
-                        <p className="whitespace-pre-wrap wrap-break-word">{m.body}</p>
+                        <LinkifiedText
+                          text={m.body}
+                          className="whitespace-pre-wrap wrap-break-word"
+                          linkClassName={
+                            mine
+                              ? "text-white underline"
+                              : "text-purple underline"
+                          }
+                        />
                         <p
                           className={cn(
                             "mt-0.5 text-right text-[10px]",

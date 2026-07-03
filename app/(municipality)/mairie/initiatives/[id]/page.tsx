@@ -8,6 +8,7 @@ import { BackLink } from "@/components/ui/back-link";
 import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";
 import { ContentTypeTag } from "@/components/ui/content-type-tag";
+import { LinkifiedText } from "@/components/ui/linkified-text";
 import { PageStack } from "@/components/ui/page-stack";
 import type { InitiativeRecord } from "@/lib/types";
 
@@ -59,9 +60,10 @@ export default async function MairieInitiativeDetailPage(props: {
           <Field label="Planning" value={schedule} />
         </dl>
         {ini.description ? (
-          <p className="whitespace-pre-line text-base font-medium leading-6 text-muted">
-            {ini.description}
-          </p>
+          <LinkifiedText
+            text={ini.description}
+            className="whitespace-pre-line text-base font-medium leading-6 text-muted"
+          />
         ) : (
           <p className="text-base font-medium italic text-muted">
             Pas de détail complémentaire.

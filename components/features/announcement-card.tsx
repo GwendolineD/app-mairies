@@ -154,11 +154,13 @@ export function AnnouncementCard({
             <div className="mt-auto flex items-center justify-between gap-1">
               <div className="flex min-w-0 items-center gap-1">
                 {a.author_membership?.profiles?.avatar_url ? (
-                  <CloudImage
-                    src={a.author_membership.profiles.avatar_url}
-                    alt=""
-                    className="size-4 shrink-0 rounded-full"
-                  />
+                  <div className="relative size-4 shrink-0 overflow-hidden rounded-full">
+                    <CloudImage
+                      src={a.author_membership.profiles.avatar_url}
+                      alt=""
+                      sizes="16px"
+                    />
+                  </div>
                 ) : (
                   <div className="flex size-4 shrink-0 items-center justify-center rounded-full bg-warm text-[8px] font-bold text-muted">
                     {resolveAuthorInitials(a.author_membership?.profiles ?? null)}
@@ -228,11 +230,13 @@ export function AnnouncementCard({
 
           <div className="mt-auto flex items-center justify-end gap-2">
             {a.author_membership?.profiles?.avatar_url ? (
-              <CloudImage
-                src={a.author_membership.profiles.avatar_url}
-                alt=""
-                className="size-6 shrink-0 rounded-full"
-              />
+              <div className="relative size-6 shrink-0 overflow-hidden rounded-full">
+                <CloudImage
+                  src={a.author_membership.profiles.avatar_url}
+                  alt=""
+                  sizes="24px"
+                />
+              </div>
             ) : (
               <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-warm text-[10px] font-bold text-muted">
                 {resolveAuthorInitials(a.author_membership?.profiles ?? null)}

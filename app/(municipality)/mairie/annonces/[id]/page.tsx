@@ -9,6 +9,7 @@ import { AnnouncementTypeTag } from "@/components/ui/announcement-type-tag";
 import { BackLink } from "@/components/ui/back-link";
 import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";
+import { LinkifiedText } from "@/components/ui/linkified-text";
 import { PageStack } from "@/components/ui/page-stack";
 import type { Announcement } from "@/lib/types";
 
@@ -52,9 +53,10 @@ export default async function MairieAnnonceDetailPage(props: {
           />
         </dl>
         {ann.description ? (
-          <p className="whitespace-pre-line text-base font-medium leading-6 text-muted">
-            {ann.description}
-          </p>
+          <LinkifiedText
+            text={ann.description}
+            className="whitespace-pre-line text-base font-medium leading-6 text-muted"
+          />
         ) : (
           <p className="text-base font-medium italic text-muted">
             Pas de détail complémentaire.
