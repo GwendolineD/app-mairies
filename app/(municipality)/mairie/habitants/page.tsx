@@ -2,6 +2,7 @@ import { MembershipModerationButton } from "./_components/membership-moderation-
 import { ChangeRoleButton } from "@/components/features/backoffice/change-role-button";
 import { MembershipRoleBadge } from "@/components/features/backoffice/membership-role-badge";
 import { MembershipStatusBadge } from "@/components/features/backoffice/membership-status-badge";
+import { HabitantsListPagination } from "@/components/features/habitants/habitants-list-pagination";
 import { HabitantsListToolbar } from "@/components/features/habitants/habitants-list-toolbar";
 import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
@@ -13,12 +14,11 @@ import { formatDay } from "@/lib/utils/date";
 import {
   hasActiveHabitantsFilters,
   parseHabitantsListParams,
+  resolveHabitantsInscriptionRange,
 } from "@/lib/utils/habitants-list-params";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
-
-const MAIRIE_HABITANTS_LIST_LIMIT = 500;
 
 export default async function MairieHabitantsPage({
   searchParams,
@@ -28,6 +28,8 @@ export default async function MairieHabitantsPage({
   const { communeId, userId, profile } = await requireCommuneStaff();
   const rawParams = await searchParams;
   const listParams = parseHabitantsListParams(rawParams);
+  const { from: joinedFrom, to: joinedTo } =
+    resolveHabitantsInscriptionRange(listParams);
 
   const supabase = await createClient();
   const membersPage = await listCommuneMembersPage(supabase, communeId, {
@@ -35,8 +37,10 @@ export default async function MairieHabitantsPage({
     sort: listParams.tri,
     roles: listParams.roles,
     statuses: listParams.statuses,
-    page: 1,
-    limit: MAIRIE_HABITANTS_LIST_LIMIT,
+    joinedFrom,
+    joinedTo,
+    page: listParams.page,
+    limit: listParams.limit,
   });
 
   const hasFilters =
@@ -129,6 +133,11 @@ export default async function MairieHabitantsPage({
           ))
         )}
       </div>
+
+      <HabitantsListPagination
+        params={listParams}
+        totalCount={membersPage.totalCount}
+      />
     </PageStack>
   );
 }

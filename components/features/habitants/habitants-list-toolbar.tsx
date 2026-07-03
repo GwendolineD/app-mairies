@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
+import { DatePickerField } from "@/components/ui/date-picker-field";
+import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
@@ -20,8 +22,12 @@ import type { MembershipRole, MembershipStatus } from "@/lib/types";
 import {
   activeHabitantsFilterCount,
   buildHabitantsListQuery,
+  getInscriptionMonthLabel,
+  getInscriptionWeekLabel,
   HABITANTS_ROLE_FILTERS,
   HABITANTS_STATUS_FILTERS,
+  isValidInscriptionDateRange,
+  type HabitantsInscriptionFilter,
   type HabitantsListParams,
   type HabitantsSort,
 } from "@/lib/utils/habitants-list-params";
@@ -37,6 +43,10 @@ const SORT_OPTIONS: { value: HabitantsSort; label: string }[] = [
   { value: "name_desc", label: "Nom Z → A" },
 ];
 
+function capitalize(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
 export function HabitantsListToolbar({ params, totalCount }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -44,7 +54,12 @@ export function HabitantsListToolbar({ params, totalCount }: Props) {
   const countLabel = `${totalCount} habitant${totalCount !== 1 ? "·es" : "·e"}`;
 
   function navigate(partial: Partial<HabitantsListParams>) {
-    const next = { ...params, ...partial };
+    const resetPage = !("page" in partial) && !("limit" in partial);
+    const next = {
+      ...params,
+      ...(resetPage ? { page: 1 } : {}),
+      ...partial,
+    };
     router.push(`${pathname}${buildHabitantsListQuery(next)}`);
   }
 
@@ -182,9 +197,33 @@ function FiltersPopover({
   count: number;
 }) {
   const [open, setOpen] = useState(false);
+  const weekHint = getInscriptionWeekLabel();
+  const monthHint = capitalize(getInscriptionMonthLabel());
 
   function clearAll() {
-    navigate({ statuses: [], roles: [] });
+    navigate({
+      statuses: [],
+      roles: [],
+      inscription: undefined,
+      inscriptionDebut: undefined,
+      inscriptionFin: undefined,
+    });
+  }
+
+  function clearInscriptionFilter() {
+    navigate({
+      inscription: undefined,
+      inscriptionDebut: undefined,
+      inscriptionFin: undefined,
+    });
+  }
+
+  function selectInscriptionPreset(value: HabitantsInscriptionFilter) {
+    navigate({
+      inscription: value,
+      inscriptionDebut: undefined,
+      inscriptionFin: undefined,
+    });
   }
 
   function toggleStatus(status: MembershipStatus) {
@@ -202,6 +241,9 @@ function FiltersPopover({
       : [...params.roles, role];
     navigate({ roles: next });
   }
+
+  const hasInscriptionFilter = !!params.inscription;
+  const isPersoActive = params.inscription === "perso";
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -321,9 +363,172 @@ function FiltersPopover({
               );
             })}
           </FilterSection>
+
+          <FilterSection title="Date d'inscription">
+            <FilterRow
+              checked={!hasInscriptionFilter}
+              onCheckboxToggle={clearInscriptionFilter}
+              onRowSelect={() => {
+                clearInscriptionFilter();
+                setOpen(false);
+              }}
+              label="Toutes les dates"
+            />
+            <FilterRow
+              checked={params.inscription === "semaine"}
+              onCheckboxToggle={() => {
+                if (params.inscription === "semaine") {
+                  clearInscriptionFilter();
+                } else {
+                  selectInscriptionPreset("semaine");
+                }
+              }}
+              onRowSelect={() => {
+                selectInscriptionPreset("semaine");
+                setOpen(false);
+              }}
+              label="Cette semaine"
+              hint={weekHint}
+            />
+            <FilterRow
+              checked={params.inscription === "mois"}
+              onCheckboxToggle={() => {
+                if (params.inscription === "mois") {
+                  clearInscriptionFilter();
+                } else {
+                  selectInscriptionPreset("mois");
+                }
+              }}
+              onRowSelect={() => {
+                selectInscriptionPreset("mois");
+                setOpen(false);
+              }}
+              label="Ce mois"
+              hint={monthHint}
+            />
+            <InscriptionCustomRangeRow
+              checked={isPersoActive}
+              debut={params.inscriptionDebut ?? ""}
+              fin={params.inscriptionFin ?? ""}
+              onToggle={() => {
+                if (isPersoActive) {
+                  clearInscriptionFilter();
+                } else {
+                  navigate({
+                    inscription: "perso",
+                    inscriptionDebut: params.inscriptionDebut,
+                    inscriptionFin: params.inscriptionFin,
+                  });
+                }
+              }}
+              onApply={(debut, fin) => {
+                if (!debut && !fin) {
+                  clearInscriptionFilter();
+                  return;
+                }
+                if (!isValidInscriptionDateRange(debut, fin)) return;
+                navigate({
+                  inscription: "perso",
+                  inscriptionDebut: debut || undefined,
+                  inscriptionFin: fin || undefined,
+                });
+              }}
+            />
+          </FilterSection>
         </div>
       </PopoverContent>
     </Popover>
+  );
+}
+
+function InscriptionCustomRangeRow({
+  checked,
+  debut,
+  fin,
+  onToggle,
+  onApply,
+}: {
+  checked: boolean;
+  debut: string;
+  fin: string;
+  onToggle: () => void;
+  onApply: (debut: string, fin: string) => void;
+}) {
+  const [localDebut, setLocalDebut] = useState(debut);
+  const [localFin, setLocalFin] = useState(fin);
+
+  useEffect(() => {
+    setLocalDebut(debut);
+  }, [debut]);
+
+  useEffect(() => {
+    setLocalFin(fin);
+  }, [fin]);
+
+  function applyDebut(value: string) {
+    setLocalDebut(value);
+    if (!isValidInscriptionDateRange(value, localFin)) return;
+    onApply(value, localFin);
+  }
+
+  function applyFin(value: string) {
+    setLocalFin(value);
+    if (!isValidInscriptionDateRange(localDebut, value)) return;
+    onApply(localDebut, value);
+  }
+
+  return (
+    <div className="px-4 py-2.5 transition hover:bg-warm/60 md:py-2">
+      <div className="flex items-start gap-3">
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={checked}
+          aria-label="Période personnalisée"
+          onClick={onToggle}
+          className={cn(
+            "mt-0.5 inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-sm border-2 transition md:size-5",
+            checked
+              ? "border-purple bg-purple text-white"
+              : "border-border bg-surface text-transparent hover:border-purple/40",
+          )}
+        >
+          <CheckGlyph />
+        </button>
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
+          <span className="text-sm font-medium text-text">
+            Période personnalisée
+          </span>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label htmlFor="inscription-debut" className="text-xs text-subtle">
+                Du
+              </Label>
+              <DatePickerField
+                id="inscription-debut"
+                value={localDebut}
+                onChange={applyDebut}
+                placeholder="Choisir une date"
+                className="w-full px-2.5 py-1.5 text-xs"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="inscription-fin" className="text-xs text-subtle">
+                Au
+              </Label>
+              <DatePickerField
+                id="inscription-fin"
+                value={localFin}
+                onChange={applyFin}
+                minDate={localDebut || undefined}
+                placeholder="Choisir une date"
+                className="w-full px-2.5 py-1.5 text-xs"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -349,11 +554,13 @@ function FilterRow({
   onCheckboxToggle,
   onRowSelect,
   label,
+  hint,
 }: {
   checked: boolean;
   onCheckboxToggle: () => void;
   onRowSelect: () => void;
   label: string;
+  hint?: string;
 }) {
   return (
     <div className="flex w-full items-center gap-3 px-4 py-2.5 transition hover:bg-warm/60 md:py-2">
@@ -361,7 +568,7 @@ function FilterRow({
         type="button"
         role="checkbox"
         aria-checked={checked}
-        aria-label={label}
+        aria-label={hint ? `${label} (${hint})` : label}
         onClick={(event) => {
           event.stopPropagation();
           onCheckboxToggle();
@@ -378,9 +585,14 @@ function FilterRow({
       <button
         type="button"
         onClick={onRowSelect}
-        className="flex flex-1 cursor-pointer items-center gap-2 text-left text-sm font-medium text-text"
+        className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left text-sm font-medium text-text"
       >
-        <span className="flex-1 truncate">{label}</span>
+        <span className="min-w-0 flex-1 truncate">
+          {label}
+          {hint ? (
+            <span className="text-xs font-medium text-subtle"> ({hint})</span>
+          ) : null}
+        </span>
       </button>
     </div>
   );
