@@ -25,6 +25,9 @@ const updatePlatformSettingsSchema = z.object({
   errorIllustrationUrls: z
     .array(cloudinaryUrlSchema)
     .max(20, "Maximum 20 illustrations."),
+  notFoundIllustrationUrl: z
+    .union([z.literal(""), cloudinaryUrlSchema])
+    .optional(),
 });
 
 type UpdateInput = z.infer<typeof updatePlatformSettingsSchema>;
@@ -54,7 +57,8 @@ export async function updatePlatformSettings(
     return { success: false, error: "Données invalides.", fieldErrors };
   }
 
-  const { supportEmail, errorIllustrationUrls } = parsed.data;
+  const { supportEmail, errorIllustrationUrls, notFoundIllustrationUrl } =
+    parsed.data;
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -62,6 +66,10 @@ export async function updatePlatformSettings(
     .update({
       support_email: supportEmail,
       error_illustration_urls: errorIllustrationUrls,
+      not_found_illustration_url:
+        notFoundIllustrationUrl && notFoundIllustrationUrl.length > 0
+          ? notFoundIllustrationUrl
+          : null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", 1);

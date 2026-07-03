@@ -1450,18 +1450,21 @@ export type Database = {
         Row: {
           error_illustration_urls: Json
           id: number
+          not_found_illustration_url: string | null
           support_email: string
           updated_at: string
         }
         Insert: {
           error_illustration_urls?: Json
           id?: number
+          not_found_illustration_url?: string | null
           support_email?: string
           updated_at?: string
         }
         Update: {
           error_illustration_urls?: Json
           id?: number
+          not_found_illustration_url?: string | null
           support_email?: string
           updated_at?: string
         }

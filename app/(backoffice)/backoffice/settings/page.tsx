@@ -24,6 +24,11 @@ export default async function BackofficeSettingsPage() {
       )
     : [];
 
+  const initialNotFoundIllustrationUrl =
+    typeof settings?.not_found_illustration_url === "string"
+      ? settings.not_found_illustration_url
+      : "";
+
   return (
     <PageStack>
       <PageHeading
@@ -35,6 +40,7 @@ export default async function BackofficeSettingsPage() {
         <PlatformSettingsForm
           initialSupportEmail={settings?.support_email ?? "contact@tous-voisins.fr"}
           initialErrorIllustrationUrls={initialErrorIllustrationUrls}
+          initialNotFoundIllustrationUrl={initialNotFoundIllustrationUrl}
         />
       </Card>
     </PageStack>

@@ -39,6 +39,31 @@ export const getErrorIllustrationUrls = unstable_cache(
   { tags: [PLATFORM_SETTINGS_CACHE_TAG], revalidate: 3600 },
 );
 
+export const getNotFoundIllustrationUrl = unstable_cache(
+  async (): Promise<string | null> => {
+    const supabase = createAnonClient();
+    const { data, error } = await supabase
+      .from("platform_settings")
+      .select("not_found_illustration_url")
+      .eq("id", 1)
+      .maybeSingle();
+
+    if (error) {
+      console.error("[getNotFoundIllustrationUrl] DB error:", error);
+      return null;
+    }
+
+    const url = data?.not_found_illustration_url;
+    if (typeof url !== "string" || !isCloudinaryDeliveryUrl(url)) {
+      return null;
+    }
+
+    return url;
+  },
+  ["platform-settings-not-found-illustration"],
+  { tags: [PLATFORM_SETTINGS_CACHE_TAG], revalidate: 3600 },
+);
+
 export const getPlatformSupportEmail = unstable_cache(
   async (): Promise<string> => {
     const supabase = createAnonClient();

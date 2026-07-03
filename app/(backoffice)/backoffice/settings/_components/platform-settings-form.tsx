@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils/cn";
 type Props = {
   initialSupportEmail: string;
   initialErrorIllustrationUrls: string[];
+  initialNotFoundIllustrationUrl: string;
 };
 
 function isValidUrl(value: string): boolean {
@@ -32,13 +33,20 @@ function areIllustrationUrlsEqual(a: string[], b: string[]): boolean {
 export function PlatformSettingsForm({
   initialSupportEmail,
   initialErrorIllustrationUrls,
+  initialNotFoundIllustrationUrl,
 }: Props) {
   const [email, setEmail] = useState(initialSupportEmail);
   const [illustrationUrls, setIllustrationUrls] = useState<string[]>(
     initialErrorIllustrationUrls.length > 0 ? initialErrorIllustrationUrls : [""],
   );
+  const [notFoundIllustrationUrl, setNotFoundIllustrationUrl] = useState(
+    initialNotFoundIllustrationUrl,
+  );
   const [baselineEmail, setBaselineEmail] = useState(initialSupportEmail);
   const [baselineUrls, setBaselineUrls] = useState(initialErrorIllustrationUrls);
+  const [baselineNotFoundUrl, setBaselineNotFoundUrl] = useState(
+    initialNotFoundIllustrationUrl,
+  );
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, run] = useTransition();
@@ -47,11 +55,23 @@ export function PlatformSettingsForm({
     (url) => url.trim().length > 0 && !isCloudinaryDeliveryUrl(url.trim()),
   );
 
+  const trimmedNotFoundUrl = notFoundIllustrationUrl.trim();
+  const hasInvalidNotFoundUrl =
+    trimmedNotFoundUrl.length > 0 && !isCloudinaryDeliveryUrl(trimmedNotFoundUrl);
+
   const isDirty = useMemo(
     () =>
       email.trim() !== baselineEmail.trim() ||
-      !areIllustrationUrlsEqual(illustrationUrls, baselineUrls),
-    [email, illustrationUrls, baselineEmail, baselineUrls],
+      !areIllustrationUrlsEqual(illustrationUrls, baselineUrls) ||
+      trimmedNotFoundUrl !== baselineNotFoundUrl.trim(),
+    [
+      email,
+      illustrationUrls,
+      baselineEmail,
+      baselineUrls,
+      trimmedNotFoundUrl,
+      baselineNotFoundUrl,
+    ],
   );
 
   function handleSubmit(e: React.FormEvent) {
@@ -65,12 +85,14 @@ export function PlatformSettingsForm({
         errorIllustrationUrls: illustrationUrls
           .map((url) => url.trim())
           .filter(Boolean),
+        notFoundIllustrationUrl: trimmedNotFoundUrl,
       });
       if (result.success) {
         const trimmedEmail = email.trim();
         const savedUrls = normalizeIllustrationUrls(illustrationUrls);
         setBaselineEmail(trimmedEmail);
         setBaselineUrls(savedUrls);
+        setBaselineNotFoundUrl(trimmedNotFoundUrl);
         setSaved(true);
         return;
       }
@@ -195,12 +217,68 @@ export function PlatformSettingsForm({
         </Button>
       </div>
 
+      <div className="space-y-3 border-t border-border pt-6">
+        <div>
+          <h3 className="text-base font-semibold text-text">
+            Illustration — page 404
+          </h3>
+          <p className="mt-1 text-sm text-muted">
+            URL Cloudinary affichée sur la page « page introuvable » (tous les
+            espaces).
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-2 rounded-lg border border-border/60 bg-warm/40 p-3 sm:flex-row sm:items-start">
+          <div className="min-w-0 flex-1 space-y-2">
+            <FormField label="URL illustration 404">
+              <Input
+                type="url"
+                value={notFoundIllustrationUrl}
+                onChange={(e) => {
+                  setNotFoundIllustrationUrl(e.target.value);
+                  setSaved(false);
+                }}
+                placeholder="https://res.cloudinary.com/..."
+                aria-invalid={hasInvalidNotFoundUrl}
+              />
+            </FormField>
+            {hasInvalidNotFoundUrl ? (
+              <p className="text-xs font-medium text-coral">
+                Domaine attendu : res.cloudinary.com
+              </p>
+            ) : null}
+          </div>
+          <div className="flex shrink-0 items-center sm:pt-7">
+            <div
+              className={cn(
+                "relative size-16 overflow-hidden rounded-md border border-border bg-surface",
+                !isValidUrl(notFoundIllustrationUrl) && "border-dashed bg-warm",
+              )}
+            >
+              {isValidUrl(notFoundIllustrationUrl) ? (
+                <CloudImage
+                  src={trimmedNotFoundUrl}
+                  alt=""
+                  fill
+                  sizes="64px"
+                  className="object-contain p-1"
+                />
+              ) : (
+                <span className="flex size-full items-center justify-center text-xs text-subtle">
+                  Aperçu
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
         <Button
           type="submit"
           variant="primary"
           size="sm"
-          disabled={busy || !isDirty || hasInvalidUrls}
+          disabled={busy || !isDirty || hasInvalidUrls || hasInvalidNotFoundUrl}
         >
           Enregistrer
         </Button>
