@@ -15,7 +15,7 @@ import {
 } from "@/lib/constants/audit";
 import { listAuditLogsPage } from "@/lib/queries/audit-logs";
 import { createClient } from "@/lib/supabase/server";
-import { formatShortDateTime } from "@/lib/utils/format-date";
+import { formatShortDateTime } from "@/lib/datetime";
 import { parseBackofficeAuditListParams } from "@/lib/utils/audit-search-params";
 import { AuditLogDetail } from "./_components/audit-log-detail";
 import { AuditLogToolbar } from "./_components/audit-log-toolbar";

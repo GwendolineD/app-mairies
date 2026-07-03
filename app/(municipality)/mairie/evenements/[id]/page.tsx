@@ -15,7 +15,8 @@ import {
   countEventParticipants,
 } from "@/lib/queries/events";
 import { createClient } from "@/lib/supabase/server";
-import { formatDay, formatEventDetail } from "@/lib/utils/date";
+import { formatDay } from "@/lib/datetime";
+import { EventDetailDateLabel } from "@/components/features/event-detail-date-label";
 import {
   formatAddressLines,
   parseAddressLabelParts,
@@ -195,9 +196,10 @@ export default async function MairieEvenementDetailPage(props: {
               </div>
             ) : null}
 
-            <p className="text-base font-semibold text-orange">
-              {formatEventDetail(event.starts_at, event.ends_at)}
-            </p>
+            <EventDetailDateLabel
+              start={event.starts_at}
+              end={event.ends_at}
+            />
 
             <section className={DESCRIPTION_SECTION_CLASS}>
               <h2 className="mb-2 text-sm font-semibold leading-5 text-text">

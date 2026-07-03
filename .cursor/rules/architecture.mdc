@@ -14,7 +14,14 @@ Performance, maintainability, and scalability defaults → `vie-locale-quality.m
 - **TypeScript** strict (`"strict": true`).
 - **Supabase** for PostgreSQL + Auth (clients in `lib/supabase/`).
 - **Tailwind CSS** + **shadcn/ui** for UI (`components/ui/`). Add missing primitives with `npx shadcn@latest add [component]` — customize via `globals.css` tokens and `className`, not ad-hoc duplicates in features.
-- **One** date library only: **Dayjs** (no date-fns in parallel).
+
+## Dates & fuseau horaire
+
+- **Bibliothèque unique** : `date-fns` + `@date-fns/tz`. Fuseau applicatif : `Europe/Paris`.
+- **API publique** : `@/lib/datetime` pour parse, business et format — pas d'import `date-fns` dans les features.
+- **Exceptions** : `components/ui/calendar.tsx`, `components/ui/date-picker-field.tsx` (locale shadcn / react-day-picker).
+- **Interdit** : `Intl.DateTimeFormat` / `toLocaleString` inline dans les features ; fichiers utils dates parallèles ; homonymes de formatters.
+- **Stockage** : UTC en base (`timestamptz` / ISO) ; conversion Paris aux frontières UI et métier uniquement.
 
 ## Deployment
 

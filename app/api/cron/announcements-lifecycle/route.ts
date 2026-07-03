@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { addDaysParisYmd, todayParisYmd } from "@/lib/datetime";
 import { createServiceClient } from "@/lib/supabase/server";
 
 /**
@@ -17,10 +18,8 @@ export async function GET(request: NextRequest) {
   const service = await createServiceClient();
 
   const now = new Date();
-  const yyyyMmDdLocal = toYmd(now);
-  const inThreeDays = new Date(now.getTime());
-  inThreeDays.setUTCDate(inThreeDays.getUTCDate() + 3);
-  const yyyyMmDdPlus3 = toYmd(inThreeDays);
+  const yyyyMmDdLocal = todayParisYmd(now);
+  const yyyyMmDdPlus3 = addDaysParisYmd(3, now);
 
   /* Expired: target strictly before today */
   const expiredRes = await service
@@ -39,7 +38,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: expiredRes.error.message }, { status: 500 });
   }
 
-  /* Expiring soon: target within next 3 days (UTC), still open */
+  /* Expiring soon: target within next 3 days (Paris civil calendar), still open */
   const expiringSoonRes = await service
     .from("announcements")
     .update({ expiring_soon_sent_at: now.toISOString() })
@@ -96,8 +95,4 @@ export async function GET(request: NextRequest) {
     purged: purgeRes.data?.length ?? 0,
     at: now.toISOString(),
   });
-}
-
-function toYmd(d: Date) {
-  return d.toISOString().slice(0, 10);
 }

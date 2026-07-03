@@ -10,7 +10,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";
 import { cn } from "@/lib/utils/cn";
-import { getEventRangeParts } from "@/lib/utils/date";
+import { getEventRangeParts } from "@/lib/datetime";
 import type { AgendaEventRecord } from "@/lib/types";
 
 export type EventCardData = Pick<

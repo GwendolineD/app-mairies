@@ -1,6 +1,10 @@
-import { startOfWeek, format, addWeeks, isBefore } from "date-fns";
-import { fr } from "date-fns/locale";
 import type { SupabaseClient } from "@supabase/supabase-js";
+
+import {
+  buildParisWeekBuckets,
+  countByParisWeek,
+  formatParisWeekLabel,
+} from "@/lib/datetime";
 
 export type WeeklyContentRow = {
   week: string;
@@ -13,35 +17,6 @@ export type WeeklyMembersRow = {
   week: string;
   inscrits: number;
 };
-
-function weekLabel(date: Date): string {
-  return format(date, "dd/MM", { locale: fr });
-}
-
-function buildWeekBuckets(since: Date): Date[] {
-  const buckets: Date[] = [];
-  const now = new Date();
-  let cursor = startOfWeek(since, { weekStartsOn: 1 });
-  const currentWeek = startOfWeek(now, { weekStartsOn: 1 });
-  while (isBefore(cursor, currentWeek) || cursor.getTime() === currentWeek.getTime()) {
-    buckets.push(new Date(cursor));
-    cursor = addWeeks(cursor, 1);
-  }
-  return buckets;
-}
-
-function countByWeek(
-  dates: { created_at: string }[],
-  buckets: Date[],
-): Map<number, number> {
-  const map = new Map<number, number>();
-  for (const { created_at } of dates) {
-    const week = startOfWeek(new Date(created_at), { weekStartsOn: 1 });
-    const ts = week.getTime();
-    map.set(ts, (map.get(ts) ?? 0) + 1);
-  }
-  return map;
-}
 
 const DASHBOARD_CHART_ROW_LIMIT = 5000;
 
@@ -73,13 +48,13 @@ export async function fetchWeeklyContentCreation(
         .limit(DASHBOARD_CHART_ROW_LIMIT),
     ]);
 
-  const buckets = buildWeekBuckets(since);
-  const annMap = countByWeek(annDates ?? [], buckets);
-  const iniMap = countByWeek(iniDates ?? [], buckets);
-  const evtMap = countByWeek(evtDates ?? [], buckets);
+  const buckets = buildParisWeekBuckets(since);
+  const annMap = countByParisWeek(annDates ?? [], buckets);
+  const iniMap = countByParisWeek(iniDates ?? [], buckets);
+  const evtMap = countByParisWeek(evtDates ?? [], buckets);
 
   return buckets.map((b) => ({
-    week: weekLabel(b),
+    week: formatParisWeekLabel(b),
     annonces: annMap.get(b.getTime()) ?? 0,
     initiatives: iniMap.get(b.getTime()) ?? 0,
     evenements: evtMap.get(b.getTime()) ?? 0,
@@ -98,12 +73,12 @@ export async function fetchWeeklyMembershipGrowth(
     .gte("created_at", since.toISOString())
     .limit(DASHBOARD_CHART_ROW_LIMIT);
 
-  const buckets = buildWeekBuckets(since);
-  const weekMap = countByWeek(memDates ?? [], buckets);
+  const buckets = buildParisWeekBuckets(since);
+  const weekMap = countByParisWeek(memDates ?? [], buckets);
 
   let cumulative = 0;
   return buckets.map((b) => {
     cumulative += weekMap.get(b.getTime()) ?? 0;
-    return { week: weekLabel(b), inscrits: cumulative };
+    return { week: formatParisWeekLabel(b), inscrits: cumulative };
   });
 }

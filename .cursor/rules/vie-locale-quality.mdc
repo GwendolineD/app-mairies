@@ -18,7 +18,7 @@ Cross-cutting defaults for a maintainable, scalable, performant app. Structure a
 ## Maintainability
 
 - Preserve strong typing (`Database` types, inferred query results); avoid `any` for domain models — see also `architecture.mdc`.
-- Centralize URL builders, validators, and feature flags rather than scattering magic strings. Shared constants and helpers → `architecture.mdc`; colors and asset paths → `vie-locale-design-system.mdc`.
+- Centralize URL builders, validators, and feature flags rather than scattering magic strings. Shared constants and helpers → `architecture.mdc`; colors and asset paths → `vie-locale-design-system.mdc`. Dates → `architecture.mdc` (section Dates & fuseau horaire).
 - Small, cohesive modules with explicit interfaces at boundaries.
 
 ## Scalability

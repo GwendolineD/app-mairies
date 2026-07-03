@@ -12,8 +12,8 @@ import { CategoryTag } from "@/components/ui/category-tag";
 import { AnnouncementTypePastille } from "@/components/ui/announcement-type-pastille";
 import { cn } from "@/lib/utils/cn";
 import { formatDisplayName } from "@/lib/utils/display-name";
-import { formatRelativeTime } from "@/lib/utils/date";
-import { formatShortDate } from "@/lib/utils/format-date";
+import { formatRelativeTime } from "@/lib/datetime";
+import { formatShortDate } from "@/lib/datetime";
 import { formatAddressLabel, formatAddressLines } from "@/lib/utils/format-address";
 
 type Props = {

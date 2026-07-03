@@ -21,7 +21,7 @@ import { ROLE_LABELS } from "@/lib/constants/roles";
 import { getCommuneDetailStats } from "@/lib/queries/backoffice-communes";
 import { getCommuneSubscriptionInfo } from "@/lib/queries/commune-subscription";
 import { listCommuneMembersPage } from "@/lib/queries/backoffice-memberships";
-import { formatShortDate } from "@/lib/utils/format-date";
+import { formatShortDate } from "@/lib/datetime";
 import { parseBackofficeMembersListParams } from "@/lib/utils/backoffice-search-params";
 
 export const dynamic = "force-dynamic";

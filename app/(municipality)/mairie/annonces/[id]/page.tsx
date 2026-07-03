@@ -4,7 +4,7 @@ import { ROUTES } from "@/lib/constants/routes";
 import { getCategoryLabel } from "@/lib/constants/announcement-categories";
 import { getAuthorName } from "@/lib/data/authors";
 import { createClient } from "@/lib/supabase/server";
-import { formatDay } from "@/lib/utils/date";
+import { formatDay } from "@/lib/datetime";
 import { AnnouncementTypeTag } from "@/components/ui/announcement-type-tag";
 import { BackLink } from "@/components/ui/back-link";
 import { Card } from "@/components/ui/card";

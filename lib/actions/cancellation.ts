@@ -6,7 +6,7 @@ import { requireCommuneStaff } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import { sendTemplatedEmail } from "@/lib/email";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { formatShortDate } from "@/lib/utils/format-date";
+import { formatShortDate, todayParisYmd } from "@/lib/datetime";
 
 export type CancellationActionResult =
   | { success: true }
@@ -32,7 +32,7 @@ export async function cancelSubscription(
   }
 
   const supabase = await createClient();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayParisYmd();
 
   const { data: subscription, error: subscriptionError } = await supabase
     .from("commune_subscriptions")

@@ -7,7 +7,7 @@ import { ROUTES } from "@/lib/constants/routes";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { sendTemplatedEmail } from "@/lib/email";
 import { getAppUrl } from "@/lib/utils/app-url";
-import { formatShortDate } from "@/lib/utils/format-date";
+import { formatShortDate } from "@/lib/datetime";
 import { CONTEXT_TYPE_LABELS } from "@/lib/constants/context-types";
 import type { ConversationContextType } from "@/lib/types";
 import { reportSchema, userReportSchema } from "@/lib/validations/schemas";

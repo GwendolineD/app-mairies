@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { submitInitiativeResponse } from "@/lib/actions/initiatives";
 import { GradientButton } from "@/components/ui/gradient-button";
+import { formatDateTimeFr } from "@/lib/datetime";
 import { cn } from "@/lib/utils/cn";
 
 const TABS = [
@@ -79,8 +80,8 @@ export function InitiativeDetailTabs({
       {tab === "info" ? (
         <ul className="space-y-2 text-sm text-muted">
           <li>Temporalité : {dateMode}</li>
-          {startsAt ? <li>Début : {new Date(startsAt).toLocaleString("fr-FR")}</li> : null}
-          {endsAt ? <li>Fin : {new Date(endsAt).toLocaleString("fr-FR")}</li> : null}
+          {startsAt ? <li>Début : {formatDateTimeFr(startsAt)}</li> : null}
+          {endsAt ? <li>Fin : {formatDateTimeFr(endsAt)}</li> : null}
           {addressLabel ? <li>Lieu : {addressLabel}</li> : null}
         </ul>
       ) : null}

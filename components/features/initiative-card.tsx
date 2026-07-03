@@ -11,7 +11,7 @@ import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";
 import { cn } from "@/lib/utils/cn";
 import { formatDisplayName } from "@/lib/utils/display-name";
-import { formatEventRange, formatRelativeTime } from "@/lib/utils/date";
+import { formatEventRange, formatRelativeTime } from "@/lib/datetime";
 
 export type InitiativeCardData = {
   id: string;

@@ -6,7 +6,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils/cn";
-import { formatDay } from "@/lib/utils/date";
+import { formatDay } from "@/lib/datetime";
 import type { MembershipStatus } from "@/lib/types";
 
 const STATUS_LABELS: Record<MembershipStatus, string> = {

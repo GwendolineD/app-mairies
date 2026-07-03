@@ -12,7 +12,7 @@ import { PageStack } from "@/components/ui/page-stack";
 import { MEMBERSHIP_STATUS } from "@/lib/constants/statuses";
 import { ROUTES } from "@/lib/constants/routes";
 import { getBackofficeUserDetail } from "@/lib/queries/backoffice-users";
-import { formatShortDate } from "@/lib/utils/format-date";
+import { formatShortDate } from "@/lib/datetime";
 
 export const dynamic = "force-dynamic";
 

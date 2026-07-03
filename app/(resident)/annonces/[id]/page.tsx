@@ -24,9 +24,9 @@ import { AnnouncementSidebarActions } from "@/components/features/announcement-s
 import { ReportButton } from "@/components/features/report-button";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { LinkifiedText } from "@/components/ui/linkified-text";
-import { formatMemberSince, formatRelativeTime } from "@/lib/utils/date";
+import { formatMemberSince, formatRelativeTime } from "@/lib/datetime";
 import { formatDisplayName } from "@/lib/utils/display-name";
-import { formatShortDate } from "@/lib/utils/format-date";
+import { formatShortDate } from "@/lib/datetime";
 import { formatDetailAddressLines, resolveAddressPostcode } from "@/lib/utils/format-address";
 import type { AnnouncementEditData } from "@/lib/types";
 import { PageStack } from "@/components/ui/page-stack";

@@ -15,7 +15,8 @@ import {
   listEventParticipants,
   countEventParticipants,
 } from "@/lib/queries/events";
-import { formatEventDetail, formatMemberSince } from "@/lib/utils/date";
+import { formatMemberSince } from "@/lib/datetime";
+import { EventDetailDateLabel } from "@/components/features/event-detail-date-label";
 import {
   formatAddressLines,
   parseAddressLabelParts,
@@ -256,9 +257,10 @@ export default async function EvenementDetailPage(props: {
               </div>
             ) : null}
 
-            <p className="text-base font-semibold text-orange">
-              {formatEventDetail(event.starts_at, event.ends_at)}
-            </p>
+            <EventDetailDateLabel
+              start={event.starts_at}
+              end={event.ends_at}
+            />
 
             <section className={DESCRIPTION_SECTION_CLASS}>
               <h2 className="mb-2 text-sm font-semibold leading-5 text-text">

@@ -4,6 +4,7 @@ import type { AnnouncementType } from "@/lib/constants/announcement-types";
 import { ANNOUNCEMENT_STATUS } from "@/lib/constants/statuses";
 import type { Announcement, Membership, Profile } from "@/lib/types";
 import type { AnnouncementDateFilter, SortMode } from "@/lib/utils/search-params";
+import { addDaysParisYmd, todayParisYmd } from "@/lib/datetime";
 
 export const ANNOUNCEMENTS_PAGE_SIZE = 20;
 
@@ -61,13 +62,11 @@ export function decodeCursor(cursor: string): { createdAt: string; id: string } 
 }
 
 function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
+  return todayParisYmd();
 }
 
 function plusDaysIso(days: number): string {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
+  return addDaysParisYmd(days);
 }
 
 /**

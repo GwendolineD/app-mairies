@@ -1,6 +1,6 @@
 "use client";
 
-import { formatShortDate } from "@/lib/utils/format-date";
+import { formatShortDate } from "@/lib/datetime";
 import { Tooltip } from "@/components/ui/tooltip";
 
 type CancellationBadgeProps = {

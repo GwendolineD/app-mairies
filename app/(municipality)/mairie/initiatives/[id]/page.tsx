@@ -3,7 +3,7 @@ import { requireCommuneStaff } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import { getAuthorName } from "@/lib/data/authors";
 import { createClient } from "@/lib/supabase/server";
-import { formatDay, formatEventRange } from "@/lib/utils/date";
+import { formatDay, formatEventRange } from "@/lib/datetime";
 import { BackLink } from "@/components/ui/back-link";
 import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";

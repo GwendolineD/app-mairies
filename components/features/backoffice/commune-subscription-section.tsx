@@ -8,7 +8,7 @@ import {
   deleteSubscriptionPeriod,
 } from "@/lib/actions/platform";
 import { cn } from "@/lib/utils/cn";
-import { formatShortDate } from "@/lib/utils/format-date";
+import { formatShortDate } from "@/lib/datetime";
 import { formatEuros } from "@/lib/utils/format-currency";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";

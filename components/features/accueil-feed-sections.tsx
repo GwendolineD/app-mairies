@@ -8,7 +8,7 @@ import type { AgendaEventRecord } from "@/lib/types";
 import {
   formatEventAccueilDate,
   formatEventAccueilSchedule,
-} from "@/lib/utils/date";
+} from "@/lib/datetime";
 import { cn } from "@/lib/utils/cn";
 import { AccueilSectionLink } from "@/components/features/accueil-section-link";
 import { AnnouncementCard } from "@/components/features/announcement-card";

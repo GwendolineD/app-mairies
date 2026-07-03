@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { APP_NAME } from "@/lib/constants/app";
 import { cancelSubscription } from "@/lib/actions/cancellation";
-import { formatShortDate } from "@/lib/utils/format-date";
+import { formatShortDate } from "@/lib/datetime";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 

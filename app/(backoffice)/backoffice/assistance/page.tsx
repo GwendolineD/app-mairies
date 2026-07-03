@@ -5,7 +5,7 @@ import { LinkifiedText } from "@/components/ui/linkified-text";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
 import type { SupportRequestStatus } from "@/lib/types";
-import { formatShortDate } from "@/lib/utils/format-date";
+import { formatShortDate } from "@/lib/datetime";
 import { BackofficeSupportActions } from "./_components/backoffice-support-actions";
 
 const STATUS_LABELS: Record<

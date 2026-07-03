@@ -6,7 +6,7 @@ import { CommuneAccessStatusControl } from "@/components/features/backoffice/com
 import { EditCommuneInfoModal } from "@/components/features/backoffice/edit-commune-info-modal";
 import { Button } from "@/components/ui/button";
 import { PageHeading } from "@/components/ui/page-heading";
-import { formatShortDate } from "@/lib/utils/format-date";
+import { formatShortDate } from "@/lib/datetime";
 import type { AccessStatus } from "@/lib/types";
 
 type Props = {

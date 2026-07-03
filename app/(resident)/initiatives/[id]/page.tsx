@@ -22,7 +22,7 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { LinkifiedText } from "@/components/ui/linkified-text";
 import type { InitiativeEditData, InitiativeRecord } from "@/lib/types";
 import { PageStack } from "@/components/ui/page-stack";
-import { formatMemberSince, formatRelativeTime } from "@/lib/utils/date";
+import { formatMemberSince, formatRelativeTime } from "@/lib/datetime";
 import { formatDisplayName } from "@/lib/utils/display-name";
 import { formatAddressLines, parseAddressLabelParts, resolveAddressPostcode } from "@/lib/utils/format-address";
 

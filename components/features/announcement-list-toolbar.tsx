@@ -4,8 +4,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowUpDown, Calendar as CalendarIcon, ChevronDown, List, Map, Plus, SlidersHorizontal, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { format, isValid, parseISO } from "date-fns";
-import { fr } from "date-fns/locale";
+import {
+  formatParisYmdFromDate,
+  formatPickerDateLabel,
+  parseDateOnly,
+} from "@/lib/datetime";
 import { ANNOUNCEMENT_CATEGORIES } from "@/lib/constants/announcement-categories";
 import { ANNOUNCEMENT_TYPES } from "@/lib/constants/announcement-types";
 import {
@@ -565,12 +568,12 @@ function CustomDateRow({
   const checked = params.date === "custom";
   const selected = useMemo(() => {
     if (!params.dateValue) return undefined;
-    const d = parseISO(params.dateValue);
-    return isValid(d) ? d : undefined;
+    const d = parseDateOnly(params.dateValue);
+    return Number.isNaN(d.getTime()) ? undefined : d;
   }, [params.dateValue]);
 
   const labelText = selected
-    ? format(selected, "d MMM yyyy", { locale: fr })
+    ? formatPickerDateLabel(params.dateValue!)
     : "Date précise";
 
   return (
@@ -611,7 +614,7 @@ function CustomDateRow({
             selected={selected}
             onSelect={(date) => {
               if (!date) return;
-              const value = format(date, "yyyy-MM-dd");
+              const value = formatParisYmdFromDate(date);
               setOpen(false);
               onApply(value);
             }}

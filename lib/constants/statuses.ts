@@ -1,4 +1,4 @@
-import { formatCompactShortDate } from "@/lib/utils/format-date";
+import { formatCompactShortDate } from "@/lib/datetime";
 import type { ReportResolutionMeta } from "@/lib/queries/report-resolution-meta";
 
 export const ANNOUNCEMENT_STATUS = {

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { ReportRestoreActionsClient } from "@/components/features/reports/report-restore-actions-client";
 import type { ReportRestoreInfo } from "@/lib/queries/report-restore-context";
-import { formatCompactShortDate } from "@/lib/utils/format-date";
+import { formatCompactShortDate } from "@/lib/datetime";
 
 type RestorableResolution = "content_suspended" | "user_suspended";
 

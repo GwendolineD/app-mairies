@@ -4,7 +4,7 @@ import { ROUTES } from "@/lib/constants/routes";
 import { isAnnouncementType } from "@/lib/constants/announcement-types";
 import { getCategoryLabel } from "@/lib/constants/announcement-categories";
 import { createClient } from "@/lib/supabase/server";
-import { formatDay } from "@/lib/utils/date";
+import { formatDay } from "@/lib/datetime";
 import { AnnouncementTypeTag } from "@/components/ui/announcement-type-tag";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";

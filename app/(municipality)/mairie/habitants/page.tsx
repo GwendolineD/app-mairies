@@ -10,7 +10,7 @@ import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
 import { requireCommuneStaff } from "@/lib/auth/session";
 import { listCommuneMembersPage } from "@/lib/queries/backoffice-memberships";
-import { formatDay } from "@/lib/utils/date";
+import { formatDay } from "@/lib/datetime";
 import {
   hasActiveHabitantsFilters,
   parseHabitantsListParams,

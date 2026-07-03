@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PageStack } from "@/components/ui/page-stack";
 import { ROUTES } from "@/lib/constants/routes";
+import { formatMemberSince } from "@/lib/datetime";
 import { updateAvatar } from "@/lib/actions/profile";
 import {
   CloudinaryUploadError,
@@ -324,7 +325,9 @@ function ProfileHero({
 
               <span className="inline-flex items-center gap-1">
                 <CalendarDays className="size-4 shrink-0" aria-hidden />
-                Membre depuis {formatMonthYear(membership.joinedAt)}
+                {membership.joinedAt
+                  ? formatMemberSince(membership.joinedAt)
+                  : "Membre récemment"}
               </span>
             </div>
             <div className="grid shrink-0 grid-cols-3 gap-3 md:w-80">
@@ -518,12 +521,4 @@ function SettingsPanel({ settings }: { settings: SettingsData }) {
       />
     </div>
   );
-}
-
-function formatMonthYear(value?: string) {
-  if (!value) return "récemment";
-  return new Intl.DateTimeFormat("fr-FR", {
-    month: "long",
-    year: "numeric",
-  }).format(new Date(value));
 }

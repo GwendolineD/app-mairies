@@ -25,7 +25,7 @@ import {
 } from "@/lib/legal/seed-content";
 import { getLegalDocument } from "@/lib/queries/legal-documents";
 import { createClient } from "@/lib/supabase/server";
-import { formatShortDate } from "@/lib/utils/format-date";
+import { formatShortDate } from "@/lib/datetime";
 
 type Props = {
   params: Promise<{ slug: string }>;
