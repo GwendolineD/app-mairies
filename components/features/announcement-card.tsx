@@ -15,6 +15,7 @@ import { formatDisplayName } from "@/lib/utils/display-name";
 import { formatRelativeTime } from "@/lib/datetime";
 import { formatShortDate } from "@/lib/datetime";
 import { formatAddressLabel, formatAddressLines } from "@/lib/utils/format-address";
+import { ContentSuspendedBadge } from "@/components/features/content-suspended-indicator";
 
 type Props = {
   announcement: AnnouncementWithAuthor;
@@ -129,6 +130,7 @@ export function AnnouncementCard({
             )}
           </div>
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col p-2">
+            {a.suspended_at ? <ContentSuspendedBadge /> : null}
             <div className="flex items-center gap-2">
               <AnnouncementTypePastille
                 type={a.type}
@@ -202,7 +204,8 @@ export function AnnouncementCard({
           <AnnouncementTypePastille type={a.type} className="absolute left-2 top-2" />
         </div>
 
-        <div className="flex flex-1 flex-col gap-1 px-2.5 pt-2.5 pb-2.5">
+        <div className="relative flex flex-1 flex-col gap-1 px-2.5 pt-2.5 pb-2.5">
+          {a.suspended_at ? <ContentSuspendedBadge /> : null}
           <div className="flex items-center justify-between gap-2">
             <CategoryTag
               label={getCategoryLabel(a.category_slug)}

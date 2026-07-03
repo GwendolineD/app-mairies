@@ -30,6 +30,7 @@ import { formatShortDate } from "@/lib/datetime";
 import { formatDetailAddressLines, resolveAddressPostcode } from "@/lib/utils/format-address";
 import type { AnnouncementEditData } from "@/lib/types";
 import { PageStack } from "@/components/ui/page-stack";
+import { ContentSuspendedBanner } from "@/components/features/content-suspended-indicator";
 
 const MAIN_DETAIL_CARD_CLASS =
   "rounded-none border-0 bg-transparent p-0 !shadow-none";
@@ -175,6 +176,10 @@ export default async function AnnonceDetailPage(props: {
   return (
     <PageStack gap="5">
       <HistoryBackLink />
+
+      {ann.suspended_at ? (
+        <ContentSuspendedBanner suspendedAt={ann.suspended_at} />
+      ) : null}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
         {/* --- Main card --- */}
