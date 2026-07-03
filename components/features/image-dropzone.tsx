@@ -97,13 +97,14 @@ export function ImageDropzone({ file, onFileChange, isUploading = false, classNa
 
   if (preview) {
     return (
-      <div className={cn("relative overflow-hidden rounded-xl border border-border", className)}>
+      <div
+        className={cn(
+          "relative aspect-[16/10] w-full overflow-hidden rounded-lg border border-border",
+          className,
+        )}
+      >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={preview}
-          alt=""
-          className="aspect-[1.5/1] w-full object-cover object-bottom"
-        />
+        <img src={preview} alt="" className="h-full w-full object-cover" />
         {isUploading ? (
           <div className="absolute inset-0 flex items-center justify-center bg-text/40">
             <Loader2 className="size-8 animate-spin text-white" aria-hidden />

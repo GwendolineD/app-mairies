@@ -39,7 +39,7 @@ export function InitiativeDetailSkeleton() {
             <Skeleton className="h-5 w-28 rounded-full" />
             <Skeleton className="h-8 w-3/4" />
             <Skeleton className="h-4 w-1/2" />
-            <Skeleton className="aspect-[16/9] w-full rounded-2xl" />
+            <Skeleton className="aspect-[16/10] w-full rounded-lg" />
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-2/3" />
