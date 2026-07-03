@@ -11,7 +11,7 @@ import {
   markReportsRestoredForUser,
   resolvePendingReportsForContent,
   resolvePendingReportsForUser,
-} from "@/lib/actions/municipality";
+} from "@/lib/services/report-resolution";
 import { MEMBERSHIP_STATUS } from "@/lib/constants/statuses";
 import { formatDisplayName } from "@/lib/utils/display-name";
 import { createClient, createServiceClient } from "@/lib/supabase/server";

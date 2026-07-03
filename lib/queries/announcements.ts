@@ -120,12 +120,12 @@ export async function listAnnouncementsPage(
   const limit = options.limit ?? ANNOUNCEMENTS_PAGE_SIZE;
   const sortMode = options.sortMode ?? "recent";
   const ascending = sortMode === "oldest";
-  const totalCount = await countAnnouncements(supabase, filters);
 
   let query = supabase
     .from("announcements")
     .select(
       "*, author_membership:memberships!announcements_author_membership_id_fkey(address_street, address_city, address_postcode, address_lat, address_lng, profiles:profiles!memberships_profiles_user_id_fkey(first_name, last_name, display_name, avatar_url))",
+      { count: "exact" },
     )
     .order("created_at", { ascending })
     .order("id", { ascending })
@@ -145,7 +145,7 @@ export async function listAnnouncementsPage(
     }
   }
 
-  const { data } = await query;
+  const { data, count } = await query;
   const items = (data ?? []) as AnnouncementWithAuthor[];
   const last = items[items.length - 1];
   const nextCursor =
@@ -153,7 +153,7 @@ export async function listAnnouncementsPage(
       ? encodeCursor(last.created_at, last.id)
       : null;
 
-  return { items, nextCursor, totalCount };
+  return { items, nextCursor, totalCount: count ?? 0 };
 }
 
 /**
@@ -175,6 +175,7 @@ export async function listAnnouncementMapItems(
     .order("created_at", { ascending: false });
 
   query = applyAnnouncementFilters(query, filters);
+  query = query.limit(500);
   const { data } = await query;
   return (data ?? []) as AnnouncementMapItem[];
 }

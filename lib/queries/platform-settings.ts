@@ -38,3 +38,17 @@ export const getErrorIllustrationUrls = unstable_cache(
   ["platform-settings-error-illustrations"],
   { tags: [PLATFORM_SETTINGS_CACHE_TAG], revalidate: 3600 },
 );
+
+export const getPlatformSupportEmail = unstable_cache(
+  async (): Promise<string> => {
+    const supabase = createAnonClient();
+    const { data } = await supabase
+      .from("platform_settings")
+      .select("support_email")
+      .eq("id", 1)
+      .maybeSingle();
+    return data?.support_email ?? "contact@tous-voisins.fr";
+  },
+  ["platform-support-email"],
+  { tags: [PLATFORM_SETTINGS_CACHE_TAG], revalidate: 3600 },
+);

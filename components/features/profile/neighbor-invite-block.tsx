@@ -87,10 +87,12 @@ export function NeighborInviteBlock(props: Props) {
           </Button>
         </form>
 
-        <p className="text-xs font-medium leading-5 text-subtle">
-          Bravo, {inviteCount} invitation{inviteCount !== 1 ? "s" : ""} envoyée
-          {inviteCount !== 1 ? "s" : ""} depuis ce profil.
-        </p>
+        {inviteCount > 0 ? (
+          <p className="text-xs font-medium leading-5 text-subtle">
+            Bravo, {inviteCount} invitation{inviteCount !== 1 ? "s" : ""} envoyée
+            {inviteCount !== 1 ? "s" : ""} depuis ce profil.
+          </p>
+        ) : null}
       </div>
     </Card>
   );

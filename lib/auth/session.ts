@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { ROUTES } from "@/lib/constants/routes";
 import { COMMUNE_STAFF_ROLES } from "@/lib/constants/roles";
@@ -13,7 +14,12 @@ export type SessionContext = {
   isSuspendedForActiveCommune: boolean;
 };
 
-export async function getSessionContext(): Promise<SessionContext | null> {
+const PROFILE_COLUMNS =
+  "user_id, first_name, last_name, display_name, avatar_url, active_commune_id, is_platform_admin, banned_at, has_seen_onboarding, has_dismissed_notification_prompt";
+
+const MEMBERSHIP_COLUMNS = `*, commune:communes(id, name, insee_code, access_status, settings)`;
+
+async function loadSessionContext(): Promise<SessionContext | null> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -23,18 +29,17 @@ export async function getSessionContext(): Promise<SessionContext | null> {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("*")
+    .select(PROFILE_COLUMNS)
     .eq("user_id", user.id)
     .single();
 
   if (!profile) return null;
 
-  // If globally banned, prevent access
   if (profile.banned_at) return null;
 
   const { data: memberships } = await supabase
     .from("memberships")
-    .select("*, commune:communes(*)")
+    .select(MEMBERSHIP_COLUMNS)
     .eq("user_id", user.id)
     .neq("status", "left");
 
@@ -61,6 +66,9 @@ export async function getSessionContext(): Promise<SessionContext | null> {
     isSuspendedForActiveCommune,
   };
 }
+
+/** Deduped within a single RSC render pass; fresh on each navigation / server action. */
+export const getSessionContext = cache(loadSessionContext);
 
 export async function requireAuth(redirectTo = ROUTES.connexion) {
   const ctx = await getSessionContext();

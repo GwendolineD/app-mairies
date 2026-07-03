@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireCommuneStaff } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import { sendTemplatedEmail } from "@/lib/email";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { formatShortDate } from "@/lib/utils/format-date";
 
 export type CancellationActionResult =
@@ -132,7 +132,8 @@ export async function cancelSubscription(
   if (staffMemberships && staffMemberships.length > 0) {
     const staffUserIds = staffMemberships.map((m) => m.user_id);
 
-    const { data: authData } = await supabase.auth.admin.listUsers();
+    const serviceClient = await createServiceClient();
+    const { data: authData } = await serviceClient.auth.admin.listUsers();
     const staffEmails = (authData?.users ?? [])
       .filter((u) => staffUserIds.includes(u.id) && u.email)
       .map((u) => u.email!);

@@ -43,6 +43,8 @@ function countByWeek(
   return map;
 }
 
+const DASHBOARD_CHART_ROW_LIMIT = 5000;
+
 export async function fetchWeeklyContentCreation(
   supabase: SupabaseClient,
   communeId: string,
@@ -55,17 +57,20 @@ export async function fetchWeeklyContentCreation(
         .from("announcements")
         .select("created_at")
         .eq("commune_id", communeId)
-        .gte("created_at", sinceIso),
+        .gte("created_at", sinceIso)
+        .limit(DASHBOARD_CHART_ROW_LIMIT),
       supabase
         .from("initiatives")
         .select("created_at")
         .eq("commune_id", communeId)
-        .gte("created_at", sinceIso),
+        .gte("created_at", sinceIso)
+        .limit(DASHBOARD_CHART_ROW_LIMIT),
       supabase
         .from("events")
         .select("created_at")
         .eq("commune_id", communeId)
-        .gte("created_at", sinceIso),
+        .gte("created_at", sinceIso)
+        .limit(DASHBOARD_CHART_ROW_LIMIT),
     ]);
 
   const buckets = buildWeekBuckets(since);
@@ -90,7 +95,8 @@ export async function fetchWeeklyMembershipGrowth(
     .from("memberships")
     .select("created_at")
     .eq("commune_id", communeId)
-    .gte("created_at", since.toISOString());
+    .gte("created_at", since.toISOString())
+    .limit(DASHBOARD_CHART_ROW_LIMIT);
 
   const buckets = buildWeekBuckets(since);
   const weekMap = countByWeek(memDates ?? [], buckets);

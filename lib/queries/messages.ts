@@ -63,15 +63,11 @@ export async function countUnreadMessages(
   supabase: SupabaseClient,
   communeId: string,
 ): Promise<number> {
-  const { data, error } = await supabase.rpc("list_my_conversations", {
+  const { data, error } = await supabase.rpc("count_total_unread", {
     p_commune_id: communeId,
-    p_archived: false,
   });
-  if (error || !data) return 0;
-  return (data as ConversationInboxItem[]).reduce(
-    (sum, c) => sum + (c.unread_count ?? 0),
-    0,
-  );
+  if (error || data === null) return 0;
+  return data as number;
 }
 
 /** Fetches preferences for the current user — falls back to defaults if no row yet. */

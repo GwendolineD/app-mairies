@@ -6,6 +6,7 @@ import { requirePlatformAdmin } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import {
   getErrorIllustrationUrls,
+  getPlatformSupportEmail as getCachedPlatformSupportEmail,
   PLATFORM_SETTINGS_CACHE_TAG,
 } from "@/lib/queries/platform-settings";
 import { isCloudinaryDeliveryUrl } from "@/lib/services/cloudinary";
@@ -77,13 +78,7 @@ export async function updatePlatformSettings(
 }
 
 export async function getPlatformSupportEmail(): Promise<string> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("platform_settings")
-    .select("support_email")
-    .eq("id", 1)
-    .single();
-  return data?.support_email ?? "contact@tous-voisins.fr";
+  return getCachedPlatformSupportEmail();
 }
 
 export async function getRandomErrorIllustration(): Promise<string | null> {

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { RECOVERY_COOKIE_NAME } from "@/lib/constants/auth";
@@ -490,6 +491,16 @@ export async function signOut() {
 }
 
 export async function submitCommuneInterest(formData: FormData) {
+  const headersList = await headers();
+  const forwarded = headersList.get("x-forwarded-for");
+  const ip = forwarded?.split(",")[0]?.trim() ?? "unknown";
+  const rateLimitKey = `commune-interest:${ip}`;
+  if (!checkRateLimit(rateLimitKey, 5, 10 * 60 * 1000)) {
+    return {
+      error: "Trop de demandes. Réessayez dans quelques minutes.",
+    };
+  }
+
   const rawInsee = (formData.get("inseeCode") as string)?.trim();
   const emailRaw = (formData.get("email") as string)?.trim();
   const message = (formData.get("message") as string)?.trim() || null;

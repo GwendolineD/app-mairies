@@ -70,14 +70,11 @@ export async function listInitiativesPage(
   const limit = options.limit ?? INITIATIVES_PAGE_SIZE;
   const ascending = options.sortMode === "oldest";
 
-  let countQuery = supabase.from("initiatives").select("id", { count: "exact", head: true });
-  countQuery = applyFilters(countQuery, filters);
-  const { count } = await countQuery;
-
   let query = supabase
     .from("initiatives")
     .select(
       "*, author_membership:memberships!initiatives_author_membership_id_fkey(address_street, address_city, profiles(first_name, last_name, display_name, avatar_url))",
+      { count: "exact" },
     )
     .order("created_at", { ascending })
     .order("id", { ascending })
@@ -97,7 +94,7 @@ export async function listInitiativesPage(
     }
   }
 
-  const { data } = await query;
+  const { data, count } = await query;
   const items = (data ?? []) as InitiativeWithAuthor[];
 
   await enrichInitiativesWithMeta(supabase, items);
@@ -189,6 +186,7 @@ export async function listInitiativeMapItems(
     .order("created_at", { ascending: false });
 
   query = applyFilters(query, filters);
+  query = query.limit(500);
   const { data } = await query;
   const items = (data ?? []) as InitiativeWithAuthor[];
   await enrichInitiativesWithMeta(supabase, items);

@@ -10,6 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "import-communes": "tsx scripts/import-communes.ts",
     "bootstrap-super-admin": "npx tsx --env-file=.env.local scripts/bootstrap-super-admin.ts"
   },
@@ -53,6 +55,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   }
 }

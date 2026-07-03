@@ -121,7 +121,10 @@ export async function sendTrialInvitations(
   communeId: string,
   rawEmails: string,
 ): Promise<TrialActionResult & { sentCount?: number }> {
-  await requireCommuneStaff();
+  const { communeId: staffCommuneId } = await requireCommuneStaff();
+  if (staffCommuneId !== communeId) {
+    return { success: false, error: "Non autorisé." };
+  }
 
   const { error: communeError, commune } =
     await requireTrialCommuneAccess(communeId);

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requirePlatformAdmin } from "@/lib/auth/session";
-import { resolvePendingReportsForUser } from "@/lib/actions/municipality";
+import { resolvePendingReportsForUser } from "@/lib/services/report-resolution";
 import { ROUTES } from "@/lib/constants/routes";
 import { MEMBERSHIP_STATUS } from "@/lib/constants/statuses";
 import { createClient } from "@/lib/supabase/server";

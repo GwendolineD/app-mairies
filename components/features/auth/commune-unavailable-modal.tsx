@@ -33,11 +33,16 @@ export function CommuneUnavailableModal({
 
   return (
     <Modal open={open} onClose={onClose} title="Commune pas encore disponible">
-      <p className="text-sm leading-relaxed text-muted">
-        «&nbsp;{displayName}&nbsp;» n&apos;a pas encore activé {APP_NAME} pour
-        les habitant·es. Laissez votre e-mail : nous vous préviendrons dès que
-        le service ouvre dans votre commune, et vos élu·es seront informé·es.
-      </p>
+      <div className="space-y-2 text-sm leading-relaxed text-muted">
+        <p>
+          «&nbsp;{displayName}&nbsp;» n&apos;a pas encore activé {APP_NAME} pour
+          ses habitant·es.
+        </p>
+        <p>
+          Laissez votre e-mail : nous vous préviendrons dès que le service ouvre
+          dans votre commune.
+        </p>
+      </div>
 
       <form action={action} className="mt-4 flex flex-col gap-3">
         {communeFeature ? (
@@ -80,11 +85,11 @@ export function CommuneUnavailableModal({
         ) : null}
 
         <div className="flex flex-col gap-2 pt-1 sm:flex-row">
-          <Button type="submit" className="flex-1 py-3">
-            Enregistrer mon intérêt
-          </Button>
           <Button type="button" variant="ghost" className="flex-1" onClick={onClose}>
             Fermer
+          </Button>
+          <Button type="submit" className="flex-1 py-3">
+            Enregistrer mon intérêt
           </Button>
         </div>
       </form>
