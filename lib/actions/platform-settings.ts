@@ -2,6 +2,7 @@
 
 import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
+import { logAudit } from "@/lib/audit/log";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import {
@@ -41,7 +42,7 @@ function formatPlatformSettingsDbError(message: string, code?: string): string {
 export async function updatePlatformSettings(
   input: UpdateInput,
 ): Promise<{ success: boolean; error?: string; fieldErrors?: Record<string, string> }> {
-  await requirePlatformAdmin();
+  const { userId } = await requirePlatformAdmin();
 
   const parsed = updatePlatformSettingsSchema.safeParse(input);
   if (!parsed.success) {
@@ -74,6 +75,14 @@ export async function updatePlatformSettings(
 
   updateTag(PLATFORM_SETTINGS_CACHE_TAG);
   revalidatePath(ROUTES.backoffice.settings);
+
+  void logAudit({
+    action: "admin.update_platform_settings",
+    category: "admin",
+    severity: "warning",
+    userId,
+  });
+
   return { success: true };
 }
 

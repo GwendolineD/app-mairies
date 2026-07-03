@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { logAudit } from "@/lib/audit/log";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import { resolvePendingReportsForUser } from "@/lib/services/report-resolution";
 import { ROUTES } from "@/lib/constants/routes";
@@ -15,7 +16,7 @@ export async function suspendMembershipAction(
   membershipId: string,
   reason: string,
 ): Promise<ModerationActionResult> {
-  await requirePlatformAdmin();
+  const { userId: actorUserId } = await requirePlatformAdmin();
 
   const trimmedReason = reason.trim();
   if (!membershipId || !trimmedReason) {
@@ -49,6 +50,17 @@ export async function suspendMembershipAction(
   if (error) {
     return { success: false, error: error.message };
   }
+
+  void logAudit({
+    action: "moderation.suspend_membership_admin",
+    category: "moderation",
+    severity: "warning",
+    userId: actorUserId,
+    targetType: "membership",
+    targetId: membershipId,
+    communeId: membership.commune_id,
+    metadata: { reason: trimmedReason },
+  });
 
   revalidatePath(ROUTES.backoffice.communeDetail(membership.commune_id));
   revalidatePath(ROUTES.backoffice.userDetail(membership.user_id));
@@ -115,6 +127,19 @@ export async function suspendUserFromAllCommunesAction(
   for (const membership of memberships) {
     revalidatePath(ROUTES.backoffice.communeDetail(membership.commune_id));
   }
+
+  void logAudit({
+    action: "moderation.suspend_all_communes",
+    category: "moderation",
+    severity: "warning",
+    userId: actorUserId,
+    targetType: "user",
+    targetId: userId,
+    metadata: {
+      reason: trimmedReason,
+      membership_count: memberships.length,
+    },
+  });
 
   return { success: true };
 }

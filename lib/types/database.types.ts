@@ -205,6 +205,74 @@ export type Database = {
           },
         ]
       }
+      audit_logs: {
+        Row: {
+          action: string
+          browser_name: string | null
+          category: string
+          commune_id: string | null
+          created_at: string
+          device_type: string | null
+          id: string
+          ip_address: unknown
+          metadata: Json
+          os_name: string | null
+          os_version: string | null
+          severity: string
+          success: boolean
+          target_id: string | null
+          target_type: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          browser_name?: string | null
+          category: string
+          commune_id?: string | null
+          created_at?: string
+          device_type?: string | null
+          id?: string
+          ip_address?: unknown
+          metadata?: Json
+          os_name?: string | null
+          os_version?: string | null
+          severity?: string
+          success?: boolean
+          target_id?: string | null
+          target_type?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          browser_name?: string | null
+          category?: string
+          commune_id?: string | null
+          created_at?: string
+          device_type?: string | null
+          id?: string
+          ip_address?: unknown
+          metadata?: Json
+          os_name?: string | null
+          os_version?: string | null
+          severity?: string
+          success?: boolean
+          target_id?: string | null
+          target_type?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_commune_id_fkey"
+            columns: ["commune_id"]
+            isOneToOne: false
+            referencedRelation: "communes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       banned_emails: {
         Row: {
           banned_at: string
@@ -1756,6 +1824,7 @@ export type Database = {
           offres: number
         }[]
       }
+      count_total_unread: { Args: { p_commune_id: string }; Returns: number }
       get_conversation_inbox: {
         Args: { p_commune_id: string }
         Returns: {

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { logAudit } from "@/lib/audit/log";
 import { RECOVERY_COOKIE_NAME } from "@/lib/constants/auth";
 import { ROUTES } from "@/lib/constants/routes";
 import { resendVerificationEmailIfNeeded, sendVerificationEmail } from "@/lib/email/send-verification-email";
@@ -185,11 +186,26 @@ export async function signUp(formData: FormData) {
   });
 
   if (!emailResult.success) {
+    void logAudit({
+      action: "auth.sign_up",
+      category: "auth",
+      userId: adminData.user.id,
+      communeId: commune.id,
+      metadata: { email: parsed.data.email, email_send_warning: true },
+    });
     return {
       emailConfirmationRequired: true,
       emailSendWarning: true,
     };
   }
+
+  void logAudit({
+    action: "auth.sign_up",
+    category: "auth",
+    userId: adminData.user.id,
+    communeId: commune.id,
+    metadata: { email: parsed.data.email },
+  });
 
   return { emailConfirmationRequired: true };
 }
@@ -212,6 +228,13 @@ export async function signIn(formData: FormData) {
 
   const rateLimitKey = `signin:${parsed.data.email.toLowerCase()}`;
   if (!checkRateLimit(rateLimitKey)) {
+    void logAudit({
+      action: "auth.sign_in_failed",
+      category: "auth",
+      severity: "warning",
+      success: false,
+      metadata: { attempted_email: parsed.data.email, reason: "rate_limit" },
+    });
     return {
       error: "Trop de tentatives de connexion. Réessayez dans quelques minutes.",
     };
@@ -224,6 +247,16 @@ export async function signIn(formData: FormData) {
     password: parsed.data.password,
   });
   if (error) {
+    void logAudit({
+      action: "auth.sign_in_failed",
+      category: "auth",
+      severity: "warning",
+      success: false,
+      metadata: {
+        attempted_email: parsed.data.email,
+        reason: error.code ?? "invalid_credentials",
+      },
+    });
     return {
       error: formatAuthError(
         error,
@@ -248,6 +281,14 @@ export async function signIn(formData: FormData) {
 
     if (profile?.banned_at) {
       await supabase.auth.signOut();
+      void logAudit({
+        action: "auth.sign_in_failed",
+        category: "auth",
+        severity: "warning",
+        userId: user.id,
+        success: false,
+        metadata: { attempted_email: parsed.data.email, reason: "banned" },
+      });
       // Retrieve support email for the error message
       const serviceClient = await createServiceClient();
       const { data: settings } = await serviceClient
@@ -261,6 +302,13 @@ export async function signIn(formData: FormData) {
       };
     }
   }
+
+  void logAudit({
+    action: "auth.sign_in",
+    category: "auth",
+    userId: user?.id,
+    metadata: { email: parsed.data.email },
+  });
 
   redirect(ROUTES.accueil);
 }
@@ -294,6 +342,12 @@ export async function requestPasswordReset(formData: FormData) {
       ),
     };
   }
+
+  void logAudit({
+    action: "auth.request_password_reset",
+    category: "auth",
+    metadata: { email: parsed.data.email },
+  });
 
   return { success: true as const };
 }
@@ -382,6 +436,14 @@ export async function updatePassword(formData: FormData) {
   }
 
   cookieStore.delete(RECOVERY_COOKIE_NAME);
+
+  void logAudit({
+    action: "auth.reset_password",
+    category: "auth",
+    severity: "warning",
+    userId: user.id,
+  });
+
   redirect(ROUTES.accueil);
 }
 
@@ -429,6 +491,14 @@ export async function requestEmailChange(
       error: formatAuthError(error, "Impossible de modifier l'email."),
     };
   }
+
+  void logAudit({
+    action: "auth.request_email_change",
+    category: "auth",
+    severity: "warning",
+    userId: user.id,
+    metadata: { new_email: parsed.data.email },
+  });
 
   return { success: true };
 }
@@ -481,11 +551,26 @@ export async function changePassword(input: {
     };
   }
 
+  void logAudit({
+    action: "auth.change_password",
+    category: "auth",
+    severity: "warning",
+    userId: user.id,
+  });
+
   return { success: true };
 }
 
 export async function signOut() {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  void logAudit({
+    action: "auth.sign_out",
+    category: "auth",
+    userId: user?.id,
+  });
   await supabase.auth.signOut();
   redirect(ROUTES.home);
 }
@@ -711,6 +796,14 @@ export async function joinCommune(formData: FormData) {
     .from("profiles")
     .update({ active_commune_id: commune.id })
     .eq("user_id", user.id);
+
+  void logAudit({
+    action: "auth.join_commune",
+    category: "auth",
+    userId: user.id,
+    communeId: commune.id,
+    metadata: { insee_code: parsed.data.inseeCode },
+  });
 
   revalidatePath("/", "layout");
   redirect(ROUTES.accueil);

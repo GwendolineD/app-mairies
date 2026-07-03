@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath, updateTag } from "next/cache";
+import { logAudit } from "@/lib/audit/log";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import type { Json } from "@/lib/types/database.types";
@@ -22,7 +23,7 @@ type UpdateInput = {
 export async function updateLegalDocument(
   input: UpdateInput,
 ): Promise<{ success: boolean; error?: string }> {
-  await requirePlatformAdmin();
+  const { userId } = await requirePlatformAdmin();
 
   if (!isLegalDocumentSlug(input.slug)) {
     return { success: false, error: "Document introuvable." };
@@ -75,6 +76,16 @@ export async function updateLegalDocument(
   revalidatePath(ROUTES.backoffice.legal);
   revalidatePath(`${ROUTES.backoffice.legal}/${input.slug}`);
   revalidatePath(ROUTES.legal.document(input.slug));
+
+  void logAudit({
+    action: "admin.update_legal_document",
+    category: "admin",
+    severity: "critical",
+    userId,
+    targetType: "legal_document",
+    targetId: input.slug,
+    metadata: { version: nextVersion },
+  });
 
   return { success: true };
 }

@@ -25,6 +25,7 @@ import {
   Mail,
   Megaphone,
   Settings,
+  ShieldCheck,
   Sparkles,
   Tags,
   Users,
@@ -47,6 +48,7 @@ const ADMIN_NAV_ICONS: Record<AdminNavItem["icon"], LucideIcon> = {
   "file-text": FileText,
   "life-buoy": LifeBuoy,
   megaphone: Megaphone,
+  "shield-check": ShieldCheck,
 };
 
 type NavLinkProps = {

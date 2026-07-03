@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { logAudit } from "@/lib/audit/log";
 import {
   requireCommuneStaff,
   requirePlatformAdmin,
@@ -10,7 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 import { communeSettingsSchema } from "@/lib/validations/schemas";
 
 export async function updateCommuneWelcomeMessage(formData: FormData): Promise<void> {
-  const { communeId } = await requireCommuneStaff();
+  const { communeId, userId } = await requireCommuneStaff();
 
   const raw = Object.fromEntries(
     [...formData.entries()].map(([k, v]) => [k, String(v)]),
@@ -43,6 +44,16 @@ export async function updateCommuneWelcomeMessage(formData: FormData): Promise<v
     .eq("id", communeId);
 
   if (error) return;
+
+  void logAudit({
+    action: "admin.update_commune_settings",
+    category: "admin",
+    userId,
+    targetType: "commune",
+    targetId: communeId,
+    communeId,
+  });
+
   revalidatePath(ROUTES.mairie.dashboard);
 }
 
@@ -92,6 +103,16 @@ export async function resolveReportAction(
     .eq("id", reportId);
 
   if (error) return;
+
+  void logAudit({
+    action: "moderation.resolve_report",
+    category: "moderation",
+    userId,
+    targetType: "report",
+    targetId: reportId,
+    metadata: { resolution },
+  });
+
   revalidatePath(ROUTES.mairie.signalements);
   revalidatePath(ROUTES.backoffice.signalements);
 }
