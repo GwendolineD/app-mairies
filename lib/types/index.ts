@@ -240,6 +240,8 @@ export type ConversationRow = {
   last_message_sender_id: string | null;
 };
 
+export type ConversationContextStatus = "available" | "suspended" | "deleted";
+
 /** Returned by the `list_my_conversations` RPC — one row per conversation for the current user. */
 export type ConversationInboxItem = {
   conversation_id: string;
@@ -248,6 +250,8 @@ export type ConversationInboxItem = {
   title: string | null;
   context_photo_url: string | null;
   context_available: boolean;
+  context_status: ConversationContextStatus | null;
+  other_membership_status: MembershipStatus | null;
   updated_at: string;
   last_message_at: string | null;
   last_message_preview: string | null;

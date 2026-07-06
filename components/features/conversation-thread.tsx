@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { FormField, Textarea } from "@/components/ui/form-field";
 import { LinkifiedText } from "@/components/ui/linkified-text";
+import { ArchiveConversationModal } from "@/components/features/archive-conversation-modal";
 import { ROUTES } from "@/lib/constants/routes";
 import type { MessageRow } from "@/lib/types";
 import {
@@ -49,6 +50,8 @@ type Props = {
   isArchived?: boolean;
   /** If true, the current viewer wrote the original announcement / initiative / event. */
   readOnly?: boolean;
+  /** Shown when readOnly is true — explains why messaging is disabled. */
+  readOnlyMessage?: string;
 };
 
 export function ConversationThread({
@@ -57,6 +60,7 @@ export function ConversationThread({
   currentUserId,
   isArchived,
   readOnly,
+  readOnlyMessage = "Le contenu lié à cette conversation a été suspendu. Vous ne pouvez plus envoyer de messages.",
 }: Props) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
@@ -64,6 +68,7 @@ export function ConversationThread({
   const [optimistic, setOptimistic] = useState<MessageRow[]>([]);
   const [sending, startSending] = useTransition();
   const [archiving, startArchiving] = useTransition();
+  const [archiveModalOpen, setArchiveModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [bodyValue, setBodyValue] = useState("");
 
@@ -87,6 +92,11 @@ export function ConversationThread({
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [all.length]);
+
+  useEffect(() => {
+    // ConversationPane marks read server-side; refresh layout so sidebar badge updates.
+    router.refresh();
+  }, [conversationId, router]);
 
   async function handleSubmit(formData: FormData) {
     setError(null);
@@ -119,7 +129,10 @@ export function ConversationThread({
   function handleArchive() {
     startArchiving(async () => {
       const result = await archiveConversation(conversationId);
-      if (!result?.error) router.push(ROUTES.messages.list);
+      if (!result?.error) {
+        setArchiveModalOpen(false);
+        router.push(ROUTES.messages.list);
+      }
     });
   }
 
@@ -210,12 +223,10 @@ export function ConversationThread({
         </div>
       ) : readOnly ? (
         <div className="border-t border-border/60 bg-warm/50 px-3 pt-3 pb-6">
-          <p className="text-center text-sm text-muted">
-            Le contenu lié à cette conversation a été suspendu. Vous ne pouvez plus envoyer de messages.
-          </p>
+          <p className="text-center text-sm text-muted">{readOnlyMessage}</p>
           <div className="mt-6 flex justify-center">
             <ArchiveConversationButton
-              onClick={handleArchive}
+              onClick={() => setArchiveModalOpen(true)}
               disabled={archiving}
             />
           </div>
@@ -249,7 +260,7 @@ export function ConversationThread({
           ) : null}
           <div className="mt-2 flex items-center justify-between gap-3">
             <ArchiveConversationButton
-              onClick={handleArchive}
+              onClick={() => setArchiveModalOpen(true)}
               disabled={archiving || sending}
             />
             <Button type="submit" size="sm" disabled={sending || !bodyValue.trim()}>
@@ -258,6 +269,13 @@ export function ConversationThread({
           </div>
         </form>
       )}
+
+      <ArchiveConversationModal
+        open={archiveModalOpen}
+        onClose={() => setArchiveModalOpen(false)}
+        onConfirm={handleArchive}
+        pending={archiving}
+      />
     </div>
   );
 }

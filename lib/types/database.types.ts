@@ -1882,6 +1882,7 @@ export type Database = {
           context_available: boolean
           context_id: string
           context_photo_url: string
+          context_status: string
           context_type: Database["public"]["Enums"]["context_type"]
           conversation_id: string
           last_message_at: string
@@ -1890,6 +1891,7 @@ export type Database = {
           last_read_at: string
           other_avatar_url: string
           other_display_name: string
+          other_membership_status: string
           other_user_id: string
           title: string
           unread_count: number

@@ -16,8 +16,9 @@ import type {
 } from "@/lib/types";
 import { cn } from "@/lib/utils/cn";
 import { RelativeTime } from "@/components/ui/relative-time";
-import { Modal } from "@/components/ui/modal";
-import { Button } from "@/components/ui/button";
+import { ArchiveConversationModal } from "@/components/features/archive-conversation-modal";
+import { DeleteConversationModal } from "@/components/features/delete-conversation-modal";
+import { getConversationStatusBadgeLabel } from "@/lib/utils/conversation-status-badge";
 
 const CONTEXT_ICON: Record<ConversationContextType, typeof MessageCircle> = {
   announcement: Megaphone,
@@ -39,6 +40,7 @@ export function MessagesInboxList({
   currentUserId,
 }: Props) {
   const [pending, startTransition] = useTransition();
+  const [archiveModalId, setArchiveModalId] = useState<string | null>(null);
   const [deleteModalId, setDeleteModalId] = useState<string | null>(null);
 
   // Tab links always return to the inbox root. Switching tabs from inside a thread
@@ -47,6 +49,13 @@ export function MessagesInboxList({
   const trashTabHref = `${ROUTES.messages.list}?vue=corbeille`;
 
   const conversationLinkSuffix = view === "archived" ? "?vue=corbeille" : "";
+
+  const handleArchive = (conversationId: string) => {
+    startTransition(async () => {
+      await archiveConversation(conversationId);
+      setArchiveModalId(null);
+    });
+  };
 
   const handlePermanentDelete = (conversationId: string) => {
     startTransition(async () => {
@@ -99,6 +108,7 @@ export function MessagesInboxList({
             const otherName = conv.other_display_name ?? "Voisin·e";
             const preview = conv.last_message_preview ?? "Pas encore de message";
             const previewPrefix = isMine ? "Vous : " : "";
+            const statusLabel = getConversationStatusBadgeLabel(conv);
 
             return (
               <li
@@ -121,11 +131,18 @@ export function MessagesInboxList({
                       <ContextPhoto url={conv.context_photo_url} title={conv.title} />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
-                          <div className="flex min-w-0 items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-purple">
+                          <div className="flex min-w-0 items-center gap-1 text-[11px] font-semibold text-purple">
                             <Icon className="size-3 shrink-0" aria-hidden />
-                            <span className="truncate">
-                              {contextLabel}
-                              {conv.title ? ` · ${conv.title}` : ""}
+                            <span className="flex min-w-0 items-baseline truncate">
+                              <span className="shrink-0 uppercase tracking-wide">
+                                {contextLabel}
+                              </span>
+                              {conv.title ? (
+                                <>
+                                  <span className="shrink-0"> · </span>
+                                  <span className="truncate normal-case">{conv.title}</span>
+                                </>
+                              ) : null}
                             </span>
                           </div>
                           <span className="shrink-0 text-[11px] font-medium text-muted">
@@ -140,17 +157,12 @@ export function MessagesInboxList({
                           <SmallAvatar name={otherName} url={conv.other_avatar_url} />
                           <p
                             className={cn(
-                              "truncate text-xs font-medium",
+                              "min-w-0 flex-1 truncate text-xs font-medium",
                               unread ? "text-text" : "text-muted",
                             )}
                           >
                             {otherName}
                           </p>
-                          {conv.context_available === false && (
-                            <span className="ml-1 rounded-full bg-coral/10 px-1.5 py-0.5 text-[9px] font-bold text-coral">
-                              Suspendu
-                            </span>
-                          )}
                           {unread ? (
                             <span
                               aria-label={`${conv.unread_count} non lus`}
@@ -160,15 +172,22 @@ export function MessagesInboxList({
                             </span>
                           ) : null}
                         </div>
-                        <p
-                          className={cn(
-                            "mt-1 line-clamp-1 text-xs",
-                            unread ? "text-text" : "text-muted",
-                          )}
-                        >
-                          {previewPrefix}
-                          {preview}
-                        </p>
+                        <div className="mt-1 flex items-center gap-2">
+                          <p
+                            className={cn(
+                              "min-w-0 flex-1 truncate text-xs",
+                              unread ? "text-text" : "text-muted",
+                            )}
+                          >
+                            {previewPrefix}
+                            {preview}
+                          </p>
+                          {statusLabel ? (
+                            <span className="shrink-0 rounded-full bg-coral/10 px-1.5 py-0.5 text-[9px] font-bold text-coral">
+                              {statusLabel}
+                            </span>
+                          ) : null}
+                        </div>
                       </div>
                     </div>
                   </Link>
@@ -213,11 +232,7 @@ export function MessagesInboxList({
                       <button
                         type="button"
                         disabled={pending}
-                        onClick={() =>
-                          startTransition(async () => {
-                            await archiveConversation(conv.conversation_id);
-                          })
-                        }
+                        onClick={() => setArchiveModalId(conv.conversation_id)}
                         className={cn(
                           "cursor-pointer rounded-sm bg-surface/80 p-1.5 text-muted opacity-0 shadow-card transition hover:bg-warm hover:text-text",
                           "group-hover/item:opacity-100 focus-visible:opacity-100",
@@ -237,33 +252,19 @@ export function MessagesInboxList({
         )}
       </ul>
 
-      <Modal
+      <ArchiveConversationModal
+        open={archiveModalId !== null}
+        onClose={() => setArchiveModalId(null)}
+        onConfirm={() => archiveModalId && handleArchive(archiveModalId)}
+        pending={pending}
+      />
+
+      <DeleteConversationModal
         open={deleteModalId !== null}
         onClose={() => setDeleteModalId(null)}
-        title="Supprimer définitivement"
-      >
-        <p className="text-sm text-muted">
-          Cette conversation sera définitivement supprimée. Cette action est
-          irréversible.
-        </p>
-        <div className="mt-4 flex justify-end gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setDeleteModalId(null)}
-          >
-            Annuler
-          </Button>
-          <Button
-            variant="danger"
-            size="sm"
-            disabled={pending}
-            onClick={() => deleteModalId && handlePermanentDelete(deleteModalId)}
-          >
-            {pending ? "Suppression…" : "Supprimer"}
-          </Button>
-        </div>
-      </Modal>
+        onConfirm={() => deleteModalId && handlePermanentDelete(deleteModalId)}
+        pending={pending}
+      />
     </div>
   );
 }

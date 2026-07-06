@@ -273,7 +273,7 @@ export async function markConversationRead(conversationId: string) {
     .update({ last_read_at: new Date().toISOString() })
     .eq("conversation_id", conversationId)
     .eq("user_id", ctx.userId);
-  revalidatePath(ROUTES.messages.list);
+  revalidatePath(ROUTES.messages.list, "layout");
   return { success: true };
 }
 

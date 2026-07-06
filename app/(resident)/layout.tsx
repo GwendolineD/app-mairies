@@ -26,9 +26,11 @@ export default async function ResidentRootLayout({
   const backofficeLinks = getResidentBackofficeNav(ctx);
   const supabase = await createClient();
 
+  const communeId = ctx.activeMembership!.commune_id;
+
   const [unreadMessages, categoryRows, initiativeCategoryRows, supportEmail, pushPublicKey] =
     await Promise.all([
-    countUnreadMessages(supabase, ctx.activeMembership!.commune_id),
+    countUnreadMessages(supabase, communeId),
     getAnnouncementCategories(),
     getInitiativeEventCategories(),
     getPlatformSupportEmail(),
