@@ -1,10 +1,14 @@
 import { requireActiveMembership } from "@/lib/auth/session";
-import { EVENT_STATUS } from "@/lib/constants/statuses";
 import {
+  countAnnouncements,
   countNeighborAnnouncementsDueToday,
-  listAnnouncementsPage,
+  listFeaturedAnnouncementForAccueil,
 } from "@/lib/queries/announcements";
-import { listInitiativesForAccueil } from "@/lib/queries/initiatives";
+import { listInitiativesPage } from "@/lib/queries/initiatives";
+import {
+  listEventsPage,
+  listVolunteerCountsByEventId,
+} from "@/lib/queries/events";
 import { createClient } from "@/lib/supabase/server";
 import { PageStack } from "@/components/ui/page-stack";
 import {
@@ -12,68 +16,87 @@ import {
   AccueilQuickActions,
 } from "@/components/features/accueil-sections";
 import {
-  AccueilRecentAnnouncements,
-  AccueilTrendingInitiative,
-  AccueilUpcomingEvents,
-} from "@/components/features/accueil-feed-sections";
+  AccueilAnnouncementsHub,
+  AccueilEventsHub,
+  AccueilInitiativesHub,
+} from "@/components/features/accueil-hub-sections";
+import { AccueilPageHeader } from "@/components/features/accueil-page-header";
+import type { EventCardData } from "@/components/features/event-card";
 import { resolveFirstName } from "@/lib/utils/display-name";
-import type { AgendaEventRecord } from "@/lib/types";
 
 export default async function ResidentAccueilPage() {
   const ctx = await requireActiveMembership();
   const communeId = ctx.activeMembership!.commune_id;
+  const membershipId = ctx.activeMembership!.id;
   const supabase = await createClient();
 
-  const [neighborDemandCount, recentAnnouncements, neighborInitiatives, eventsRes] =
-    await Promise.all([
-      countNeighborAnnouncementsDueToday(supabase, communeId),
-      listAnnouncementsPage(supabase, { communeId }, { limit: 2 }),
-      listInitiativesForAccueil(supabase, communeId, 2),
-      supabase
-        .from("events")
-        .select("*")
-        .eq("commune_id", communeId)
-        .eq("status", EVENT_STATUS.active)
-        .is("suspended_at", null)
-        .gte("ends_at", new Date().toISOString())
-        .order("starts_at", { ascending: true })
-        .limit(3),
+  const [
+    neighborDemandCount,
+    totalAnnouncements,
+    demandeCount,
+    offreCount,
+    initiativesRes,
+    eventsRes,
+  ] = await Promise.all([
+    countNeighborAnnouncementsDueToday(supabase, communeId, membershipId),
+    countAnnouncements(supabase, { communeId }),
+    countAnnouncements(supabase, { communeId, type: "demande" }),
+    countAnnouncements(supabase, { communeId, type: "offre" }),
+    listInitiativesPage(supabase, { communeId }, { limit: 1 }),
+    listEventsPage(supabase, { communeId }, { limit: 1 }),
+  ]);
+
+  const featuredAnnouncement = await listFeaturedAnnouncementForAccueil(
+    supabase,
+    communeId,
+    {
+      preferNeighborDemandToday: neighborDemandCount > 0,
+      excludeMembershipId: membershipId,
+    },
+  );
+
+  const featuredInitiative = initiativesRes.items[0] ?? null;
+  const featuredEvent = eventsRes.items[0] ?? null;
+
+  let featuredEventWithVolunteers: EventCardData | null = featuredEvent;
+  if (featuredEvent) {
+    const volunteerCounts = await listVolunteerCountsByEventId(supabase, [
+      featuredEvent.id,
     ]);
-
-  const upcomingEvents = (eventsRes.data ?? []) as AgendaEventRecord[];
-
-  const eventIds = upcomingEvents.map((e) => e.id);
-  const volunteerCountByEventId: Record<string, number> = {};
-  if (eventIds.length > 0) {
-    const { data: volunteerRows } = await supabase
-      .from("event_volunteers")
-      .select("event_id")
-      .in("event_id", eventIds);
-
-    for (const row of volunteerRows ?? []) {
-      volunteerCountByEventId[row.event_id] =
-        (volunteerCountByEventId[row.event_id] ?? 0) + 1;
-    }
+    featuredEventWithVolunteers = {
+      ...featuredEvent,
+      volunteers_registered: volunteerCounts[featuredEvent.id] ?? 0,
+    };
   }
 
   return (
     <PageStack gap="6">
+      <AccueilPageHeader />
       <AccueilHero
         userFirstName={resolveFirstName(ctx.profile)}
         neighborDemandCount={neighborDemandCount}
       />
-      <AccueilQuickActions />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
         <div className="flex flex-col gap-6">
-          <AccueilRecentAnnouncements items={recentAnnouncements.items} />
-          <AccueilTrendingInitiative initiatives={neighborInitiatives} />
+          <AccueilAnnouncementsHub
+            totalCount={totalAnnouncements}
+            demandeCount={demandeCount}
+            offreCount={offreCount}
+            featured={featuredAnnouncement}
+          />
+          <AccueilInitiativesHub
+            totalCount={initiativesRes.totalCount}
+            featured={featuredInitiative}
+          />
         </div>
-        <AccueilUpcomingEvents
-          events={upcomingEvents}
-          volunteerCountByEventId={volunteerCountByEventId}
+        <AccueilEventsHub
+          totalCount={eventsRes.totalCount}
+          featured={featuredEventWithVolunteers}
         />
       </div>
+
+      <AccueilQuickActions />
     </PageStack>
   );
 }

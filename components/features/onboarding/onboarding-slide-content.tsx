@@ -6,7 +6,12 @@ import { ILLUSTRATIONS } from "@/lib/constants/illustrations";
 import { homemadeApple } from "@/lib/fonts";
 import { cn } from "@/lib/utils/cn";
 
-export type OnboardingSlideId = "welcome" | "annonces" | "initiatives" | "evenements";
+export type OnboardingSlideId =
+  | "welcome"
+  | "accueil"
+  | "annonces"
+  | "initiatives"
+  | "evenements";
 
 type Props = {
   slide: OnboardingSlideId;
@@ -42,6 +47,29 @@ function WelcomeSlide({ communeName }: { communeName: string }) {
             className="size-9 shrink-0 object-contain"
           />
         ) : null}
+      </p>
+    </div>
+  );
+}
+
+function AccueilSlide() {
+  return (
+    <div className="flex flex-col items-start text-left">
+      <h2 className="mb-2 text-2xl font-bold text-text">Votre accueil local</h2>
+      <p className="mt-2 w-full text-sm font-medium leading-relaxed text-text">
+        Cette page vous donne un <strong>aperçu</strong>{" "}
+        de ce qui se passe dans votre commune — ce n&apos;est pas la liste complète.
+      </p>
+      <p className="mt-3 w-full text-sm font-medium leading-relaxed text-muted">
+        Pour tout parcourir, utilisez les onglets{" "}
+        <strong className="text-text">Annonces</strong>,{" "}
+        <strong className="text-text">Initiatives</strong> et{" "}
+        <strong className="text-text">Événements</strong>{" "}
+        en bas de l&apos;écran.
+      </p>
+      <p className="mt-3 w-full text-sm font-medium leading-relaxed text-muted">
+        L&apos;aperçu change quand de nouvelles publications arrivent — rien
+        n&apos;est supprimé, le contenu est juste ailleurs.
       </p>
     </div>
   );
@@ -203,6 +231,8 @@ export function OnboardingSlideContent({ slide, communeName = "votre commune" }:
   switch (slide) {
     case "welcome":
       return <WelcomeSlide communeName={communeName} />;
+    case "accueil":
+      return <AccueilSlide />;
     case "annonces":
       return <AnnoncesSlide />;
     case "initiatives":

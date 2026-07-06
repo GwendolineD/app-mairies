@@ -179,6 +179,48 @@ export async function listAnnouncementMapItems(
   return (data ?? []) as AnnouncementMapItem[];
 }
 
+const ANNOUNCEMENT_AUTHOR_SELECT =
+  "*, author_membership:memberships!announcements_author_membership_id_fkey(address_street, address_city, address_postcode, address_lat, address_lng, profiles:profiles!memberships_profiles_user_id_fkey(first_name, last_name, display_name, avatar_url))";
+
+export async function listFeaturedAnnouncementForAccueil(
+  supabase: SupabaseClient,
+  communeId: string,
+  options: {
+    preferNeighborDemandToday?: boolean;
+    excludeMembershipId?: string;
+  } = {},
+): Promise<AnnouncementWithAuthor | null> {
+  if (options.preferNeighborDemandToday) {
+    const today = todayIso();
+
+    let query = supabase
+      .from("announcements")
+      .select(ANNOUNCEMENT_AUTHOR_SELECT)
+      .eq("commune_id", communeId)
+      .eq("type", "demande")
+      .eq("status", ANNOUNCEMENT_STATUS.ouverte)
+      .eq("target_date", today)
+      .is("suspended_at", null)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (options.excludeMembershipId) {
+      query = query.neq("author_membership_id", options.excludeMembershipId);
+    }
+
+    const { data } = await query;
+    const featured = (data ?? [])[0] as AnnouncementWithAuthor | undefined;
+    if (featured) return featured;
+  }
+
+  const { items } = await listAnnouncementsPage(
+    supabase,
+    { communeId },
+    { limit: 1 },
+  );
+  return items[0] ?? null;
+}
+
 export async function countNeighborAnnouncementsDueToday(
   supabase: SupabaseClient,
   communeId: string,
