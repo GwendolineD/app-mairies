@@ -110,32 +110,32 @@ npx shadcn@latest add [nom-composant]
 
 Personnaliser via **tokens `globals.css`** et **`className`** — ne pas dupliquer la logique shadcn dans les features.
 
-| Besoin              | Composant à importer                          |
-| ------------------- | --------------------------------------------- |
-| Bouton action       | `@/components/ui/button`                      |
-| CTA dégradé         | `@/components/ui/gradient-button`             |
-| Carte               | `@/components/ui/card`                        |
-| Modale              | `@/components/ui/modal` (wrapper → `Dialog`)  |
-| Champ + label       | `@/components/ui/form-field`                  |
-| Input seul          | `@/components/ui/input` ou `form-field`       |
-| Menu / popover      | `@/components/ui/dropdown-menu`, `popover`    |
+| Besoin         | Composant à importer                         |
+| -------------- | -------------------------------------------- |
+| Bouton action  | `@/components/ui/button`                     |
+| CTA dégradé    | `@/components/ui/gradient-button`            |
+| Carte          | `@/components/ui/card`                       |
+| Modale         | `@/components/ui/modal` (wrapper → `Dialog`) |
+| Champ + label  | `@/components/ui/form-field`                 |
+| Input seul     | `@/components/ui/input` ou `form-field`      |
+| Menu / popover | `@/components/ui/dropdown-menu`, `popover`   |
 
 Utilitaire `cn()` : `@/lib/utils` (réexport aussi `@/lib/utils/cn`).
 
 ### Boutons (`components/ui/button.tsx`, `gradient-button.tsx`)
 
-| Variante             | Style                                                              | Usage                                              |
-| -------------------- | ------------------------------------------------------------------ | -------------------------------------------------- |
-| **Primary**          | `gradient-hero`, texte blanc, `rounded-sm`                         | Action principale (1 par écran)                    |
-| **Secondary**        | `bg-surface border border-border`, texte `text-text`, `rounded-sm` | Actions secondaires                                |
-| **Ghost / Tertiary** | Texte seul, sans bordure, hover `bg-warm`                           | Annuler en modale ; liens d'action discrets        |
-| **Danger**           | `bg-coral text-white`, `rounded-sm`                                | Suppression, signalement                           |
+| Variante             | Style                                                              | Usage                                       |
+| -------------------- | ------------------------------------------------------------------ | ------------------------------------------- |
+| **Primary**          | `gradient-hero`, texte blanc, `rounded-sm`                         | Action principale (1 par écran)             |
+| **Secondary**        | `bg-surface border border-border`, texte `text-text`, `rounded-sm` | Actions secondaires                         |
+| **Ghost / Tertiary** | Texte seul, sans bordure, hover `bg-warm`                          | Annuler en modale ; liens d'action discrets |
+| **Danger**           | `bg-coral text-white`, `rounded-sm`                                | Suppression, signalement                    |
 
-| Taille (`size`) | Padding / typo                         | Usage                                              |
-| --------------- | -------------------------------------- | -------------------------------------------------- |
-| **default**     | `px-5 py-2`, `text-sm`                 | Actions principales d'écran, barres d'outils       |
-| **sm**          | `px-4 py-1.5`, `text-sm`               | Pieds de modale, actions secondaires compactes     |
-| **lg**          | `px-6 py-3`, `text-base`               | CTA marketing, hero                                |
+| Taille (`size`) | Padding / typo           | Usage                                          |
+| --------------- | ------------------------ | ---------------------------------------------- |
+| **default**     | `px-5 py-2`, `text-sm`   | Actions principales d'écran, barres d'outils   |
+| **sm**          | `px-4 py-1.5`, `text-sm` | Pieds de modale, actions secondaires compactes |
+| **lg**          | `px-6 py-3`, `text-base` | CTA marketing, hero                            |
 
 - Toujours `rounded-sm` (8px) pour les boutons d'action — coins discrets, alignés sur les champs de formulaire.
 - Pieds de modale (`Modal`) : **Annuler** → `variant="ghost"` `size="sm"` (sans bordure) ; action principale → `variant="primary"` `size="sm"`.
@@ -158,14 +158,14 @@ Utilitaire `cn()` : `@/lib/utils` (réexport aussi `@/lib/utils/cn`).
 <Card className="p-6">…</Card>
 ```
 
-- Par défaut : `rounded-3xl`, `bg-surface`, `shadow-card`, `border border-border/60`.
+- Par défaut : `rounded-xl`, `bg-surface`, `shadow-card`, `border border-border/60`.
 - Sous-composants shadcn disponibles : `CardHeader`, `CardTitle`, `CardContent`, `CardFooter`…
 - Espacement interne : multiples de 8 (16, 24, 32).
 
 ### Modales (`components/ui/modal.tsx` → shadcn `Dialog`)
 
 - Toujours `<Modal open onClose title>` — pas de `<div role="dialog">` maison.
-- Mobile : sheet bas (`rounded-t-3xl`) ; desktop : centrée.
+- Mobile : sheet bas (`rounded-t-xl`) ; desktop : centrée.
 - Pied de modale : `Annuler` en `Button variant="ghost" size="sm"` ; action de confirmation en `variant="primary" size="sm"`.
 
 ### Tags / badges (`components/ui/category-tag.tsx`)
@@ -262,7 +262,7 @@ Ne pas empiler plusieurs ombres sur le même élément.
 | `rounded-lg`   | 16  | Sous-cartes                                            |
 | `rounded-xl`   | 20  | Panneaux auth, blocs features                          |
 | `rounded-2xl`  | 24  | Images, placeholders                                   |
-| `rounded-3xl`  | 32  | Cartes principales                                     |
+| `rounded-xl`   | 20  | Cartes principales                                     |
 | `rounded-full` | —   | Tags, avatars, puces compactes                         |
 
 ### Grille 8px
@@ -340,7 +340,7 @@ Règle globale dans `globals.css` : liens, boutons actifs, checkbox/radio et lab
 1. Couleurs = tokens `globals.css` uniquement ?
 2. Typo = Manrope avec la bonne hiérarchie ?
 3. UI = composants **shadcn** (`Button`, `Card`, `Modal`/`Dialog`, `Input`, `FormField`) — pas d’éléments HTML bruts ?
-4. Cartes = `Card` + styles par défaut (`rounded-3xl`, `shadow-card`) ?
+4. Cartes = `Card` + styles par défaut (`rounded-xl`, `shadow-card`) ?
 5. Dégradé = sémantique (demande/offre/initiative/events/hero) ?
 6. Ton visuel = chaleureux, inclusif, pas corporate ?
 7. Assets manquants = `AssetPlaceholder`, pas de stock photo ?

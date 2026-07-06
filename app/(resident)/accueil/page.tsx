@@ -77,22 +77,23 @@ export default async function ResidentAccueilPage() {
         neighborDemandCount={neighborDemandCount}
       />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
-        <div className="flex flex-col gap-6">
-          <AccueilAnnouncementsHub
-            totalCount={totalAnnouncements}
-            demandeCount={demandeCount}
-            offreCount={offreCount}
-            featured={featuredAnnouncement}
-          />
-          <AccueilInitiativesHub
-            totalCount={initiativesRes.totalCount}
-            featured={featuredInitiative}
-          />
-        </div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-stretch">
+        <AccueilAnnouncementsHub
+          totalCount={totalAnnouncements}
+          demandeCount={demandeCount}
+          offreCount={offreCount}
+          featured={featuredAnnouncement}
+          className="lg:col-start-1 lg:row-start-1 lg:h-full"
+        />
+        <AccueilInitiativesHub
+          totalCount={initiativesRes.totalCount}
+          featured={featuredInitiative}
+          className="lg:col-start-1 lg:row-start-2"
+        />
         <AccueilEventsHub
           totalCount={eventsRes.totalCount}
           featured={featuredEventWithVolunteers}
+          className="lg:col-start-2 lg:row-start-1 lg:h-full"
         />
       </div>
 

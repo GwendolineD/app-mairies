@@ -36,7 +36,7 @@ function AccueilHubSection({
   return (
     <Card
       className={cn(
-        "flex flex-col gap-4 rounded-none border-0 bg-transparent p-0 shadow-none md:rounded-3xl md:border md:border-border/60 md:bg-surface md:p-5 md:shadow-card",
+        "flex flex-col gap-4 rounded-none border-0 bg-transparent p-0 shadow-none md:rounded-3xl md:border md:border-border/60 md:bg-surface md:p-5 md:shadow-card lg:rounded-xl",
         className,
       )}
     >
@@ -70,7 +70,7 @@ function AccueilHubSection({
         variant="secondary"
         size="default"
         href={ctaHref}
-        className="w-full py-3 font-bold"
+        className="mt-auto w-full py-3 font-bold"
       >
         {ctaLabel}
       </Button>
@@ -83,6 +83,7 @@ type AccueilAnnouncementsHubProps = {
   demandeCount: number;
   offreCount: number;
   featured: AnnouncementWithAuthor | null;
+  className?: string;
 };
 
 export function AccueilAnnouncementsHub({
@@ -90,6 +91,7 @@ export function AccueilAnnouncementsHub({
   demandeCount,
   offreCount,
   featured,
+  className,
 }: AccueilAnnouncementsHubProps) {
   const title =
     totalCount === 0
@@ -116,6 +118,7 @@ export function AccueilAnnouncementsHub({
       ctaLabel={ctaLabel}
       ctaHref={ROUTES.annonces.list}
       showPreviewHint={totalCount > 1}
+      className={className}
       preview={
         featured ? (
           <AnnouncementCard announcement={featured} layout="horizontal" />
@@ -135,11 +138,13 @@ export function AccueilAnnouncementsHub({
 type AccueilInitiativesHubProps = {
   totalCount: number;
   featured: InitiativeWithAuthor | null;
+  className?: string;
 };
 
 export function AccueilInitiativesHub({
   totalCount,
   featured,
+  className,
 }: AccueilInitiativesHubProps) {
   const title =
     totalCount === 0
@@ -160,7 +165,7 @@ export function AccueilInitiativesHub({
       ctaLabel={ctaLabel}
       ctaHref={ROUTES.initiatives.list}
       showPreviewHint={totalCount > 1}
-      className="mt-6 lg:mt-0"
+      className={className}
       preview={
         featured ? (
           <InitiativeCard initiative={featured} layout="horizontal" />
@@ -180,11 +185,13 @@ export function AccueilInitiativesHub({
 type AccueilEventsHubProps = {
   totalCount: number;
   featured: EventCardData | null;
+  className?: string;
 };
 
 export function AccueilEventsHub({
   totalCount,
   featured,
+  className,
 }: AccueilEventsHubProps) {
   const title =
     totalCount === 0
@@ -203,7 +210,7 @@ export function AccueilEventsHub({
       ctaLabel={ctaLabel}
       ctaHref={ROUTES.evenements.list}
       showPreviewHint={totalCount > 1}
-      className="mt-6 lg:mt-0 lg:h-full"
+      className={className}
       preview={
         featured ? (
           <EventCard event={featured} layout="horizontal" />
