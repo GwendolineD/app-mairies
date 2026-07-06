@@ -7,8 +7,8 @@ import {
   createInitiativeEventCategory,
   updateInitiativeEventCategory,
   deleteInitiativeEventCategory,
-  type InitiativeEventCategoryFormState,
 } from "@/lib/actions/initiative-event-categories";
+import type { InitiativeEventCategoryFormState } from "@/lib/actions/types";
 import type { InitiativeEventCategoryRow } from "@/lib/types";
 import { ALLOWED_ICON_NAMES, resolveIcon } from "@/lib/utils/lucide-icon-map";
 import { Button } from "@/components/ui/button";

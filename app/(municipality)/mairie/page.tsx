@@ -10,8 +10,31 @@ import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { StatCard } from "@/components/ui/stat-card";
 import { MairieTrialSection } from "@/components/features/mairie/mairie-trial-section";
-import { DashboardContentChart } from "@/components/features/mairie/dashboard-content-chart";
-import { DashboardMembersChart } from "@/components/features/mairie/dashboard-members-chart";
+import dynamic from "next/dynamic";
+
+const DashboardContentChart = dynamic(
+  () =>
+    import("@/components/features/mairie/dashboard-content-chart").then(
+      (m) => m.DashboardContentChart,
+    ),
+  {
+    loading: () => (
+      <div className="h-[280px] animate-pulse rounded-sm bg-warm" />
+    ),
+  },
+);
+
+const DashboardMembersChart = dynamic(
+  () =>
+    import("@/components/features/mairie/dashboard-members-chart").then(
+      (m) => m.DashboardMembersChart,
+    ),
+  {
+    loading: () => (
+      <div className="h-[280px] animate-pulse rounded-sm bg-warm" />
+    ),
+  },
+);
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
 import {

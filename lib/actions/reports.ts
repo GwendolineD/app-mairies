@@ -1,24 +1,21 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { logAudit } from "@/lib/audit/log";
 import { requireActiveMembership } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { sendTemplatedEmail } from "@/lib/email";
 import { getAppUrl } from "@/lib/utils/app-url";
-import { formatShortDate } from "@/lib/utils/format-date";
+import { formatShortDate } from "@/lib/datetime";
+import { CONTEXT_TYPE_LABELS } from "@/lib/constants/context-types";
+import type { ConversationContextType } from "@/lib/types";
 import { reportSchema, userReportSchema } from "@/lib/validations/schemas";
 
 export type ContentReportActionState = {
   error?: string;
   success?: boolean;
 } | undefined;
-
-const CONTEXT_TYPE_LABELS: Record<string, string> = {
-  announcement: "Annonce",
-  initiative: "Initiative",
-  event: "Événement",
-};
 
 export async function submitContentReport(
   _state: ContentReportActionState,
@@ -62,6 +59,16 @@ export async function submitContentReport(
     console.error("[reports] Failed to send notification emails:", err);
   });
 
+  void logAudit({
+    action: "moderation.report_content",
+    category: "moderation",
+    userId: ctx.userId,
+    targetType: parsed.data.contextType,
+    targetId: parsed.data.contextId,
+    communeId: ctx.activeMembership!.commune_id,
+    metadata: { reason: parsed.data.reason },
+  });
+
   revalidatePath("/", "layout");
   return { success: true };
 }
@@ -88,6 +95,17 @@ export async function submitUserReport(formData: FormData): Promise<void> {
   });
 
   if (error) return;
+
+  void logAudit({
+    action: "moderation.report_user",
+    category: "moderation",
+    userId: ctx.userId,
+    targetType: "user",
+    targetId: parsed.data.reportedUserId,
+    communeId: ctx.activeMembership!.commune_id,
+    metadata: { reason: parsed.data.reason },
+  });
+
   revalidatePath(ROUTES.mairie.signalements);
   revalidatePath(ROUTES.backoffice.admin);
 }
@@ -116,7 +134,8 @@ async function sendReportNotificationEmails(
     .maybeSingle();
 
   const contentTitle = content?.title ?? "Contenu signalé";
-  const contentTypeLabel = CONTEXT_TYPE_LABELS[contextType] ?? contextType;
+  const contentTypeLabel =
+    CONTEXT_TYPE_LABELS[contextType as ConversationContextType] ?? contextType;
   const reportDate = formatShortDate(new Date().toISOString());
 
   // Fetch commune name
@@ -151,7 +170,9 @@ async function sendReportNotificationEmails(
         reason,
         report_date: reportDate,
         moderation_url: `${appUrl}${ROUTES.mairie.signalements}`,
-      }).catch(() => {});
+      }).catch((err) =>
+        console.error("[reports] Failed to send staff notification email:", err),
+      );
     }
   }
 
@@ -177,7 +198,9 @@ async function sendReportNotificationEmails(
         reason,
         report_date: reportDate,
         moderation_url: `${appUrl}${ROUTES.backoffice.signalements}`,
-      }).catch(() => {});
+      }).catch((err) =>
+        console.error("[reports] Failed to send admin notification email:", err),
+      );
     }
   }
 }

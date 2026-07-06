@@ -22,7 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Profile } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 const HEADER_TRIGGER_CLASS =
   "h-11 max-w-[min(100vw-10rem,220px)] shrink-0 gap-2 rounded-xl px-3 font-semibold";

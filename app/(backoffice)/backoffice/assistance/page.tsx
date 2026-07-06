@@ -1,10 +1,11 @@
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
+import { LinkifiedText } from "@/components/ui/linkified-text";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
 import type { SupportRequestStatus } from "@/lib/types";
-import { formatShortDate } from "@/lib/utils/format-date";
+import { formatShortDate } from "@/lib/datetime";
 import { BackofficeSupportActions } from "./_components/backoffice-support-actions";
 
 const STATUS_LABELS: Record<
@@ -80,7 +81,10 @@ export default async function BackofficeAssistancePage() {
 
                 <p className="text-sm font-semibold text-text">{request.subject}</p>
 
-                <p className="whitespace-pre-wrap text-sm text-muted">{request.message}</p>
+                <LinkifiedText
+                  text={request.message}
+                  className="whitespace-pre-wrap text-sm text-muted"
+                />
 
                 <p className="text-xs text-subtle">
                   {name} · {request.user_email}

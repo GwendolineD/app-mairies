@@ -1,0 +1,79 @@
+import { unstable_cache } from "next/cache";
+import { createClient } from "@supabase/supabase-js";
+import { isCloudinaryDeliveryUrl } from "@/lib/services/cloudinary";
+
+export const PLATFORM_SETTINGS_CACHE_TAG = "platform-settings";
+
+function createAnonClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
+}
+
+function parseErrorIllustrationUrls(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(
+    (entry): entry is string =>
+      typeof entry === "string" && isCloudinaryDeliveryUrl(entry),
+  );
+}
+
+export const getErrorIllustrationUrls = unstable_cache(
+  async (): Promise<string[]> => {
+    const supabase = createAnonClient();
+    const { data, error } = await supabase
+      .from("platform_settings")
+      .select("error_illustration_urls")
+      .eq("id", 1)
+      .maybeSingle();
+
+    if (error) {
+      console.error("[getErrorIllustrationUrls] DB error:", error);
+      return [];
+    }
+
+    return parseErrorIllustrationUrls(data?.error_illustration_urls);
+  },
+  ["platform-settings-error-illustrations"],
+  { tags: [PLATFORM_SETTINGS_CACHE_TAG], revalidate: 3600 },
+);
+
+export const getNotFoundIllustrationUrl = unstable_cache(
+  async (): Promise<string | null> => {
+    const supabase = createAnonClient();
+    const { data, error } = await supabase
+      .from("platform_settings")
+      .select("not_found_illustration_url")
+      .eq("id", 1)
+      .maybeSingle();
+
+    if (error) {
+      console.error("[getNotFoundIllustrationUrl] DB error:", error);
+      return null;
+    }
+
+    const url = data?.not_found_illustration_url;
+    if (typeof url !== "string" || !isCloudinaryDeliveryUrl(url)) {
+      return null;
+    }
+
+    return url;
+  },
+  ["platform-settings-not-found-illustration"],
+  { tags: [PLATFORM_SETTINGS_CACHE_TAG], revalidate: 3600 },
+);
+
+export const getPlatformSupportEmail = unstable_cache(
+  async (): Promise<string> => {
+    const supabase = createAnonClient();
+    const { data } = await supabase
+      .from("platform_settings")
+      .select("support_email")
+      .eq("id", 1)
+      .maybeSingle();
+    return data?.support_email ?? "contact@tous-voisins.fr";
+  },
+  ["platform-support-email"],
+  { tags: [PLATFORM_SETTINGS_CACHE_TAG], revalidate: 3600 },
+);

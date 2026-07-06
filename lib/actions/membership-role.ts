@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { logAudit } from "@/lib/audit/log";
 import { getSessionContext } from "@/lib/auth/session";
 import {
   COMMUNE_STAFF_ROLES,
@@ -119,6 +120,7 @@ export async function changeMembershipRole(
   }
 
   const { membership, canSetPlatformAdmin } = authResult;
+  const actorUserId = authResult.actorUserId;
   const supabase = await createClient();
 
   const lastMayorError = await assertNotLastMayorDemotion(
@@ -172,5 +174,23 @@ export async function changeMembershipRole(
   }
 
   revalidateMembershipRolePaths(membership.user_id, membership.commune_id);
+
+  void logAudit({
+    action: "admin.change_role",
+    category: "admin",
+    severity: "critical",
+    userId: actorUserId,
+    targetType: "membership",
+    targetId: membershipId,
+    communeId: membership.commune_id,
+    metadata: {
+      old_role: membership.role,
+      new_role: newRole,
+      ...(isPlatformAdmin !== undefined
+        ? { is_platform_admin: isPlatformAdmin }
+        : {}),
+    },
+  });
+
   return { success: true };
 }

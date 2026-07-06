@@ -5,7 +5,7 @@ import { ChevronDown } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Input } from "@/components/ui/form-field";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 import type { BanFeature } from "@/lib/ban/client";
 
 type Props = {
@@ -60,6 +60,8 @@ export function BanAutocomplete({
     null,
   );
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const blurTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const mountedRef = useRef(true);
   const listRef = useRef<HTMLUListElement>(null);
   const isFocusedRef = useRef(false);
 
@@ -82,8 +84,11 @@ export function BanAutocomplete({
   }, [value]);
 
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
+      mountedRef.current = false;
       clearTimeout(debounceRef.current);
+      clearTimeout(blurTimeoutRef.current);
     };
   }, []);
 
@@ -127,6 +132,7 @@ export function BanAutocomplete({
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
       const results = await fetchSuggestions(text);
+      if (!mountedRef.current) return;
       setSuggestions(results);
       setOpen(results.length > 0);
       setActiveIndex(-1);
@@ -136,6 +142,7 @@ export function BanAutocomplete({
   async function handleFocus() {
     if (query.trim().length >= 3) {
       const results = await fetchSuggestions(query);
+      if (!mountedRef.current) return;
       setSuggestions(results);
       setOpen(results.length > 0);
       setActiveIndex(-1);
@@ -283,7 +290,8 @@ export function BanAutocomplete({
             if (value !== undefined && value !== query) {
               setQuery(value);
             }
-            setTimeout(() => closeList(), 150);
+            clearTimeout(blurTimeoutRef.current);
+            blurTimeoutRef.current = setTimeout(() => closeList(), 150);
           }}
           onKeyDown={handleKeyDown}
           className={cn(

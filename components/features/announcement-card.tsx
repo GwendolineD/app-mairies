@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Calendar, MapPin } from "lucide-react";
+import { CloudImage } from "@/components/ui/cloud-image";
 import { ROUTES } from "@/lib/constants/routes";
 import {
   getCategoryColorHex,
@@ -11,9 +12,10 @@ import { CategoryTag } from "@/components/ui/category-tag";
 import { AnnouncementTypePastille } from "@/components/ui/announcement-type-pastille";
 import { cn } from "@/lib/utils/cn";
 import { formatDisplayName } from "@/lib/utils/display-name";
-import { formatRelativeTime } from "@/lib/utils/date";
-import { formatShortDate } from "@/lib/utils/format-date";
+import { formatRelativeTime } from "@/lib/datetime";
+import { formatShortDate } from "@/lib/datetime";
 import { formatAddressLabel, formatAddressLines } from "@/lib/utils/format-address";
+import { ContentSuspendedBadge } from "@/components/features/content-suspended-indicator";
 
 type Props = {
   announcement: AnnouncementWithAuthor;
@@ -120,12 +122,7 @@ export function AnnouncementCard({
         >
           <div className="relative size-28 shrink-0 overflow-hidden">
             {a.photo_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={a.photo_url}
-                alt=""
-                className="size-full object-cover"
-              />
+              <CloudImage src={a.photo_url} alt="" />
             ) : (
               <div className="flex size-full items-center justify-center bg-warm text-[10px] font-semibold text-muted">
                 Annonce
@@ -133,6 +130,7 @@ export function AnnouncementCard({
             )}
           </div>
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col p-2">
+            {a.suspended_at ? <ContentSuspendedBadge /> : null}
             <div className="flex items-center gap-2">
               <AnnouncementTypePastille
                 type={a.type}
@@ -158,12 +156,13 @@ export function AnnouncementCard({
             <div className="mt-auto flex items-center justify-between gap-1">
               <div className="flex min-w-0 items-center gap-1">
                 {a.author_membership?.profiles?.avatar_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={a.author_membership.profiles.avatar_url}
-                    alt=""
-                    className="size-4 shrink-0 rounded-full object-cover"
-                  />
+                  <div className="relative size-4 shrink-0 overflow-hidden rounded-full">
+                    <CloudImage
+                      src={a.author_membership.profiles.avatar_url}
+                      alt=""
+                      sizes="16px"
+                    />
+                  </div>
                 ) : (
                   <div className="flex size-4 shrink-0 items-center justify-center rounded-full bg-warm text-[8px] font-bold text-muted">
                     {resolveAuthorInitials(a.author_membership?.profiles ?? null)}
@@ -194,23 +193,19 @@ export function AnnouncementCard({
           highlightRing,
         )}
       >
-        <div className="relative">
+        <div className="relative aspect-[16/10] w-full overflow-hidden">
           {a.photo_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={a.photo_url}
-              alt=""
-              className="aspect-[16/10] w-full object-cover"
-            />
+            <CloudImage src={a.photo_url} alt="" />
           ) : (
-            <div className="flex aspect-[16/10] w-full items-center justify-center bg-warm text-[11px] font-semibold text-muted">
+            <div className="flex size-full items-center justify-center bg-warm text-[11px] font-semibold text-muted">
               Annonce
             </div>
           )}
           <AnnouncementTypePastille type={a.type} className="absolute left-2 top-2" />
         </div>
 
-        <div className="flex flex-1 flex-col gap-1 px-2.5 pt-2.5 pb-2.5">
+        <div className="relative flex flex-1 flex-col gap-1 px-2.5 pt-2.5 pb-2.5">
+          {a.suspended_at ? <ContentSuspendedBadge /> : null}
           <div className="flex items-center justify-between gap-2">
             <CategoryTag
               label={getCategoryLabel(a.category_slug)}
@@ -238,12 +233,13 @@ export function AnnouncementCard({
 
           <div className="mt-auto flex items-center justify-end gap-2">
             {a.author_membership?.profiles?.avatar_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={a.author_membership.profiles.avatar_url}
-                alt=""
-                className="size-6 shrink-0 rounded-full object-cover"
-              />
+              <div className="relative size-6 shrink-0 overflow-hidden rounded-full">
+                <CloudImage
+                  src={a.author_membership.profiles.avatar_url}
+                  alt=""
+                  sizes="24px"
+                />
+              </div>
             ) : (
               <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-warm text-[10px] font-bold text-muted">
                 {resolveAuthorInitials(a.author_membership?.profiles ?? null)}
@@ -272,16 +268,11 @@ export function AnnouncementMapCard({
 
   return (
     <div className="flex w-[260px] flex-col gap-2">
-      <div className="relative">
+      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl">
         {a.photo_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={a.photo_url}
-            alt=""
-            className="aspect-[4/3] w-full rounded-2xl object-cover"
-          />
+          <CloudImage src={a.photo_url} alt="" />
         ) : (
-          <div className="flex aspect-[4/3] w-full items-center justify-center rounded-2xl bg-warm text-xs font-semibold text-muted">
+          <div className="flex size-full items-center justify-center bg-warm text-xs font-semibold text-muted">
             Annonce
           </div>
         )}

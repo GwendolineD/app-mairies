@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, CalendarDays, ExternalLink, Megaphone, Sparkles } from "lucide-react";
 import { ConversationThread } from "@/components/features/conversation-thread";
 import { ROUTES } from "@/lib/constants/routes";
@@ -236,10 +237,11 @@ export async function ConversationPane({
 function ContextPhoto({ url, title }: { url: string | null; title: string | null }) {
   if (url) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
+      <Image
         src={url}
         alt=""
+        width={40}
+        height={40}
         className="block size-10 shrink-0 rounded-sm border border-border object-cover"
       />
     );
@@ -254,10 +256,11 @@ function ContextPhoto({ url, title }: { url: string | null; title: string | null
 function SmallAvatar({ name, url }: { name: string; url: string | null }) {
   if (url) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
+      <Image
         src={url}
         alt=""
+        width={20}
+        height={20}
         className="block size-5 shrink-0 rounded-full border border-border object-cover"
       />
     );

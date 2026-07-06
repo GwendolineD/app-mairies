@@ -7,6 +7,17 @@ import {
   SUBJECT_MAX,
   SUBJECT_MIN,
 } from "@/lib/constants/support-request";
+import { isCloudinaryDeliveryUrl } from "@/lib/services/cloudinary";
+
+const optionalCloudinaryPhotoUrl = z.union([
+  z.literal(""),
+  z
+    .string()
+    .url()
+    .refine(isCloudinaryDeliveryUrl, {
+      message: "URL d'image invalide.",
+    }),
+]);
 
 export const passwordSchema = z
   .string()
@@ -88,7 +99,7 @@ export const announcementSchema = z.object({
     .string()
     .optional()
     .transform((v) => (v?.trim() ? v : undefined)),
-  photoUrl: z.string().url().optional().or(z.literal("")),
+  photoUrl: optionalCloudinaryPhotoUrl.optional(),
   addressStreet: z.string().trim().min(1, "Rue requise"),
   addressCity: z.string().trim().min(1, "Ville requise"),
   addressCitycode: z.string().trim().min(1, "Commune invalide"),
@@ -107,7 +118,7 @@ export const initiativeSchema = z.object({
   categorySlug: z.enum(INITIATIVE_CATEGORY_SLUGS),
   title: z.string().min(3).max(70),
   description: z.string().max(1000).optional(),
-  photoUrl: z.string().url().optional().or(z.literal("")),
+  photoUrl: optionalCloudinaryPhotoUrl.optional(),
   addressStreet: z.string().max(500).optional(),
   addressCity: z.string().max(200).optional(),
   addressPostcode: z.string().max(10).optional(),
@@ -146,7 +157,7 @@ export const eventModalSchema = z.object({
         .min(1, "Description requise")
         .max(3000, "Description trop longue (3000 caractères max.)"),
     ),
-  photoUrl: z.string().url().optional().or(z.literal("")),
+  photoUrl: optionalCloudinaryPhotoUrl.optional(),
   startsAt: z.string().min(1, "Date et heure de début requises"),
   endsAt: z.string().min(1, "Date et heure de fin requises"),
   volunteersNeeded: z.coerce.number().int().min(0).nullable().optional(),
@@ -183,7 +194,7 @@ export const addressUpdateSchema = z.object({
 });
 
 export const avatarUpdateSchema = z.object({
-  avatarUrl: z.string().url().optional().or(z.literal("")),
+  avatarUrl: optionalCloudinaryPhotoUrl.optional(),
 });
 
 export const emailChangeSchema = z.object({

@@ -4,6 +4,7 @@ import {
   AdminMobileBottomNav,
 } from "@/components/features/admin-shell/admin-nav";
 import { AdminSidebar } from "@/components/features/admin-shell/admin-sidebar";
+import { InAppHistoryTracker } from "@/components/features/in-app-history-tracker";
 import type { AdminNavItem } from "@/lib/constants/routes";
 import { ROUTES } from "@/lib/constants/routes";
 
@@ -40,6 +41,7 @@ export function AdminShell({
         />
 
         <main className="min-w-0 flex-1 overflow-y-auto bg-surface px-5 py-4 pb-28 md:px-6 md:py-6 md:pb-6 lg:px-8">
+          <InAppHistoryTracker />
           {children}
         </main>
       </div>

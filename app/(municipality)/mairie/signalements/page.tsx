@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
-import { formatCompactShortDate } from "@/lib/utils/format-date";
+import { formatCompactShortDate } from "@/lib/datetime";
 import { formatDisplayName } from "@/lib/utils/display-name";
 import {
   buildReportListQuery,

@@ -8,8 +8,8 @@ import {
   createAnnouncementCategory,
   updateAnnouncementCategory,
   deleteAnnouncementCategory,
-  type CategoryFormState,
 } from "@/lib/actions/announcement-categories";
+import type { CategoryFormState } from "@/lib/actions/types";
 import type { AnnouncementCategoryRow } from "@/lib/types";
 import { ALLOWED_ICON_NAMES, resolveIcon } from "@/lib/utils/lucide-icon-map";
 import { Button } from "@/components/ui/button";

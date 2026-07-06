@@ -4,12 +4,7 @@ import { ROUTES } from "@/lib/constants/routes";
 import { CONTENT_CATEGORIES } from "@/lib/constants/content-categories";
 import { BackLink } from "@/components/ui/back-link";
 import { Card } from "@/components/ui/card";
-
-// Wrapper to satisfy form action signature
-async function handleCreateInitiative(formData: FormData): Promise<void> {
-  "use server";
-  await createInitiative(formData);
-}
+import { InitiativeEventScheduleFields } from "@/components/features/initiatives/initiative-event-schedule-fields";
 import { FormField, Input, Select, Textarea } from "@/components/ui/form-field";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { PageHeading } from "@/components/ui/page-heading";
@@ -61,12 +56,7 @@ export default function NouvelleInitiativePage() {
             <legend className="px-2 text-[10px] font-semibold uppercase text-muted">
               Si ponctuelle
             </legend>
-            <FormField label="Début" className="text-xs">
-              <Input type="datetime-local" name="singleStartsAt" className="px-3 py-2 text-xs" />
-            </FormField>
-            <FormField label="Fin" className="text-xs">
-              <Input type="datetime-local" name="singleEndsAt" className="px-3 py-2 text-xs" />
-            </FormField>
+            <InitiativeEventScheduleFields />
           </fieldset>
           <FormField label="Lieu de rendez-vous (optionnel)">
             <Input name="locationLabel" placeholder="Ex. Parking du Pont Neuf" />

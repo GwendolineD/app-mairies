@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { todayParisYmd } from "@/lib/datetime";
+
 export type SubscriptionPeriod = {
   id: string;
   starts_at: string;
@@ -94,7 +96,7 @@ export async function getCommuneSubscriptionInfo(
     }),
   );
 
-  const now = new Date().toISOString().slice(0, 10);
+  const now = todayParisYmd();
   const hasActiveAutoRenew = periods.some(
     (p) => p.ends_at >= now && p.auto_renew,
   );

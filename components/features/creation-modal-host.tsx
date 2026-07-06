@@ -81,6 +81,14 @@ export function CreationModalHost({
     stripCreateFromUrl();
   }, [closeModals, stripCreateFromUrl]);
 
+  const handleAnnouncementCreated = useCallback(
+    (id: string) => {
+      router.push(ROUTES.annonces.detail(id));
+      closeModals();
+    },
+    [closeModals, router],
+  );
+
   const handleInitiativeCreated = useCallback(
     (id: string) => {
       router.push(ROUTES.initiatives.detail(id));
@@ -115,6 +123,7 @@ export function CreationModalHost({
       <CreateAnnouncementModal
         open={announcementOpen}
         onClose={handleClose}
+        onCreated={handleAnnouncementCreated}
         communeId={communeId}
         membershipAddress={membershipAddress}
         presetType={announcementPresetType}

@@ -18,7 +18,7 @@ import {
 import type { BanFeature } from "@/lib/ban/client";
 import { searchMunicipalities } from "@/lib/ban/client";
 import { formatMunicipalityDisplay } from "@/lib/ban/display";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 type Props = {
   label: string;

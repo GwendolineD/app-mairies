@@ -8,7 +8,7 @@ import { ILLUSTRATIONS } from "@/lib/constants/illustrations";
 import { getAnnouncementTypeConfig } from "@/lib/constants/announcement-types";
 import { ROUTES } from "@/lib/constants/routes";
 import { buildAnnouncementListQuery } from "@/lib/utils/search-params";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 import { StylizedUnderline } from "@/components/ui/stylized-underline";
 import { AnnouncementTypeIcon } from "@/components/ui/announcement-type-icon";
 import { useCreationModals } from "@/components/features/creation-modal-context";
@@ -49,7 +49,7 @@ export function AccueilHero({ userFirstName, neighborDemandCount }: Props) {
   const hasNeighborDemands = neighborDemandCount > 0;
 
   return (
-    <section className="relative min-h-[200px] overflow-hidden rounded-2xl gradient-hero shadow-card md:min-h-[220px]">
+    <section className="relative min-h-[160px] overflow-hidden rounded-2xl gradient-hero shadow-card md:min-h-[220px]">
       {heroUrl ? (
         <div className="pointer-events-none absolute -bottom-6 right-0 h-[85%] w-[min(72%,20rem)] overflow-hidden md:-top-20 md:bottom-auto md:h-[150%] md:w-[min(76%,34rem)] lg:-top-24">
           <div className="relative h-full w-full origin-bottom-right scale-[1.05] md:origin-top-right md:scale-[1.12]">
@@ -64,7 +64,7 @@ export function AccueilHero({ userFirstName, neighborDemandCount }: Props) {
           </div>
         </div>
       ) : null}
-      <div className="relative z-10 flex min-h-[200px] flex-col justify-between p-5 md:min-h-[220px] lg:p-8">
+      <div className="relative z-10 flex min-h-[160px] flex-col gap-5 p-5 md:min-h-[220px] lg:p-8">
         <div className="max-w-[min(70%,11rem)] space-y-2 md:max-w-[min(100%,32rem)] md:space-y-3 lg:max-w-[min(55%,36rem)]">
           <p className="text-xs font-semibold text-white/90 md:text-sm">
             Bonjour {userFirstName}
@@ -132,7 +132,7 @@ export function AccueilQuickActions() {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs font-bold uppercase tracking-widest text-muted">
+      <p className="text-xs font-bold tracking-wide text-muted">
         Participer en 1 clic
       </p>
       <div className="grid grid-cols-3 gap-2 md:gap-3">
@@ -168,27 +168,5 @@ export function AccueilQuickActions() {
         />
       </div>
     </div>
-  );
-}
-
-export function AccueilSectionLink({
-  href,
-  label,
-  size = "default",
-}: {
-  href: string;
-  label: string;
-  size?: "default" | "sm";
-}) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        "font-bold text-coral hover:underline",
-        size === "sm" ? "text-[10px] md:text-xs" : "text-sm",
-      )}
-    >
-      {label} →
-    </Link>
   );
 }

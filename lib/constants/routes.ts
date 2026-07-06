@@ -67,6 +67,7 @@ export const ROUTES = {
     legal: "/backoffice/legal",
     legalDetail: (slug: string) => `/backoffice/legal/${slug}`,
     communication: "/backoffice/communication",
+    audit: "/backoffice/audit",
   },
   legal: {
     cgu: "/legal/cgu",
@@ -111,7 +112,8 @@ export type AdminNavIcon =
   | "sparkles"
   | "file-text"
   | "life-buoy"
-  | "megaphone";
+  | "megaphone"
+  | "shield-check";
 
 export type AdminNavItem = {
   href: string;
@@ -146,4 +148,5 @@ export const BACKOFFICE_NAV: readonly AdminNavItem[] = [
   { href: ROUTES.backoffice.legal, label: "Documents juridiques", icon: "file-text" },
   { href: ROUTES.backoffice.communication, label: "Communication", icon: "megaphone" },
   { href: ROUTES.backoffice.settings, label: "Réglages", icon: "settings" },
+  { href: ROUTES.backoffice.audit, label: "Audit logs", icon: "shield-check" },
 ];

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireCommuneStaff } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
-import { formatDay } from "@/lib/utils/date";
+import { formatDay } from "@/lib/datetime";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";

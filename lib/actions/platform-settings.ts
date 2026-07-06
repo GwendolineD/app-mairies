@@ -1,46 +1,107 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
+import { z } from "zod";
+import { logAudit } from "@/lib/audit/log";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
+import {
+  getErrorIllustrationUrls,
+  getPlatformSupportEmail as getCachedPlatformSupportEmail,
+  PLATFORM_SETTINGS_CACHE_TAG,
+} from "@/lib/queries/platform-settings";
+import { isCloudinaryDeliveryUrl } from "@/lib/services/cloudinary";
 import { createClient } from "@/lib/supabase/server";
 
-type UpdateInput = {
-  supportEmail: string;
-};
+const cloudinaryUrlSchema = z
+  .string()
+  .url("URL invalide.")
+  .refine(isCloudinaryDeliveryUrl, {
+    message: "URL Cloudinary invalide (domaine attendu : res.cloudinary.com).",
+  });
+
+const updatePlatformSettingsSchema = z.object({
+  supportEmail: z.string().email("Email invalide."),
+  errorIllustrationUrls: z
+    .array(cloudinaryUrlSchema)
+    .max(20, "Maximum 20 illustrations."),
+  notFoundIllustrationUrl: z
+    .union([z.literal(""), cloudinaryUrlSchema])
+    .optional(),
+});
+
+type UpdateInput = z.infer<typeof updatePlatformSettingsSchema>;
+
+function formatPlatformSettingsDbError(message: string, code?: string): string {
+  if (
+    code === "42501" ||
+    message.toLowerCase().includes("permission denied")
+  ) {
+    return "Vous n'avez pas les droits pour modifier ces réglages.";
+  }
+  return "Erreur lors de l'enregistrement. Réessayez dans un instant.";
+}
 
 export async function updatePlatformSettings(
   input: UpdateInput,
-): Promise<{ success: boolean; error?: string }> {
-  await requirePlatformAdmin();
+): Promise<{ success: boolean; error?: string; fieldErrors?: Record<string, string> }> {
+  const { userId } = await requirePlatformAdmin();
 
-  if (!input.supportEmail || !input.supportEmail.includes("@")) {
-    return { success: false, error: "Email invalide." };
+  const parsed = updatePlatformSettingsSchema.safeParse(input);
+  if (!parsed.success) {
+    const fieldErrors: Record<string, string> = {};
+    for (const issue of parsed.error.issues) {
+      const field = issue.path.join(".") || "form";
+      fieldErrors[field] = issue.message;
+    }
+    return { success: false, error: "Données invalides.", fieldErrors };
   }
+
+  const { supportEmail, errorIllustrationUrls, notFoundIllustrationUrl } =
+    parsed.data;
 
   const supabase = await createClient();
   const { error } = await supabase
     .from("platform_settings")
     .update({
-      support_email: input.supportEmail,
+      support_email: supportEmail,
+      error_illustration_urls: errorIllustrationUrls,
+      not_found_illustration_url:
+        notFoundIllustrationUrl && notFoundIllustrationUrl.length > 0
+          ? notFoundIllustrationUrl
+          : null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", 1);
 
   if (error) {
-    return { success: false, error: error.message };
+    return {
+      success: false,
+      error: formatPlatformSettingsDbError(error.message, error.code),
+    };
   }
 
+  updateTag(PLATFORM_SETTINGS_CACHE_TAG);
   revalidatePath(ROUTES.backoffice.settings);
+
+  void logAudit({
+    action: "admin.update_platform_settings",
+    category: "admin",
+    severity: "warning",
+    userId,
+  });
+
   return { success: true };
 }
 
 export async function getPlatformSupportEmail(): Promise<string> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("platform_settings")
-    .select("support_email")
-    .eq("id", 1)
-    .single();
-  return data?.support_email ?? "contact@tous-voisins.fr";
+  return getCachedPlatformSupportEmail();
+}
+
+export async function getRandomErrorIllustration(): Promise<string | null> {
+  const urls = await getErrorIllustrationUrls();
+  const validUrls = urls.filter(isCloudinaryDeliveryUrl);
+  if (validUrls.length === 0) return null;
+  const index = Math.floor(Math.random() * validUrls.length);
+  return validUrls[index] ?? null;
 }

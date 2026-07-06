@@ -10,32 +10,15 @@ import {
 } from "@/lib/actions/messages";
 import { Button } from "@/components/ui/button";
 import { FormField, Textarea } from "@/components/ui/form-field";
+import { LinkifiedText } from "@/components/ui/linkified-text";
 import { ROUTES } from "@/lib/constants/routes";
 import type { MessageRow } from "@/lib/types";
+import {
+  formatChatDateKey,
+  formatChatDayLabel,
+  formatChatTime,
+} from "@/lib/datetime";
 import { cn } from "@/lib/utils/cn";
-
-function getDateKey(iso: string): string {
-  return new Date(iso).toLocaleDateString("fr-FR", { dateStyle: "short" });
-}
-
-function formatDateLabel(iso: string): string {
-  const date = new Date(iso);
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  if (date.toDateString() === today.toDateString()) {
-    return "Aujourd'hui";
-  }
-  if (date.toDateString() === yesterday.toDateString()) {
-    return "Hier";
-  }
-  return date.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
-}
-
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-}
 
 type GroupedMessages = { dateKey: string; dateLabel: string; messages: MessageRow[] }[];
 
@@ -90,10 +73,10 @@ export function ConversationThread({
     const groups: GroupedMessages = [];
     let currentKey = "";
     for (const m of all) {
-      const key = getDateKey(m.created_at);
+      const key = formatChatDateKey(m.created_at);
       if (key !== currentKey) {
         currentKey = key;
-        groups.push({ dateKey: key, dateLabel: formatDateLabel(m.created_at), messages: [m] });
+        groups.push({ dateKey: key, dateLabel: formatChatDayLabel(m.created_at), messages: [m] });
       } else {
         groups[groups.length - 1].messages.push(m);
       }
@@ -181,14 +164,22 @@ export function ConversationThread({
                             : "rounded-md rounded-bl-none bg-warm text-text",
                         )}
                       >
-                        <p className="whitespace-pre-wrap wrap-break-word">{m.body}</p>
+                        <LinkifiedText
+                          text={m.body}
+                          className="whitespace-pre-wrap wrap-break-word"
+                          linkClassName={
+                            mine
+                              ? "text-white underline"
+                              : "text-purple underline"
+                          }
+                        />
                         <p
                           className={cn(
                             "mt-0.5 text-right text-[10px]",
                             mine ? "text-white/70" : "text-muted",
                           )}
                         >
-                          {formatTime(m.created_at)}
+                          {formatChatTime(m.created_at)}
                         </p>
                       </div>
                     </li>

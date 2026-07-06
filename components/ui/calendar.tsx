@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DayPicker, type DayPickerProps, type DropdownProps } from "react-day-picker";
 import { fr } from "date-fns/locale";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 import { buttonVariants } from "@/components/ui/button";
 import {
   Select,

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils/cn";
-import { formatShortDate } from "@/lib/utils/format-date";
+import { formatShortDate, todayParisYmd } from "@/lib/datetime";
 import { formatEuros } from "@/lib/utils/format-currency";
 import { Button } from "@/components/ui/button";
 import { CancellationRequestModal } from "./cancellation-request-modal";
@@ -44,7 +44,7 @@ export function SubscriptionPeriodsTable({
     null,
   );
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayParisYmd();
   const modalPeriod = periods.find((p) => p.id === modalSubscriptionId);
 
   if (periods.length === 0) {

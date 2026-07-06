@@ -26,7 +26,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import type { Membership, Profile } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 const USER_MENU_ITEM_ICONS: Record<string, LucideIcon> = {
   "Mon profil": User,

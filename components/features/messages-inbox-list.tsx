@@ -9,6 +9,7 @@ import {
   permanentlyDeleteConversation,
 } from "@/lib/actions/messages";
 import { ROUTES } from "@/lib/constants/routes";
+import { CONTEXT_TYPE_LABELS } from "@/lib/constants/context-types";
 import type {
   ConversationContextType,
   ConversationInboxItem,
@@ -22,12 +23,6 @@ const CONTEXT_ICON: Record<ConversationContextType, typeof MessageCircle> = {
   announcement: Megaphone,
   initiative: Sparkles,
   event: CalendarDays,
-};
-
-const CONTEXT_LABEL: Record<ConversationContextType, string> = {
-  announcement: "Annonce",
-  initiative: "Initiative",
-  event: "Événement",
 };
 
 type Props = {
@@ -99,7 +94,7 @@ export function MessagesInboxList({
               ? CONTEXT_ICON[conv.context_type]
               : MessageCircle;
             const contextLabel = conv.context_type
-              ? CONTEXT_LABEL[conv.context_type]
+              ? CONTEXT_TYPE_LABELS[conv.context_type]
               : "Message";
             const otherName = conv.other_display_name ?? "Voisin·e";
             const preview = conv.last_message_preview ?? "Pas encore de message";

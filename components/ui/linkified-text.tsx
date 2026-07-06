@@ -4,9 +4,14 @@ import { splitTextWithUrls } from "@/lib/utils/linkify-text";
 type Props = {
   text: string;
   className?: string;
+  linkClassName?: string;
 };
 
-export function LinkifiedText({ text, className }: Props) {
+export function LinkifiedText({
+  text,
+  className,
+  linkClassName = "text-purple underline",
+}: Props) {
   const segments = splitTextWithUrls(text);
 
   return (
@@ -18,7 +23,7 @@ export function LinkifiedText({ text, className }: Props) {
             href={segment.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-purple underline"
+            className={cn(linkClassName)}
           >
             {segment.value}
           </a>

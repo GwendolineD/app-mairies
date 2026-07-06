@@ -2,6 +2,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { logAudit } from "@/lib/audit/log";
 import { assertAuthorMembership } from "@/lib/auth/ownership";
 import { requireActiveMembership } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
@@ -109,6 +110,15 @@ export async function createAnnouncement(formData: FormData): Promise<{ id: stri
     authorDisplayName: ctx.profile.display_name,
   });
 
+  void logAudit({
+    action: "content.create_announcement",
+    category: "content",
+    userId: ctx.userId,
+    targetType: "announcement",
+    targetId: created.id,
+    communeId: membership.commune_id,
+  });
+
   return { id: created.id };
 }
 
@@ -181,6 +191,16 @@ export async function updateAnnouncement(
   revalidatePath(ROUTES.annonces.list);
   revalidatePath(ROUTES.annonces.detail(id));
   revalidatePath(ROUTES.accueil);
+
+  void logAudit({
+    action: "content.update_announcement",
+    category: "content",
+    userId: ctx.userId,
+    targetType: "announcement",
+    targetId: id,
+    communeId: ctx.activeMembership!.commune_id,
+  });
+
   return { success: true };
 }
 
@@ -210,6 +230,17 @@ export async function softDeleteAnnouncement(
   revalidatePath(ROUTES.annonces.list);
   revalidatePath(ROUTES.annonces.detail(id));
   revalidatePath(ROUTES.accueil);
+
+  void logAudit({
+    action: "content.delete_announcement",
+    category: "content",
+    userId: ctx.userId,
+    targetType: "announcement",
+    targetId: id,
+    communeId: ctx.activeMembership!.commune_id,
+    metadata: { soft_delete: true },
+  });
+
   return { success: true };
 }
 
@@ -253,6 +284,16 @@ export async function deleteAnnouncement(id: string) {
 
   const { error } = await supabase.from("announcements").delete().eq("id", id);
   if (error) return { error: error.message };
+
+  void logAudit({
+    action: "content.delete_announcement",
+    category: "content",
+    userId: ctx.userId,
+    targetType: "announcement",
+    targetId: id,
+    communeId: ctx.activeMembership!.commune_id,
+  });
+
   revalidatePath(ROUTES.annonces.list);
   return { success: true };
 }

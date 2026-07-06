@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { buildBackofficeAuditListQuery } from "@/lib/utils/audit-search-params";
 import {
   buildBackofficeCommunesListQuery,
   buildBackofficeMembersListQuery,
@@ -30,7 +31,7 @@ type FilterOption = {
   label: string;
 };
 
-type QueryVariant = "communes" | "members";
+type QueryVariant = "communes" | "members" | "audit";
 
 type BackofficeListParams = Record<
   string,
@@ -43,6 +44,7 @@ const BUILD_QUERY_BY_VARIANT: Record<
 > = {
   communes: buildBackofficeCommunesListQuery,
   members: buildBackofficeMembersListQuery,
+  audit: buildBackofficeAuditListQuery,
 };
 
 type BackofficeListQueryProps = {

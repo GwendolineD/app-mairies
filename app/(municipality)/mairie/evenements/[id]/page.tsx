@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { requireCommuneStaff } from "@/lib/auth/session";
 import {
@@ -14,7 +15,8 @@ import {
   countEventParticipants,
 } from "@/lib/queries/events";
 import { createClient } from "@/lib/supabase/server";
-import { formatDay, formatEventDetail } from "@/lib/utils/date";
+import { formatDay } from "@/lib/datetime";
+import { EventDetailDateLabel } from "@/components/features/event-detail-date-label";
 import {
   formatAddressLines,
   parseAddressLabelParts,
@@ -183,17 +185,21 @@ export default async function MairieEvenementDetailPage(props: {
             </header>
 
             {imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={imageUrl}
-                alt=""
-                className="aspect-[16/10] w-full rounded-lg border border-border object-cover"
-              />
+              <div className="relative aspect-[16/10] w-full overflow-hidden rounded-lg border border-border">
+                <Image
+                  src={imageUrl}
+                  alt=""
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 640px"
+                />
+              </div>
             ) : null}
 
-            <p className="text-base font-semibold text-orange">
-              {formatEventDetail(event.starts_at, event.ends_at)}
-            </p>
+            <EventDetailDateLabel
+              start={event.starts_at}
+              end={event.ends_at}
+            />
 
             <section className={DESCRIPTION_SECTION_CLASS}>
               <h2 className="mb-2 text-sm font-semibold leading-5 text-text">

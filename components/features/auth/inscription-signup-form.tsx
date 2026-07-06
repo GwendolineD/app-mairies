@@ -23,14 +23,21 @@ import {
   formatMunicipalityDisplay,
   formatStreetDisplay,
 } from "@/lib/ban/display";
-import { signUp } from "@/lib/actions/auth";
+import { signUp, resendVerificationEmail } from "@/lib/actions/auth";
 import { ROUTES } from "@/lib/constants/routes";
 import type { Commune } from "@/lib/types";
 
 type LookupResponse = { commune: Commune | null; error?: string };
 
 type SignupErrorField = Partial<Record<string, string[] | undefined>>;
-type SignUpState = { error: SignupErrorField } | undefined;
+type SignUpState =
+  | { error: SignupErrorField }
+  | { emailConfirmationRequired: true; emailSendWarning?: boolean }
+  | undefined;
+
+type ResendState =
+  | { error?: string; success?: boolean }
+  | undefined;
 
 type AddressDraft = {
   city: string;
@@ -125,6 +132,10 @@ export function InscriptionSignupForm({
       signUp(formData) as Promise<SignUpState>,
     undefined,
   );
+  const [resendState, resendAction, resendPending] = useActionState(
+    async (_: ResendState, fd: FormData) => resendVerificationEmail(fd),
+    undefined as ResendState,
+  );
 
   const onPickCommune = useCallback(async (feature: BanFeature) => {
     setCommuneFeature(feature);
@@ -188,6 +199,88 @@ export function InscriptionSignupForm({
     acceptedTerms &&
     passwordValid &&
     !signupPending;
+
+  if (signupState && "emailConfirmationRequired" in signupState) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto rounded-none bg-transparent px-6 py-12 text-center shadow-none md:rounded-3xl md:bg-surface md:px-12 md:py-8 md:shadow-elevated">
+        <div className="mb-4 flex size-14 items-center justify-center rounded-full bg-mint/20">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="size-7 text-mint"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+            />
+          </svg>
+        </div>
+        <h2 className="text-xl font-bold text-text">
+          Vérifiez votre boîte mail
+        </h2>
+        <p className="mt-3 max-w-sm text-sm text-muted">
+          Un email de confirmation vous a été envoyé. Cliquez sur le lien qu'il
+          contient pour activer votre compte et accéder à l'application.
+        </p>
+        {signupState.emailSendWarning ? (
+          <p
+            className="mt-4 max-w-sm rounded-md bg-soft-pink px-3 py-2 text-xs font-medium text-coral"
+            role="alert"
+          >
+            L&apos;envoi de l&apos;e-mail a échoué. Utilisez le bouton
+            ci-dessous pour le renvoyer.
+          </p>
+        ) : null}
+        <div className="mt-6 space-y-3">
+          {resendState?.success ? (
+            <p
+              className="max-w-sm rounded-md border border-mint/30 bg-mint/10 px-3 py-2 text-xs font-medium text-text"
+              role="status"
+            >
+              Si un compte non confirmé existe avec cette adresse, un nouvel
+              e-mail de vérification vient d&apos;être envoyé. Pensez à
+              vérifier vos spams.
+            </p>
+          ) : null}
+          {resendState?.error ? (
+            <p
+              className="max-w-sm rounded-md bg-soft-pink px-3 py-2 text-xs font-medium text-coral"
+              role="alert"
+            >
+              {resendState.error}
+            </p>
+          ) : null}
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            disabled={resendPending || !email.trim()}
+            onClick={() => {
+              const formData = new FormData();
+              formData.set("email", email);
+              startTransition(() => {
+                resendAction(formData);
+              });
+            }}
+          >
+            {resendPending ? "Envoi en cours…" : "Renvoyer l'e-mail"}
+          </Button>
+          <p className="text-xs text-subtle">
+            <Link
+              href={ROUTES.connexion}
+              className="cursor-pointer font-semibold text-purple hover:underline"
+            >
+              Retour à la connexion
+            </Link>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

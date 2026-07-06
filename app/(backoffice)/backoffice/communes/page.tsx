@@ -13,7 +13,7 @@ import { PageStack } from "@/components/ui/page-stack";
 import { ALL_ACCESS_STATUSES, ACCESS_STATUS_LABELS } from "@/lib/constants/access-status";
 import { ROUTES } from "@/lib/constants/routes";
 import { listPilotCommunesPage } from "@/lib/queries/backoffice-communes";
-import { formatShortDate } from "@/lib/utils/format-date";
+import { formatShortDate } from "@/lib/datetime";
 import { parseBackofficeCommunesListParams } from "@/lib/utils/backoffice-search-params";
 
 export const dynamic = "force-dynamic";

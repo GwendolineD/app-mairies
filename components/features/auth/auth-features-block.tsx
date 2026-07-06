@@ -42,7 +42,7 @@ export function AuthFeaturesBlock({
   return (
     <div
       className={cn(
-        "mx-auto w-full max-w-xl rounded-xl bg-surface/90 p-3 shadow-card backdrop-blur-sm md:p-4",
+        "mx-auto w-full max-w-xl rounded-xl bg-surface/90 px-5 py-5 shadow-card backdrop-blur-sm md:px-6 md:py-6",
         cardClassName,
         className,
       )}
@@ -52,7 +52,7 @@ export function AuthFeaturesBlock({
           {title}
         </h2>
       ) : null}
-      <ul className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-6">
+      <ul className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-8">
         {FEATURES.map((feature) => (
           <li
             key={feature.title}
@@ -71,10 +71,10 @@ export function AuthFeaturesBlock({
               />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold text-text md:text-sm">
+              <p className="mb-1.5 text-xs font-bold text-text md:mb-2 md:text-sm">
                 {feature.title}
               </p>
-              <p className="mt-0.5 text-[10px] font-medium leading-snug text-muted md:text-[10px]">
+              <p className="text-[10px] font-medium leading-snug text-muted md:text-[10px]">
                 {feature.description}
               </p>
             </div>

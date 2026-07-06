@@ -25,6 +25,7 @@ import {
   Mail,
   Megaphone,
   Settings,
+  ShieldCheck,
   Sparkles,
   Tags,
   Users,
@@ -47,6 +48,7 @@ const ADMIN_NAV_ICONS: Record<AdminNavItem["icon"], LucideIcon> = {
   "file-text": FileText,
   "life-buoy": LifeBuoy,
   megaphone: Megaphone,
+  "shield-check": ShieldCheck,
 };
 
 type NavLinkProps = {
@@ -227,7 +229,7 @@ function AdminMobileTabLink({
     <Link
       href={href}
       className={cn(
-        "relative flex min-h-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[10px] font-semibold leading-tight transition",
+        "relative flex min-h-0 w-[4.5rem] max-w-[5.5rem] shrink-0 flex-col items-center justify-center gap-0.5 px-1.5 py-2 text-[10px] font-semibold leading-tight transition",
         active
           ? "text-coral after:absolute after:inset-x-0 after:top-0 after:h-0.5 after:bg-coral"
           : "text-text hover:text-purple",
@@ -235,7 +237,7 @@ function AdminMobileTabLink({
       aria-current={active ? "page" : undefined}
     >
       <Icon className="size-5 shrink-0" aria-hidden />
-      <span className="w-full truncate text-center">{label}</span>
+      <span className="line-clamp-2 w-full max-w-[4.75rem] text-center">{label}</span>
     </Link>
   );
 }
@@ -344,7 +346,7 @@ export function AdminMobileBottomNav({
   return (
     <nav
       className={cn(
-        "fixed inset-x-0 bottom-0 z-[1100] flex w-full items-stretch border-t border-border/80 bg-surface/95 backdrop-blur md:hidden",
+        "fixed inset-x-0 bottom-0 z-[1100] flex w-full items-stretch overflow-x-auto overscroll-x-contain border-t border-border/80 bg-surface/95 backdrop-blur md:hidden",
         "supports-[backdrop-filter]:bg-surface/80",
         "pb-[max(env(safe-area-inset-bottom),8px)]",
       )}

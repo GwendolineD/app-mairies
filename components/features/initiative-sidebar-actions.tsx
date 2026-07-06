@@ -22,7 +22,7 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { ROUTES } from "@/lib/constants/routes";
 import type { EventEditData, InitiativeEditData } from "@/lib/types";
 import type { InitiativeSupporter } from "@/lib/queries/initiatives";
-import { formatLinkedEventDateTime } from "@/lib/utils/date";
+import { formatLinkedEventDateTime } from "@/lib/datetime";
 import { cn } from "@/lib/utils/cn";
 import { SupportersAvatarRow } from "@/components/features/initiative-supporters-list";
 
@@ -292,60 +292,53 @@ export function InitiativeSidebarActions({
 }: Props) {
   const contactLabel = `Contacter ${authorName.split(" ")[0]}`;
 
+  const contactCard = !isAuthor ? (
+    <>
+      <div className="space-y-4 md:hidden">
+        <Card className={cn("space-y-4 p-4", className)}>
+          <h2 className="text-lg font-semibold text-text">Contact</h2>
+          <div className="flex items-center gap-3">
+            <UserAvatar name={authorName} url={authorAvatarUrl} size="sm" />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-text">
+                {authorName}
+              </p>
+              <p className="text-xs text-muted">{memberSince}</p>
+            </div>
+          </div>
+          <ContactAnnouncementButton
+            contextId={initiativeId}
+            contextType="initiative"
+            label={contactLabel}
+            icon={<MessageCircle className="size-4" aria-hidden />}
+            className="py-4"
+          />
+        </Card>
+      </div>
+
+      <Card className={cn("hidden space-y-4 md:block md:p-5", className)}>
+        <h2 className="text-lg font-semibold text-text">Contact</h2>
+        <div className="flex items-center gap-3">
+          <UserAvatar name={authorName} url={authorAvatarUrl} />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-text">
+              {authorName}
+            </p>
+            <p className="text-xs text-muted">{memberSince}</p>
+          </div>
+        </div>
+        <ContactAnnouncementButton
+          contextId={initiativeId}
+          contextType="initiative"
+          label={contactLabel}
+          icon={<MessageCircle className="size-4" aria-hidden />}
+        />
+      </Card>
+    </>
+  ) : null;
+
   return (
     <>
-      {isAuthor ? (
-        <AuthorActionsCard
-          initiativeId={initiativeId}
-          editData={editData}
-          linkedEvent={linkedEvent}
-          className={className}
-        />
-      ) : (
-        <>
-          <div className="space-y-4 md:hidden">
-            <Card className={cn("space-y-4 p-4", className)}>
-              <h2 className="text-lg font-semibold text-text">Contact</h2>
-              <div className="flex items-center gap-3">
-                <UserAvatar name={authorName} url={authorAvatarUrl} size="sm" />
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-text">
-                    {authorName}
-                  </p>
-                  <p className="text-xs text-muted">{memberSince}</p>
-                </div>
-              </div>
-              <ContactAnnouncementButton
-                contextId={initiativeId}
-                contextType="initiative"
-                label={contactLabel}
-                icon={<MessageCircle className="size-4" aria-hidden />}
-                className="py-4"
-              />
-            </Card>
-          </div>
-
-          <Card className={cn("hidden space-y-4 md:block md:p-5", className)}>
-            <h2 className="text-lg font-semibold text-text">Contact</h2>
-            <div className="flex items-center gap-3">
-              <UserAvatar name={authorName} url={authorAvatarUrl} />
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-text">
-                  {authorName}
-                </p>
-                <p className="text-xs text-muted">{memberSince}</p>
-              </div>
-            </div>
-            <ContactAnnouncementButton
-              contextId={initiativeId}
-              contextType="initiative"
-              label={contactLabel}
-              icon={<MessageCircle className="size-4" aria-hidden />}
-            />
-          </Card>
-        </>
-      )}
-
       <SupportCard
         isAuthor={isAuthor}
         initiativeId={initiativeId}
@@ -354,6 +347,17 @@ export function InitiativeSidebarActions({
         supporters={supporters}
         className={className}
       />
+
+      {contactCard}
+
+      {isAuthor ? (
+        <AuthorActionsCard
+          initiativeId={initiativeId}
+          editData={editData}
+          linkedEvent={linkedEvent}
+          className={className}
+        />
+      ) : null}
 
       {linkedEvent ? (
         <InitiativeLinkedEventCard event={linkedEvent} className={className} />

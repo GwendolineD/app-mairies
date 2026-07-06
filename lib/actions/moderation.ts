@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { logAudit } from "@/lib/audit/log";
 import {
   requireCommuneStaff,
   requirePlatformAdmin,
@@ -11,7 +12,7 @@ import {
   markReportsRestoredForUser,
   resolvePendingReportsForContent,
   resolvePendingReportsForUser,
-} from "@/lib/actions/municipality";
+} from "@/lib/services/report-resolution";
 import { MEMBERSHIP_STATUS } from "@/lib/constants/statuses";
 import { formatDisplayName } from "@/lib/utils/display-name";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
@@ -186,6 +187,17 @@ export async function suspendContent(
     actorUserId,
   );
 
+  void logAudit({
+    action: "moderation.suspend_content",
+    category: "moderation",
+    severity: "warning",
+    userId: actorUserId,
+    targetType: type,
+    targetId: contentId,
+    communeId: content.commune_id,
+    metadata: { reason: trimmedReason, related_report_id: relatedReportId },
+  });
+
   revalidateContentPaths(type, contentId, content.commune_id);
   return { success: true };
 }
@@ -258,6 +270,16 @@ export async function reactivateContent(
     restoredAt,
     actorUserId,
   );
+
+  void logAudit({
+    action: "moderation.reactivate_content",
+    category: "moderation",
+    severity: "warning",
+    userId: actorUserId,
+    targetType: type,
+    targetId: contentId,
+    communeId: content.commune_id,
+  });
 
   revalidateContentPaths(type, contentId, content.commune_id);
   return { success: true, restoredAt, actorName };
@@ -337,6 +359,17 @@ export async function suspendMembershipByStaff(
     actorUserId,
   );
 
+  void logAudit({
+    action: "moderation.suspend_membership",
+    category: "moderation",
+    severity: "warning",
+    userId: actorUserId,
+    targetType: "membership",
+    targetId: membershipId,
+    communeId: membership.commune_id,
+    metadata: { reason: trimmedReason },
+  });
+
   revalidatePath(ROUTES.mairie.habitants);
   revalidatePath(ROUTES.mairie.signalements);
   revalidatePath(ROUTES.backoffice.signalements);
@@ -410,6 +443,16 @@ export async function reactivateMembership(
     restoredAt,
     actorUserId,
   );
+
+  void logAudit({
+    action: "moderation.reactivate_membership",
+    category: "moderation",
+    severity: "warning",
+    userId: actorUserId,
+    targetType: "membership",
+    targetId: membershipId,
+    communeId: membership.commune_id,
+  });
 
   revalidatePath(ROUTES.mairie.habitants);
   revalidatePath(ROUTES.mairie.signalements);
@@ -496,6 +539,16 @@ export async function banUserFromPlatform(
     reason: trimmedReason,
   });
 
+  void logAudit({
+    action: "moderation.ban_user",
+    category: "moderation",
+    severity: "critical",
+    userId: ctx.userId,
+    targetType: "user",
+    targetId: userId,
+    metadata: { reason: trimmedReason },
+  });
+
   revalidatePath(ROUTES.backoffice.userDetail(userId));
   revalidatePath(ROUTES.backoffice.communes);
 
@@ -558,6 +611,15 @@ export async function unbanUserFromPlatform(
     commune_id: null,
     action: "unban",
     reason: null,
+  });
+
+  void logAudit({
+    action: "moderation.unban_user",
+    category: "moderation",
+    severity: "critical",
+    userId: ctx.userId,
+    targetType: "user",
+    targetId: userId,
   });
 
   revalidatePath(ROUTES.backoffice.userDetail(userId));

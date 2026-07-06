@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { format, isValid, parseISO } from "date-fns";
-import { fr } from "date-fns/locale";
+/**
+ * Single UI entry point for date selection — do not use native `type="date"` inputs.
+ */
+
+import { useState, type ReactNode } from "react";
 import { Calendar as CalendarIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -12,71 +14,72 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import {
+  formatParisYmdFromDate,
+  formatPickerDateLabel,
+  parseDateOnly,
+  todayParisYmd,
+} from "@/lib/datetime";
+import { cn } from "@/lib/utils/cn";
 
-type Props = {
+type DatePickerPopoverProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   value: string;
   onChange: (value: string) => void;
-  placeholder?: string;
-  className?: string;
-  id?: string;
-  /** Earliest selectable date (yyyy-MM-dd). Dates before this are disabled. */
   minDate?: string;
+  maxDate?: string;
+  children: ReactNode;
+  align?: "start" | "center" | "end";
 };
 
 function parseValue(value: string): Date | undefined {
   if (!value) return undefined;
-  const parsed = parseISO(value);
-  return isValid(parsed) ? parsed : undefined;
+  const parsed = parseDateOnly(value);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
 }
 
-export function DatePickerField({
+function buildDisabledRange(minDate?: string, maxDate?: string) {
+  const minSelectable = minDate ? parseValue(minDate) : undefined;
+  const maxSelectable = maxDate ? parseValue(maxDate) : undefined;
+
+  if (minSelectable && maxSelectable) {
+    return { before: minSelectable, after: maxSelectable };
+  }
+  if (minSelectable) return { before: minSelectable };
+  if (maxSelectable) return { after: maxSelectable };
+  return undefined;
+}
+
+export function DatePickerPopover({
+  open,
+  onOpenChange,
   value,
   onChange,
-  placeholder = "Choisir une date",
-  className,
-  id,
   minDate,
-}: Props) {
-  const [open, setOpen] = useState(false);
+  maxDate,
+  children,
+  align = "start",
+}: DatePickerPopoverProps) {
   const selected = parseValue(value);
-  const minSelectable = minDate ? parseValue(minDate) : undefined;
   const currentYear = new Date().getFullYear();
+  const disabled = buildDisabledRange(minDate, maxDate);
+  const minSelectable = minDate ? parseValue(minDate) : undefined;
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
-        id={id}
-        render={
-          <button
-            type="button"
-            className={cn(
-              "flex w-fit min-w-0 cursor-pointer items-center gap-2 rounded-sm border border-border bg-surface px-4 py-2.5 text-left text-sm font-medium whitespace-nowrap outline-none transition hover:border-purple/30 focus-visible:border-purple focus-visible:ring-2 focus-visible:ring-purple/20",
-              !value && "text-subtle",
-              value && "text-text",
-              className,
-            )}
-          />
-        }
-      >
-        <CalendarIcon className="size-4 shrink-0 text-muted" aria-hidden />
-        <span className="truncate">
-          {selected
-            ? format(selected, "d MMMM yyyy", { locale: fr })
-            : placeholder}
-        </span>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto gap-0 p-0" align="start" sideOffset={8}>
+    <Popover open={open} onOpenChange={onOpenChange}>
+      {children}
+      <PopoverContent className="w-auto gap-0 p-0" align={align} sideOffset={8}>
         <Calendar
           mode="single"
           selected={selected}
           onSelect={(date) => {
             if (date) {
-              onChange(format(date, "yyyy-MM-dd"));
-              setOpen(false);
+              onChange(formatParisYmdFromDate(date));
+              onOpenChange(false);
             }
           }}
-          disabled={minSelectable ? { before: minSelectable } : undefined}
+          disabled={disabled}
           captionLayout="dropdown"
           startMonth={new Date(currentYear - 1, 0)}
           endMonth={new Date(currentYear + 5, 11)}
@@ -89,8 +92,8 @@ export function DatePickerField({
             size="sm"
             className="flex-1"
             onClick={() => {
-              onChange(format(new Date(), "yyyy-MM-dd"));
-              setOpen(false);
+              onChange(todayParisYmd());
+              onOpenChange(false);
             }}
           >
             Aujourd&apos;hui
@@ -102,7 +105,7 @@ export function DatePickerField({
               size="sm"
               onClick={() => {
                 onChange("");
-                setOpen(false);
+                onOpenChange(false);
               }}
             >
               Effacer
@@ -111,5 +114,75 @@ export function DatePickerField({
         </div>
       </PopoverContent>
     </Popover>
+  );
+}
+
+type Props = {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  className?: string;
+  id?: string;
+  /** Earliest selectable date (yyyy-MM-dd). Dates before this are disabled. */
+  minDate?: string;
+  /** Latest selectable date (yyyy-MM-dd). Dates after this are disabled. */
+  maxDate?: string;
+  /** Bordered field trigger (default) or borderless inline trigger for filter rows. */
+  appearance?: "field" | "inline";
+  /** Accessible label when no visible label is associated. */
+  "aria-label"?: string;
+};
+
+export function DatePickerField({
+  value,
+  onChange,
+  placeholder = "Choisir une date",
+  className,
+  id,
+  minDate,
+  maxDate,
+  appearance = "field",
+  "aria-label": ariaLabel,
+}: Props) {
+  const [open, setOpen] = useState(false);
+  const labelText = value ? formatPickerDateLabel(value) : placeholder;
+
+  const triggerClassName =
+    appearance === "inline"
+      ? cn(
+          "flex flex-1 cursor-pointer items-center gap-2 text-left text-sm font-medium",
+          !value && "text-subtle",
+          value && "text-text",
+          className,
+        )
+      : cn(
+          "flex w-fit min-w-0 cursor-pointer items-center gap-2 rounded-sm border border-border bg-surface px-4 py-2.5 text-left text-sm font-medium whitespace-nowrap outline-none transition hover:border-purple/30 focus-visible:border-purple focus-visible:ring-2 focus-visible:ring-purple/20",
+          !value && "text-subtle",
+          value && "text-text",
+          className,
+        );
+
+  return (
+    <DatePickerPopover
+      open={open}
+      onOpenChange={setOpen}
+      value={value}
+      onChange={onChange}
+      minDate={minDate}
+      maxDate={maxDate}
+    >
+      <PopoverTrigger
+        id={id}
+        aria-label={ariaLabel}
+        render={
+          <button type="button" className={triggerClassName} />
+        }
+      >
+        <CalendarIcon className="size-4 shrink-0 text-muted" aria-hidden />
+        <span className={appearance === "inline" ? "flex-1 truncate" : "truncate"}>
+          {labelText}
+        </span>
+      </PopoverTrigger>
+    </DatePickerPopover>
   );
 }

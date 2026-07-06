@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { logAudit } from "@/lib/audit/log";
 import { assertAuthorMembership } from "@/lib/auth/ownership";
 import { requireActiveMembership } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
@@ -143,6 +144,15 @@ export async function createInitiative(formData: FormData): Promise<{ id: string
     authorDisplayName: ctx.profile.display_name,
   });
 
+  void logAudit({
+    action: "content.create_initiative",
+    category: "content",
+    userId: ctx.userId,
+    targetType: "initiative",
+    targetId: created.id,
+    communeId: membership.commune_id,
+  });
+
   return { id: created.id };
 }
 
@@ -249,6 +259,16 @@ export async function updateInitiative(
 
   revalidatePath(ROUTES.initiatives.list);
   revalidatePath(ROUTES.initiatives.detail(id));
+
+  void logAudit({
+    action: "content.update_initiative",
+    category: "content",
+    userId: ctx.userId,
+    targetType: "initiative",
+    targetId: id,
+    communeId: membership.commune_id,
+  });
+
   return { success: true };
 }
 
@@ -419,6 +439,16 @@ export async function deleteInitiative(
 
   const { error } = await supabase.from("initiatives").delete().eq("id", id);
   if (error) return { error: error.message };
+
+  void logAudit({
+    action: "content.delete_initiative",
+    category: "content",
+    userId: ctx.userId,
+    targetType: "initiative",
+    targetId: id,
+    communeId: ctx.activeMembership!.commune_id,
+  });
+
   revalidatePath(ROUTES.initiatives.list);
   return { success: true };
 }

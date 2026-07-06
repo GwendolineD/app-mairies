@@ -2,10 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowUpDown, Calendar as CalendarIcon, ChevronDown, List, Map, Plus, SlidersHorizontal, X } from "lucide-react";
-import { useMemo, useState } from "react";
-import { format, isValid, parseISO } from "date-fns";
-import { fr } from "date-fns/locale";
+import { ArrowUpDown, ChevronDown, List, Map, Plus, SlidersHorizontal, X } from "lucide-react";
+import { useState } from "react";
 import { ANNOUNCEMENT_CATEGORIES } from "@/lib/constants/announcement-categories";
 import { ANNOUNCEMENT_TYPES } from "@/lib/constants/announcement-types";
 import {
@@ -16,7 +14,7 @@ import {
 } from "@/lib/utils/search-params";
 import { Button } from "@/components/ui/button";
 import { CategoryIconBadge } from "@/components/ui/category-icon-badge";
-import { Calendar } from "@/components/ui/calendar";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import {
   Popover,
   PopoverContent,
@@ -561,17 +559,7 @@ function CustomDateRow({
   onApply: (value: string) => void;
   onToggle: (value?: string) => void;
 }) {
-  const [open, setOpen] = useState(false);
   const checked = params.date === "custom";
-  const selected = useMemo(() => {
-    if (!params.dateValue) return undefined;
-    const d = parseISO(params.dateValue);
-    return isValid(d) ? d : undefined;
-  }, [params.dateValue]);
-
-  const labelText = selected
-    ? format(selected, "d MMM yyyy", { locale: fr })
-    : "Date précise";
 
   return (
     <div className="flex w-full items-center gap-3 px-4 py-2.5 transition hover:bg-warm/60 md:py-2">
@@ -593,35 +581,13 @@ function CustomDateRow({
       >
         <CheckGlyph />
       </button>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger
-          render={
-            <button
-              type="button"
-              className="flex flex-1 cursor-pointer items-center gap-2 text-left text-sm font-medium text-text"
-            >
-              <CalendarIcon className="size-4 text-muted" aria-hidden />
-              <span className="flex-1 truncate">{labelText}</span>
-            </button>
-          }
-        />
-        <PopoverContent className="w-auto gap-0 p-0" align="start" sideOffset={8}>
-          <Calendar
-            mode="single"
-            selected={selected}
-            onSelect={(date) => {
-              if (!date) return;
-              const value = format(date, "yyyy-MM-dd");
-              setOpen(false);
-              onApply(value);
-            }}
-            captionLayout="dropdown"
-            startMonth={new Date(new Date().getFullYear() - 1, 0)}
-            endMonth={new Date(new Date().getFullYear() + 5, 11)}
-            defaultMonth={selected ?? new Date()}
-          />
-        </PopoverContent>
-      </Popover>
+      <DatePickerField
+        appearance="inline"
+        value={params.dateValue ?? ""}
+        onChange={onApply}
+        placeholder="Date précise"
+        aria-label="Date précise"
+      />
     </div>
   );
 }

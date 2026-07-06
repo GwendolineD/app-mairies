@@ -4,6 +4,7 @@ import type { AnnouncementType } from "@/lib/constants/announcement-types";
 import { ANNOUNCEMENT_STATUS } from "@/lib/constants/statuses";
 import type { Announcement, Membership, Profile } from "@/lib/types";
 import type { AnnouncementDateFilter, SortMode } from "@/lib/utils/search-params";
+import { addDaysParisYmd, todayParisYmd } from "@/lib/datetime";
 
 export const ANNOUNCEMENTS_PAGE_SIZE = 20;
 
@@ -27,19 +28,6 @@ export type AnnouncementWithAuthor = Announcement & {
       "first_name" | "last_name" | "display_name" | "avatar_url"
     > | null;
   }) | null;
-};
-
-export type AnnouncementMarker = {
-  id: string;
-  title: string;
-  category_slug: string;
-  address_lat: number;
-  address_lng: number;
-  /** Joined from announcement_categories */
-  announcement_categories: {
-    map_pin_url: string | null;
-    color_hex: string;
-  } | null;
 };
 
 export type AnnouncementMapItem = AnnouncementWithAuthor & {
@@ -74,13 +62,11 @@ export function decodeCursor(cursor: string): { createdAt: string; id: string } 
 }
 
 function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
+  return todayParisYmd();
 }
 
 function plusDaysIso(days: number): string {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
+  return addDaysParisYmd(days);
 }
 
 /**
@@ -133,12 +119,12 @@ export async function listAnnouncementsPage(
   const limit = options.limit ?? ANNOUNCEMENTS_PAGE_SIZE;
   const sortMode = options.sortMode ?? "recent";
   const ascending = sortMode === "oldest";
-  const totalCount = await countAnnouncements(supabase, filters);
 
   let query = supabase
     .from("announcements")
     .select(
       "*, author_membership:memberships!announcements_author_membership_id_fkey(address_street, address_city, address_postcode, address_lat, address_lng, profiles:profiles!memberships_profiles_user_id_fkey(first_name, last_name, display_name, avatar_url))",
+      { count: "exact" },
     )
     .order("created_at", { ascending })
     .order("id", { ascending })
@@ -158,7 +144,7 @@ export async function listAnnouncementsPage(
     }
   }
 
-  const { data } = await query;
+  const { data, count } = await query;
   const items = (data ?? []) as AnnouncementWithAuthor[];
   const last = items[items.length - 1];
   const nextCursor =
@@ -166,24 +152,7 @@ export async function listAnnouncementsPage(
       ? encodeCursor(last.created_at, last.id)
       : null;
 
-  return { items, nextCursor, totalCount };
-}
-
-export async function listAnnouncementMarkers(
-  supabase: SupabaseClient,
-  filters: AnnouncementListFilters,
-): Promise<AnnouncementMarker[]> {
-  let query = supabase
-    .from("announcements")
-    .select(
-      "id, title, category_slug, address_lat, address_lng, announcement_categories(map_pin_url, color_hex)",
-    )
-    .not("address_lat", "is", null)
-    .not("address_lng", "is", null);
-
-  query = applyAnnouncementFilters(query, filters);
-  const { data } = await query;
-  return (data ?? []) as unknown as AnnouncementMarker[];
+  return { items, nextCursor, totalCount: count ?? 0 };
 }
 
 /**
@@ -205,8 +174,51 @@ export async function listAnnouncementMapItems(
     .order("created_at", { ascending: false });
 
   query = applyAnnouncementFilters(query, filters);
+  query = query.limit(500);
   const { data } = await query;
   return (data ?? []) as AnnouncementMapItem[];
+}
+
+const ANNOUNCEMENT_AUTHOR_SELECT =
+  "*, author_membership:memberships!announcements_author_membership_id_fkey(address_street, address_city, address_postcode, address_lat, address_lng, profiles:profiles!memberships_profiles_user_id_fkey(first_name, last_name, display_name, avatar_url))";
+
+export async function listFeaturedAnnouncementForAccueil(
+  supabase: SupabaseClient,
+  communeId: string,
+  options: {
+    preferNeighborDemandToday?: boolean;
+    excludeMembershipId?: string;
+  } = {},
+): Promise<AnnouncementWithAuthor | null> {
+  if (options.preferNeighborDemandToday) {
+    const today = todayIso();
+
+    let query = supabase
+      .from("announcements")
+      .select(ANNOUNCEMENT_AUTHOR_SELECT)
+      .eq("commune_id", communeId)
+      .eq("type", "demande")
+      .eq("status", ANNOUNCEMENT_STATUS.ouverte)
+      .eq("target_date", today)
+      .is("suspended_at", null)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (options.excludeMembershipId) {
+      query = query.neq("author_membership_id", options.excludeMembershipId);
+    }
+
+    const { data } = await query;
+    const featured = (data ?? [])[0] as AnnouncementWithAuthor | undefined;
+    if (featured) return featured;
+  }
+
+  const { items } = await listAnnouncementsPage(
+    supabase,
+    { communeId },
+    { limit: 1 },
+  );
+  return items[0] ?? null;
 }
 
 export async function countNeighborAnnouncementsDueToday(

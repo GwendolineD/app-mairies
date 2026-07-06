@@ -1,7 +1,9 @@
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Calendar } from "lucide-react";
 import { requireActiveMembership } from "@/lib/auth/session";
+import { unwrapOrThrow } from "@/lib/queries/helpers";
 import { listSimilarAnnouncements } from "@/lib/queries/announcements";
 import type { AnnouncementWithAuthor } from "@/lib/queries/announcements";
 import { createClient } from "@/lib/supabase/server";
@@ -22,12 +24,13 @@ import { AnnouncementSidebarActions } from "@/components/features/announcement-s
 import { ReportButton } from "@/components/features/report-button";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { LinkifiedText } from "@/components/ui/linkified-text";
-import { formatMemberSince, formatRelativeTime } from "@/lib/utils/date";
+import { formatMemberSince, formatRelativeTime } from "@/lib/datetime";
 import { formatDisplayName } from "@/lib/utils/display-name";
-import { formatShortDate } from "@/lib/utils/format-date";
+import { formatShortDate } from "@/lib/datetime";
 import { formatDetailAddressLines, resolveAddressPostcode } from "@/lib/utils/format-address";
 import type { AnnouncementEditData } from "@/lib/types";
 import { PageStack } from "@/components/ui/page-stack";
+import { ContentSuspendedBanner } from "@/components/features/content-suspended-indicator";
 
 const MAIN_DETAIL_CARD_CLASS =
   "rounded-none border-0 bg-transparent p-0 !shadow-none";
@@ -47,7 +50,7 @@ export default async function AnnonceDetailPage(props: {
   const ctx = await requireActiveMembership();
   const supabase = await createClient();
 
-  const { data } = await supabase
+  const result = await supabase
     .from("announcements")
     .select(
       `*, announcement_categories(map_pin_url, color_hex),
@@ -66,7 +69,8 @@ export default async function AnnonceDetailPage(props: {
     .eq("commune_id", ctx.activeMembership!.commune_id)
     .single();
 
-  if (!data) notFound();
+  if (!result.data && !result.error) notFound();
+  const data = unwrapOrThrow(result, "announcement-detail");
 
   // If the content is suspended, show appropriate screen
   if (data.suspended_at) {
@@ -173,6 +177,10 @@ export default async function AnnonceDetailPage(props: {
     <PageStack gap="5">
       <HistoryBackLink />
 
+      {ann.suspended_at ? (
+        <ContentSuspendedBanner suspendedAt={ann.suspended_at} />
+      ) : null}
+
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
         {/* --- Main card --- */}
         <Card className={`space-y-5 ${MAIN_DETAIL_CARD_CLASS}`}>
@@ -222,12 +230,15 @@ export default async function AnnonceDetailPage(props: {
             </header>
 
             {ann.photo_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={ann.photo_url}
-                alt=""
-                className="aspect-[16/10] w-full rounded-lg border border-border object-cover"
-              />
+              <div className="relative aspect-[16/10] w-full overflow-hidden rounded-lg border border-border">
+                <Image
+                  src={ann.photo_url}
+                  alt=""
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 640px"
+                />
+              </div>
             ) : null}
 
             <section className={DESCRIPTION_SECTION_CLASS}>

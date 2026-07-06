@@ -29,24 +29,22 @@ function formatFullName(
   return displayName?.trim() || "Utilisateur·rice";
 }
 
-function sortCommuneMembers(
-  items: CommuneMemberRow[],
+function applyMemberSort<T extends { order: Function }>(
+  query: T,
   sort: HabitantsSort | undefined,
-): CommuneMemberRow[] {
-  if (!sort || sort === "recent") return items;
-
-  const direction = sort === "name_asc" ? 1 : -1;
-  return [...items].sort((a, b) => {
-    const lastNameCompare = a.lastName.localeCompare(b.lastName, "fr", {
-      sensitivity: "base",
-    });
-    if (lastNameCompare !== 0) return lastNameCompare * direction;
-
-    return (
-      a.firstName.localeCompare(b.firstName, "fr", { sensitivity: "base" }) *
-      direction
-    );
-  });
+): T {
+  switch (sort) {
+    case "name_asc":
+      return query
+        .order("profile(last_name)", { ascending: true, nullsFirst: false })
+        .order("profile(first_name)", { ascending: true, nullsFirst: false });
+    case "name_desc":
+      return query
+        .order("profile(last_name)", { ascending: false, nullsFirst: true })
+        .order("profile(first_name)", { ascending: false, nullsFirst: true });
+    default:
+      return query.order("created_at", { ascending: false });
+  }
 }
 
 export async function listCommuneMembersPage(
@@ -56,6 +54,8 @@ export async function listCommuneMembersPage(
     sort?: HabitantsSort;
     roles?: MembershipRole[];
     statuses?: MembershipStatus[];
+    joinedFrom?: string;
+    joinedTo?: string;
   },
 ): Promise<{ items: CommuneMemberRow[]; totalCount: number }> {
   const offset = (params.page - 1) * params.limit;
@@ -88,9 +88,7 @@ export async function listCommuneMembersPage(
       "id, user_id, role, status, created_at, suspended_at, suspension_reason, profile:profiles!memberships_profiles_user_id_fkey(first_name, last_name, display_name, avatar_url, is_platform_admin)",
     )
     .eq("commune_id", communeId)
-    .neq("status", "left")
-    .order("created_at", { ascending: false })
-    .range(offset, offset + params.limit - 1);
+    .neq("status", "left");
 
   if (userIdsFilter) {
     countQuery = countQuery.in("user_id", userIdsFilter);
@@ -119,6 +117,21 @@ export async function listCommuneMembersPage(
     countQuery = countQuery.in("status", statusFilters);
     dataQuery = dataQuery.in("status", statusFilters);
   }
+
+  if (params.joinedFrom) {
+    countQuery = countQuery.gte("created_at", params.joinedFrom);
+    dataQuery = dataQuery.gte("created_at", params.joinedFrom);
+  }
+
+  if (params.joinedTo) {
+    countQuery = countQuery.lte("created_at", params.joinedTo);
+    dataQuery = dataQuery.lte("created_at", params.joinedTo);
+  }
+
+  dataQuery = applyMemberSort(dataQuery, params.sort).range(
+    offset,
+    offset + params.limit - 1,
+  );
 
   const [{ count }, { data, error }] = await Promise.all([countQuery, dataQuery]);
 
@@ -201,7 +214,7 @@ export async function listCommuneMembersPage(
   });
 
   return {
-    items: sortCommuneMembers(items, params.sort),
+    items,
     totalCount: count ?? 0,
   };
 }

@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { format, parseISO, isValid } from "date-fns";
-import { fr } from "date-fns/locale";
+import { splitInstantToParisFields, todayParisYmd, toUtcFromParisLocal, clampEndDate, resolveEndDateAfterStartChange } from "@/lib/datetime";
 import { CalendarDays, Check, Loader2, MapPin, Sparkles, Users } from "lucide-react";
 import { createEventFromModal, updateEvent } from "@/lib/actions/events";
 import { searchAddresses, type BanFeature } from "@/lib/ban/client";
@@ -23,7 +22,6 @@ import {
   readFormDraft,
   writeFormDraft,
 } from "@/lib/utils/form-draft";
-import { localDateTimeToIso } from "@/lib/utils/date";
 import { Button } from "@/components/ui/button";
 import { FormField, formFieldClassName, Input, Textarea } from "@/components/ui/form-field";
 import {
@@ -89,37 +87,11 @@ type Props = {
 
 function parseDateTime(isoString: string): { date: string; time: string } {
   if (!isoString) return { date: "", time: "" };
-  try {
-    const parsed = parseISO(isoString);
-    if (!isValid(parsed)) return { date: "", time: "" };
-    return {
-      date: format(parsed, "yyyy-MM-dd"),
-      time: format(parsed, "HH:mm"),
-    };
-  } catch {
-    return { date: "", time: "" };
-  }
+  return splitInstantToParisFields(isoString);
 }
 
 function combineDateAndTime(date: string, time: string): string | null {
-  return localDateTimeToIso(date, time);
-}
-
-function isDateBefore(a: string, b: string): boolean {
-  if (!a || !b) return false;
-  return a < b;
-}
-
-function resolveEndDateAfterStartChange(startDate: string, endDate: string): string {
-  if (!startDate) return endDate;
-  if (!endDate || isDateBefore(endDate, startDate)) return startDate;
-  return endDate;
-}
-
-function clampEndDate(endDate: string, startDate: string): string {
-  if (!startDate) return endDate;
-  if (!endDate || isDateBefore(endDate, startDate)) return startDate;
-  return endDate;
+  return toUtcFromParisLocal(date, time);
 }
 
 function getInitialAddressFromEditData(
@@ -619,7 +591,7 @@ export function CreateEventModal({
                 <DatePickerField
                   value={startDate}
                   onChange={handleStartDateChange}
-                  minDate={isEditMode ? undefined : format(new Date(), "yyyy-MM-dd")}
+                  minDate={isEditMode ? undefined : todayParisYmd()}
                   placeholder="Choisir une date"
                   className="w-[12rem]"
                 />

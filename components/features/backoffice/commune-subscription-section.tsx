@@ -8,10 +8,12 @@ import {
   deleteSubscriptionPeriod,
 } from "@/lib/actions/platform";
 import { cn } from "@/lib/utils/cn";
-import { formatShortDate } from "@/lib/utils/format-date";
+import { clampEndDate, formatShortDate } from "@/lib/datetime";
 import { formatEuros } from "@/lib/utils/format-currency";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { DatePickerField } from "@/components/ui/date-picker-field";
+import { FormField } from "@/components/ui/form-field";
 import { Modal } from "@/components/ui/modal";
 import { Tooltip } from "@/components/ui/tooltip";
 import { CancellationBadge } from "@/components/features/subscription/cancellation-badge";
@@ -375,37 +377,34 @@ export function CommuneSubscriptionSection({
         title="Ajouter une période"
       >
         <div className="space-y-4">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-text">
-              Date de début
-            </label>
-            <input
-              type="date"
+          <FormField label="Date de début">
+            <DatePickerField
               value={newPeriod.startsAt}
-              onChange={(e) => {
-                const startsAt = e.target.value;
+              onChange={(startsAt) => {
                 setNewPeriod((prev) => ({
                   ...prev,
                   startsAt,
                   endsAt: startsAt ? addOneYearMinusOneDay(startsAt) : "",
                 }));
               }}
-              className="w-full rounded-sm border border-border bg-surface px-3 py-2 text-sm"
+              className="w-full"
+              placeholder="Choisir une date"
             />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-text">
-              Date de fin
-            </label>
-            <input
-              type="date"
+          </FormField>
+          <FormField label="Date de fin">
+            <DatePickerField
               value={newPeriod.endsAt}
-              onChange={(e) =>
-                setNewPeriod((prev) => ({ ...prev, endsAt: e.target.value }))
+              onChange={(endsAt) =>
+                setNewPeriod((prev) => ({
+                  ...prev,
+                  endsAt: clampEndDate(endsAt, prev.startsAt),
+                }))
               }
-              className="w-full rounded-sm border border-border bg-surface px-3 py-2 text-sm"
+              minDate={newPeriod.startsAt || undefined}
+              className="w-full"
+              placeholder="Choisir une date"
             />
-          </div>
+          </FormField>
           <div>
             <label className="mb-1 block text-sm font-medium text-text">
               Montant
@@ -466,19 +465,16 @@ export function CommuneSubscriptionSection({
         title="Marquer comme payé"
       >
         <div className="space-y-4">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-text">
-              Date de paiement
-            </label>
-            <input
-              type="date"
+          <FormField label="Date de paiement">
+            <DatePickerField
               value={markPaidData.paidAt}
-              onChange={(e) =>
-                setMarkPaidData((prev) => ({ ...prev, paidAt: e.target.value }))
+              onChange={(paidAt) =>
+                setMarkPaidData((prev) => ({ ...prev, paidAt }))
               }
-              className="w-full rounded-sm border border-border bg-surface px-3 py-2 text-sm"
+              className="w-full"
+              placeholder="Choisir une date"
             />
-          </div>
+          </FormField>
           <div>
             <label className="mb-1 block text-sm font-medium text-text">
               Moyen de paiement

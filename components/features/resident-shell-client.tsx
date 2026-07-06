@@ -7,6 +7,7 @@ import { OnboardingModalHost } from "@/components/features/onboarding/onboarding
 import { OnboardingCommuneProvider } from "@/components/features/onboarding/onboarding-commune-context";
 import { initCategories } from "@/lib/constants/announcement-categories";
 import { initInitiativeEventCategories } from "@/lib/constants/initiative-categories";
+import { InAppHistoryTracker } from "@/components/features/in-app-history-tracker";
 import type {
   AnnouncementCategoryRow,
   InitiativeEventCategoryRow,
@@ -38,6 +39,7 @@ export function ResidentShellClient({
   return (
     <OnboardingCommuneProvider communeName={communeName}>
       <CreationModalProvider>
+        <InAppHistoryTracker />
         {children}
         <Suspense fallback={null}>
           <CreationModalHost

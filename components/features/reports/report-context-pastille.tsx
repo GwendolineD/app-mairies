@@ -1,5 +1,6 @@
 import { CalendarDays, Sparkles } from "lucide-react";
 import { AnnouncementTypePastille } from "@/components/ui/announcement-type-pastille";
+import { CONTEXT_TYPE_LABELS } from "@/lib/constants/context-types";
 import { cn } from "@/lib/utils/cn";
 
 type Props = {
@@ -10,12 +11,12 @@ type Props = {
 
 const CONTENT_PASTILLES = {
   initiative: {
-    label: "Initiative",
+    label: CONTEXT_TYPE_LABELS.initiative,
     gradient: "gradient-initiative",
     Icon: Sparkles,
   },
   event: {
-    label: "Événement",
+    label: CONTEXT_TYPE_LABELS.event,
     gradient: "gradient-events",
     Icon: CalendarDays,
   },

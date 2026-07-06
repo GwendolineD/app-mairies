@@ -2,6 +2,7 @@ import { APP_NAME } from "@/lib/constants/app";
 import { ROUTES } from "@/lib/constants/routes";
 import { sendEmail } from "@/lib/email/send-email";
 import { createServiceClient } from "@/lib/supabase/server";
+import { formatEmailDateTime } from "@/lib/datetime";
 import { getAppUrl } from "@/lib/utils/app-url";
 
 type SupportRequestNotificationInput = {
@@ -14,16 +15,6 @@ type SupportRequestNotificationInput = {
   communeName: string;
   createdAt: string;
 };
-
-function formatDateTime(value: string): string {
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
-}
 
 function displayName(firstName: string | null, lastName: string | null): string {
   const parts = [firstName, lastName].filter(Boolean);
@@ -45,7 +36,7 @@ export async function sendSupportRequestNotification(
   const appUrl = getAppUrl();
   const backofficeUrl = `${appUrl}${ROUTES.backoffice.assistance}`;
   const fullName = displayName(input.firstName, input.lastName);
-  const sentAt = formatDateTime(input.createdAt);
+  const sentAt = formatEmailDateTime(input.createdAt);
 
   const text = [
     `Nouvelle demande d'assistance ${APP_NAME}`,

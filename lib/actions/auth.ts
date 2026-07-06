@@ -1,15 +1,18 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { cookies, headers } from "next/headers";
+import { headers } from "next/headers";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { logAudit } from "@/lib/audit/log";
 import { RECOVERY_COOKIE_NAME } from "@/lib/constants/auth";
 import { ROUTES } from "@/lib/constants/routes";
+import { resendVerificationEmailIfNeeded, sendVerificationEmail } from "@/lib/email/send-verification-email";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getAppUrl } from "@/lib/utils/app-url";
 import { formatAuthError } from "@/lib/utils/auth-errors";
 import { formatDisplayName } from "@/lib/utils/display-name";
-import { checkTrialCodeRateLimit } from "@/lib/utils/trial-rate-limit";
+import { checkRateLimit, resetRateLimit } from "@/lib/utils/rate-limit";
 import {
   changePasswordSchema,
   emailChangeSchema,
@@ -64,17 +67,6 @@ export async function signUp(formData: FormData) {
   }
 
   if (commune.access_status === "trial") {
-    const reqHeaders = await headers();
-    const ip = reqHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-
-    if (!checkTrialCodeRateLimit(ip, commune.id)) {
-      return {
-        error: {
-          form: ["Trop de tentatives. Réessayez dans quelques minutes."],
-        },
-      };
-    }
-
     if (!parsed.data.trialAccessCode) {
       return {
         error: {
@@ -138,7 +130,11 @@ export async function signUp(formData: FormData) {
     await serviceClient.auth.admin.createUser({
       email: parsed.data.email,
       password: parsed.data.password,
-      email_confirm: true,
+      email_confirm: false,
+      user_metadata: {
+        first_name: parsed.data.firstName,
+        last_name: parsed.data.lastName,
+      },
     });
 
   if (adminError || !adminData.user) {
@@ -183,26 +179,35 @@ export async function signUp(formData: FormData) {
     status: "active",
   });
 
-  // Sign in the newly created user to establish a session
-  const { error: signInError } = await supabase.auth.signInWithPassword({
+  const emailResult = await sendVerificationEmail({
     email: parsed.data.email,
+    userName: displayName,
     password: parsed.data.password,
   });
 
-  if (signInError) {
+  if (!emailResult.success) {
+    void logAudit({
+      action: "auth.sign_up",
+      category: "auth",
+      userId: adminData.user.id,
+      communeId: commune.id,
+      metadata: { email: parsed.data.email, email_send_warning: true },
+    });
     return {
-      error: {
-        form: [
-          formatAuthError(
-            signInError,
-            "Compte créé mais connexion impossible. Essayez de vous connecter.",
-          ),
-        ],
-      },
+      emailConfirmationRequired: true,
+      emailSendWarning: true,
     };
   }
 
-  redirect(ROUTES.accueil);
+  void logAudit({
+    action: "auth.sign_up",
+    category: "auth",
+    userId: adminData.user.id,
+    communeId: commune.id,
+    metadata: { email: parsed.data.email },
+  });
+
+  return { emailConfirmationRequired: true };
 }
 
 export async function signIn(formData: FormData) {
@@ -221,6 +226,20 @@ export async function signIn(formData: FormData) {
     };
   }
 
+  const rateLimitKey = `signin:${parsed.data.email.toLowerCase()}`;
+  if (!checkRateLimit(rateLimitKey)) {
+    void logAudit({
+      action: "auth.sign_in_failed",
+      category: "auth",
+      severity: "warning",
+      success: false,
+      metadata: { attempted_email: parsed.data.email, reason: "rate_limit" },
+    });
+    return {
+      error: "Trop de tentatives de connexion. Réessayez dans quelques minutes.",
+    };
+  }
+
   const supabase = await createClient();
 
   const { error } = await supabase.auth.signInWithPassword({
@@ -228,13 +247,26 @@ export async function signIn(formData: FormData) {
     password: parsed.data.password,
   });
   if (error) {
+    void logAudit({
+      action: "auth.sign_in_failed",
+      category: "auth",
+      severity: "warning",
+      success: false,
+      metadata: {
+        attempted_email: parsed.data.email,
+        reason: error.code ?? "invalid_credentials",
+      },
+    });
     return {
       error: formatAuthError(
         error,
         "Connexion impossible. Vérifiez vos identifiants et réessayez.",
       ),
+      emailNotConfirmed: error.code === "email_not_confirmed",
     };
   }
+
+  resetRateLimit(rateLimitKey);
 
   // Check if the user is platform-banned after successful auth
   const {
@@ -249,6 +281,14 @@ export async function signIn(formData: FormData) {
 
     if (profile?.banned_at) {
       await supabase.auth.signOut();
+      void logAudit({
+        action: "auth.sign_in_failed",
+        category: "auth",
+        severity: "warning",
+        userId: user.id,
+        success: false,
+        metadata: { attempted_email: parsed.data.email, reason: "banned" },
+      });
       // Retrieve support email for the error message
       const serviceClient = await createServiceClient();
       const { data: settings } = await serviceClient
@@ -262,6 +302,13 @@ export async function signIn(formData: FormData) {
       };
     }
   }
+
+  void logAudit({
+    action: "auth.sign_in",
+    category: "auth",
+    userId: user?.id,
+    metadata: { email: parsed.data.email },
+  });
 
   redirect(ROUTES.accueil);
 }
@@ -294,6 +341,50 @@ export async function requestPasswordReset(formData: FormData) {
         "Trop de demandes envoyées. Patientez quelques instants et réessayez.",
       ),
     };
+  }
+
+  void logAudit({
+    action: "auth.request_password_reset",
+    category: "auth",
+    metadata: { email: parsed.data.email },
+  });
+
+  return { success: true as const };
+}
+
+export async function resendVerificationEmail(formData: FormData) {
+  const parsed = forgotPasswordSchema.safeParse({
+    email: formData.get("email"),
+  });
+
+  if (!parsed.success) {
+    return {
+      error:
+        parsed.error.flatten().fieldErrors.email?.[0] ?? "Email invalide",
+    };
+  }
+
+  const normalizedEmail = parsed.data.email.toLowerCase();
+  const rateLimitKey = `resend-verification:${normalizedEmail}`;
+  if (!checkRateLimit(rateLimitKey)) {
+    return {
+      error: "Trop de demandes envoyées. Patientez quelques instants et réessayez.",
+    };
+  }
+
+  const result = await resendVerificationEmailIfNeeded(normalizedEmail);
+
+  if (!result.success && result.error) {
+    if (isRateLimitError({ message: result.error })) {
+      return {
+        error: formatAuthError(
+          { message: result.error },
+          "Trop de demandes envoyées. Patientez quelques instants et réessayez.",
+        ),
+      };
+    }
+
+    console.error("[auth] resendVerificationEmail failed:", result.error);
   }
 
   return { success: true as const };
@@ -345,6 +436,14 @@ export async function updatePassword(formData: FormData) {
   }
 
   cookieStore.delete(RECOVERY_COOKIE_NAME);
+
+  void logAudit({
+    action: "auth.reset_password",
+    category: "auth",
+    severity: "warning",
+    userId: user.id,
+  });
+
   redirect(ROUTES.accueil);
 }
 
@@ -392,6 +491,14 @@ export async function requestEmailChange(
       error: formatAuthError(error, "Impossible de modifier l'email."),
     };
   }
+
+  void logAudit({
+    action: "auth.request_email_change",
+    category: "auth",
+    severity: "warning",
+    userId: user.id,
+    metadata: { new_email: parsed.data.email },
+  });
 
   return { success: true };
 }
@@ -444,16 +551,41 @@ export async function changePassword(input: {
     };
   }
 
+  void logAudit({
+    action: "auth.change_password",
+    category: "auth",
+    severity: "warning",
+    userId: user.id,
+  });
+
   return { success: true };
 }
 
 export async function signOut() {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  void logAudit({
+    action: "auth.sign_out",
+    category: "auth",
+    userId: user?.id,
+  });
   await supabase.auth.signOut();
   redirect(ROUTES.home);
 }
 
 export async function submitCommuneInterest(formData: FormData) {
+  const headersList = await headers();
+  const forwarded = headersList.get("x-forwarded-for");
+  const ip = forwarded?.split(",")[0]?.trim() ?? "unknown";
+  const rateLimitKey = `commune-interest:${ip}`;
+  if (!checkRateLimit(rateLimitKey, 5, 10 * 60 * 1000)) {
+    return {
+      error: "Trop de demandes. Réessayez dans quelques minutes.",
+    };
+  }
+
   const rawInsee = (formData.get("inseeCode") as string)?.trim();
   const emailRaw = (formData.get("email") as string)?.trim();
   const message = (formData.get("message") as string)?.trim() || null;
@@ -571,17 +703,6 @@ export async function joinCommune(formData: FormData) {
   }
 
   if (commune.access_status === "trial") {
-    const reqHeaders = await headers();
-    const ip = reqHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-
-    if (!checkTrialCodeRateLimit(ip, commune.id)) {
-      return {
-        error: {
-          form: ["Trop de tentatives. Réessayez dans quelques minutes."],
-        },
-      };
-    }
-
     if (!parsed.data.trialAccessCode) {
       return {
         error: {
@@ -675,6 +796,14 @@ export async function joinCommune(formData: FormData) {
     .from("profiles")
     .update({ active_commune_id: commune.id })
     .eq("user_id", user.id);
+
+  void logAudit({
+    action: "auth.join_commune",
+    category: "auth",
+    userId: user.id,
+    communeId: commune.id,
+    metadata: { insee_code: parsed.data.inseeCode },
+  });
 
   revalidatePath("/", "layout");
   redirect(ROUTES.accueil);

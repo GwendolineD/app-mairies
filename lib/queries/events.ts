@@ -39,16 +39,9 @@ export async function listEventsPage(
   const now = new Date().toISOString();
   const ascending = options.sortMode !== "oldest";
 
-  let countQuery = supabase
-    .from("events")
-    .select("id", { count: "exact", head: true })
-    .gte("ends_at", now);
-  countQuery = applyEventFilters(countQuery, filters);
-  const { count } = await countQuery;
-
   let query = supabase
     .from("events")
-    .select("*")
+    .select("*", { count: "exact" })
     .gte("ends_at", now)
     .order("starts_at", { ascending })
     .order("id", { ascending })
@@ -60,8 +53,11 @@ export async function listEventsPage(
     query = query.range(options.offset, options.offset + limit - 1);
   }
 
-  const { data } = await query;
-  return { items: (data ?? []) as AgendaEventRecord[], totalCount: count ?? 0 };
+  const { data, count } = await query;
+  return {
+    items: (data ?? []) as AgendaEventRecord[],
+    totalCount: count ?? 0,
+  };
 }
 
 export async function listEventMapItems(
@@ -79,6 +75,7 @@ export async function listEventMapItems(
     .order("starts_at", { ascending: true });
 
   query = applyEventFilters(query, filters);
+  query = query.limit(500);
   const { data } = await query;
   return (data ?? []) as AgendaEventRecord[];
 }

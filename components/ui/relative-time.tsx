@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { formatRelativeTime, formatShortDate } from "@/lib/utils/date";
-import { cn } from "@/lib/utils";
+import { formatMediumDate, formatRelativeTime } from "@/lib/datetime";
+import { cn } from "@/lib/utils/cn";
 
 type Props = {
   iso: string;
@@ -11,7 +11,7 @@ type Props = {
 
 /** Relative label after mount; stable date on SSR to avoid hydration mismatches. */
 export function RelativeTime({ iso, className }: Props) {
-  const [label, setLabel] = useState(() => formatShortDate(iso));
+  const [label, setLabel] = useState(() => formatMediumDate(iso));
 
   useEffect(() => {
     setLabel(formatRelativeTime(iso));

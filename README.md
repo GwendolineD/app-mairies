@@ -14,7 +14,7 @@ PWA mobile-first pour créer du lien social dans les communes françaises.
 ## Démarrage
 
 ```bash
-cd vie-locale
+cd tous-voisins
 cp .env.example .env.local
 # Renseigner NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
 npm install
@@ -43,7 +43,7 @@ npx tsx scripts/import-communes.ts
 | Compte | Email | Rôle | URL |
 |--------|-------|------|-----|
 | Vous (backoffice) | `dubois.gwendoline@hotmail.fr` | Super admin (`profiles.is_platform_admin`) | `/backoffice/admin` |
-| Mairie pilote | `mairie.les-authieux@vie-locale.dev` | Staff commune (`memberships.role = 'staff'`) | `/mairie` |
+| Mairie pilote | `mairie.les-authieux@tous-voisins.dev` | Staff commune (`memberships.role = 'staff'`) | `/mairie` |
 
 Mot de passe seed local : **`VieLocaleDev2026!`** (voir [`supabase/seed.sql`](supabase/seed.sql))
 

@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useVisualViewportBottomSheet } from "@/lib/hooks/use-visual-viewport-bottom-sheet";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 import { XIcon } from "lucide-react";
 
 type ModalSize = "sm" | "md" | "lg" | "xl";

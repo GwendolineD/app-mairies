@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { logAudit } from "@/lib/audit/log";
 import { assertAuthorMembership, assertCanManageEvent } from "@/lib/auth/ownership";
 import { requireActiveMembership } from "@/lib/auth/session";
 import { COMMUNE_STAFF_ROLES } from "@/lib/constants/roles";
@@ -68,6 +69,15 @@ export async function createEvent(formData: FormData): Promise<void> {
     authorDisplayName: ctx.profile.display_name,
   });
 
+  void logAudit({
+    action: "content.create_event",
+    category: "content",
+    userId: ctx.userId,
+    targetType: "event",
+    targetId: created.id,
+    communeId: membership.commune_id,
+  });
+
   redirect(ROUTES.evenements.list);
 }
 
@@ -106,6 +116,16 @@ export async function deleteEvent(id: string) {
 
   const { error } = await supabase.from("events").delete().eq("id", id);
   if (error) return { error: error.message };
+
+  void logAudit({
+    action: "content.delete_event",
+    category: "content",
+    userId: ctx.userId,
+    targetType: "event",
+    targetId: id,
+    communeId: ctx.activeMembership!.commune_id,
+  });
+
   revalidatePath(ROUTES.evenements.list);
   revalidatePath(ROUTES.mairie.evenements);
   revalidatePath(ROUTES.mairie.evenementDetail(id));
@@ -223,6 +243,15 @@ export async function createEventFromModal(
     authorDisplayName: ctx.profile.display_name,
   });
 
+  void logAudit({
+    action: "content.create_event",
+    category: "content",
+    userId: ctx.userId,
+    targetType: "event",
+    targetId: created.id,
+    communeId: membership.commune_id,
+  });
+
   return { success: true, id: created.id };
 }
 
@@ -274,6 +303,16 @@ export async function updateEvent(
   revalidatePath(ROUTES.evenements.detail(id));
   revalidatePath(ROUTES.mairie.evenements);
   revalidatePath(ROUTES.mairie.evenementDetail(id));
+
+  void logAudit({
+    action: "content.update_event",
+    category: "content",
+    userId: ctx.userId,
+    targetType: "event",
+    targetId: id,
+    communeId: ctx.activeMembership!.commune_id,
+  });
+
   return { success: true };
 }
 

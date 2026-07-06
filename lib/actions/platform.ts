@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { logAudit } from "@/lib/audit/log";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
@@ -132,9 +133,20 @@ export async function setCommuneAccessStatus(
   communeId: string,
   status: AccessStatus,
 ): Promise<PlatformActionResult> {
-  await requirePlatformAdmin();
+  const { userId } = await requirePlatformAdmin();
 
   const supabase = await createClient();
+
+  const { data: commune, error: fetchError } = await supabase
+    .from("communes")
+    .select("access_status")
+    .eq("id", communeId)
+    .maybeSingle();
+
+  if (fetchError || !commune) {
+    return { success: false, error: "Commune introuvable." };
+  }
+
   const { error } = await supabase
     .from("communes")
     .update({ access_status: status })
@@ -143,6 +155,20 @@ export async function setCommuneAccessStatus(
   if (error) {
     return { success: false, error: error.message };
   }
+
+  void logAudit({
+    action: "admin.set_commune_status",
+    category: "admin",
+    severity: "critical",
+    userId,
+    targetType: "commune",
+    targetId: communeId,
+    communeId,
+    metadata: {
+      old_status: commune.access_status,
+      new_status: status,
+    },
+  });
 
   revalidatePath(ROUTES.backoffice.communes);
   revalidatePath(ROUTES.backoffice.communeDetail(communeId));
@@ -210,7 +236,7 @@ export async function updateCommuneInfo(
     mairieAddressLng?: number;
   },
 ): Promise<PlatformActionResult> {
-  await requirePlatformAdmin();
+  const { userId } = await requirePlatformAdmin();
 
   if (!communeId) {
     return { success: false, error: "Commune introuvable." };
@@ -263,6 +289,15 @@ export async function updateCommuneInfo(
     return { success: false, error: error.message };
   }
 
+  void logAudit({
+    action: "admin.update_commune_info",
+    category: "admin",
+    userId,
+    targetType: "commune",
+    targetId: communeId,
+    communeId,
+  });
+
   revalidatePath(ROUTES.backoffice.communes);
   revalidatePath(ROUTES.backoffice.communeDetail(communeId));
   revalidatePath(ROUTES.mairie.evenements);
@@ -270,15 +305,36 @@ export async function updateCommuneInfo(
 }
 
 export async function softDeleteAnnouncementByAdmin(id: string) {
-  await requirePlatformAdmin();
+  const { userId } = await requirePlatformAdmin();
 
   const supabase = await createClient();
+  const { data: announcement, error: fetchError } = await supabase
+    .from("announcements")
+    .select("commune_id")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (fetchError || !announcement) {
+    return { error: "Annonce introuvable." };
+  }
+
   const { error } = await supabase
     .from("announcements")
     .delete()
     .eq("id", id);
 
   if (error) return { error: error.message };
+
+  void logAudit({
+    action: "admin.delete_announcement",
+    category: "admin",
+    severity: "warning",
+    userId,
+    targetType: "announcement",
+    targetId: id,
+    communeId: announcement.commune_id,
+  });
+
   revalidatePath(ROUTES.backoffice.admin);
   return { success: true };
 }
@@ -344,7 +400,7 @@ export async function markSubscriptionPaid(
   paidAt: string,
   paymentMethod: string,
 ): Promise<PlatformActionResult> {
-  await requirePlatformAdmin();
+  const { userId } = await requirePlatformAdmin();
 
   if (!paidAt || !paymentMethod.trim()) {
     return { success: false, error: "Date et moyen de paiement requis." };
@@ -374,6 +430,17 @@ export async function markSubscriptionPaid(
     return { success: false, error: error.message };
   }
 
+  void logAudit({
+    action: "billing.mark_paid",
+    category: "billing",
+    severity: "critical",
+    userId,
+    targetType: "subscription",
+    targetId: subscriptionId,
+    communeId: subscription.commune_id,
+    metadata: { paid_at: paidAt, payment_method: paymentMethod.trim() },
+  });
+
   revalidatePath(ROUTES.backoffice.communeDetail(subscription.commune_id));
   return { success: true };
 }
@@ -381,7 +448,7 @@ export async function markSubscriptionPaid(
 export async function deleteSubscriptionPeriod(
   subscriptionId: string,
 ): Promise<PlatformActionResult> {
-  await requirePlatformAdmin();
+  const { userId } = await requirePlatformAdmin();
 
   const supabase = await createClient();
   const { data: subscription, error: fetchError } = await supabase
@@ -402,6 +469,16 @@ export async function deleteSubscriptionPeriod(
   if (error) {
     return { success: false, error: error.message };
   }
+
+  void logAudit({
+    action: "billing.delete_period",
+    category: "billing",
+    severity: "critical",
+    userId,
+    targetType: "subscription",
+    targetId: subscriptionId,
+    communeId: subscription.commune_id,
+  });
 
   revalidatePath(ROUTES.backoffice.communeDetail(subscription.commune_id));
   return { success: true };
@@ -431,7 +508,7 @@ export async function updateEmailTemplate(
   slug: string,
   data: { subject: string; bodyHtml: string },
 ): Promise<PlatformActionResult> {
-  await requirePlatformAdmin();
+  const { userId } = await requirePlatformAdmin();
 
   if (!slug || !data.subject.trim() || !data.bodyHtml.trim()) {
     return { success: false, error: "Sujet et contenu HTML requis." };
@@ -454,6 +531,15 @@ export async function updateEmailTemplate(
   if (error) {
     return { success: false, error: error.message };
   }
+
+  void logAudit({
+    action: "admin.update_email_template",
+    category: "admin",
+    severity: "warning",
+    userId,
+    targetType: "email_template",
+    targetId: slug,
+  });
 
   revalidatePath(ROUTES.backoffice.emails);
   return { success: true };

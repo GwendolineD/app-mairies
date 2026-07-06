@@ -74,60 +74,53 @@ export function EventSidebarActions({
 }: Props) {
   const contactLabel = `Contacter ${authorName.split(" ")[0]}`;
 
+  const contactCard = !isAuthor ? (
+    <>
+      <div className="space-y-4 md:hidden">
+        <Card className={cn("space-y-4 p-4", className)}>
+          <h2 className="text-lg font-semibold text-text">Contact</h2>
+          <div className="flex items-center gap-3">
+            <UserAvatar name={authorName} url={authorAvatarUrl} size="sm" />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-text">
+                {authorName}
+              </p>
+              <p className="text-xs text-muted">{memberSince}</p>
+            </div>
+          </div>
+          <ContactAnnouncementButton
+            contextId={eventId}
+            contextType="event"
+            label={contactLabel}
+            icon={<MessageCircle className="size-4" aria-hidden />}
+            className="py-4"
+          />
+        </Card>
+      </div>
+
+      <Card className={cn("hidden space-y-4 md:block md:p-5", className)}>
+        <h2 className="text-lg font-semibold text-text">Contact</h2>
+        <div className="flex items-center gap-3">
+          <UserAvatar name={authorName} url={authorAvatarUrl} />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-text">
+              {authorName}
+            </p>
+            <p className="text-xs text-muted">{memberSince}</p>
+          </div>
+        </div>
+        <ContactAnnouncementButton
+          contextId={eventId}
+          contextType="event"
+          label={contactLabel}
+          icon={<MessageCircle className="size-4" aria-hidden />}
+        />
+      </Card>
+    </>
+  ) : null;
+
   return (
     <>
-      {isAuthor ? (
-        <AuthorActionsCard
-          eventId={eventId}
-          editData={editData}
-          className={className}
-          deleteRedirectHref={deleteRedirectHref}
-        />
-      ) : (
-        <>
-          <div className="space-y-4 md:hidden">
-            <Card className={cn("space-y-4 p-4", className)}>
-              <h2 className="text-lg font-semibold text-text">Contact</h2>
-              <div className="flex items-center gap-3">
-                <UserAvatar name={authorName} url={authorAvatarUrl} size="sm" />
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-text">
-                    {authorName}
-                  </p>
-                  <p className="text-xs text-muted">{memberSince}</p>
-                </div>
-              </div>
-              <ContactAnnouncementButton
-                contextId={eventId}
-                contextType="event"
-                label={contactLabel}
-                icon={<MessageCircle className="size-4" aria-hidden />}
-                className="py-4"
-              />
-            </Card>
-          </div>
-
-          <Card className={cn("hidden space-y-4 md:block md:p-5", className)}>
-            <h2 className="text-lg font-semibold text-text">Contact</h2>
-            <div className="flex items-center gap-3">
-              <UserAvatar name={authorName} url={authorAvatarUrl} />
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-text">
-                  {authorName}
-                </p>
-                <p className="text-xs text-muted">{memberSince}</p>
-              </div>
-            </div>
-            <ContactAnnouncementButton
-              contextId={eventId}
-              contextType="event"
-              label={contactLabel}
-              icon={<MessageCircle className="size-4" aria-hidden />}
-            />
-          </Card>
-        </>
-      )}
-
       {volunteersNeeded != null && volunteersNeeded > 0 ? (
         <VolunteersCard
           eventId={eventId}
@@ -148,6 +141,17 @@ export function EventSidebarActions({
         participants={participants}
         className={className}
       />
+
+      {contactCard}
+
+      {isAuthor ? (
+        <AuthorActionsCard
+          eventId={eventId}
+          editData={editData}
+          className={className}
+          deleteRedirectHref={deleteRedirectHref}
+        />
+      ) : null}
 
       {sourceInitiative ? (
         <SourceInitiativeCard
