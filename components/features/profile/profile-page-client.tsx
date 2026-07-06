@@ -24,6 +24,8 @@ import {
   uploadImageToCloudinary,
 } from "@/lib/services/cloudinary-client";
 import { ProfileTabs, type ProfileTabKey } from "@/components/features/profile/profile-tabs";
+import { ProfileListPagination } from "@/components/features/profile/profile-list-pagination";
+import type { ProfileListResult } from "@/lib/queries/profile-content";
 import { ProfileEmptyState } from "@/components/features/profile/profile-empty-state";
 import { NeighborInviteBlock } from "@/components/features/profile/neighbor-invite-block";
 import { PwaInstallCard } from "@/components/features/pwa/pwa-install-card";
@@ -83,9 +85,9 @@ type Props = {
   profile: ProfileData;
   membership: MembershipData;
   activeTab: ProfileTabKey;
-  announcements: AnnouncementWithAuthor[];
-  initiatives: InitiativeWithAuthor[];
-  events: AgendaEventRecord[];
+  announcements: ProfileListResult<AnnouncementWithAuthor>;
+  initiatives: ProfileListResult<InitiativeWithAuthor>;
+  events: ProfileListResult<AgendaEventRecord>;
   invite: InviteData;
   settings: SettingsData;
   emailChanged?: boolean;
@@ -129,13 +131,13 @@ export function ProfilePageClient({
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
         <section className="px-4 md:px-0">
           {activeTab === "annonces" && (
-            <AnnouncementsPanel announcements={announcements} />
+            <AnnouncementsPanel list={announcements} />
           )}
           {activeTab === "initiatives" && (
-            <InitiativesPanel initiatives={initiatives} />
+            <InitiativesPanel list={initiatives} />
           )}
           {activeTab === "evenements" && (
-            <EventsPanel events={events} />
+            <EventsPanel list={events} />
           )}
           {activeTab === "participations" && <ParticipationsPlaceholder />}
           {activeTab === "parametres" && (
@@ -385,14 +387,29 @@ function ProfileStat({
   );
 }
 
-function AnnouncementsPanel({
-  announcements,
+function ProfileSectionHeading({
+  title,
+  count,
 }: {
-  announcements: AnnouncementWithAuthor[];
+  title: string;
+  count: number;
+}) {
+  return (
+    <h2 className="text-xl font-semibold leading-7 text-text">
+      {title}{" "}
+      <span className="text-muted">({count})</span>
+    </h2>
+  );
+}
+
+function AnnouncementsPanel({
+  list,
+}: {
+  list: ProfileListResult<AnnouncementWithAuthor>;
 }) {
   const router = useRouter();
 
-  if (announcements.length === 0) {
+  if (list.totalCount === 0) {
     return (
       <ProfileEmptyState
         title="Aucune annonce en cours"
@@ -412,26 +429,33 @@ function AnnouncementsPanel({
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold leading-7 text-text">
-        Mes annonces en cours
-      </h2>
+      <ProfileSectionHeading
+        title="Mes annonces en cours"
+        count={list.totalCount}
+      />
       <div className="space-y-3">
-        {announcements.map((a) => (
+        {list.items.map((a) => (
           <AnnouncementCard key={a.id} announcement={a} layout="horizontal" />
         ))}
       </div>
+      <ProfileListPagination
+        tab="annonces"
+        page={list.page}
+        totalCount={list.totalCount}
+        pageSize={list.pageSize}
+      />
     </div>
   );
 }
 
 function InitiativesPanel({
-  initiatives,
+  list,
 }: {
-  initiatives: InitiativeWithAuthor[];
+  list: ProfileListResult<InitiativeWithAuthor>;
 }) {
   const router = useRouter();
 
-  if (initiatives.length === 0) {
+  if (list.totalCount === 0) {
     return (
       <ProfileEmptyState
         title="Aucune initiative en cours"
@@ -451,22 +475,33 @@ function InitiativesPanel({
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold leading-7 text-text">
-        Mes initiatives en cours
-      </h2>
+      <ProfileSectionHeading
+        title="Mes initiatives en cours"
+        count={list.totalCount}
+      />
       <div className="space-y-3">
-        {initiatives.map((i) => (
+        {list.items.map((i) => (
           <InitiativeCard key={i.id} initiative={i} layout="horizontal" />
         ))}
       </div>
+      <ProfileListPagination
+        tab="initiatives"
+        page={list.page}
+        totalCount={list.totalCount}
+        pageSize={list.pageSize}
+      />
     </div>
   );
 }
 
-function EventsPanel({ events }: { events: AgendaEventRecord[] }) {
+function EventsPanel({
+  list,
+}: {
+  list: ProfileListResult<AgendaEventRecord>;
+}) {
   const router = useRouter();
 
-  if (events.length === 0) {
+  if (list.totalCount === 0) {
     return (
       <ProfileEmptyState
         title="Aucun événement en cours"
@@ -486,14 +521,21 @@ function EventsPanel({ events }: { events: AgendaEventRecord[] }) {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold leading-7 text-text">
-        Mes événements en cours
-      </h2>
+      <ProfileSectionHeading
+        title="Mes événements en cours"
+        count={list.totalCount}
+      />
       <div className="space-y-3">
-        {events.map((e) => (
+        {list.items.map((e) => (
           <EventCard key={e.id} event={e} layout="horizontal" />
         ))}
       </div>
+      <ProfileListPagination
+        tab="evenements"
+        page={list.page}
+        totalCount={list.totalCount}
+        pageSize={list.pageSize}
+      />
     </div>
   );
 }

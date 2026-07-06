@@ -9,6 +9,7 @@ import {
 } from "@/lib/constants/initiative-categories";
 import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";
+import { ContentSuspendedBadge } from "@/components/features/content-suspended-indicator";
 import { cn } from "@/lib/utils/cn";
 import { formatDisplayName } from "@/lib/utils/display-name";
 import { formatEventRange, formatRelativeTime } from "@/lib/datetime";
@@ -21,6 +22,7 @@ export type InitiativeCardData = {
   category_slug: string | null;
   address_label: string | null;
   created_at: string;
+  suspended_at?: string | null;
   support_count?: number;
   linked_event?: { id: string; starts_at: string; ends_at: string } | null;
   author_membership?: {
@@ -148,10 +150,14 @@ export function InitiativeCard({
             )}
           </div>
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col p-2">
-            <SupportBadge
-              count={supportCount}
-              className="absolute right-2 top-2 text-xs [&_svg]:size-3.5"
-            />
+            {i.suspended_at ? (
+              <ContentSuspendedBadge />
+            ) : (
+              <SupportBadge
+                count={supportCount}
+                className="absolute right-2 top-2 text-xs [&_svg]:size-3.5"
+              />
+            )}
             <div className="flex items-center gap-1">
               {i.category_slug ? (
                 <CategoryTag
@@ -222,9 +228,10 @@ export function InitiativeCard({
               Initiative
             </div>
           )}
+          {i.suspended_at ? <ContentSuspendedBadge /> : null}
         </div>
 
-        <div className="flex flex-1 flex-col gap-1 px-2.5 pt-2.5 pb-2.5">
+        <div className="relative flex flex-1 flex-col gap-1 px-2.5 pt-2.5 pb-2.5">
           <div className="flex items-center justify-between gap-2">
             {i.category_slug ? (
               <CategoryTag

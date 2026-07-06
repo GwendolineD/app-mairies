@@ -9,6 +9,7 @@ import {
 } from "@/lib/constants/initiative-categories";
 import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";
+import { ContentSuspendedBadge } from "@/components/features/content-suspended-indicator";
 import { cn } from "@/lib/utils/cn";
 import { getEventRangeParts } from "@/lib/datetime";
 import type { AgendaEventRecord } from "@/lib/types";
@@ -24,6 +25,7 @@ export type EventCardData = Pick<
   | "starts_at"
   | "ends_at"
   | "volunteers_needed"
+  | "suspended_at"
 > & {
   volunteers_registered?: number;
 };
@@ -124,6 +126,7 @@ export function EventCard({
             )}
           </div>
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col p-2">
+            {e.suspended_at ? <ContentSuspendedBadge /> : null}
             <div className="flex items-center gap-1">
               {e.category_slug ? (
                 <CategoryTag
@@ -171,9 +174,10 @@ export function EventCard({
               Événement
             </div>
           )}
+          {e.suspended_at ? <ContentSuspendedBadge /> : null}
         </div>
 
-        <div className="flex flex-1 flex-col gap-1 px-2.5 pt-2.5 pb-2.5">
+        <div className="relative flex flex-1 flex-col gap-1 px-2.5 pt-2.5 pb-2.5">
           <div className="flex items-center gap-2">
             {e.category_slug ? (
               <CategoryTag
