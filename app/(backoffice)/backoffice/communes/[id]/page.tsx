@@ -65,7 +65,7 @@ export default async function BackofficeCommuneDetailPage(props: {
 
   return (
     <PageStack>
-      <HistoryBackLink />
+      <HistoryBackLink fallbackHref={ROUTES.backoffice.communes} />
 
       <CommuneDetailHeader
         name={stats.commune.name}

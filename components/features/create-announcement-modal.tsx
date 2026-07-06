@@ -65,6 +65,7 @@ type AddressFormState = {
 type Props = {
   open: boolean;
   onClose: () => void;
+  onCreated?: (id: string) => void;
   communeId: string;
   membershipAddress: MembershipAddress;
   presetType?: AnnouncementType;
@@ -123,6 +124,7 @@ function getInitialFormState(presetType: AnnouncementType) {
 export function CreateAnnouncementModal({
   open,
   onClose,
+  onCreated,
   communeId,
   membershipAddress,
   presetType = "demande",
@@ -335,6 +337,12 @@ export function CreateAnnouncementModal({
         if (draftKey) clearFormDraft(draftKey);
         setSubmitting(false);
         setSubmitPhase("idle");
+
+        if (onCreated) {
+          onCreated(id);
+          return;
+        }
+
         onClose();
         router.push(ROUTES.annonces.detail(id));
       }

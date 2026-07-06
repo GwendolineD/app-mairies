@@ -1,21 +1,34 @@
 "use client";
 
 import { ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { ROUTES } from "@/lib/constants/routes";
+import { resolveInAppBackTarget } from "@/lib/navigation/in-app-history";
 import { cn } from "@/lib/utils/cn";
 
 type Props = {
   label?: string;
   className?: string;
+  /** Used when there is no prior in-app page in our navigation stack. */
+  fallbackHref?: string;
 };
 
-export function HistoryBackLink({ label = "Retour", className }: Props) {
+export function HistoryBackLink({
+  label = "Retour",
+  className,
+  fallbackHref = ROUTES.accueil,
+}: Props) {
   const router = useRouter();
+  const pathname = usePathname();
+
+  function handleBack() {
+    router.push(resolveInAppBackTarget(pathname, fallbackHref));
+  }
 
   return (
     <button
       type="button"
-      onClick={() => router.back()}
+      onClick={handleBack}
       className={cn(
         "inline-flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-purple underline",
         className,

@@ -5,6 +5,7 @@ import { EmailTemplateEditHeader } from "@/components/features/backoffice/email-
 import { EmailTemplateEditor } from "@/components/features/backoffice/email-template-editor";
 import { HistoryBackLink } from "@/components/ui/history-back-link";
 import { PageStack } from "@/components/ui/page-stack";
+import { ROUTES } from "@/lib/constants/routes";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,7 @@ export default async function BackofficeEmailTemplateEditPage(props: {
 
   return (
     <PageStack>
-      <HistoryBackLink />
+      <HistoryBackLink fallbackHref={ROUTES.backoffice.emails} />
       <EmailTemplateEditHeader
         slug={template.slug}
         description={template.description}
