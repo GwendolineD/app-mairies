@@ -17,6 +17,7 @@ import {
   createEventFromInitiativeSchema,
 } from "@/lib/validations/schemas";
 import { fanoutNewContentNotification } from "@/lib/services/notification-fanout";
+import { incrementMembershipPublishCounter } from "@/lib/services/membership-publish-counters";
 import {
   listInitiativesPage,
   INITIATIVES_PAGE_SIZE,
@@ -114,7 +115,7 @@ export async function createInitiative(formData: FormData): Promise<{ id: string
   const eventEndsAt = formData.get("eventEndsAt") as string | null;
   if (eventStartsAt && eventEndsAt) {
     const volunteersNeeded = formData.get("eventVolunteersNeeded") as string | null;
-    await supabase.from("events").insert({
+    const { error: linkedEventError } = await supabase.from("events").insert({
       commune_id: membership.commune_id,
       author_membership_id: membership.id,
       source_initiative_id: created.id,
@@ -130,10 +131,26 @@ export async function createInitiative(formData: FormData): Promise<{ id: string
       address_lng: addressLng,
       status: EVENT_STATUS.active,
     });
+    if (!linkedEventError) {
+      incrementMembershipPublishCounter(
+        supabase,
+        membership.id,
+        "total_events_published",
+        { logContext: "createInitiative.linkedEvent" },
+      );
+    }
     revalidatePath(ROUTES.evenements.list);
   }
 
   revalidatePath(ROUTES.initiatives.list);
+  revalidatePath(ROUTES.profil);
+
+  incrementMembershipPublishCounter(
+    supabase,
+    membership.id,
+    "total_initiatives_published",
+    { logContext: "createInitiative" },
+  );
 
   void fanoutNewContentNotification({
     contextType: "initiative",
@@ -322,6 +339,14 @@ export async function createEventFromInitiative(formData: FormData): Promise<str
 
   revalidatePath(ROUTES.evenements.list);
   revalidatePath(ROUTES.initiatives.detail(parsed.data.initiativeId));
+  revalidatePath(ROUTES.profil);
+
+  incrementMembershipPublishCounter(
+    supabase,
+    membership.id,
+    "total_events_published",
+    { logContext: "createEventFromInitiative" },
+  );
 
   void fanoutNewContentNotification({
     contextType: "event",

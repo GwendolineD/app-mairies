@@ -13,6 +13,7 @@ import { parseFormId } from "@/lib/utils/form-data";
 import { buildAddressLabel, parseAddressLabelParts } from "@/lib/utils/format-address";
 import { eventSchema, eventModalSchema } from "@/lib/validations/schemas";
 import { fanoutNewContentNotification } from "@/lib/services/notification-fanout";
+import { incrementMembershipPublishCounter } from "@/lib/services/membership-publish-counters";
 import type { EventEditData, AgendaEventRecord } from "@/lib/types";
 
 export async function createEvent(formData: FormData): Promise<void> {
@@ -53,12 +54,12 @@ export async function createEvent(formData: FormData): Promise<void> {
   revalidatePath(ROUTES.evenements.list);
   revalidatePath(ROUTES.profil);
 
-  void supabase.rpc("increment_membership_counter", {
-    p_membership_id: membership.id,
-    p_column_name: "total_events_published",
-  }).then(({ error: rpcErr }) => {
-    if (rpcErr) console.error("[createEvent] counter increment failed", rpcErr.message);
-  });
+  incrementMembershipPublishCounter(
+    supabase,
+    membership.id,
+    "total_events_published",
+    { logContext: "createEvent" },
+  );
 
   void fanoutNewContentNotification({
     contextType: "event",
@@ -233,6 +234,17 @@ export async function createEventFromModal(
   revalidatePath(ROUTES.evenements.list);
   revalidatePath(ROUTES.mairie.evenements);
   revalidatePath(ROUTES.mairie.evenementDetail(created.id));
+  revalidatePath(ROUTES.profil);
+
+  incrementMembershipPublishCounter(
+    supabase,
+    membership.id,
+    "total_events_published",
+    {
+      skip: parsed.data.isOfficial === true,
+      logContext: "createEventFromModal",
+    },
+  );
 
   void fanoutNewContentNotification({
     contextType: "event",

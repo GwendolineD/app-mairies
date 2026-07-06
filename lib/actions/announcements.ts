@@ -23,6 +23,7 @@ import {
   formatPostgrestError,
 } from "@/lib/utils/supabase-errors";
 import { fanoutNewContentNotification } from "@/lib/services/notification-fanout";
+import { incrementMembershipPublishCounter } from "@/lib/services/membership-publish-counters";
 
 type AnnouncementStatusUpdate = Extract<
   AnnouncementStatusValue,
@@ -93,13 +94,12 @@ export async function createAnnouncement(formData: FormData): Promise<{ id: stri
   revalidatePath(ROUTES.annonces.detail(created.id));
   revalidatePath(ROUTES.profil);
 
-  // Best-effort increment of the denormalized publish counter
-  void supabase.rpc("increment_membership_counter", {
-    p_membership_id: membership.id,
-    p_column_name: "total_announcements_published",
-  }).then(({ error: rpcErr }) => {
-    if (rpcErr) console.error("[createAnnouncement] counter increment failed", rpcErr.message);
-  });
+  incrementMembershipPublishCounter(
+    supabase,
+    membership.id,
+    "total_announcements_published",
+    { logContext: "createAnnouncement" },
+  );
 
   void fanoutNewContentNotification({
     contextType: "announcement",

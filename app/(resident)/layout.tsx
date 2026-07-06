@@ -28,8 +28,13 @@ export default async function ResidentRootLayout({
 
   const communeId = ctx.activeMembership!.commune_id;
 
-  const [unreadMessages, categoryRows, initiativeCategoryRows, supportEmail, pushPublicKey] =
-    await Promise.all([
+  const [
+    unreadMessages,
+    categoryRows,
+    initiativeCategoryRows,
+    supportEmail,
+    pushPublicKey,
+  ] = await Promise.all([
     countUnreadMessages(supabase, communeId),
     getAnnouncementCategories(),
     getInitiativeEventCategories(),
@@ -53,7 +58,10 @@ export default async function ResidentRootLayout({
       />
 
       <div className="flex min-h-0 w-full flex-1">
-        <ResidentSidebar unreadMessages={unreadMessages} supportEmail={supportEmail} />
+        <ResidentSidebar
+          unreadMessages={unreadMessages}
+          supportEmail={supportEmail}
+        />
 
         <main className="min-w-0 flex-1 overflow-y-auto bg-surface px-5 py-4 pb-28 md:px-6 md:py-6 md:pb-6 lg:px-8">
           <PwaInstallBanner

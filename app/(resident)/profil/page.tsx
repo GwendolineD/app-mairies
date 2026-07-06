@@ -120,7 +120,7 @@ async function ProfilContent({
     membership.address_city,
   );
 
-  const inviteCount = invitesResult.count ?? (invitesResult.data?.length ?? 0);
+  const inviteCount = invitesResult.count ?? invitesResult.data?.length ?? 0;
 
   return (
     <ProfilePageClient

@@ -23,7 +23,10 @@ import {
   CloudinaryUploadError,
   uploadImageToCloudinary,
 } from "@/lib/services/cloudinary-client";
-import { ProfileTabs, type ProfileTabKey } from "@/components/features/profile/profile-tabs";
+import {
+  ProfileTabs,
+  type ProfileTabKey,
+} from "@/components/features/profile/profile-tabs";
 import { ProfileListPagination } from "@/components/features/profile/profile-list-pagination";
 import type { ProfileListResult } from "@/lib/queries/profile-content";
 import { ProfileEmptyState } from "@/components/features/profile/profile-empty-state";
@@ -41,10 +44,7 @@ import { InitiativeCard } from "@/components/features/initiative-card";
 import { EventCard } from "@/components/features/event-card";
 import type { AnnouncementWithAuthor } from "@/lib/queries/announcements";
 import type { InitiativeWithAuthor } from "@/lib/queries/initiatives";
-import type {
-  AgendaEventRecord,
-  NotificationPreferences,
-} from "@/lib/types";
+import type { AgendaEventRecord, NotificationPreferences } from "@/lib/types";
 
 type ProfileData = {
   displayName: string;
@@ -136,13 +136,9 @@ export function ProfilePageClient({
           {activeTab === "initiatives" && (
             <InitiativesPanel list={initiatives} />
           )}
-          {activeTab === "evenements" && (
-            <EventsPanel list={events} />
-          )}
+          {activeTab === "evenements" && <EventsPanel list={events} />}
           {activeTab === "participations" && <ParticipationsPlaceholder />}
-          {activeTab === "parametres" && (
-            <SettingsPanel settings={settings} />
-          )}
+          {activeTab === "parametres" && <SettingsPanel settings={settings} />}
         </section>
 
         <aside className="space-y-5 px-4 md:px-0">
@@ -333,9 +329,21 @@ function ProfileHero({
               </span>
             </div>
             <div className="grid shrink-0 grid-cols-3 gap-3 md:w-80">
-              <ProfileStat label="Annonces" value={membership.totalAnnouncements} sublabel="publiées" />
-              <ProfileStat label="Initiatives" value={membership.totalInitiatives} sublabel="organisées" />
-              <ProfileStat label="Événements" value={membership.totalEvents} sublabel="créés" />
+              <ProfileStat
+                label="Annonces"
+                value={membership.totalAnnouncements}
+                sublabel="publiées"
+              />
+              <ProfileStat
+                label="Initiatives"
+                value={membership.totalInitiatives}
+                sublabel="organisées"
+              />
+              <ProfileStat
+                label="Événements"
+                value={membership.totalEvents}
+                sublabel="créés"
+              />
             </div>
           </div>
         </div>
@@ -381,7 +389,9 @@ function ProfileStat({
       <p className="text-xl font-bold leading-7 text-text">{value}</p>
       <p className="text-[10px] font-semibold leading-4 text-muted">{label}</p>
       {sublabel && (
-        <p className="text-[9px] font-medium leading-4 text-subtle">{sublabel}</p>
+        <p className="text-[9px] font-medium leading-4 text-subtle">
+          {sublabel}
+        </p>
       )}
     </div>
   );
@@ -396,8 +406,7 @@ function ProfileSectionHeading({
 }) {
   return (
     <h2 className="text-xl font-semibold leading-7 text-text">
-      {title}{" "}
-      <span className="text-muted">({count})</span>
+      {title} <span className="text-muted">({count})</span>
     </h2>
   );
 }
@@ -417,7 +426,9 @@ function AnnouncementsPanel({
         action={
           <Button
             type="button"
-            onClick={() => router.push(`${ROUTES.annonces.list}?create=annonce`)}
+            onClick={() =>
+              router.push(`${ROUTES.annonces.list}?create=annonce`)
+            }
           >
             <Plus className="size-4" aria-hidden />
             Publier une annonce
@@ -463,7 +474,9 @@ function InitiativesPanel({
         action={
           <Button
             type="button"
-            onClick={() => router.push(`${ROUTES.initiatives.list}?create=initiative`)}
+            onClick={() =>
+              router.push(`${ROUTES.initiatives.list}?create=initiative`)
+            }
           >
             <Plus className="size-4" aria-hidden />
             Lancer une initiative
@@ -494,11 +507,7 @@ function InitiativesPanel({
   );
 }
 
-function EventsPanel({
-  list,
-}: {
-  list: ProfileListResult<AgendaEventRecord>;
-}) {
+function EventsPanel({ list }: { list: ProfileListResult<AgendaEventRecord> }) {
   const router = useRouter();
 
   if (list.totalCount === 0) {

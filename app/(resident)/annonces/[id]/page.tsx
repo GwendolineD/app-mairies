@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { Calendar } from "lucide-react";
+import { Calendar, Megaphone } from "lucide-react";
 import { requireActiveMembership } from "@/lib/auth/session";
 import { unwrapOrThrow } from "@/lib/queries/helpers";
 import { listSimilarAnnouncements } from "@/lib/queries/announcements";
@@ -38,6 +38,8 @@ const DETAIL_CARD_CLASS =
   "rounded-none border-0 bg-transparent p-0 !shadow-none md:rounded-xl md:border md:border-border/60 md:bg-surface";
 const DESCRIPTION_SECTION_CLASS =
   "rounded-md border border-border/60 p-4";
+const SIDEBAR_SECTION_TITLE_CLASS =
+  "flex items-center gap-2 text-lg font-semibold text-text md:text-base md:leading-6";
 const DETAIL_BADGE_CLASS =
   "h-[22px] px-2.5 py-0 text-[10px] leading-none";
 const DETAIL_TYPE_PASTILLE_CLASS = `${DETAIL_BADGE_CLASS} gap-1 shadow-none [&_svg]:size-3`;
@@ -339,8 +341,11 @@ async function SimilarAnnouncements({
   if (similar.length === 0) return null;
 
   return (
-    <Card className={`space-y-3 p-5 ${DETAIL_CARD_CLASS}`}>
-      <h2 className="text-lg font-semibold text-text">Annonces similaires</h2>
+    <Card className={`space-y-3 !p-4 md:!p-5 ${DETAIL_CARD_CLASS}`}>
+      <h2 className={SIDEBAR_SECTION_TITLE_CLASS}>
+        <Megaphone className="size-5 shrink-0 text-orange" aria-hidden />
+        Annonces similaires
+      </h2>
       <div className="space-y-3">
         {similar.map((s: AnnouncementWithAuthor) => (
           <AnnouncementCard key={s.id} announcement={s} layout="horizontal" />
@@ -352,8 +357,11 @@ async function SimilarAnnouncements({
 
 function SimilarAnnouncementsSkeleton() {
   return (
-    <Card className={`space-y-3 p-5 ${DETAIL_CARD_CLASS}`}>
-      <Skeleton className="h-6 w-40" />
+    <Card className={`space-y-3 !p-4 md:!p-5 ${DETAIL_CARD_CLASS}`}>
+      <div className="flex items-center gap-2">
+        <Skeleton className="size-5 shrink-0 rounded-sm" />
+        <Skeleton className="h-7 w-36 md:h-6" />
+      </div>
       <div className="space-y-3">
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="flex gap-3">

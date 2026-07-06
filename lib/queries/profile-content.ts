@@ -141,7 +141,8 @@ export async function listAuthorEventsPage(
     .select("id", { count: "exact", head: true })
     .eq("commune_id", scope.communeId)
     .eq("author_membership_id", scope.membershipId)
-    .eq("status", EVENT_STATUS.active);
+    .eq("status", EVENT_STATUS.active)
+    .eq("is_official", false);
 
   if (countResult.error) {
     throw new Error(
@@ -159,6 +160,7 @@ export async function listAuthorEventsPage(
     .eq("commune_id", scope.communeId)
     .eq("author_membership_id", scope.membershipId)
     .eq("status", EVENT_STATUS.active)
+    .eq("is_official", false)
     .order("created_at", { ascending: false })
     .range(from, to);
 
