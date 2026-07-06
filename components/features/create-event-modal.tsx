@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { splitInstantToParisFields, todayParisYmd, toUtcFromParisLocal } from "@/lib/datetime";
+import { splitInstantToParisFields, todayParisYmd, toUtcFromParisLocal, clampEndDate, resolveEndDateAfterStartChange } from "@/lib/datetime";
 import { CalendarDays, Check, Loader2, MapPin, Sparkles, Users } from "lucide-react";
 import { createEventFromModal, updateEvent } from "@/lib/actions/events";
 import { searchAddresses, type BanFeature } from "@/lib/ban/client";
@@ -92,23 +92,6 @@ function parseDateTime(isoString: string): { date: string; time: string } {
 
 function combineDateAndTime(date: string, time: string): string | null {
   return toUtcFromParisLocal(date, time);
-}
-
-function isDateBefore(a: string, b: string): boolean {
-  if (!a || !b) return false;
-  return a < b;
-}
-
-function resolveEndDateAfterStartChange(startDate: string, endDate: string): string {
-  if (!startDate) return endDate;
-  if (!endDate || isDateBefore(endDate, startDate)) return startDate;
-  return endDate;
-}
-
-function clampEndDate(endDate: string, startDate: string): string {
-  if (!startDate) return endDate;
-  if (!endDate || isDateBefore(endDate, startDate)) return startDate;
-  return endDate;
 }
 
 function getInitialAddressFromEditData(

@@ -198,3 +198,23 @@ describe("toUtcFromParisLocal", () => {
     expect(toUtcFromParisLocal("", "14:30")).toBeNull();
   });
 });
+
+describe("date range helpers", () => {
+  it("resolveEndDateAfterStartChange keeps valid end or bumps to start", async () => {
+    const { resolveEndDateAfterStartChange } = await import("./business");
+    expect(resolveEndDateAfterStartChange("2026-07-10", "2026-07-15")).toBe(
+      "2026-07-15",
+    );
+    expect(resolveEndDateAfterStartChange("2026-07-10", "2026-07-05")).toBe(
+      "2026-07-10",
+    );
+    expect(resolveEndDateAfterStartChange("", "2026-07-05")).toBe("2026-07-05");
+  });
+
+  it("clampEndDate prevents end before start", async () => {
+    const { clampEndDate } = await import("./business");
+    expect(clampEndDate("2026-07-15", "2026-07-10")).toBe("2026-07-15");
+    expect(clampEndDate("2026-07-05", "2026-07-10")).toBe("2026-07-10");
+    expect(clampEndDate("2026-07-05", "")).toBe("2026-07-05");
+  });
+});

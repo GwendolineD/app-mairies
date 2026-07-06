@@ -6,6 +6,7 @@ import {
 import { ANNOUNCEMENT_CATEGORIES } from "@/lib/constants/announcement-categories";
 import { Button } from "@/components/ui/button";
 import { FormField, Input, Select, Textarea } from "@/components/ui/form-field";
+import { AnnouncementTargetDateField } from "@/components/features/announcements/announcement-target-date-field";
 
 type Props = {
   presetType?: AnnouncementType;
@@ -61,7 +62,7 @@ export function AnnouncementForm({
       </FormField>
 
       <FormField label="Date souhaitée (optionnel)">
-        <Input name="targetDate" type="date" />
+        <AnnouncementTargetDateField />
       </FormField>
 
       <FormField label="Photo principale · URL accessible (optionnel)">

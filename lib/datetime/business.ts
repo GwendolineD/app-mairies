@@ -71,3 +71,25 @@ export function countByParisWeek(
   }
   return map;
 }
+
+function isYmdBefore(a: string, b: string): boolean {
+  if (!a || !b) return false;
+  return a < b;
+}
+
+/** Keep end date on or after start when start changes (yyyy-MM-dd strings). */
+export function resolveEndDateAfterStartChange(
+  startDate: string,
+  endDate: string,
+): string {
+  if (!startDate) return endDate;
+  if (!endDate || isYmdBefore(endDate, startDate)) return startDate;
+  return endDate;
+}
+
+/** Clamp end date so it is not before start (yyyy-MM-dd strings). */
+export function clampEndDate(endDate: string, startDate: string): string {
+  if (!startDate) return endDate;
+  if (!endDate || isYmdBefore(endDate, startDate)) return startDate;
+  return endDate;
+}

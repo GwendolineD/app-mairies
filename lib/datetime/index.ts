@@ -3,10 +3,12 @@ export { APP_LOCALE, APP_TIMEZONE, DAY_MS } from "./constants";
 export {
   addDaysParisYmd,
   buildParisWeekBuckets,
+  clampEndDate,
   countByParisWeek,
   formatParisWeekLabel,
   isSameParisDay,
   nowUtc,
+  resolveEndDateAfterStartChange,
   startOfParisWeek,
   todayParisYmd,
   toParisYmd,

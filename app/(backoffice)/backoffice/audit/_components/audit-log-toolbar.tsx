@@ -4,6 +4,8 @@ import { X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { Input } from "@/components/ui/input";
+import { DatePickerField } from "@/components/ui/date-picker-field";
+import { resolveEndDateAfterStartChange } from "@/lib/datetime";
 import {
   Select,
   SelectContent,
@@ -189,23 +191,28 @@ export function AuditLogToolbar({ params }: AuditLogToolbarProps) {
           </SelectContent>
         </Select>
 
-        <Input
-          type="date"
+        <DatePickerField
           value={params.dateFrom ?? ""}
-          onChange={(event) =>
-            navigate({ dateFrom: event.target.value || undefined })
+          onChange={(value) =>
+            navigate({
+              dateFrom: value || undefined,
+              dateTo: params.dateTo
+                ? resolveEndDateAfterStartChange(value, params.dateTo)
+                : undefined,
+            })
           }
-          className="w-40 rounded-sm"
+          maxDate={params.dateTo}
+          placeholder="Date de début"
+          className="w-40"
           aria-label="Date de début"
         />
 
-        <Input
-          type="date"
+        <DatePickerField
           value={params.dateTo ?? ""}
-          onChange={(event) =>
-            navigate({ dateTo: event.target.value || undefined })
-          }
-          className="w-40 rounded-sm"
+          onChange={(value) => navigate({ dateTo: value || undefined })}
+          minDate={params.dateFrom}
+          placeholder="Date de fin"
+          className="w-40"
           aria-label="Date de fin"
         />
 
