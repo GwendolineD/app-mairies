@@ -20,7 +20,11 @@ export function DashboardMembersChart({
 }) {
   return (
     <ChartContainer config={chartConfig} className="h-[280px] w-full">
-      <AreaChart data={data} accessibilityLayer>
+      <AreaChart
+        data={data}
+        accessibilityLayer
+        margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
+      >
         <CartesianGrid vertical={false} />
         <XAxis
           dataKey="week"
@@ -32,7 +36,8 @@ export function DashboardMembersChart({
           tickLine={false}
           axisLine={false}
           allowDecimals={false}
-          width={32}
+          width={24}
+          tickMargin={4}
         />
         <ChartTooltip content={<ChartTooltipContent />} />
         <defs>

@@ -1,5 +1,3 @@
-WARN: config section [inbucket] is deprecated. Please use [local_smtp] instead.
-Connecting to db 5432
 export type Json =
   | string
   | number
@@ -1947,6 +1945,17 @@ export type Database = {
       commune_fulfilled_demands_this_week: {
         Args: { p_commune_id: string }
         Returns: number
+      }
+      commune_outcome_banner_stats: {
+        Args: { p_commune_id: string }
+        Returns: {
+          demands_month: number
+          demands_week: number
+          events_month: number
+          events_week: number
+          offers_month: number
+          offers_week: number
+        }[]
       }
       count_total_unread: { Args: { p_commune_id: string }; Returns: number }
       get_conversation_inbox: {

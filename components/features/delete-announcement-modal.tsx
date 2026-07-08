@@ -73,9 +73,7 @@ export function DeleteAnnouncementModal({
         />
 
         <p className="text-sm font-medium leading-5 text-muted">
-          Votre annonce sera immédiatement retirée des résultats. Elle sera
-          définitivement supprimée après 30 jours. Cette action est
-          irréversible passé ce délai.
+          Votre annonce sera immédiatement retirée des résultats.
         </p>
 
         {error ? <p className="text-xs text-coral">{error}</p> : null}

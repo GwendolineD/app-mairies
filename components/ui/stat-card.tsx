@@ -51,7 +51,7 @@ export function StatCard({
   );
 
   const base =
-    "flex flex-col gap-1 rounded-3xl border border-border/60 bg-surface p-5 shadow-card";
+    "flex flex-col gap-1 rounded-lg border border-border/60 bg-surface p-5 shadow-card";
 
   if (href) {
     return (

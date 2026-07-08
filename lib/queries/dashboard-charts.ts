@@ -27,11 +27,38 @@ export type OutcomeStatsRow = {
   count: number;
 };
 
+export type CategoryBreakdown = {
+  categorySlug: string;
+  fulfilled: number;
+  unfulfilled: number;
+};
+
+export type OutcomeSection = {
+  fulfilled: number;
+  unfulfilled: number;
+  byCategory: CategoryBreakdown[];
+};
+
 export type OutcomeSummary = {
-  announcementDemande: { fulfilled: number; unfulfilled: number };
-  announcementOffre: { fulfilled: number; unfulfilled: number };
-  events: { fulfilled: number; unfulfilled: number };
+  announcementDemande: OutcomeSection;
+  announcementOffre: OutcomeSection;
+  events: OutcomeSection;
   byCategory: OutcomeStatsRow[];
+};
+
+export type BannerSlide = {
+  key: "demandes" | "offres" | "events";
+  count: number;
+  period: "week" | "month";
+};
+
+type OutcomeBannerStatsRow = {
+  demands_week: number;
+  demands_month: number;
+  offers_week: number;
+  offers_month: number;
+  events_week: number;
+  events_month: number;
 };
 
 const DASHBOARD_CHART_ROW_LIMIT = 5000;
@@ -160,6 +187,41 @@ export async function fetchFulfilledCountThisWeek(
   return data ?? 0;
 }
 
+function resolveBannerSlideCount(
+  weekCount: number,
+  monthCount: number,
+): { count: number; period: "week" | "month" } | null {
+  if (weekCount > 0) return { count: weekCount, period: "week" };
+  if (monthCount > 0) return { count: monthCount, period: "month" };
+  return null;
+}
+
+/** Resident accueil banner slides: fulfilled demands, offers, and events (week, else month). */
+export async function fetchAccueilBannerSlides(
+  supabase: SupabaseClient,
+  communeId: string,
+): Promise<BannerSlide[]> {
+  const { data, error } = await supabase
+    .rpc("commune_outcome_banner_stats", { p_commune_id: communeId })
+    .single();
+
+  if (error || !data) return [];
+
+  const stats = data as OutcomeBannerStatsRow;
+  const slides: BannerSlide[] = [];
+
+  const demands = resolveBannerSlideCount(stats.demands_week, stats.demands_month);
+  if (demands) slides.push({ key: "demandes", ...demands });
+
+  const offers = resolveBannerSlideCount(stats.offers_week, stats.offers_month);
+  if (offers) slides.push({ key: "offres", ...offers });
+
+  const events = resolveBannerSlideCount(stats.events_week, stats.events_month);
+  if (events) slides.push({ key: "events", ...events });
+
+  return slides;
+}
+
 export async function fetchOutcomeStats(
   supabase: SupabaseClient,
   communeId: string,
@@ -172,21 +234,34 @@ export async function fetchOutcomeStats(
     .gte("recorded_at", since.toISOString())
     .limit(DASHBOARD_CHART_ROW_LIMIT);
 
+  const emptySection = (): OutcomeSection => ({
+    fulfilled: 0,
+    unfulfilled: 0,
+    byCategory: [],
+  });
+
   if (error || !data) {
     return {
-      announcementDemande: { fulfilled: 0, unfulfilled: 0 },
-      announcementOffre: { fulfilled: 0, unfulfilled: 0 },
-      events: { fulfilled: 0, unfulfilled: 0 },
+      announcementDemande: emptySection(),
+      announcementOffre: emptySection(),
+      events: emptySection(),
       byCategory: [],
     };
   }
 
   const byCategoryMap = new Map<string, OutcomeStatsRow>();
   const summary: OutcomeSummary = {
-    announcementDemande: { fulfilled: 0, unfulfilled: 0 },
-    announcementOffre: { fulfilled: 0, unfulfilled: 0 },
-    events: { fulfilled: 0, unfulfilled: 0 },
+    announcementDemande: emptySection(),
+    announcementOffre: emptySection(),
+    events: emptySection(),
     byCategory: [],
+  };
+
+  type SectionKey = "announcementDemande" | "announcementOffre" | "events";
+  const sectionCatMaps = {
+    announcementDemande: new Map<string, CategoryBreakdown>(),
+    announcementOffre: new Map<string, CategoryBreakdown>(),
+    events: new Map<string, CategoryBreakdown>(),
   };
 
   for (const row of data) {
@@ -195,12 +270,24 @@ export async function fetchOutcomeStats(
     const outcome = row.outcome as OutcomeReason;
     const categorySlug = row.category_slug;
 
+    let sectionKey: SectionKey | null = null;
     if (contentKind === "announcement" && contentType === "demande") {
-      summary.announcementDemande[outcome] += 1;
+      sectionKey = "announcementDemande";
     } else if (contentKind === "announcement" && contentType === "offre") {
-      summary.announcementOffre[outcome] += 1;
+      sectionKey = "announcementOffre";
     } else if (contentKind === "event") {
-      summary.events[outcome] += 1;
+      sectionKey = "events";
+    }
+
+    if (sectionKey) {
+      summary[sectionKey][outcome] += 1;
+      const catMap = sectionCatMaps[sectionKey];
+      let cat = catMap.get(categorySlug);
+      if (!cat) {
+        cat = { categorySlug, fulfilled: 0, unfulfilled: 0 };
+        catMap.set(categorySlug, cat);
+      }
+      cat[outcome] += 1;
     }
 
     const key = `${contentKind}:${contentType ?? ""}:${categorySlug}:${outcome}`;
@@ -216,6 +303,12 @@ export async function fetchOutcomeStats(
         count: 1,
       });
     }
+  }
+
+  for (const sectionKey of Object.keys(sectionCatMaps) as SectionKey[]) {
+    summary[sectionKey].byCategory = [...sectionCatMaps[sectionKey].values()]
+      .filter((c) => c.fulfilled + c.unfulfilled > 0)
+      .sort((a, b) => b.fulfilled + b.unfulfilled - (a.fulfilled + a.unfulfilled));
   }
 
   summary.byCategory = [...byCategoryMap.values()].sort((a, b) => b.count - a.count);

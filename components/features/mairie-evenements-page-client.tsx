@@ -45,7 +45,7 @@ export function MairieEvenementsPageClient({
         <div className="mb-3 hidden md:block">
           <PageHeading
             title="Événements"
-            subtitle="Événements en cours ou à venir dans la commune"
+            subtitle="Événements officiels publiés par la mairie"
             actions={
               <Button
                 type="button"
@@ -99,8 +99,8 @@ export function MairieEvenementsPageClient({
       {items.length === 0 ? (
         <p className="text-sm font-medium text-muted">
           {statusFilter === "actives"
-            ? "Aucun événement actif pour l'instant."
-            : "Aucun événement pour l'instant."}
+            ? "Aucun événement officiel actif pour l'instant."
+            : "Aucun événement officiel pour l'instant."}
         </p>
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">

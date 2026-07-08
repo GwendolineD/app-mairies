@@ -29,7 +29,8 @@ export default async function MairieEvenementsPage(props: {
   let query = supabase
     .from("events")
     .select("*", { count: "exact" })
-    .eq("commune_id", communeId);
+    .eq("commune_id", communeId)
+    .eq("is_official", true);
 
   if (statusFilter === "actives") {
     query = query
