@@ -6,6 +6,7 @@ export function AccueilPageHeader() {
     <PageHeading
       title="Accueil"
       subtitle="L'essentiel près de chez vous — pour tout voir, utilisez les onglets en bas."
+      subtitleClassName="md:hidden"
       actions={<InfoPopover slide="accueil" />}
     />
   );

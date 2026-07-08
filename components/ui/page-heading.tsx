@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils/cn";
 type Props = {
   title: string;
   subtitle?: string;
+  subtitleClassName?: string;
   /** hero = landing/marketing H1 ; screen = titres d'écran mobile */
   size?: "hero" | "screen";
   centered?: boolean;
@@ -13,6 +14,7 @@ type Props = {
 export function PageHeading({
   title,
   subtitle,
+  subtitleClassName,
   size = "screen",
   centered = false,
   className,
@@ -42,6 +44,7 @@ export function PageHeading({
             className={cn(
               "mt-2 text-sm font-medium leading-5 text-muted",
               centered && "text-pretty",
+              subtitleClassName,
             )}
           >
             {subtitle}

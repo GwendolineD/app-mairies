@@ -22,12 +22,22 @@ type SlideTheme = {
   heartClass: string;
   dotClass: string;
   buildTitle: (count: number, period: BannerSlide["period"]) => string;
+  buildSubtitle: () => string;
 };
 
 const PERIOD_LABEL: Record<BannerSlide["period"], string> = {
   week: "cette semaine",
   month: "ce mois",
 };
+
+const DEMANDES_SUBTITLE =
+  "Ensemble, notre commune est plus humaine — merci à tou·tes celles et ceux qui participent !";
+
+const OFFRES_SUBTITLE =
+  "Ensemble, notre commune est plus solidaire — merci à tou·tes celles et ceux qui participent !";
+
+const EVENTS_SUBTITLE =
+  "Ensemble, notre commune est vivante — merci à tou·tes celles et ceux qui la font vivre !";
 
 const SLIDE_THEMES: Record<BannerSlide["key"], SlideTheme> = {
   demandes: {
@@ -40,6 +50,7 @@ const SLIDE_THEMES: Record<BannerSlide["key"], SlideTheme> = {
       count === 1
         ? `1 voisin a trouvé l'aide qu'il cherchait ${PERIOD_LABEL[period]}`
         : `${count} voisins ont trouvé l'aide qu'ils cherchaient ${PERIOD_LABEL[period]}`,
+    buildSubtitle: () => DEMANDES_SUBTITLE,
   },
   offres: {
     Icon: HandHeart,
@@ -49,8 +60,9 @@ const SLIDE_THEMES: Record<BannerSlide["key"], SlideTheme> = {
     dotClass: "bg-turquoise",
     buildTitle: (count, period) =>
       count === 1
-        ? `1 voisin a pu aider un voisin ${PERIOD_LABEL[period]}`
-        : `${count} voisins ont pu aider un voisin ${PERIOD_LABEL[period]}`,
+        ? `1 offre a aidé un voisin ${PERIOD_LABEL[period]}`
+        : `${count} offres ont aidé des voisins ${PERIOD_LABEL[period]}`,
+    buildSubtitle: () => OFFRES_SUBTITLE,
   },
   events: {
     Icon: CalendarDays,
@@ -62,6 +74,7 @@ const SLIDE_THEMES: Record<BannerSlide["key"], SlideTheme> = {
       count === 1
         ? `1 événement a eu lieu ${PERIOD_LABEL[period]}`
         : `${count} événements ont eu lieu ${PERIOD_LABEL[period]}`,
+    buildSubtitle: () => EVENTS_SUBTITLE,
   },
 };
 
@@ -86,10 +99,7 @@ function OutcomeSlideContent({ slide }: { slide: BannerSlide }) {
           {theme.buildTitle(slide.count, slide.period)}
         </p>
         <p className="flex items-center gap-1 text-sm font-medium text-muted">
-          <span>
-            Votre commune s&apos;entraide — merci à tou·tes celles et ceux qui
-            participent !
-          </span>
+          <span>{theme.buildSubtitle()}</span>
           <Heart
             className={cn("size-4 shrink-0 fill-current", theme.heartClass)}
             aria-hidden
