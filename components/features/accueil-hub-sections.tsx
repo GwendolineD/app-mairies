@@ -36,7 +36,7 @@ function AccueilHubSection({
   return (
     <Card
       className={cn(
-        "flex flex-col gap-4 rounded-none border-0 bg-transparent p-0 shadow-none md:rounded-3xl md:border md:border-border/60 md:bg-surface md:p-5 md:shadow-card lg:rounded-xl",
+        "flex flex-col gap-4 max-md:rounded-none max-md:border-0 max-md:p-0 max-md:!bg-transparent max-md:!shadow-none md:rounded-3xl md:border md:border-border/60 md:bg-surface md:p-5 md:shadow-card lg:rounded-xl",
         className,
       )}
     >
