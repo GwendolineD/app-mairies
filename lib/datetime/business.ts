@@ -1,10 +1,15 @@
-import { addDays, addWeeks, format, isBefore, startOfWeek } from "date-fns";
+import { addDays, addWeeks, format, isBefore, startOfDay, startOfWeek } from "date-fns";
 
 import { parisTz } from "./constants";
 
 /** Current instant as a Date (UTC). */
 export function nowUtc(): Date {
   return new Date();
+}
+
+/** Start of the Paris civil day for `from`, as UTC ISO (for DB range filters). */
+export function startOfTodayParisIso(from: Date = new Date()): string {
+  return startOfDay(from, { in: parisTz }).toISOString();
 }
 
 /** Civil today in Paris as YYYY-MM-DD. */

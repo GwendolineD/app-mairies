@@ -122,6 +122,15 @@ async function ProfilContent({
 
   const inviteCount = invitesResult.count ?? invitesResult.data?.length ?? 0;
 
+  const hasPassword =
+    user?.identities?.some((identity) => identity.provider === "email") ?? false;
+
+  const staffWarning = getStaffDeletionWarning(
+    profile.is_platform_admin,
+    membership.role,
+    communeName,
+  );
+
   return (
     <ProfilePageClient
       profile={{
@@ -164,6 +173,9 @@ async function ProfilContent({
       settings={{
         notificationPrefs,
         pushPublicKey,
+        isPlatformAdmin: profile.is_platform_admin,
+        hasPassword,
+        staffWarning,
       }}
       emailChanged={sp.email_changed === "1"}
       emailChangeError={sp.email_change_error === "1"}
@@ -185,6 +197,24 @@ async function fetchActiveTabContent(
     case "evenements":
       return listAuthorEventsPage(supabase, scope, { page });
   }
+}
+
+function getStaffDeletionWarning(
+  isPlatformAdmin: boolean,
+  role: string,
+  communeName: string,
+): string | null {
+  if (isPlatformAdmin) return null;
+
+  if (role === "mayor") {
+    return `Attention : vous êtes actuellement maire de ${communeName}. La commune n'aura plus de maire après la suppression.`;
+  }
+
+  if (role === "staff") {
+    return `Attention : vous êtes actuellement staff de ${communeName}.`;
+  }
+
+  return null;
 }
 
 function getDisplayName(profile: {

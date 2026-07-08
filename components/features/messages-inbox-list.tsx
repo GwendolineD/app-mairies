@@ -106,6 +106,7 @@ export function MessagesInboxList({
               ? CONTEXT_TYPE_LABELS[conv.context_type]
               : "Message";
             const otherName = conv.other_display_name ?? "Voisin·e";
+            const isDepartedNeighbor = conv.other_account_deleted;
             const preview = conv.last_message_preview ?? "Pas encore de message";
             const previewPrefix = isMine ? "Vous : " : "";
             const statusLabel = getConversationStatusBadgeLabel(conv);
@@ -158,7 +159,11 @@ export function MessagesInboxList({
                           <p
                             className={cn(
                               "min-w-0 flex-1 truncate text-xs font-medium",
-                              unread ? "text-text" : "text-muted",
+                              isDepartedNeighbor
+                                ? "text-subtle"
+                                : unread
+                                  ? "text-text"
+                                  : "text-muted",
                             )}
                           >
                             {otherName}

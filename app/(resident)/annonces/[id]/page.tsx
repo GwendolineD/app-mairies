@@ -9,6 +9,7 @@ import type { AnnouncementWithAuthor } from "@/lib/queries/announcements";
 import { createClient } from "@/lib/supabase/server";
 import {
   getCategoryColorHex,
+  getCategoryDefaultPhotoUrl,
   getCategoryLabel,
 } from "@/lib/constants/announcement-categories";
 import { HistoryBackLink } from "@/components/ui/history-back-link";
@@ -231,17 +232,18 @@ export default async function AnnonceDetailPage(props: {
               </div>
             </header>
 
-            {ann.photo_url ? (
-              <div className="relative aspect-[16/10] w-full overflow-hidden rounded-lg border border-border">
-                <Image
-                  src={ann.photo_url}
-                  alt=""
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 640px"
-                />
-              </div>
-            ) : null}
+            <div className="relative aspect-[16/10] w-full overflow-hidden rounded-lg border border-border">
+              <Image
+                src={
+                  ann.photo_url ??
+                  getCategoryDefaultPhotoUrl(ann.category_slug)
+                }
+                alt=""
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 640px"
+              />
+            </div>
 
             <section className={DESCRIPTION_SECTION_CLASS}>
               <h2 className="mb-2 text-sm font-semibold leading-5 text-text">
@@ -266,6 +268,7 @@ export default async function AnnonceDetailPage(props: {
           <AnnouncementSidebarActions
             isAuthor={isAuthor}
             announcementId={ann.id}
+            announcementType={ann.type}
             authorName={authorName}
             authorAvatarUrl={authorAvatarUrl}
             memberSince={memberSince}

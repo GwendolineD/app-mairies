@@ -1,4 +1,8 @@
 import type { AnnouncementType } from "@/lib/constants/announcement-types";
+export type {
+  ContentKind,
+  OutcomeReason,
+} from "@/lib/constants/content-outcomes";
 
 export type MembershipRole = "member" | "staff" | "mayor";
 export type AccessStatus = "inactive" | "trial" | "active";
@@ -218,7 +222,7 @@ export type ConversationContextType = "announcement" | "initiative" | "event";
 export type MessageRow = {
   id: string;
   conversation_id: string;
-  sender_id: string;
+  sender_id: string | null;
   body: string;
   created_at: string;
   edited_at: string | null;
@@ -252,6 +256,7 @@ export type ConversationInboxItem = {
   context_available: boolean;
   context_status: ConversationContextStatus | null;
   other_membership_status: MembershipStatus | null;
+  other_account_deleted: boolean;
   updated_at: string;
   last_message_at: string | null;
   last_message_preview: string | null;
@@ -268,6 +273,9 @@ export type NotificationPreferenceKey =
   | "notify_message_announcement"
   | "notify_message_initiative"
   | "notify_message_event"
+  | "notify_initiative_support"
+  | "notify_event_participation"
+  | "notify_event_volunteer"
   | "notify_new_announcement"
   | "notify_new_initiative"
   | "notify_new_event";

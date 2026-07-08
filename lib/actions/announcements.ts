@@ -17,7 +17,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { announcementSchema } from "@/lib/validations/schemas";
 import { isAnnouncementType, type AnnouncementType } from "@/lib/constants/announcement-types";
-import { getCategoryDefaultPhotoUrl } from "@/lib/constants/announcement-categories";
+import type { OutcomeReason } from "@/lib/constants/content-outcomes";
 import {
   firstZodIssueMessage,
   formatPostgrestError,
@@ -54,9 +54,7 @@ export async function createAnnouncement(formData: FormData): Promise<{ id: stri
 
   const membership = ctx.activeMembership!;
   const supabase = await createClient();
-  const photoUrl =
-    parsed.data.photoUrl ||
-    getCategoryDefaultPhotoUrl(parsed.data.categorySlug);
+  const photoUrl = parsed.data.photoUrl || null;
   const { data: created, error } = await supabase.from("announcements").insert({
     commune_id: membership.commune_id,
     author_membership_id: membership.id,
@@ -157,9 +155,7 @@ export async function updateAnnouncement(
     return { error: firstZodIssueMessage(parsed.error.issues) };
   }
 
-  const photoUrl =
-    parsed.data.photoUrl ||
-    getCategoryDefaultPhotoUrl(parsed.data.categorySlug);
+  const photoUrl = parsed.data.photoUrl || null;
 
   const { error } = await supabase
     .from("announcements")
@@ -206,6 +202,7 @@ export async function updateAnnouncement(
 
 export async function softDeleteAnnouncement(
   id: string,
+  outcome: OutcomeReason,
 ): Promise<{ success: true } | { error: string }> {
   const ctx = await requireActiveMembership();
   const supabase = await createClient();
@@ -217,6 +214,25 @@ export async function softDeleteAnnouncement(
     ctx.activeMembership!.id,
   );
   if (auth.error) return { error: auth.error };
+
+  const { data: ann, error: fetchError } = await supabase
+    .from("announcements")
+    .select("type, category_slug, commune_id")
+    .eq("id", id)
+    .single();
+
+  if (fetchError) return { error: fetchError.message };
+
+  const { error: outcomeError } = await supabase.from("content_outcomes").insert({
+    commune_id: ann.commune_id,
+    membership_id: ctx.activeMembership!.id,
+    content_kind: "announcement",
+    content_type: ann.type,
+    category_slug: ann.category_slug,
+    outcome,
+  });
+
+  if (outcomeError) return { error: outcomeError.message };
 
   const { error } = await supabase
     .from("announcements")
@@ -230,6 +246,7 @@ export async function softDeleteAnnouncement(
   revalidatePath(ROUTES.annonces.list);
   revalidatePath(ROUTES.annonces.detail(id));
   revalidatePath(ROUTES.accueil);
+  revalidatePath(ROUTES.mairie.dashboard);
 
   void logAudit({
     action: "content.delete_announcement",
@@ -238,7 +255,7 @@ export async function softDeleteAnnouncement(
     targetType: "announcement",
     targetId: id,
     communeId: ctx.activeMembership!.commune_id,
-    metadata: { soft_delete: true },
+    metadata: { soft_delete: true, outcome },
   });
 
   return { success: true };

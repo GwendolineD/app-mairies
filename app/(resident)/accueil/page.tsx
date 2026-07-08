@@ -20,9 +20,11 @@ import {
   AccueilEventsHub,
   AccueilInitiativesHub,
 } from "@/components/features/accueil-hub-sections";
+import { AccueilOutcomeBanner } from "@/components/features/accueil-outcome-banner";
 import { AccueilPageHeader } from "@/components/features/accueil-page-header";
 import type { EventCardData } from "@/components/features/event-card";
 import { resolveFirstName } from "@/lib/utils/display-name";
+import { fetchFulfilledCountThisWeek } from "@/lib/queries/dashboard-charts";
 
 export default async function ResidentAccueilPage() {
   const ctx = await requireActiveMembership();
@@ -37,6 +39,7 @@ export default async function ResidentAccueilPage() {
     offreCount,
     initiativesRes,
     eventsRes,
+    fulfilledDemandsThisWeek,
   ] = await Promise.all([
     countNeighborAnnouncementsDueToday(supabase, communeId, membershipId),
     countAnnouncements(supabase, { communeId }),
@@ -44,6 +47,7 @@ export default async function ResidentAccueilPage() {
     countAnnouncements(supabase, { communeId, type: "offre" }),
     listInitiativesPage(supabase, { communeId }, { limit: 1 }),
     listEventsPage(supabase, { communeId }, { limit: 1 }),
+    fetchFulfilledCountThisWeek(supabase, communeId),
   ]);
 
   const featuredAnnouncement = await listFeaturedAnnouncementForAccueil(
@@ -76,6 +80,8 @@ export default async function ResidentAccueilPage() {
         userFirstName={resolveFirstName(ctx.profile)}
         neighborDemandCount={neighborDemandCount}
       />
+
+      <AccueilOutcomeBanner fulfilledCount={fulfilledDemandsThisWeek} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-stretch">
         <AccueilAnnouncementsHub

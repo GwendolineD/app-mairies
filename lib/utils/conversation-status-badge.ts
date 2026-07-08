@@ -8,12 +8,16 @@ import type {
 export type ConversationStatusBadgeInput = {
   context_status: ConversationContextStatus | null;
   other_membership_status: MembershipStatus | null;
+  other_account_deleted?: boolean;
 };
 
-/** Priority: member suspended > content suspended > content deleted. */
+/** Priority: deleted account > member suspended > content suspended > content deleted. */
 export function getConversationStatusBadgeLabel(
   item: ConversationStatusBadgeInput | ConversationInboxItem,
 ): string | null {
+  if (item.other_account_deleted) {
+    return "Ancien voisin";
+  }
   if (item.other_membership_status === MEMBERSHIP_STATUS.suspended) {
     return "Membre suspendu";
   }
@@ -29,6 +33,9 @@ export function getConversationStatusBadgeLabel(
 export function getConversationReadOnlyMessage(
   item: ConversationStatusBadgeInput,
 ): string {
+  if (item.other_account_deleted) {
+    return "Ce voisin a quitté la plateforme. Vous ne pouvez plus envoyer de messages.";
+  }
   if (item.other_membership_status === MEMBERSHIP_STATUS.suspended) {
     return "Ce membre a été suspendu. Vous ne pouvez plus envoyer de messages.";
   }

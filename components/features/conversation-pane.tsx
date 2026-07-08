@@ -173,16 +173,21 @@ export async function ConversationPane({
   const contextAvailable = contextInfo.available;
   const contextStatus = contextInfo.contextStatus;
   const otherMembershipStatus = (otherMembershipRow?.status ?? null) as MembershipStatus | null;
+  const otherProfile = (otherProfileRow ?? null) as OtherProfile | null;
+  const otherAccountDeleted = otherUserId == null;
+  const otherName = otherAccountDeleted
+    ? "Ancien voisin"
+    : (otherProfile?.display_name ?? "Voisin·e");
   const statusBadgeLabel = getConversationStatusBadgeLabel({
     context_status: contextStatus,
     other_membership_status: otherMembershipStatus,
+    other_account_deleted: otherAccountDeleted,
   });
   const readOnlyMessage = getConversationReadOnlyMessage({
     context_status: contextStatus,
     other_membership_status: otherMembershipStatus,
+    other_account_deleted: otherAccountDeleted,
   });
-  const otherProfile = (otherProfileRow ?? null) as OtherProfile | null;
-  const otherName = otherProfile?.display_name ?? "Voisin·e";
 
   // Mark conversation as read on render — best-effort, errors are ignored.
   // Direct DB update (not a server action) avoids mid-render revalidatePath.
@@ -232,7 +237,7 @@ export async function ConversationPane({
             <div className="mt-0.5 flex items-center gap-1.5">
               <SmallAvatar
                 name={otherName}
-                url={otherProfile?.avatar_url ?? null}
+                url={otherAccountDeleted ? null : (otherProfile?.avatar_url ?? null)}
               />
               <p className="truncate text-xs font-medium text-muted">
                 {otherName}
@@ -260,8 +265,15 @@ export async function ConversationPane({
         messages={messages as MessageRow[]}
         currentUserId={currentUserId}
         isArchived={isArchived}
-        readOnly={!contextAvailable || otherMembershipStatus === "suspended"}
+        readOnly={
+          otherAccountDeleted ||
+          !contextAvailable ||
+          otherMembershipStatus === "suspended"
+        }
         readOnlyMessage={readOnlyMessage}
+        departedBanner={
+          otherAccountDeleted ? "Ce voisin a quitté la plateforme" : undefined
+        }
       />
     </div>
   );

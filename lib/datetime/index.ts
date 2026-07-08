@@ -10,6 +10,7 @@ export {
   nowUtc,
   resolveEndDateAfterStartChange,
   startOfParisWeek,
+  startOfTodayParisIso,
   todayParisYmd,
   toParisYmd,
 } from "./business";

@@ -52,6 +52,8 @@ type Props = {
   readOnly?: boolean;
   /** Shown when readOnly is true — explains why messaging is disabled. */
   readOnlyMessage?: string;
+  /** Optional banner shown above the read-only footer (e.g. departed neighbor). */
+  departedBanner?: string;
 };
 
 export function ConversationThread({
@@ -61,6 +63,7 @@ export function ConversationThread({
   isArchived,
   readOnly,
   readOnlyMessage = "Le contenu lié à cette conversation a été suspendu. Vous ne pouvez plus envoyer de messages.",
+  departedBanner,
 }: Props) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
@@ -223,6 +226,11 @@ export function ConversationThread({
         </div>
       ) : readOnly ? (
         <div className="border-t border-border/60 bg-warm/50 px-3 pt-3 pb-6">
+          {departedBanner ? (
+            <p className="mb-3 text-center text-sm font-semibold text-muted">
+              {departedBanner}
+            </p>
+          ) : null}
           <p className="text-center text-sm text-muted">{readOnlyMessage}</p>
           <div className="mt-6 flex justify-center">
             <ArchiveConversationButton

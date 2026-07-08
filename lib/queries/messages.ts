@@ -12,6 +12,9 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   notify_message_announcement: true,
   notify_message_initiative: true,
   notify_message_event: true,
+  notify_initiative_support: true,
+  notify_event_participation: true,
+  notify_event_volunteer: true,
   notify_new_announcement: false,
   notify_new_initiative: false,
   notify_new_event: false,
@@ -78,11 +81,11 @@ export async function getNotificationPreferences(
   const { data } = await supabase
     .from("user_notification_preferences")
     .select(
-      "notify_message_announcement, notify_message_initiative, notify_message_event, notify_new_announcement, notify_new_initiative, notify_new_event",
+      "notify_message_announcement, notify_message_initiative, notify_message_event, notify_initiative_support, notify_event_participation, notify_event_volunteer, notify_new_announcement, notify_new_initiative, notify_new_event",
     )
     .eq("user_id", userId)
     .maybeSingle();
 
   if (!data) return DEFAULT_NOTIFICATION_PREFERENCES;
-  return data as NotificationPreferences;
+  return { ...DEFAULT_NOTIFICATION_PREFERENCES, ...data };
 }

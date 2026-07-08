@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireCommuneStaff } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
+import { INITIATIVE_STATUS } from "@/lib/constants/statuses";
 import { createClient } from "@/lib/supabase/server";
 import { formatDay } from "@/lib/datetime";
 import { Button } from "@/components/ui/button";
@@ -12,22 +13,42 @@ import type { InitiativeRecord } from "@/lib/types";
 
 const PAGE_SIZE = 25;
 
+const STATUS_FILTERS = [
+  { key: "actives", label: "Actives" },
+  { key: "toutes", label: "Toutes" },
+] as const;
+
+type StatusFilter = (typeof STATUS_FILTERS)[number]["key"];
+
+function resolveStatusFilter(value: string | undefined): StatusFilter {
+  return value === "toutes" ? "toutes" : "actives";
+}
+
 export default async function MairieInitiativesPage(props: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; statut?: string }>;
 }) {
   const { communeId } = await requireCommuneStaff();
   if (!communeId) return null;
 
-  const { page } = await props.searchParams;
+  const { page, statut } = await props.searchParams;
+  const statusFilter = resolveStatusFilter(statut);
   const currentPage = Math.max(1, Number(page) || 1);
   const from = (currentPage - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
 
   const supabase = await createClient();
-  const { data, count } = await supabase
+  let query = supabase
     .from("initiatives")
     .select("*", { count: "exact" })
-    .eq("commune_id", communeId)
+    .eq("commune_id", communeId);
+
+  if (statusFilter === "actives") {
+    query = query
+      .eq("status", INITIATIVE_STATUS.active)
+      .is("suspended_at", null);
+  }
+
+  const { data, count } = await query
     .order("created_at", { ascending: false })
     .range(from, to);
 
@@ -35,9 +56,13 @@ export default async function MairieInitiativesPage(props: {
   const total = count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  function pageHref(p: number) {
-    return p > 1
-      ? `${ROUTES.mairie.initiatives}?page=${p}`
+  function pageHref(p: number, nextStatus: StatusFilter = statusFilter) {
+    const sp = new URLSearchParams();
+    if (p > 1) sp.set("page", String(p));
+    if (nextStatus !== "actives") sp.set("statut", nextStatus);
+    const qs = sp.toString();
+    return qs
+      ? `${ROUTES.mairie.initiatives}?${qs}`
       : ROUTES.mairie.initiatives;
   }
 
@@ -48,9 +73,24 @@ export default async function MairieInitiativesPage(props: {
           title="Initiatives"
           subtitle="Projets collectifs portés par les habitant·es de votre commune."
         />
+        <div className="flex flex-wrap gap-2">
+          {STATUS_FILTERS.map((f) => (
+            <Button
+              key={f.key}
+              href={pageHref(1, f.key)}
+              variant={statusFilter === f.key ? "primary" : "secondary"}
+              className="px-4 py-2 text-xs"
+            >
+              {f.label}
+            </Button>
+          ))}
+        </div>
         <p className="text-xs font-medium text-muted">
-          {total} initiative{total > 1 ? "s" : ""} · page {currentPage} /{" "}
-          {totalPages}
+          {total} initiative{total > 1 ? "s" : ""}
+          {statusFilter === "actives"
+            ? ` active${total > 1 ? "s" : ""}`
+            : ""}{" "}
+          · page {currentPage} / {totalPages}
         </p>
       </Card>
 

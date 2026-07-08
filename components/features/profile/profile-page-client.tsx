@@ -38,6 +38,7 @@ import { EditNameModal } from "@/components/features/profile/edit-name-modal";
 import { EditAddressModal } from "@/components/features/profile/edit-address-modal";
 import { EditEmailModal } from "@/components/features/profile/edit-email-modal";
 import { ChangePasswordForm } from "@/components/features/profile/change-password-form";
+import { DeleteAccountSection } from "@/components/features/profile/delete-account-section";
 import { AVATAR_PUBLIC_ID } from "@/lib/services/cloudinary";
 import { AnnouncementCard } from "@/components/features/announcement-card";
 import { InitiativeCard } from "@/components/features/initiative-card";
@@ -79,6 +80,9 @@ type InviteData = {
 type SettingsData = {
   notificationPrefs: NotificationPreferences;
   pushPublicKey: string | null;
+  isPlatformAdmin: boolean;
+  hasPassword: boolean;
+  staffWarning: string | null;
 };
 
 type Props = {
@@ -138,7 +142,9 @@ export function ProfilePageClient({
           )}
           {activeTab === "evenements" && <EventsPanel list={events} />}
           {activeTab === "participations" && <ParticipationsPlaceholder />}
-          {activeTab === "parametres" && <SettingsPanel settings={settings} />}
+          {activeTab === "parametres" && (
+            <SettingsPanel settings={settings} />
+          )}
         </section>
 
         <aside className="space-y-5 px-4 md:px-0">
@@ -561,14 +567,22 @@ function ParticipationsPlaceholder() {
   );
 }
 
+const PROFILE_SETTINGS_CARD_CLASS =
+  "rounded-none border-0 p-0 max-md:!bg-transparent max-md:!shadow-none md:rounded-3xl md:border md:border-border/60 md:bg-surface md:p-5 md:shadow-card";
+
 function SettingsPanel({ settings }: { settings: SettingsData }) {
   return (
     <div className="space-y-5">
-      <ChangePasswordForm cardClassName="rounded-none border-0 p-0 shadow-none md:rounded-3xl md:border md:border-border/60 md:p-5 md:shadow-card" />
+      <ChangePasswordForm cardClassName={PROFILE_SETTINGS_CARD_CLASS} />
       <NotificationPreferencesForm
         initial={settings.notificationPrefs}
         pushPublicKey={settings.pushPublicKey}
-        cardClassName="rounded-none border-0 p-0 shadow-none md:rounded-3xl md:border md:border-border/60 md:p-5 md:shadow-card"
+        cardClassName={PROFILE_SETTINGS_CARD_CLASS}
+      />
+      <DeleteAccountSection
+        isPlatformAdmin={settings.isPlatformAdmin}
+        hasPassword={settings.hasPassword}
+        staffWarning={settings.staffWarning}
       />
     </div>
   );

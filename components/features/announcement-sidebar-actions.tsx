@@ -9,11 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import type { AnnouncementEditData } from "@/lib/types";
+import type { AnnouncementType } from "@/lib/constants/announcement-types";
 import { cn } from "@/lib/utils/cn";
 
 type Props = {
   isAuthor: boolean;
   announcementId: string;
+  announcementType: AnnouncementType;
   authorName: string;
   authorAvatarUrl: string | null;
   memberSince: string;
@@ -25,6 +27,7 @@ type Props = {
 export function AnnouncementSidebarActions({
   isAuthor,
   announcementId,
+  announcementType,
   authorName,
   authorAvatarUrl,
   memberSince,
@@ -58,6 +61,7 @@ export function AnnouncementSidebarActions({
         </Button>
         <DeleteAnnouncementModal
           announcementId={announcementId}
+          announcementType={announcementType}
           open={deleteOpen}
           onClose={() => setDeleteOpen(false)}
         />

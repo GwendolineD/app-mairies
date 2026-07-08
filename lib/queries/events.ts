@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { EVENT_STATUS } from "@/lib/constants/statuses";
+import { startOfTodayParisIso } from "@/lib/datetime";
 import type { AgendaEventRecord } from "@/lib/types";
 import type { SortMode } from "@/lib/utils/search-params";
 
@@ -36,13 +37,13 @@ export async function listEventsPage(
   options: { offset?: number; limit?: number; sortMode?: SortMode },
 ) {
   const limit = options.limit ?? EVENTS_PAGE_SIZE;
-  const now = new Date().toISOString();
+  const minEndsAt = startOfTodayParisIso();
   const ascending = options.sortMode !== "oldest";
 
   let query = supabase
     .from("events")
     .select("*", { count: "exact" })
-    .gte("ends_at", now)
+    .gte("ends_at", minEndsAt)
     .order("starts_at", { ascending })
     .order("id", { ascending })
     .limit(limit);
@@ -64,12 +65,12 @@ export async function listEventMapItems(
   supabase: SupabaseClient,
   filters: EventListFilters,
 ): Promise<AgendaEventRecord[]> {
-  const now = new Date().toISOString();
+  const minEndsAt = startOfTodayParisIso();
 
   let query = supabase
     .from("events")
     .select("*")
-    .gte("ends_at", now)
+    .gte("ends_at", minEndsAt)
     .not("address_lat", "is", null)
     .not("address_lng", "is", null)
     .order("starts_at", { ascending: true });
@@ -84,12 +85,12 @@ export async function listEventMarkers(
   supabase: SupabaseClient,
   filters: EventListFilters,
 ): Promise<EventMarker[]> {
-  const now = new Date().toISOString();
+  const minEndsAt = startOfTodayParisIso();
 
   let query = supabase
     .from("events")
     .select("id, title, category_slug, address_lat, address_lng")
-    .gte("ends_at", now)
+    .gte("ends_at", minEndsAt)
     .not("address_lat", "is", null)
     .not("address_lng", "is", null);
 

@@ -3,6 +3,7 @@ import { requireCommuneStaff } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import { isAnnouncementType } from "@/lib/constants/announcement-types";
 import { getCategoryLabel } from "@/lib/constants/announcement-categories";
+import { ANNOUNCEMENT_STATUS } from "@/lib/constants/statuses";
 import { createClient } from "@/lib/supabase/server";
 import { formatDay } from "@/lib/datetime";
 import { AnnouncementTypeTag } from "@/components/ui/announcement-type-tag";
@@ -20,14 +21,26 @@ const TYPE_FILTERS = [
   { key: "offre", label: "Offres" },
 ] as const;
 
+const STATUS_FILTERS = [
+  { key: "actives", label: "Actives" },
+  { key: "toutes", label: "Toutes" },
+] as const;
+
+type StatusFilter = (typeof STATUS_FILTERS)[number]["key"];
+
+function resolveStatusFilter(value: string | undefined): StatusFilter {
+  return value === "toutes" ? "toutes" : "actives";
+}
+
 export default async function MairieAnnoncesPage(props: {
-  searchParams: Promise<{ type?: string; page?: string }>;
+  searchParams: Promise<{ type?: string; page?: string; statut?: string }>;
 }) {
   const { communeId } = await requireCommuneStaff();
   if (!communeId) return null;
 
-  const { type, page } = await props.searchParams;
+  const { type, page, statut } = await props.searchParams;
   const typeFilter = type && isAnnouncementType(type) ? type : "all";
+  const statusFilter = resolveStatusFilter(statut);
   const currentPage = Math.max(1, Number(page) || 1);
   const from = (currentPage - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
@@ -39,6 +52,12 @@ export default async function MairieAnnoncesPage(props: {
     .select("*", { count: "exact" })
     .eq("commune_id", communeId);
 
+  if (statusFilter === "actives") {
+    query = query
+      .eq("status", ANNOUNCEMENT_STATUS.ouverte)
+      .is("suspended_at", null);
+  }
+
   if (typeFilter !== "all") query = query.eq("type", typeFilter);
 
   const { data, count } = await query
@@ -49,10 +68,12 @@ export default async function MairieAnnoncesPage(props: {
   const total = count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  function buildHref(params: { type?: string; page?: number }) {
+  function buildHref(params: { type?: string; page?: number; statut?: StatusFilter }) {
     const sp = new URLSearchParams();
     const t = params.type ?? typeFilter;
     if (t && t !== "all") sp.set("type", t);
+    const s = params.statut ?? statusFilter;
+    if (s !== "actives") sp.set("statut", s);
     const p = params.page ?? currentPage;
     if (p > 1) sp.set("page", String(p));
     const qs = sp.toString();
@@ -67,6 +88,18 @@ export default async function MairieAnnoncesPage(props: {
           subtitle="Demandes et offres d'entraide publiées par les habitant·es de votre commune."
         />
         <div className="flex flex-wrap gap-2">
+          {STATUS_FILTERS.map((f) => (
+            <Button
+              key={f.key}
+              href={buildHref({ statut: f.key, page: 1 })}
+              variant={statusFilter === f.key ? "primary" : "secondary"}
+              className="px-4 py-2 text-xs"
+            >
+              {f.label}
+            </Button>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-2">
           {TYPE_FILTERS.map((f) => (
             <Button
               key={f.key}
@@ -79,8 +112,11 @@ export default async function MairieAnnoncesPage(props: {
           ))}
         </div>
         <p className="text-xs font-medium text-muted">
-          {total} annonce{total > 1 ? "s" : ""} · page {currentPage} /{" "}
-          {totalPages}
+          {total} annonce{total > 1 ? "s" : ""}
+          {statusFilter === "actives"
+            ? ` active${total > 1 ? "s" : ""}`
+            : ""}{" "}
+          · page {currentPage} / {totalPages}
         </p>
       </Card>
 

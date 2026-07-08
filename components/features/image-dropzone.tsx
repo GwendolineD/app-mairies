@@ -11,6 +11,8 @@ const ALLOWED_TYPES = ["image/jpeg", "image/png"];
 type Props = {
   file: File | null;
   onFileChange: (file: File | null) => void;
+  existingImageUrl?: string | null;
+  onExistingImageClear?: () => void;
   isUploading?: boolean;
   className?: string;
 };
@@ -25,7 +27,14 @@ function validateFile(file: File): string | null {
   return null;
 }
 
-export function ImageDropzone({ file, onFileChange, isUploading = false, className }: Props) {
+export function ImageDropzone({
+  file,
+  onFileChange,
+  existingImageUrl,
+  onExistingImageClear,
+  isUploading = false,
+  className,
+}: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const previewUrlRef = useRef<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -95,7 +104,14 @@ export function ImageDropzone({ file, onFileChange, isUploading = false, classNa
     if (inputRef.current) inputRef.current.value = "";
   };
 
-  if (preview) {
+  const clearExistingPhoto = () => {
+    setError(null);
+    onExistingImageClear?.();
+  };
+
+  const displayUrl = preview ?? existingImageUrl ?? null;
+
+  if (displayUrl) {
     return (
       <div
         className={cn(
@@ -104,7 +120,7 @@ export function ImageDropzone({ file, onFileChange, isUploading = false, classNa
         )}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={preview} alt="" className="h-full w-full object-cover" />
+        <img src={displayUrl} alt="" className="h-full w-full object-cover" />
         {isUploading ? (
           <div className="absolute inset-0 flex items-center justify-center bg-text/40">
             <Loader2 className="size-8 animate-spin text-white" aria-hidden />
@@ -112,7 +128,7 @@ export function ImageDropzone({ file, onFileChange, isUploading = false, classNa
         ) : (
           <button
             type="button"
-            onClick={clearPhoto}
+            onClick={preview ? clearPhoto : clearExistingPhoto}
             className="absolute top-2 right-2 flex size-8 cursor-pointer items-center justify-center rounded-full bg-surface/90 text-text shadow-card transition hover:bg-surface"
             aria-label="Retirer la photo"
           >

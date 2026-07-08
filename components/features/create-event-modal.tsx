@@ -193,6 +193,7 @@ export function CreateEventModal({
     initialData?.volunteersNeeded != null ? String(initialData.volunteersNeeded) : "",
   );
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [existingPhotoRemoved, setExistingPhotoRemoved] = useState(false);
   const [addressData, setAddressData] = useState<AddressFormState>(
     initialAddress.addressData,
   );
@@ -230,6 +231,7 @@ export function CreateEventModal({
         initialData.volunteersNeeded != null ? String(initialData.volunteersNeeded) : "",
       );
       setPendingFile(null);
+      setExistingPhotoRemoved(false);
       const address = getInitialAddressFromEditData(initialData);
       setAddressData(address.addressData);
       setAddressConfirmed(address.addressConfirmed);
@@ -244,6 +246,7 @@ export function CreateEventModal({
       setEndTime("");
       setVolunteersNeeded("");
       setPendingFile(null);
+      setExistingPhotoRemoved(false);
       setAddressData(address.addressData);
       setAddressConfirmed(address.addressConfirmed);
     }
@@ -383,6 +386,10 @@ export function CreateEventModal({
       if (pendingFile) {
         setSubmitPhase("uploading");
         photoUrl = await uploadImageToCloudinary(pendingFile, "event");
+      } else if (existingPhotoRemoved) {
+        photoUrl = "";
+      } else {
+        photoUrl = initialData?.photoUrl ?? "";
       }
 
       setSubmitPhase("publishing");
@@ -391,7 +398,7 @@ export function CreateEventModal({
         categorySlug,
         title: title.trim(),
         description: description.trim(),
-        photoUrl: photoUrl || (initialData?.photoUrl ?? ""),
+        photoUrl,
         startsAt,
         endsAt,
         volunteersNeeded: volunteersNeeded ? Number.parseInt(volunteersNeeded, 10) : null,
@@ -695,6 +702,12 @@ export function CreateEventModal({
           <ImageDropzone
             file={pendingFile}
             onFileChange={setPendingFile}
+            existingImageUrl={
+              !existingPhotoRemoved && initialData?.photoUrl
+                ? initialData.photoUrl
+                : undefined
+            }
+            onExistingImageClear={() => setExistingPhotoRemoved(true)}
             isUploading={submitPhase === "uploading"}
           />
         </section>

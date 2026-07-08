@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { MembershipStatusBadge } from "@/components/features/backoffice/membership-status-badge";
 import { ChangeRoleButton } from "@/components/features/backoffice/change-role-button";
 import { MembershipRoleBadge } from "@/components/features/backoffice/membership-role-badge";
+import { DeleteUserAccountButton } from "@/components/features/backoffice/delete-user-account-button";
 import { SuspendUserButton } from "@/components/features/backoffice/suspend-user-button";
 import { HistoryBackLink } from "@/components/ui/history-back-link";
 import { Card } from "@/components/ui/card";
@@ -39,12 +40,27 @@ export default async function BackofficeUserDetailPage(props: {
           subtitle={`Compte créé le ${formatShortDate(user.createdAt)}`}
         />
 
-        <SuspendUserButton
-          mode="all"
-          userId={user.userId}
-          label="Suspendre de toutes les communes"
-          disabled={!hasActiveMembership}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <SuspendUserButton
+            mode="all"
+            userId={user.userId}
+            label="Suspendre de toutes les communes"
+            disabled={!hasActiveMembership}
+          />
+          {!user.isPlatformAdmin ? (
+            <DeleteUserAccountButton
+              userId={user.userId}
+              userName={user.fullName}
+              userEmail={null}
+              communeCount={user.memberships.length}
+              contentCount={
+                user.totalAnnouncementsCount +
+                user.totalInitiativesCount +
+                user.totalEventsCount
+              }
+            />
+          ) : null}
+        </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
