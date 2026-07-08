@@ -23,7 +23,12 @@ import {
   CloudinaryUploadError,
   uploadImageToCloudinary,
 } from "@/lib/services/cloudinary-client";
-import { ProfileTabs, type ProfileTabKey } from "@/components/features/profile/profile-tabs";
+import {
+  ProfileTabs,
+  type ProfileTabKey,
+} from "@/components/features/profile/profile-tabs";
+import { ProfileListPagination } from "@/components/features/profile/profile-list-pagination";
+import type { ProfileListResult } from "@/lib/queries/profile-content";
 import { ProfileEmptyState } from "@/components/features/profile/profile-empty-state";
 import { NeighborInviteBlock } from "@/components/features/profile/neighbor-invite-block";
 import { PwaInstallCard } from "@/components/features/pwa/pwa-install-card";
@@ -33,16 +38,14 @@ import { EditNameModal } from "@/components/features/profile/edit-name-modal";
 import { EditAddressModal } from "@/components/features/profile/edit-address-modal";
 import { EditEmailModal } from "@/components/features/profile/edit-email-modal";
 import { ChangePasswordForm } from "@/components/features/profile/change-password-form";
+import { DeleteAccountSection } from "@/components/features/profile/delete-account-section";
 import { AVATAR_PUBLIC_ID } from "@/lib/services/cloudinary";
 import { AnnouncementCard } from "@/components/features/announcement-card";
 import { InitiativeCard } from "@/components/features/initiative-card";
 import { EventCard } from "@/components/features/event-card";
 import type { AnnouncementWithAuthor } from "@/lib/queries/announcements";
 import type { InitiativeWithAuthor } from "@/lib/queries/initiatives";
-import type {
-  AgendaEventRecord,
-  NotificationPreferences,
-} from "@/lib/types";
+import type { AgendaEventRecord, NotificationPreferences } from "@/lib/types";
 
 type ProfileData = {
   displayName: string;
@@ -77,15 +80,18 @@ type InviteData = {
 type SettingsData = {
   notificationPrefs: NotificationPreferences;
   pushPublicKey: string | null;
+  isPlatformAdmin: boolean;
+  hasPassword: boolean;
+  staffWarning: string | null;
 };
 
 type Props = {
   profile: ProfileData;
   membership: MembershipData;
   activeTab: ProfileTabKey;
-  announcements: AnnouncementWithAuthor[];
-  initiatives: InitiativeWithAuthor[];
-  events: AgendaEventRecord[];
+  announcements: ProfileListResult<AnnouncementWithAuthor>;
+  initiatives: ProfileListResult<InitiativeWithAuthor>;
+  events: ProfileListResult<AgendaEventRecord>;
   invite: InviteData;
   settings: SettingsData;
   emailChanged?: boolean;
@@ -129,14 +135,12 @@ export function ProfilePageClient({
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
         <section className="px-4 md:px-0">
           {activeTab === "annonces" && (
-            <AnnouncementsPanel announcements={announcements} />
+            <AnnouncementsPanel list={announcements} />
           )}
           {activeTab === "initiatives" && (
-            <InitiativesPanel initiatives={initiatives} />
+            <InitiativesPanel list={initiatives} />
           )}
-          {activeTab === "evenements" && (
-            <EventsPanel events={events} />
-          )}
+          {activeTab === "evenements" && <EventsPanel list={events} />}
           {activeTab === "participations" && <ParticipationsPlaceholder />}
           {activeTab === "parametres" && (
             <SettingsPanel settings={settings} />
@@ -331,9 +335,21 @@ function ProfileHero({
               </span>
             </div>
             <div className="grid shrink-0 grid-cols-3 gap-3 md:w-80">
-              <ProfileStat label="Annonces" value={membership.totalAnnouncements} sublabel="publiées" />
-              <ProfileStat label="Initiatives" value={membership.totalInitiatives} sublabel="organisées" />
-              <ProfileStat label="Événements" value={membership.totalEvents} sublabel="créés" />
+              <ProfileStat
+                label="Annonces"
+                value={membership.totalAnnouncements}
+                sublabel="publiées"
+              />
+              <ProfileStat
+                label="Initiatives"
+                value={membership.totalInitiatives}
+                sublabel="organisées"
+              />
+              <ProfileStat
+                label="Événements"
+                value={membership.totalEvents}
+                sublabel="créés"
+              />
             </div>
           </div>
         </div>
@@ -379,20 +395,36 @@ function ProfileStat({
       <p className="text-xl font-bold leading-7 text-text">{value}</p>
       <p className="text-[10px] font-semibold leading-4 text-muted">{label}</p>
       {sublabel && (
-        <p className="text-[9px] font-medium leading-4 text-subtle">{sublabel}</p>
+        <p className="text-[9px] font-medium leading-4 text-subtle">
+          {sublabel}
+        </p>
       )}
     </div>
   );
 }
 
-function AnnouncementsPanel({
-  announcements,
+function ProfileSectionHeading({
+  title,
+  count,
 }: {
-  announcements: AnnouncementWithAuthor[];
+  title: string;
+  count: number;
+}) {
+  return (
+    <h2 className="text-xl font-semibold leading-7 text-text">
+      {title} <span className="text-muted">({count})</span>
+    </h2>
+  );
+}
+
+function AnnouncementsPanel({
+  list,
+}: {
+  list: ProfileListResult<AnnouncementWithAuthor>;
 }) {
   const router = useRouter();
 
-  if (announcements.length === 0) {
+  if (list.totalCount === 0) {
     return (
       <ProfileEmptyState
         title="Aucune annonce en cours"
@@ -400,7 +432,9 @@ function AnnouncementsPanel({
         action={
           <Button
             type="button"
-            onClick={() => router.push(`${ROUTES.annonces.list}?create=annonce`)}
+            onClick={() =>
+              router.push(`${ROUTES.annonces.list}?create=annonce`)
+            }
           >
             <Plus className="size-4" aria-hidden />
             Publier une annonce
@@ -412,26 +446,33 @@ function AnnouncementsPanel({
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold leading-7 text-text">
-        Mes annonces en cours
-      </h2>
+      <ProfileSectionHeading
+        title="Mes annonces en cours"
+        count={list.totalCount}
+      />
       <div className="space-y-3">
-        {announcements.map((a) => (
+        {list.items.map((a) => (
           <AnnouncementCard key={a.id} announcement={a} layout="horizontal" />
         ))}
       </div>
+      <ProfileListPagination
+        tab="annonces"
+        page={list.page}
+        totalCount={list.totalCount}
+        pageSize={list.pageSize}
+      />
     </div>
   );
 }
 
 function InitiativesPanel({
-  initiatives,
+  list,
 }: {
-  initiatives: InitiativeWithAuthor[];
+  list: ProfileListResult<InitiativeWithAuthor>;
 }) {
   const router = useRouter();
 
-  if (initiatives.length === 0) {
+  if (list.totalCount === 0) {
     return (
       <ProfileEmptyState
         title="Aucune initiative en cours"
@@ -439,7 +480,9 @@ function InitiativesPanel({
         action={
           <Button
             type="button"
-            onClick={() => router.push(`${ROUTES.initiatives.list}?create=initiative`)}
+            onClick={() =>
+              router.push(`${ROUTES.initiatives.list}?create=initiative`)
+            }
           >
             <Plus className="size-4" aria-hidden />
             Lancer une initiative
@@ -451,22 +494,29 @@ function InitiativesPanel({
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold leading-7 text-text">
-        Mes initiatives en cours
-      </h2>
+      <ProfileSectionHeading
+        title="Mes initiatives en cours"
+        count={list.totalCount}
+      />
       <div className="space-y-3">
-        {initiatives.map((i) => (
+        {list.items.map((i) => (
           <InitiativeCard key={i.id} initiative={i} layout="horizontal" />
         ))}
       </div>
+      <ProfileListPagination
+        tab="initiatives"
+        page={list.page}
+        totalCount={list.totalCount}
+        pageSize={list.pageSize}
+      />
     </div>
   );
 }
 
-function EventsPanel({ events }: { events: AgendaEventRecord[] }) {
+function EventsPanel({ list }: { list: ProfileListResult<AgendaEventRecord> }) {
   const router = useRouter();
 
-  if (events.length === 0) {
+  if (list.totalCount === 0) {
     return (
       <ProfileEmptyState
         title="Aucun événement en cours"
@@ -486,14 +536,21 @@ function EventsPanel({ events }: { events: AgendaEventRecord[] }) {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold leading-7 text-text">
-        Mes événements en cours
-      </h2>
+      <ProfileSectionHeading
+        title="Mes événements en cours"
+        count={list.totalCount}
+      />
       <div className="space-y-3">
-        {events.map((e) => (
+        {list.items.map((e) => (
           <EventCard key={e.id} event={e} layout="horizontal" />
         ))}
       </div>
+      <ProfileListPagination
+        tab="evenements"
+        page={list.page}
+        totalCount={list.totalCount}
+        pageSize={list.pageSize}
+      />
     </div>
   );
 }
@@ -510,14 +567,22 @@ function ParticipationsPlaceholder() {
   );
 }
 
+const PROFILE_SETTINGS_CARD_CLASS =
+  "rounded-none border-0 p-0 max-md:!bg-transparent max-md:!shadow-none md:rounded-3xl md:border md:border-border/60 md:bg-surface md:p-5 md:shadow-card";
+
 function SettingsPanel({ settings }: { settings: SettingsData }) {
   return (
     <div className="space-y-5">
-      <ChangePasswordForm cardClassName="rounded-none border-0 p-0 shadow-none md:rounded-3xl md:border md:border-border/60 md:p-5 md:shadow-card" />
+      <ChangePasswordForm cardClassName={PROFILE_SETTINGS_CARD_CLASS} />
       <NotificationPreferencesForm
         initial={settings.notificationPrefs}
         pushPublicKey={settings.pushPublicKey}
-        cardClassName="rounded-none border-0 p-0 shadow-none md:rounded-3xl md:border md:border-border/60 md:p-5 md:shadow-card"
+        cardClassName={PROFILE_SETTINGS_CARD_CLASS}
+      />
+      <DeleteAccountSection
+        isPlatformAdmin={settings.isPlatformAdmin}
+        hasPassword={settings.hasPassword}
+        staffWarning={settings.staffWarning}
       />
     </div>
   );

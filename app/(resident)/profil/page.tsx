@@ -3,21 +3,37 @@ import { requireActiveMembership } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { getNotificationPreferences } from "@/lib/queries/messages";
 import { getPushPublicKey } from "@/lib/actions/notifications";
-import { ProfileSkeleton } from "@/components/features/profile/profile-skeleton";
 import {
-  isProfileTab,
-  type ProfileTabKey,
-} from "@/components/features/profile/profile-tabs";
+  listAuthorAnnouncementsPage,
+  listAuthorEventsPage,
+  listAuthorInitiativesPage,
+  PROFILE_CONTENT_PAGE_SIZE,
+  type ProfileListResult,
+} from "@/lib/queries/profile-content";
+import { ProfileSkeleton } from "@/components/features/profile/profile-skeleton";
+import type { ProfileTabKey } from "@/components/features/profile/profile-tabs";
 import { ProfilePageClient } from "@/components/features/profile/profile-page-client";
 import type { AnnouncementWithAuthor } from "@/lib/queries/announcements";
 import type { InitiativeWithAuthor } from "@/lib/queries/initiatives";
-import { enrichInitiativesWithMeta } from "@/lib/queries/initiatives";
 import type { AgendaEventRecord } from "@/lib/types";
 import { formatAddressLabel } from "@/lib/utils/format-address";
+import { parseProfileListParams } from "@/lib/utils/profile-list-params";
 
 type SearchParams =
-  | Promise<{ tab?: string; email_changed?: string; email_change_error?: string }>
+  | Promise<{
+      tab?: string;
+      page?: string;
+      email_changed?: string;
+      email_change_error?: string;
+    }>
   | undefined;
+
+const CONTENT_TABS = ["annonces", "initiatives", "evenements"] as const;
+type ContentTabKey = (typeof CONTENT_TABS)[number];
+
+function isContentTab(tab: ProfileTabKey): tab is ContentTabKey {
+  return (CONTENT_TABS as readonly string[]).includes(tab);
+}
 
 export default function ProfilPage({
   searchParams,
@@ -37,57 +53,28 @@ async function ProfilContent({
   searchParams?: SearchParams;
 }) {
   const sp = (await searchParams) ?? {};
-  const activeTab: ProfileTabKey = isProfileTab(sp.tab ?? "")
-    ? (sp.tab as ProfileTabKey)
-    : "annonces";
+  const { tab: activeTab, page } = parseProfileListParams(sp);
   const ctx = await requireActiveMembership();
   const profile = ctx.profile;
   const membership = ctx.activeMembership!;
   const communeId = membership.commune_id;
   const membershipId = membership.id;
+  const scope = { communeId, membershipId };
 
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const needsContent = isContentTab(activeTab);
 
   const [
-    activeAnnouncementsResult,
-    activeInitiativesResult,
-    activeEventsResult,
+    contentResult,
     invitesResult,
     notificationPrefs,
     pushPublicKey,
+    userResult,
   ] = await Promise.all([
-    supabase
-      .from("announcements")
-      .select(
-        "*, author_membership:memberships!announcements_author_membership_id_fkey(address_street, address_city, address_postcode, address_lat, address_lng, profiles:profiles!memberships_profiles_user_id_fkey(first_name, last_name, display_name, avatar_url))",
-      )
-      .eq("commune_id", communeId)
-      .eq("author_membership_id", membershipId)
-      .neq("status", "archivee")
-      .order("created_at", { ascending: false })
-      .limit(20),
-    supabase
-      .from("initiatives")
-      .select(
-        "*, author_membership:memberships!initiatives_author_membership_id_fkey(address_street, address_city, profiles(first_name, last_name, display_name, avatar_url))",
-      )
-      .eq("commune_id", communeId)
-      .eq("author_membership_id", membershipId)
-      .eq("status", "active")
-      .order("created_at", { ascending: false })
-      .limit(20),
-    supabase
-      .from("events")
-      .select("*")
-      .eq("commune_id", communeId)
-      .eq("author_membership_id", membershipId)
-      .eq("status", "active")
-      .order("created_at", { ascending: false })
-      .limit(20),
+    needsContent
+      ? fetchActiveTabContent(supabase, activeTab, scope, page)
+      : Promise.resolve(null),
     supabase
       .from("neighbor_invites")
       .select("id, email, created_at", { count: "exact" })
@@ -97,14 +84,32 @@ async function ProfilContent({
       .limit(3),
     getNotificationPreferences(supabase, ctx.userId),
     getPushPublicKey(),
+    supabase.auth.getUser(),
   ]);
 
-  const announcements = (activeAnnouncementsResult.data ??
-    []) as AnnouncementWithAuthor[];
-  const initiatives = (activeInitiativesResult.data ??
-    []) as InitiativeWithAuthor[];
-  await enrichInitiativesWithMeta(supabase, initiatives);
-  const events = (activeEventsResult.data ?? []) as AgendaEventRecord[];
+  const user = userResult.data.user;
+
+  const emptyList = {
+    items: [],
+    totalCount: 0,
+    page: 1,
+    pageSize: PROFILE_CONTENT_PAGE_SIZE,
+  };
+
+  const announcementsList =
+    activeTab === "annonces" && contentResult
+      ? (contentResult as ProfileListResult<AnnouncementWithAuthor>)
+      : emptyList;
+
+  const initiativesList =
+    activeTab === "initiatives" && contentResult
+      ? (contentResult as ProfileListResult<InitiativeWithAuthor>)
+      : emptyList;
+
+  const eventsList =
+    activeTab === "evenements" && contentResult
+      ? (contentResult as ProfileListResult<AgendaEventRecord>)
+      : emptyList;
 
   const displayName = getDisplayName(profile);
   const communeName = membership.commune?.name ?? "Votre commune";
@@ -115,7 +120,16 @@ async function ProfilContent({
     membership.address_city,
   );
 
-  const inviteCount = invitesResult.count ?? (invitesResult.data?.length ?? 0);
+  const inviteCount = invitesResult.count ?? invitesResult.data?.length ?? 0;
+
+  const hasPassword =
+    user?.identities?.some((identity) => identity.provider === "email") ?? false;
+
+  const staffWarning = getStaffDeletionWarning(
+    profile.is_platform_admin,
+    membership.role,
+    communeName,
+  );
 
   return (
     <ProfilePageClient
@@ -148,9 +162,9 @@ async function ProfilContent({
         addressLng: membership.address_lng,
       }}
       activeTab={activeTab}
-      announcements={announcements}
-      initiatives={initiatives}
-      events={events}
+      announcements={announcementsList}
+      initiatives={initiativesList}
+      events={eventsList}
       invite={{
         senderName: displayName,
         communeName,
@@ -159,11 +173,48 @@ async function ProfilContent({
       settings={{
         notificationPrefs,
         pushPublicKey,
+        isPlatformAdmin: profile.is_platform_admin,
+        hasPassword,
+        staffWarning,
       }}
       emailChanged={sp.email_changed === "1"}
       emailChangeError={sp.email_change_error === "1"}
     />
   );
+}
+
+async function fetchActiveTabContent(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  tab: ContentTabKey,
+  scope: { communeId: string; membershipId: string },
+  page: number,
+) {
+  switch (tab) {
+    case "annonces":
+      return listAuthorAnnouncementsPage(supabase, scope, { page });
+    case "initiatives":
+      return listAuthorInitiativesPage(supabase, scope, { page });
+    case "evenements":
+      return listAuthorEventsPage(supabase, scope, { page });
+  }
+}
+
+function getStaffDeletionWarning(
+  isPlatformAdmin: boolean,
+  role: string,
+  communeName: string,
+): string | null {
+  if (isPlatformAdmin) return null;
+
+  if (role === "mayor") {
+    return `Attention : vous êtes actuellement maire de ${communeName}. La commune n'aura plus de maire après la suppression.`;
+  }
+
+  if (role === "staff") {
+    return `Attention : vous êtes actuellement staff de ${communeName}.`;
+  }
+
+  return null;
 }
 
 function getDisplayName(profile: {

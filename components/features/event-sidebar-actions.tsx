@@ -21,6 +21,11 @@ import { ParticipantsAvatarRow } from "@/components/features/event-participants-
 import { VolunteersAvatarRow } from "@/components/features/event-volunteers-list";
 import { EventVolunteerButton } from "@/components/features/event-volunteer-button";
 import { deleteEvent } from "@/lib/actions/events";
+import { OutcomeChoiceOptions } from "@/components/features/outcome-choice-options";
+import {
+  getEventOutcomeCopy,
+  type OutcomeReason,
+} from "@/lib/constants/content-outcomes";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
@@ -290,7 +295,7 @@ function VolunteersCard({
         <p className="text-sm font-medium text-muted">
           {isAuthor
             ? "Recherchez des bénévoles — vous pouvez aussi vous inscrire vous-même."
-            : "L&apos;organisateur recherche des bénévoles pour cet événement."}
+            : "L'organisateur recherche des bénévoles pour cet événement."}
         </p>
       </div>
       <div className="space-y-3">
@@ -403,36 +408,64 @@ function DeleteEventModal({
 }) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [outcome, setOutcome] = useState<OutcomeReason | null>(null);
+  const copy = getEventOutcomeCopy();
+
+  function handleClose() {
+    if (deleting) return;
+    setOutcome(null);
+    setError(null);
+    onClose();
+  }
 
   async function handleDelete() {
+    if (!outcome) return;
     setDeleting(true);
-    const result = await deleteEvent(eventId);
+    setError(null);
+    const result = await deleteEvent(eventId, outcome);
     setDeleting(false);
-    if ("success" in result) {
-      onClose();
-      router.push(redirectHref);
+    if ("error" in result) {
+      setError(result.error);
+      return;
     }
+    setOutcome(null);
+    onClose();
+    router.push(redirectHref);
   }
 
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       closeDisabled={deleting}
       title="Supprimer l'événement"
       showCloseButton
       size="sm"
     >
       <div className="space-y-4">
+        <OutcomeChoiceOptions
+          question={copy.question}
+          fulfilledLabel={copy.fulfilled}
+          unfulfilledLabel={copy.unfulfilled}
+          value={outcome}
+          onChange={setOutcome}
+          disabled={deleting}
+        />
+
         <p className="text-sm font-medium text-muted">
           Êtes-vous sûr de vouloir supprimer cet événement ? Cette action est
           irréversible.
         </p>
+
+        {error ? <p className="text-xs text-coral">{error}</p> : null}
+
         <div className="flex justify-end gap-2">
           <Button
             type="button"
             variant="ghost"
-            onClick={onClose}
+            size="sm"
+            onClick={handleClose}
             disabled={deleting}
           >
             Annuler
@@ -440,8 +473,9 @@ function DeleteEventModal({
           <Button
             type="button"
             variant="danger"
+            size="sm"
             onClick={handleDelete}
-            disabled={deleting}
+            disabled={deleting || !outcome}
           >
             {deleting ? "Suppression…" : "Supprimer"}
           </Button>

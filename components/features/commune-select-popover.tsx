@@ -39,8 +39,10 @@ export function CommuneSelectPopover({
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<BanFeature[]>([]);
   const [loading, setLoading] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const popoverContentRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const listboxId = "commune-select-listbox";
 
   const fetchResults = useCallback(async (query: string) => {
     const trimmed = query.trim();
@@ -54,6 +56,7 @@ export function CommuneSelectPopover({
     try {
       const items = await searchMunicipalities(trimmed, 20);
       setResults(items);
+      setActiveIndex(-1);
     } finally {
       setLoading(false);
     }
@@ -74,6 +77,7 @@ export function CommuneSelectPopover({
       setSearch("");
       setResults([]);
       setLoading(false);
+      setActiveIndex(-1);
       clearTimeout(debounceRef.current);
     }
   }, [open]);
@@ -84,6 +88,7 @@ export function CommuneSelectPopover({
 
   function handleSearchChange(text: string) {
     setSearch(text);
+    setActiveIndex(-1);
     clearTimeout(debounceRef.current);
 
     if (text.trim().length < 3) {
@@ -102,10 +107,37 @@ export function CommuneSelectPopover({
     setSearch("");
     setResults([]);
     setLoading(false);
+    setActiveIndex(-1);
     clearTimeout(debounceRef.current);
     popoverContentRef.current
       ?.querySelector<HTMLInputElement>("input")
       ?.focus();
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (results.length === 0 || loading) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIndex((index) =>
+        index < results.length - 1 ? index + 1 : 0,
+      );
+      return;
+    }
+
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIndex((index) =>
+        index > 0 ? index - 1 : results.length - 1,
+      );
+      return;
+    }
+
+    if (e.key === "Enter" && activeIndex >= 0) {
+      e.preventDefault();
+      const feature = results[activeIndex];
+      if (feature) selectCommune(feature);
+    }
   }
 
   function selectCommune(feature: BanFeature) {
@@ -115,6 +147,8 @@ export function CommuneSelectPopover({
 
   const showEmpty =
     search.trim().length >= 3 && !loading && results.length === 0;
+  const activeOptionId =
+    activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined;
 
   return (
     <div className="w-full">
@@ -160,11 +194,15 @@ export function CommuneSelectPopover({
                 aria-hidden
               />
               <Input
-                type="search"
+                type="text"
                 autoComplete="off"
                 placeholder="Rechercher une commune..."
                 value={search}
                 onChange={(e) => handleSearchChange(e.target.value)}
+                onKeyDown={handleKeyDown}
+                aria-autocomplete="list"
+                aria-controls={results.length > 0 ? listboxId : undefined}
+                aria-activedescendant={activeOptionId}
                 className="h-9 pl-9 pr-9"
               />
               {search.length > 0 ? (
@@ -201,15 +239,22 @@ export function CommuneSelectPopover({
             ) : null}
 
             {!loading && results.length > 0 ? (
-              <ul role="listbox" className="py-1">
-                {results.map((feature) => {
+              <ul id={listboxId} role="listbox" className="py-1">
+                {results.map((feature, index) => {
                   const text = formatMunicipalityDisplay(feature);
+                  const isActive = index === activeIndex;
                   return (
                     <li key={`${feature.citycode}-${feature.label}`}>
                       <button
                         type="button"
+                        id={`${listboxId}-option-${index}`}
                         role="option"
-                        className="w-full cursor-pointer px-3 py-2.5 text-left text-sm hover:bg-warm"
+                        aria-selected={isActive}
+                        className={cn(
+                          "w-full cursor-pointer px-3 py-2.5 text-left text-sm hover:bg-warm",
+                          isActive && "bg-warm",
+                        )}
+                        onMouseEnter={() => setActiveIndex(index)}
                         onClick={() => selectCommune(feature)}
                       >
                         {text}

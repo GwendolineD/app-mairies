@@ -673,6 +673,54 @@ export type Database = {
         }
         Relationships: []
       }
+      content_outcomes: {
+        Row: {
+          category_slug: string
+          commune_id: string
+          content_kind: Database["public"]["Enums"]["content_kind"]
+          content_type: string | null
+          id: string
+          membership_id: string | null
+          outcome: Database["public"]["Enums"]["outcome_reason"]
+          recorded_at: string
+        }
+        Insert: {
+          category_slug: string
+          commune_id: string
+          content_kind: Database["public"]["Enums"]["content_kind"]
+          content_type?: string | null
+          id?: string
+          membership_id?: string | null
+          outcome: Database["public"]["Enums"]["outcome_reason"]
+          recorded_at?: string
+        }
+        Update: {
+          category_slug?: string
+          commune_id?: string
+          content_kind?: Database["public"]["Enums"]["content_kind"]
+          content_type?: string | null
+          id?: string
+          membership_id?: string | null
+          outcome?: Database["public"]["Enums"]["outcome_reason"]
+          recorded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_outcomes_commune_id_fkey"
+            columns: ["commune_id"]
+            isOneToOne: false
+            referencedRelation: "communes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_outcomes_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversation_participants: {
         Row: {
           archived_at: string | null
@@ -711,7 +759,7 @@ export type Database = {
           context_id: string | null
           context_type: Database["public"]["Enums"]["context_type"] | null
           created_at: string
-          created_by_user_id: string
+          created_by_user_id: string | null
           id: string
           last_message_at: string | null
           last_message_id: string | null
@@ -727,7 +775,7 @@ export type Database = {
           context_id?: string | null
           context_type?: Database["public"]["Enums"]["context_type"] | null
           created_at?: string
-          created_by_user_id: string
+          created_by_user_id?: string | null
           id?: string
           last_message_at?: string | null
           last_message_id?: string | null
@@ -743,7 +791,7 @@ export type Database = {
           context_id?: string | null
           context_type?: Database["public"]["Enums"]["context_type"] | null
           created_at?: string
-          created_by_user_id?: string
+          created_by_user_id?: string | null
           id?: string
           last_message_at?: string | null
           last_message_id?: string | null
@@ -757,6 +805,64 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "conversations_commune_id_fkey"
+            columns: ["commune_id"]
+            isOneToOne: false
+            referencedRelation: "communes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deleted_content_creation_archive: {
+        Row: {
+          announcement_type: string | null
+          commune_id: string
+          content_kind: string
+          id: string
+          original_created_at: string
+        }
+        Insert: {
+          announcement_type?: string | null
+          commune_id: string
+          content_kind: string
+          id?: string
+          original_created_at: string
+        }
+        Update: {
+          announcement_type?: string | null
+          commune_id?: string
+          content_kind?: string
+          id?: string
+          original_created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deleted_content_creation_archive_commune_id_fkey"
+            columns: ["commune_id"]
+            isOneToOne: false
+            referencedRelation: "communes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deleted_membership_archive: {
+        Row: {
+          commune_id: string
+          id: string
+          original_created_at: string
+        }
+        Insert: {
+          commune_id: string
+          id?: string
+          original_created_at: string
+        }
+        Update: {
+          commune_id?: string
+          id?: string
+          original_created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deleted_membership_archive_commune_id_fkey"
             columns: ["commune_id"]
             isOneToOne: false
             referencedRelation: "communes"
@@ -1248,7 +1354,7 @@ export type Database = {
           created_at: string
           edited_at: string | null
           id: string
-          sender_id: string
+          sender_id: string | null
         }
         Insert: {
           body: string
@@ -1256,7 +1362,7 @@ export type Database = {
           created_at?: string
           edited_at?: string | null
           id?: string
-          sender_id: string
+          sender_id?: string | null
         }
         Update: {
           body?: string
@@ -1264,7 +1370,7 @@ export type Database = {
           created_at?: string
           edited_at?: string | null
           id?: string
-          sender_id?: string
+          sender_id?: string | null
         }
         Relationships: [
           {
@@ -1729,6 +1835,9 @@ export type Database = {
       user_notification_preferences: {
         Row: {
           created_at: string
+          notify_event_participation: boolean
+          notify_event_volunteer: boolean
+          notify_initiative_support: boolean
           notify_message_announcement: boolean
           notify_message_event: boolean
           notify_message_initiative: boolean
@@ -1740,6 +1849,9 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          notify_event_participation?: boolean
+          notify_event_volunteer?: boolean
+          notify_initiative_support?: boolean
           notify_message_announcement?: boolean
           notify_message_event?: boolean
           notify_message_initiative?: boolean
@@ -1751,6 +1863,9 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          notify_event_participation?: boolean
+          notify_event_volunteer?: boolean
+          notify_initiative_support?: boolean
           notify_message_announcement?: boolean
           notify_message_event?: boolean
           notify_message_initiative?: boolean
@@ -1827,6 +1942,17 @@ export type Database = {
           offres: number
         }[]
       }
+      commune_outcome_banner_stats: {
+        Args: { p_commune_id: string }
+        Returns: {
+          demands_month: number
+          demands_week: number
+          events_month: number
+          events_week: number
+          offers_month: number
+          offers_week: number
+        }[]
+      }
       count_total_unread: { Args: { p_commune_id: string }; Returns: number }
       get_conversation_inbox: {
         Args: { p_commune_id: string }
@@ -1882,14 +2008,17 @@ export type Database = {
           context_available: boolean
           context_id: string
           context_photo_url: string
+          context_status: string
           context_type: Database["public"]["Enums"]["context_type"]
           conversation_id: string
           last_message_at: string
           last_message_preview: string
           last_message_sender_id: string
           last_read_at: string
+          other_account_deleted: boolean
           other_avatar_url: string
           other_display_name: string
+          other_membership_status: string
           other_user_id: string
           title: string
           unread_count: number
@@ -1916,6 +2045,7 @@ export type Database = {
       announcement_type: "demande" | "offre"
       appeal_status: "pending" | "reviewed"
       commune_plan: "free" | "standard" | "premium"
+      content_kind: "announcement" | "event"
       content_status: "active" | "archived"
       context_type: "announcement" | "initiative" | "event" | "user"
       initiative_date_mode: "none" | "once" | "recurring"
@@ -1929,6 +2059,7 @@ export type Database = {
         | "event"
         | "membership"
         | "user"
+      outcome_reason: "fulfilled" | "unfulfilled"
       payment_status: "paid" | "pending" | "failed" | "refunded"
       report_resolution: "content_suspended" | "user_suspended" | "dismissed"
       report_status: "pending" | "reviewed" | "dismissed"
@@ -2068,6 +2199,7 @@ export const Constants = {
       announcement_type: ["demande", "offre"],
       appeal_status: ["pending", "reviewed"],
       commune_plan: ["free", "standard", "premium"],
+      content_kind: ["announcement", "event"],
       content_status: ["active", "archived"],
       context_type: ["announcement", "initiative", "event", "user"],
       initiative_date_mode: ["none", "once", "recurring"],
@@ -2082,6 +2214,7 @@ export const Constants = {
         "membership",
         "user",
       ],
+      outcome_reason: ["fulfilled", "unfulfilled"],
       payment_status: ["paid", "pending", "failed", "refunded"],
       report_resolution: ["content_suspended", "user_suspended", "dismissed"],
       report_status: ["pending", "reviewed", "dismissed"],

@@ -9,11 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import type { AnnouncementEditData } from "@/lib/types";
+import type { AnnouncementType } from "@/lib/constants/announcement-types";
 import { cn } from "@/lib/utils/cn";
 
 type Props = {
   isAuthor: boolean;
   announcementId: string;
+  announcementType: AnnouncementType;
   authorName: string;
   authorAvatarUrl: string | null;
   memberSince: string;
@@ -25,6 +27,7 @@ type Props = {
 export function AnnouncementSidebarActions({
   isAuthor,
   announcementId,
+  announcementType,
   authorName,
   authorAvatarUrl,
   memberSince,
@@ -37,27 +40,32 @@ export function AnnouncementSidebarActions({
 
   if (isAuthor) {
     return (
-      <Card className={cn("space-y-4 md:p-5", className)}>
+      <Card className={cn("md:p-5", className)}>
         <h2 className="text-lg font-semibold text-text">Votre annonce</h2>
-        <Button
-          type="button"
-          className="w-full cursor-pointer"
-          onClick={() => openAnnouncementModal({ editId: announcementId, initialData: editData })}
-        >
-          <Pencil className="size-4" aria-hidden />
-          Modifier l&apos;annonce
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full cursor-pointer border-coral bg-surface text-coral hover:bg-coral/5"
-          onClick={() => setDeleteOpen(true)}
-        >
-          <Trash2 className="size-4" aria-hidden />
-          Supprimer
-        </Button>
+        <div className="flex flex-col gap-2">
+          <Button
+            type="button"
+            className="w-full cursor-pointer"
+            onClick={() =>
+              openAnnouncementModal({ editId: announcementId, initialData: editData })
+            }
+          >
+            <Pencil className="size-4" aria-hidden />
+            Modifier l&apos;annonce
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full cursor-pointer border-coral bg-surface text-coral hover:bg-coral/5"
+            onClick={() => setDeleteOpen(true)}
+          >
+            <Trash2 className="size-4" aria-hidden />
+            Supprimer
+          </Button>
+        </div>
         <DeleteAnnouncementModal
           announcementId={announcementId}
+          announcementType={announcementType}
           open={deleteOpen}
           onClose={() => setDeleteOpen(false)}
         />

@@ -39,7 +39,10 @@ const CONTEXT_TABLES = {
   announcement: "announcements",
   initiative: "initiatives",
   event: "events",
-} as const satisfies Record<ConversationContextType, "announcements" | "initiatives" | "events">;
+} as const satisfies Record<
+  ConversationContextType,
+  "announcements" | "initiatives" | "events"
+>;
 
 /**
  * Generic helper: ensure a 1:1 conversation exists between the current user and
@@ -197,9 +200,7 @@ async function insertConversationMessage(
     const preview = body.slice(0, 140);
     await notifyUser(recipientUserId, {
       title: `Nouveau message — ${senderName}`,
-      body: conversation.title
-        ? `${conversation.title} · ${preview}`
-        : preview,
+      body: conversation.title ? `${conversation.title} · ${preview}` : preview,
       url: ROUTES.messages.detail(conversationId),
       tag: `conv:${conversationId}`,
       payloadJson: {
@@ -273,7 +274,7 @@ export async function markConversationRead(conversationId: string) {
     .update({ last_read_at: new Date().toISOString() })
     .eq("conversation_id", conversationId)
     .eq("user_id", ctx.userId);
-  revalidatePath(ROUTES.messages.list);
+  revalidatePath(ROUTES.messages.list, "layout");
   return { success: true };
 }
 
@@ -333,7 +334,10 @@ export async function permanentlyDeleteConversation(conversationId: string) {
 
   // If no participants left, delete the conversation (messages cascade)
   if (count === 0) {
-    await supabase.from("messages").delete().eq("conversation_id", conversationId);
+    await supabase
+      .from("messages")
+      .delete()
+      .eq("conversation_id", conversationId);
     await supabase.from("conversations").delete().eq("id", conversationId);
   }
 
@@ -386,7 +390,10 @@ export async function createNeighborInvite(
   });
 
   if (!emailResult.success) {
-    console.error("[createNeighborInvite] email send failed", emailResult.error);
+    console.error(
+      "[createNeighborInvite] email send failed",
+      emailResult.error,
+    );
     await supabase
       .from("neighbor_invites")
       .delete()

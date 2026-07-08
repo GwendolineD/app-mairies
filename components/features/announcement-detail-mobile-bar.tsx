@@ -7,10 +7,12 @@ import { ContactAnnouncementButton } from "@/components/features/contact-announc
 import { DeleteAnnouncementModal } from "@/components/features/delete-announcement-modal";
 import { Button } from "@/components/ui/button";
 import type { AnnouncementEditData } from "@/lib/types";
+import type { AnnouncementType } from "@/lib/constants/announcement-types";
 
 type Props = {
   isAuthor: boolean;
   announcementId: string;
+  announcementType: AnnouncementType;
   addressCity: string | null;
   contactLabel: string;
   editData?: AnnouncementEditData;
@@ -19,6 +21,7 @@ type Props = {
 export function AnnouncementDetailMobileBar({
   isAuthor,
   announcementId,
+  announcementType,
   addressCity,
   contactLabel,
   editData,
@@ -56,6 +59,7 @@ export function AnnouncementDetailMobileBar({
               </Button>
               <DeleteAnnouncementModal
                 announcementId={announcementId}
+                announcementType={announcementType}
                 open={deleteOpen}
                 onClose={() => setDeleteOpen(false)}
               />

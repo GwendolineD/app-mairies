@@ -13,6 +13,10 @@ import { parseFormId } from "@/lib/utils/form-data";
 import { buildAddressLabel, parseAddressLabelParts } from "@/lib/utils/format-address";
 import { eventSchema, eventModalSchema } from "@/lib/validations/schemas";
 import { fanoutNewContentNotification } from "@/lib/services/notification-fanout";
+import { notifyAuthorEngagement } from "@/lib/services/author-engagement-notifications";
+import { incrementMembershipPublishCounter } from "@/lib/services/membership-publish-counters";
+import type { OutcomeReason } from "@/lib/constants/content-outcomes";
+import { isOutcomeReason } from "@/lib/constants/content-outcomes";
 import type { EventEditData, AgendaEventRecord } from "@/lib/types";
 
 export async function createEvent(formData: FormData): Promise<void> {
@@ -53,12 +57,12 @@ export async function createEvent(formData: FormData): Promise<void> {
   revalidatePath(ROUTES.evenements.list);
   revalidatePath(ROUTES.profil);
 
-  void supabase.rpc("increment_membership_counter", {
-    p_membership_id: membership.id,
-    p_column_name: "total_events_published",
-  }).then(({ error: rpcErr }) => {
-    if (rpcErr) console.error("[createEvent] counter increment failed", rpcErr.message);
-  });
+  incrementMembershipPublishCounter(
+    supabase,
+    membership.id,
+    "total_events_published",
+    { logContext: "createEvent" },
+  );
 
   void fanoutNewContentNotification({
     contextType: "event",
@@ -103,7 +107,10 @@ export async function updateEventStatus(
   return { success: true };
 }
 
-export async function deleteEvent(id: string) {
+export async function deleteEvent(
+  id: string,
+  outcome: OutcomeReason,
+): Promise<{ success: true } | { error: string }> {
   const ctx = await requireActiveMembership();
   const supabase = await createClient();
 
@@ -113,6 +120,25 @@ export async function deleteEvent(id: string) {
     ctx.activeMembership!,
   );
   if (auth.error) return { error: auth.error };
+
+  const { data: evt, error: fetchError } = await supabase
+    .from("events")
+    .select("category_slug, commune_id")
+    .eq("id", id)
+    .single();
+
+  if (fetchError) return { error: fetchError.message };
+
+  const { error: outcomeError } = await supabase.from("content_outcomes").insert({
+    commune_id: evt.commune_id,
+    membership_id: ctx.activeMembership!.id,
+    content_kind: "event",
+    content_type: null,
+    category_slug: evt.category_slug ?? "autre",
+    outcome,
+  });
+
+  if (outcomeError) return { error: outcomeError.message };
 
   const { error } = await supabase.from("events").delete().eq("id", id);
   if (error) return { error: error.message };
@@ -124,18 +150,22 @@ export async function deleteEvent(id: string) {
     targetType: "event",
     targetId: id,
     communeId: ctx.activeMembership!.commune_id,
+    metadata: { outcome },
   });
 
   revalidatePath(ROUTES.evenements.list);
   revalidatePath(ROUTES.mairie.evenements);
   revalidatePath(ROUTES.mairie.evenementDetail(id));
+  revalidatePath(ROUTES.accueil);
+  revalidatePath(ROUTES.mairie.dashboard);
   return { success: true };
 }
 
 export async function submitDeleteEvent(formData: FormData): Promise<void> {
   const id = parseFormId(formData);
-  if (!id) return;
-  await deleteEvent(id);
+  const outcomeRaw = formData.get("outcome");
+  if (!id || typeof outcomeRaw !== "string" || !isOutcomeReason(outcomeRaw)) return;
+  await deleteEvent(id, outcomeRaw);
 }
 
 export async function submitArchiveEvent(formData: FormData): Promise<void> {
@@ -233,6 +263,17 @@ export async function createEventFromModal(
   revalidatePath(ROUTES.evenements.list);
   revalidatePath(ROUTES.mairie.evenements);
   revalidatePath(ROUTES.mairie.evenementDetail(created.id));
+  revalidatePath(ROUTES.profil);
+
+  incrementMembershipPublishCounter(
+    supabase,
+    membership.id,
+    "total_events_published",
+    {
+      skip: parsed.data.isOfficial === true,
+      logContext: "createEventFromModal",
+    },
+  );
 
   void fanoutNewContentNotification({
     contextType: "event",
@@ -414,7 +455,7 @@ export async function toggleEventVolunteer(eventId: string) {
 
   const { data: event, error: fetchError } = await supabase
     .from("events")
-    .select("id")
+    .select("id, title, author_membership_id")
     .eq("id", eventId)
     .eq("commune_id", membership.commune_id)
     .single();
@@ -446,6 +487,26 @@ export async function toggleEventVolunteer(eventId: string) {
   });
 
   if (error) return { error: error.message, volunteering: false };
+
+  const actorName = ctx.profile.display_name ?? "Un·e voisin·e";
+  void notifyAuthorEngagement({
+    authorMembershipId: event.author_membership_id,
+    actorUserId: ctx.userId,
+    actorName,
+    prefKey: "notify_event_volunteer",
+    title: `Nouveau·elle bénévole — ${actorName}`,
+    body: event.title,
+    url: ROUTES.evenements.detail(eventId),
+    tag: `event-volunteer:${eventId}:${membership.id}`,
+    payloadJson: {
+      kind: "engagement",
+      engagement_type: "event_volunteer",
+      context_type: "event",
+      context_id: eventId,
+      actor_user_id: ctx.userId,
+    },
+  });
+
   revalidatePath(ROUTES.evenements.detail(eventId));
   return { success: true as const, volunteering: true };
 }
@@ -458,7 +519,7 @@ export async function toggleEventParticipation(eventId: string) {
 
   const { data: event, error: fetchError } = await supabase
     .from("events")
-    .select("id")
+    .select("id, title, author_membership_id")
     .eq("id", eventId)
     .eq("commune_id", membership.commune_id)
     .single();
@@ -490,6 +551,26 @@ export async function toggleEventParticipation(eventId: string) {
   });
 
   if (error) return { error: error.message, participating: false };
+
+  const actorName = ctx.profile.display_name ?? "Un·e voisin·e";
+  void notifyAuthorEngagement({
+    authorMembershipId: event.author_membership_id,
+    actorUserId: ctx.userId,
+    actorName,
+    prefKey: "notify_event_participation",
+    title: `Nouvelle participation — ${actorName}`,
+    body: event.title,
+    url: ROUTES.evenements.detail(eventId),
+    tag: `event-participation:${eventId}:${membership.id}`,
+    payloadJson: {
+      kind: "engagement",
+      engagement_type: "event_participation",
+      context_type: "event",
+      context_id: eventId,
+      actor_user_id: ctx.userId,
+    },
+  });
+
   revalidatePath(ROUTES.evenements.detail(eventId));
   return { success: true as const, participating: true };
 }

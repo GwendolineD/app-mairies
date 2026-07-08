@@ -81,7 +81,6 @@ export default async function MairieEvenementDetailPage(props: {
     )
     .eq("id", id)
     .eq("commune_id", communeId)
-    .eq("is_official", true)
     .single();
 
   if (!data) notFound();
@@ -98,7 +97,10 @@ export default async function MairieEvenementDetailPage(props: {
     authorName,
     communeName,
   );
-  const editData = buildEventEditData(event);
+  const canManage =
+    event.author_membership_id === ctx.activeMembership?.id ||
+    (event.is_official && !!ctx.activeMembership);
+  const editData = canManage ? buildEventEditData(event) : undefined;
 
   let sourceInitiative: { id: string; title: string } | null = null;
   if (event.source_initiative_id) {
@@ -159,7 +161,7 @@ export default async function MairieEvenementDetailPage(props: {
   return (
     <PageStack gap="5">
       <BackLink href={ROUTES.mairie.evenements}>
-        Événements officiels
+        Événements
       </BackLink>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
@@ -221,7 +223,7 @@ export default async function MairieEvenementDetailPage(props: {
 
         <aside className="space-y-8 md:space-y-4">
           <EventSidebarActions
-            isAuthor
+            isAuthor={canManage}
             eventId={event.id}
             authorName={authorLabel}
             authorAvatarUrl={null}

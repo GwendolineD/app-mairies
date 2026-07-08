@@ -7,7 +7,6 @@ import { requireActiveMembership } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import { INITIATIVE_STATUS } from "@/lib/constants/statuses";
 import { EVENT_STATUS } from "@/lib/constants/statuses";
-import { getInitiativeCategoryDefaultImageUrl } from "@/lib/constants/initiative-categories";
 import { createClient } from "@/lib/supabase/server";
 import { parseFormId } from "@/lib/utils/form-data";
 import { buildAddressLabel } from "@/lib/utils/format-address";
@@ -17,6 +16,8 @@ import {
   createEventFromInitiativeSchema,
 } from "@/lib/validations/schemas";
 import { fanoutNewContentNotification } from "@/lib/services/notification-fanout";
+import { notifyAuthorEngagement } from "@/lib/services/author-engagement-notifications";
+import { incrementMembershipPublishCounter } from "@/lib/services/membership-publish-counters";
 import {
   listInitiativesPage,
   INITIATIVES_PAGE_SIZE,
@@ -87,7 +88,7 @@ export async function createInitiative(formData: FormData): Promise<{ id: string
     ? parsed.data.addressLng!
     : membership.address_lng;
 
-  const photoUrl = parsed.data.photoUrl || getInitiativeCategoryDefaultImageUrl(parsed.data.categorySlug);
+  const photoUrl = parsed.data.photoUrl || null;
 
   const { data: created, error } = await supabase
     .from("initiatives")
@@ -114,7 +115,7 @@ export async function createInitiative(formData: FormData): Promise<{ id: string
   const eventEndsAt = formData.get("eventEndsAt") as string | null;
   if (eventStartsAt && eventEndsAt) {
     const volunteersNeeded = formData.get("eventVolunteersNeeded") as string | null;
-    await supabase.from("events").insert({
+    const { error: linkedEventError } = await supabase.from("events").insert({
       commune_id: membership.commune_id,
       author_membership_id: membership.id,
       source_initiative_id: created.id,
@@ -130,10 +131,26 @@ export async function createInitiative(formData: FormData): Promise<{ id: string
       address_lng: addressLng,
       status: EVENT_STATUS.active,
     });
+    if (!linkedEventError) {
+      incrementMembershipPublishCounter(
+        supabase,
+        membership.id,
+        "total_events_published",
+        { logContext: "createInitiative.linkedEvent" },
+      );
+    }
     revalidatePath(ROUTES.evenements.list);
   }
 
   revalidatePath(ROUTES.initiatives.list);
+  revalidatePath(ROUTES.profil);
+
+  incrementMembershipPublishCounter(
+    supabase,
+    membership.id,
+    "total_initiatives_published",
+    { logContext: "createInitiative" },
+  );
 
   void fanoutNewContentNotification({
     contextType: "initiative",
@@ -215,8 +232,7 @@ export async function updateInitiative(
     ? parsed.data.addressLng!
     : membership.address_lng;
 
-  const photoUrl =
-    parsed.data.photoUrl || getInitiativeCategoryDefaultImageUrl(parsed.data.categorySlug);
+  const photoUrl = parsed.data.photoUrl || null;
 
   const { error } = await supabase
     .from("initiatives")
@@ -322,6 +338,14 @@ export async function createEventFromInitiative(formData: FormData): Promise<str
 
   revalidatePath(ROUTES.evenements.list);
   revalidatePath(ROUTES.initiatives.detail(parsed.data.initiativeId));
+  revalidatePath(ROUTES.profil);
+
+  incrementMembershipPublishCounter(
+    supabase,
+    membership.id,
+    "total_events_published",
+    { logContext: "createEventFromInitiative" },
+  );
 
   void fanoutNewContentNotification({
     contextType: "event",
@@ -363,12 +387,24 @@ export async function updateInitiativeStatus(
 export async function toggleInitiativeSupport(initiativeId: string) {
   const ctx = await requireActiveMembership();
   const supabase = await createClient();
+  const membership = ctx.activeMembership!;
+
+  const { data: initiative, error: initiativeError } = await supabase
+    .from("initiatives")
+    .select("id, title, author_membership_id")
+    .eq("id", initiativeId)
+    .eq("commune_id", membership.commune_id)
+    .maybeSingle();
+
+  if (initiativeError || !initiative) {
+    return { error: "Initiative introuvable.", supported: false };
+  }
 
   const { data: existing } = await supabase
     .from("initiative_responses")
     .select("id")
     .eq("initiative_id", initiativeId)
-    .eq("membership_id", ctx.activeMembership!.id)
+    .eq("membership_id", membership.id)
     .eq("response_type", "support")
     .maybeSingle();
 
@@ -384,11 +420,31 @@ export async function toggleInitiativeSupport(initiativeId: string) {
 
   const { error } = await supabase.from("initiative_responses").insert({
     initiative_id: initiativeId,
-    membership_id: ctx.activeMembership!.id,
+    membership_id: membership.id,
     response_type: "support",
   });
 
   if (error) return { error: error.message, supported: false };
+
+  const actorName = ctx.profile.display_name ?? "Un·e voisin·e";
+  void notifyAuthorEngagement({
+    authorMembershipId: initiative.author_membership_id,
+    actorUserId: ctx.userId,
+    actorName,
+    prefKey: "notify_initiative_support",
+    title: `Nouveau soutien — ${actorName}`,
+    body: initiative.title,
+    url: ROUTES.initiatives.detail(initiativeId),
+    tag: `initiative-support:${initiativeId}:${membership.id}`,
+    payloadJson: {
+      kind: "engagement",
+      engagement_type: "initiative_support",
+      context_type: "initiative",
+      context_id: initiativeId,
+      actor_user_id: ctx.userId,
+    },
+  });
+
   revalidatePath(ROUTES.initiatives.detail(initiativeId));
   return { success: true, supported: true };
 }

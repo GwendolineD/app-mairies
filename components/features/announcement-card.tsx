@@ -4,6 +4,7 @@ import { CloudImage } from "@/components/ui/cloud-image";
 import { ROUTES } from "@/lib/constants/routes";
 import {
   getCategoryColorHex,
+  getCategoryDefaultPhotoUrl,
   getCategoryLabel,
 } from "@/lib/constants/announcement-categories";
 import type { AnnouncementWithAuthor } from "@/lib/queries/announcements";
@@ -30,6 +31,11 @@ type AuthorProfile = {
   display_name?: string | null;
   avatar_url?: string | null;
 } | null;
+
+function resolveImageUrl(announcement: AnnouncementWithAuthor): string {
+  if (announcement.photo_url) return announcement.photo_url;
+  return getCategoryDefaultPhotoUrl(announcement.category_slug);
+}
 
 function resolveAuthorName(profiles: AuthorProfile): string {
   if (profiles?.first_name && profiles?.last_name) {
@@ -121,13 +127,7 @@ export function AnnouncementCard({
           )}
         >
           <div className="relative size-28 shrink-0 overflow-hidden">
-            {a.photo_url ? (
-              <CloudImage src={a.photo_url} alt="" />
-            ) : (
-              <div className="flex size-full items-center justify-center bg-warm text-[10px] font-semibold text-muted">
-                Annonce
-              </div>
-            )}
+            <CloudImage src={resolveImageUrl(a)} alt="" />
           </div>
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col p-2">
             {a.suspended_at ? <ContentSuspendedBadge /> : null}
@@ -194,13 +194,7 @@ export function AnnouncementCard({
         )}
       >
         <div className="relative aspect-[16/10] w-full overflow-hidden">
-          {a.photo_url ? (
-            <CloudImage src={a.photo_url} alt="" />
-          ) : (
-            <div className="flex size-full items-center justify-center bg-warm text-[11px] font-semibold text-muted">
-              Annonce
-            </div>
-          )}
+          <CloudImage src={resolveImageUrl(a)} alt="" />
           <AnnouncementTypePastille type={a.type} className="absolute left-2 top-2" />
         </div>
 
@@ -269,13 +263,7 @@ export function AnnouncementMapCard({
   return (
     <div className="flex w-[260px] flex-col gap-2">
       <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl">
-        {a.photo_url ? (
-          <CloudImage src={a.photo_url} alt="" />
-        ) : (
-          <div className="flex size-full items-center justify-center bg-warm text-xs font-semibold text-muted">
-            Annonce
-          </div>
-        )}
+        <CloudImage src={resolveImageUrl(a)} alt="" />
         <AnnouncementTypePastille type={a.type} className="absolute left-2 top-2" />
       </div>
       <CategoryTag

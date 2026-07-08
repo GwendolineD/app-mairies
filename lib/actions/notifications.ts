@@ -11,7 +11,7 @@ import {
 import type { NotificationPreferences } from "@/lib/types";
 
 /**
- * Upsert the 6 notification preference booleans for the current user.
+ * Upsert the 9 notification preference booleans for the current user.
  * Form fields are expected to be standard checkboxes: present = "on" = true.
  */
 export async function updateNotificationPreferences(
@@ -24,6 +24,11 @@ export async function updateNotificationPreferences(
     notify_message_initiative:
       formData.get("notify_message_initiative") === "on",
     notify_message_event: formData.get("notify_message_event") === "on",
+    notify_initiative_support:
+      formData.get("notify_initiative_support") === "on",
+    notify_event_participation:
+      formData.get("notify_event_participation") === "on",
+    notify_event_volunteer: formData.get("notify_event_volunteer") === "on",
     notify_new_announcement: formData.get("notify_new_announcement") === "on",
     notify_new_initiative: formData.get("notify_new_initiative") === "on",
     notify_new_event: formData.get("notify_new_event") === "on",

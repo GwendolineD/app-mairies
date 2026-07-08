@@ -66,6 +66,8 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   "moderation.report_content": "Signalement contenu",
   "moderation.report_user": "Signalement utilisateur",
   "moderation.resolve_report": "Résolution signalement",
+  "admin.delete_user_account": "Suppression compte (admin)",
+  "auth.delete_own_account": "Suppression de compte",
   "admin.change_role": "Changement de rôle",
   "admin.set_commune_status": "Changement statut commune",
   "admin.delete_announcement": "Suppression annonce (admin)",

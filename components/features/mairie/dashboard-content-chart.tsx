@@ -24,7 +24,11 @@ export function DashboardContentChart({
 }) {
   return (
     <ChartContainer config={chartConfig} className="h-[280px] w-full">
-      <LineChart data={data} accessibilityLayer>
+      <LineChart
+        data={data}
+        accessibilityLayer
+        margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
+      >
         <CartesianGrid vertical={false} />
         <XAxis
           dataKey="week"
@@ -36,7 +40,8 @@ export function DashboardContentChart({
           tickLine={false}
           axisLine={false}
           allowDecimals={false}
-          width={32}
+          width={24}
+          tickMargin={4}
         />
         <ChartTooltip content={<ChartTooltipContent />} />
         <ChartLegend content={<ChartLegendContent />} />

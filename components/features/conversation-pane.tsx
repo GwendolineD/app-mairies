@@ -5,7 +5,11 @@ import { ConversationThread } from "@/components/features/conversation-thread";
 import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
 import { listConversationMessages } from "@/lib/queries/messages";
-import type { ConversationContextType, MessageRow } from "@/lib/types";
+import type { ConversationContextStatus, ConversationContextType, MembershipStatus, MessageRow } from "@/lib/types";
+import {
+  getConversationReadOnlyMessage,
+  getConversationStatusBadgeLabel,
+} from "@/lib/utils/conversation-status-badge";
 
 type ConversationRow = {
   id: string;
@@ -50,12 +54,18 @@ const CONTEXT_TABLES = {
   event: "events",
 } as const satisfies Record<ConversationContextType, "announcements" | "initiatives" | "events">;
 
-async function fetchContextPhotoUrl(
+async function fetchContextInfo(
   supabase: Awaited<ReturnType<typeof createClient>>,
   contextType: ConversationContextType | null,
   contextId: string | null,
-): Promise<{ photoUrl: string | null; available: boolean }> {
-  if (!contextType || !contextId) return { photoUrl: null, available: true };
+): Promise<{
+  photoUrl: string | null;
+  available: boolean;
+  contextStatus: ConversationContextStatus | null;
+}> {
+  if (!contextType || !contextId) {
+    return { photoUrl: null, available: true, contextStatus: null };
+  }
   const table = CONTEXT_TABLES[contextType];
   const { data } = await supabase
     .from(table as "announcements")
@@ -63,10 +73,13 @@ async function fetchContextPhotoUrl(
     .eq("id", contextId)
     .maybeSingle();
   const row = data as { photo_url: string | null; suspended_at: string | null } | null;
-  return {
-    photoUrl: row?.photo_url ?? null,
-    available: row ? !row.suspended_at : false,
-  };
+  if (!row) {
+    return { photoUrl: null, available: false, contextStatus: "deleted" };
+  }
+  if (row.suspended_at) {
+    return { photoUrl: row.photo_url, available: false, contextStatus: "suspended" };
+  }
+  return { photoUrl: row.photo_url, available: true, contextStatus: "available" };
 }
 
 /**
@@ -131,7 +144,8 @@ export async function ConversationPane({
       ? conversation.participant_b
       : conversation.participant_a;
 
-  const [{ data: otherProfileRow }, messages, contextInfo] = await Promise.all([
+  const [{ data: otherProfileRow }, messages, contextInfo, { data: otherMembershipRow }] =
+    await Promise.all([
     otherUserId
       ? supabase
           .from("profiles")
@@ -140,17 +154,40 @@ export async function ConversationPane({
           .maybeSingle()
       : Promise.resolve({ data: null }),
     listConversationMessages(supabase, conversationId),
-    fetchContextPhotoUrl(
+    fetchContextInfo(
       supabase,
       conversation.context_type,
       conversation.context_id,
     ),
+    otherUserId
+      ? supabase
+          .from("memberships")
+          .select("status")
+          .eq("user_id", otherUserId)
+          .eq("commune_id", communeId)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
   const contextPhotoUrl = contextInfo.photoUrl;
   const contextAvailable = contextInfo.available;
+  const contextStatus = contextInfo.contextStatus;
+  const otherMembershipStatus = (otherMembershipRow?.status ?? null) as MembershipStatus | null;
   const otherProfile = (otherProfileRow ?? null) as OtherProfile | null;
-  const otherName = otherProfile?.display_name ?? "Voisin·e";
+  const otherAccountDeleted = otherUserId == null;
+  const otherName = otherAccountDeleted
+    ? "Ancien voisin"
+    : (otherProfile?.display_name ?? "Voisin·e");
+  const statusBadgeLabel = getConversationStatusBadgeLabel({
+    context_status: contextStatus,
+    other_membership_status: otherMembershipStatus,
+    other_account_deleted: otherAccountDeleted,
+  });
+  const readOnlyMessage = getConversationReadOnlyMessage({
+    context_status: contextStatus,
+    other_membership_status: otherMembershipStatus,
+    other_account_deleted: otherAccountDeleted,
+  });
 
   // Mark conversation as read on render — best-effort, errors are ignored.
   // Direct DB update (not a server action) avoids mid-render revalidatePath.
@@ -190,7 +227,7 @@ export async function ConversationPane({
           />
           <div className="min-w-0">
             {conversation.title ? (
-              <p className="flex items-center gap-1 truncate text-[11px] font-semibold uppercase tracking-wide text-purple">
+              <p className="flex items-center gap-1 truncate text-[11px] font-semibold text-purple">
                 {ContextIcon ? (
                   <ContextIcon className="size-3 shrink-0" aria-hidden />
                 ) : null}
@@ -200,7 +237,7 @@ export async function ConversationPane({
             <div className="mt-0.5 flex items-center gap-1.5">
               <SmallAvatar
                 name={otherName}
-                url={otherProfile?.avatar_url ?? null}
+                url={otherAccountDeleted ? null : (otherProfile?.avatar_url ?? null)}
               />
               <p className="truncate text-xs font-medium text-muted">
                 {otherName}
@@ -208,7 +245,11 @@ export async function ConversationPane({
             </div>
           </div>
         </div>
-        {contextAvailable && contextHref && contextLabel ? (
+        {statusBadgeLabel ? (
+          <span className="shrink-0 rounded-full bg-coral/10 px-2.5 py-1 text-[10px] font-semibold text-coral">
+            {statusBadgeLabel}
+          </span>
+        ) : contextAvailable && contextHref && contextLabel ? (
           <Link
             href={contextHref}
             className="inline-flex shrink-0 items-center gap-1 rounded-sm border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-text transition hover:bg-warm"
@@ -216,10 +257,6 @@ export async function ConversationPane({
             <ExternalLink className="size-3" aria-hidden />
             <span className="hidden sm:inline">{contextLabel}</span>
           </Link>
-        ) : !contextAvailable && conversation.context_type ? (
-          <span className="shrink-0 rounded-full bg-coral/10 px-2.5 py-1 text-[10px] font-semibold text-coral">
-            Contenu suspendu
-          </span>
         ) : null}
       </header>
 
@@ -228,7 +265,15 @@ export async function ConversationPane({
         messages={messages as MessageRow[]}
         currentUserId={currentUserId}
         isArchived={isArchived}
-        readOnly={!contextAvailable}
+        readOnly={
+          otherAccountDeleted ||
+          !contextAvailable ||
+          otherMembershipStatus === "suspended"
+        }
+        readOnlyMessage={readOnlyMessage}
+        departedBanner={
+          otherAccountDeleted ? "Ce voisin a quitté la plateforme" : undefined
+        }
       />
     </div>
   );

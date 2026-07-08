@@ -48,10 +48,13 @@ export function NeighborInviteBlock(props: Props) {
     <Card className="overflow-hidden rounded-xl p-0">
       <div className="space-y-4 p-5">
         <div className="w-[80%] space-y-2">
-          <p className="mb-1 text-xl font-bold leading-7 text-text">Invitez vos voisins !</p>
+          <p className="mb-1 text-xl font-bold leading-7 text-text">
+            Invitez vos voisins !
+          </p>
 
           <p className="text-xs font-medium leading-4 text-text">
-            Plus nous sommes nombreux, plus notre commune est vivante et solidaire.
+            Plus nous sommes nombreux, plus notre commune est vivante et
+            solidaire.
           </p>
           <p className="text-xs font-medium leading-4 text-text">
             Invitez vos voisins à rejoindre {APP_NAME} !
@@ -89,7 +92,8 @@ export function NeighborInviteBlock(props: Props) {
 
         {inviteCount > 0 ? (
           <p className="text-xs font-medium leading-5 text-subtle">
-            Bravo, {inviteCount} invitation{inviteCount !== 1 ? "s" : ""} envoyée
+            Bravo, {inviteCount} invitation{inviteCount !== 1 ? "s" : ""}{" "}
+            envoyée
             {inviteCount !== 1 ? "s" : ""} depuis ce profil.
           </p>
         ) : null}

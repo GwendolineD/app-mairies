@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Bell, BellOff, CalendarDays, Megaphone, Sparkles } from "lucide-react";
+import { Bell, BellOff, CalendarDays, HandHeart, Heart, Megaphone, Sparkles, Users } from "lucide-react";
 import { updateNotificationPreferences } from "@/lib/actions/notifications";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -37,6 +37,17 @@ const GROUPS: {
     ],
   },
   {
+    title: "Engagement sur mes contenus",
+    description:
+      "Soyez notifié·e quand un·e voisin·e soutient ou participe à un contenu que vous avez publié.",
+    icon: Heart,
+    items: [
+      { key: "notify_initiative_support", label: "Soutien sur mes initiatives" },
+      { key: "notify_event_participation", label: "Participation sur mes événements" },
+      { key: "notify_event_volunteer", label: "Bénévolat sur mes événements" },
+    ],
+  },
+  {
     title: "Nouvelles publications dans ma commune",
     description:
       "Recevez une notification quand un·e voisin·e publie du nouveau contenu.",
@@ -53,6 +64,9 @@ const GROUP_ICONS: Record<keyof NotificationPreferences, typeof Megaphone> = {
   notify_message_announcement: Megaphone,
   notify_message_initiative: Sparkles,
   notify_message_event: CalendarDays,
+  notify_initiative_support: Heart,
+  notify_event_participation: Users,
+  notify_event_volunteer: HandHeart,
   notify_new_announcement: Megaphone,
   notify_new_initiative: Sparkles,
   notify_new_event: CalendarDays,
@@ -65,6 +79,10 @@ export function NotificationPreferencesForm({
 }: Props) {
   const [prefs, setPrefs] = useState<NotificationPreferences>(initial);
   const [saving, startSaving] = useTransition();
+  const push = usePushSubscription(pushPublicKey);
+  const pushRow = (
+    <PushSubscriptionRow push={push} pushPublicKey={pushPublicKey} />
+  );
 
   function toggle(key: keyof NotificationPreferences) {
     const next = { ...prefs, [key]: !prefs[key] };
@@ -89,6 +107,8 @@ export function NotificationPreferencesForm({
           Choisissez les notifications mobile que vous souhaitez recevoir.
         </p>
       </header>
+
+      {push.state !== "on" ? pushRow : null}
 
       {GROUPS.map((group) => (
         <section key={group.title} className="space-y-2">
@@ -122,13 +142,19 @@ export function NotificationPreferencesForm({
         </section>
       ))}
 
-      <PushSubscriptionRow pushPublicKey={pushPublicKey} />
+      {push.state === "on" ? pushRow : null}
     </Card>
   );
 }
 
-function PushSubscriptionRow({ pushPublicKey }: { pushPublicKey: string | null }) {
-  const { state, error, enable, disable } = usePushSubscription(pushPublicKey);
+function PushSubscriptionRow({
+  push,
+  pushPublicKey,
+}: {
+  push: ReturnType<typeof usePushSubscription>;
+  pushPublicKey: string | null;
+}) {
+  const { state, error, enable, disable } = push;
 
   return (
     <section className="space-y-2 rounded-2xl border border-border/60 bg-warm/40 p-4">

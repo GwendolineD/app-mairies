@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { startTransition, useActionState } from "react";
+import { startTransition, useActionState, useEffect } from "react";
 import { ArrowRight, Lock, Mail } from "lucide-react";
+import { toast } from "sonner";
 import { useAuthCredentials } from "@/components/features/auth/auth-credentials-provider";
 import { resendVerificationEmail, signIn } from "@/lib/actions/auth";
 import { ROUTES } from "@/lib/constants/routes";
@@ -21,9 +22,11 @@ type ResendState =
 export function ConnexionForm({
   callbackError,
   emailConfirmed,
+  accountDeleted,
 }: {
   callbackError?: "recovery" | "generic";
   emailConfirmed?: boolean;
+  accountDeleted?: boolean;
 }) {
   const { email, password, setCredentials } = useAuthCredentials();
   const [state, formAction, isPending] = useActionState(
@@ -44,6 +47,11 @@ export function ConnexionForm({
         : undefined);
 
   const showResendVerification = Boolean(state?.emailNotConfirmed);
+
+  useEffect(() => {
+    if (!accountDeleted) return;
+    toast.success("Votre compte a bien été supprimé. À bientôt !");
+  }, [accountDeleted]);
 
   return (
     <div className="mx-auto flex w-full max-w-[500px] flex-1 flex-col rounded-none bg-transparent px-0 py-0 shadow-none md:min-h-0 md:rounded-3xl md:bg-surface md:px-12 md:py-16 md:shadow-elevated">

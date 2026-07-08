@@ -81,7 +81,10 @@ export function ResidentSidebar({
 
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="min-w-0 flex-1 overflow-hidden">
-            <ResidentSidebarNav collapsed={collapsed} unreadMessages={unreadMessages} />
+            <ResidentSidebarNav
+              collapsed={collapsed}
+              unreadMessages={unreadMessages}
+            />
           </div>
 
           <div className="mt-auto shrink-0 pt-4">
