@@ -1942,10 +1942,6 @@ export type Database = {
           offres: number
         }[]
       }
-      commune_fulfilled_demands_this_week: {
-        Args: { p_commune_id: string }
-        Returns: number
-      }
       commune_outcome_banner_stats: {
         Args: { p_commune_id: string }
         Returns: {

@@ -175,18 +175,6 @@ export async function fetchWeeklyMembershipGrowth(
   });
 }
 
-export async function fetchFulfilledCountThisWeek(
-  supabase: SupabaseClient,
-  communeId: string,
-): Promise<number> {
-  const { data, error } = await supabase.rpc("commune_fulfilled_demands_this_week", {
-    p_commune_id: communeId,
-  });
-
-  if (error) return 0;
-  return data ?? 0;
-}
-
 function resolveBannerSlideCount(
   weekCount: number,
   monthCount: number,
