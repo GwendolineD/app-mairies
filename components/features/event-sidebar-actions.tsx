@@ -295,7 +295,7 @@ function VolunteersCard({
         <p className="text-sm font-medium text-muted">
           {isAuthor
             ? "Recherchez des bénévoles — vous pouvez aussi vous inscrire vous-même."
-            : "L&apos;organisateur recherche des bénévoles pour cet événement."}
+            : "L'organisateur recherche des bénévoles pour cet événement."}
         </p>
       </div>
       <div className="space-y-3">
