@@ -13,15 +13,18 @@ export async function listEmailTemplates(
 ): Promise<EmailTemplateRow[]> {
   const { data, error } = await supabase
     .from("email_templates")
-    .select("slug, subject, body_html, description, updated_at")
-    .order("slug");
+    .select("slug, subject, body_html, description, updated_at");
 
   if (error) {
     console.error("[email-templates] List error:", error);
     return [];
   }
 
-  return data ?? [];
+  return (data ?? []).sort((a, b) =>
+    (a.description ?? "").localeCompare(b.description ?? "", "fr", {
+      sensitivity: "base",
+    }),
+  );
 }
 
 export async function getEmailTemplate(

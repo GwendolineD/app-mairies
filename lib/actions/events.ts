@@ -15,6 +15,7 @@ import { eventSchema, eventModalSchema } from "@/lib/validations/schemas";
 import { fanoutNewContentNotification } from "@/lib/services/notification-fanout";
 import { notifyAuthorEngagement } from "@/lib/services/author-engagement-notifications";
 import { incrementMembershipPublishCounter } from "@/lib/services/membership-publish-counters";
+import { cancelPendingEmails } from "@/lib/cron/cancel-pending-emails";
 import type { OutcomeReason } from "@/lib/constants/content-outcomes";
 import { isOutcomeReason } from "@/lib/constants/content-outcomes";
 import type { EventEditData, AgendaEventRecord } from "@/lib/types";
@@ -102,6 +103,11 @@ export async function updateEventStatus(
 
   const { error } = await supabase.from("events").update({ status }).eq("id", id);
   if (error) return { error: error.message };
+
+  if (status === EVENT_STATUS.archived) {
+    void cancelPendingEmails("event", id);
+  }
+
   revalidatePath(ROUTES.evenements.list);
   revalidatePath(ROUTES.evenements.detail(id));
   return { success: true };
@@ -142,6 +148,8 @@ export async function deleteEvent(
 
   const { error } = await supabase.from("events").delete().eq("id", id);
   if (error) return { error: error.message };
+
+  void cancelPendingEmails("event", id);
 
   void logAudit({
     action: "content.delete_event",

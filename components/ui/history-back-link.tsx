@@ -26,16 +26,20 @@ export function HistoryBackLink({
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleBack}
+    <div
       className={cn(
-        "inline-flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-purple underline",
+        "sticky top-0 z-10 -mx-5 -mt-4 bg-surface px-5 pb-3 md:-mx-6 md:-mt-6 md:px-6 lg:-mx-8 lg:px-8",
         className,
       )}
     >
-      <ArrowLeft className="size-3.5 shrink-0" strokeWidth={2.5} aria-hidden />
-      {label}
-    </button>
+      <button
+        type="button"
+        onClick={handleBack}
+        className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-purple underline"
+      >
+        <ArrowLeft className="size-3.5 shrink-0" strokeWidth={2.5} aria-hidden />
+        {label}
+      </button>
+    </div>
   );
 }

@@ -5,7 +5,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { MultilineText } from "@/components/ui/multiline-text";
 import { cn } from "@/lib/utils/cn";
+import { getTrimmedMultilineText } from "@/lib/utils/multiline-text";
 import { formatDay } from "@/lib/datetime";
 import type { MembershipStatus } from "@/lib/types";
 
@@ -66,8 +68,6 @@ export function MembershipStatusBadge({
     return <span className={badgeClass}>{label}</span>;
   }
 
-  const reasonText = suspendedReason?.trim() || "Aucun motif enregistré.";
-
   return (
     <Popover>
       <PopoverTrigger
@@ -84,7 +84,14 @@ export function MembershipStatusBadge({
       />
       <PopoverContent side="left" className="max-w-xs space-y-1 text-xs">
         <p className="font-semibold text-text">Motif de suspension</p>
-        <p className="font-medium leading-4 text-muted">{reasonText}</p>
+        {getTrimmedMultilineText(suspendedReason) ? (
+          <MultilineText
+            text={suspendedReason}
+            className="font-medium leading-4 text-muted"
+          />
+        ) : (
+          <p className="font-medium leading-4 text-muted">Aucun motif enregistré.</p>
+        )}
       </PopoverContent>
     </Popover>
   );

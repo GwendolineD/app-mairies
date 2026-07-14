@@ -18,6 +18,7 @@ import {
 import { fanoutNewContentNotification } from "@/lib/services/notification-fanout";
 import { notifyAuthorEngagement } from "@/lib/services/author-engagement-notifications";
 import { incrementMembershipPublishCounter } from "@/lib/services/membership-publish-counters";
+import { cancelPendingEmails } from "@/lib/cron/cancel-pending-emails";
 import {
   listInitiativesPage,
   INITIATIVES_PAGE_SIZE,
@@ -379,6 +380,11 @@ export async function updateInitiativeStatus(
     .update({ status })
     .eq("id", id);
   if (error) return { error: error.message };
+
+  if (status === INITIATIVE_STATUS.archived) {
+    void cancelPendingEmails("initiative", id);
+  }
+
   revalidatePath(ROUTES.initiatives.list);
   revalidatePath(ROUTES.initiatives.detail(id));
   return { success: true };
@@ -495,6 +501,8 @@ export async function deleteInitiative(
 
   const { error } = await supabase.from("initiatives").delete().eq("id", id);
   if (error) return { error: error.message };
+
+  void cancelPendingEmails("initiative", id);
 
   void logAudit({
     action: "content.delete_initiative",

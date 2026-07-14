@@ -2,9 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { SuspensionReasonTextarea } from "@/components/features/moderation/suspension-reason-textarea";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import { Textarea } from "@/components/ui/form-field";
+import { validateSuspensionReason } from "@/lib/constants/moderation";
 import {
   Popover,
   PopoverContent,
@@ -46,9 +47,9 @@ export function MembershipModerationButton({
 
   function handleConfirm() {
     if (isSuspend) {
-      const trimmedReason = reason.trim();
-      if (!trimmedReason) {
-        setError("Merci d'indiquer une raison de suspension.");
+      const validationError = validateSuspensionReason(reason);
+      if (validationError) {
+        setError(validationError);
         return;
       }
     }
@@ -123,14 +124,14 @@ export function MembershipModerationButton({
           {isSuspend ? (
             <label className="block space-y-2">
               <span className="text-sm font-semibold text-text">Raison</span>
-              <Textarea
+              <SuspensionReasonTextarea
                 value={reason}
-                onChange={(event) => {
-                  setReason(event.target.value);
+                onChange={(value) => {
+                  setReason(value);
                   setError(null);
                 }}
-                placeholder="Expliquez brièvement la raison de la suspension."
                 rows={3}
+                disabled={isPending}
               />
             </label>
           ) : null}

@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Eye } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { SuspensionReasonTextarea } from "@/components/features/moderation/suspension-reason-textarea";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import { Textarea } from "@/components/ui/form-field";
+import { validateSuspensionReason } from "@/lib/constants/moderation";
 import {
   Popover,
   PopoverContent,
@@ -49,9 +51,9 @@ export function ReportActionsClient({
   function handleConfirmSuspendContent() {
     if (contextType === "user") return;
 
-    const trimmedReason = reason.trim();
-    if (!trimmedReason) {
-      setError("Merci d'indiquer une raison de suspension.");
+    const validationError = validateSuspensionReason(reason);
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
@@ -59,7 +61,7 @@ export function ReportActionsClient({
       const result = await suspendContent(
         contextType as ConversationContextType,
         contextId,
-        trimmedReason,
+        reason.trim(),
         reportId,
       );
       if (!result.success) {
@@ -85,15 +87,18 @@ export function ReportActionsClient({
   }
 
   function handleConfirmSuspendAuthor() {
-    const trimmedReason = reason.trim();
-    if (!trimmedReason) {
-      setError("Merci d'indiquer une raison de suspension.");
+    const validationError = validateSuspensionReason(reason);
+    if (validationError) {
+      setError(validationError);
       return;
     }
     if (!authorMembershipId) return;
 
     run(async () => {
-      const result = await suspendMembershipByStaff(authorMembershipId, trimmedReason);
+      const result = await suspendMembershipByStaff(
+        authorMembershipId,
+        reason.trim(),
+      );
       if (!result.success) {
         setError(result.error ?? "Impossible de suspendre l'auteur.");
         return;
@@ -104,6 +109,7 @@ export function ReportActionsClient({
   }
 
   const suspendAuthorDisabled = busy || isAuthorSelf;
+  const canConfirmSuspension = validateSuspensionReason(reason) === null;
 
   const suspendAuthorButton = (
     <Button
@@ -184,21 +190,35 @@ export function ReportActionsClient({
         closeDisabled={busy}
       >
         <div className="space-y-4">
-          <p className="text-sm font-medium text-muted">
-            Ce contenu ne sera plus visible par les résident·es de la commune.
-            Les signalements associés seront marqués comme traités.
-          </p>
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-muted">
+              Ce contenu ne sera plus visible par les résident·es de la commune.
+            </p>
+            <p className="text-sm font-medium text-muted">
+              L&apos;auteur·rice de ce contenu sera prévenu par email.
+            </p>
+          </div>
 
           <label className="block space-y-2">
             <span className="text-sm font-semibold text-text">Raison</span>
-            <Textarea
+            <div className="flex items-start gap-2.5 rounded-sm border border-purple/20 bg-soft-pink px-3 py-2.5">
+              <Eye
+                className="mt-0.5 size-4 shrink-0 text-purple"
+                aria-hidden
+              />
+              <p className="text-sm font-medium text-text">
+                Cette raison sera visible par l&apos;auteur·rice du contenu
+                suspendu.
+              </p>
+            </div>
+            <SuspensionReasonTextarea
               value={reason}
-              onChange={(event) => {
-                setReason(event.target.value);
+              onChange={(value) => {
+                setReason(value);
                 setError(null);
               }}
-              placeholder="Expliquez brièvement la raison de la suspension."
               rows={3}
+              disabled={busy}
             />
           </label>
 
@@ -218,7 +238,7 @@ export function ReportActionsClient({
               type="button"
               variant="danger"
               size="sm"
-              disabled={busy}
+              disabled={busy || !canConfirmSuspension}
               onClick={handleConfirmSuspendContent}
             >
               Confirmer la suspension
@@ -242,14 +262,14 @@ export function ReportActionsClient({
 
           <label className="block space-y-2">
             <span className="text-sm font-semibold text-text">Raison</span>
-            <Textarea
+            <SuspensionReasonTextarea
               value={reason}
-              onChange={(event) => {
-                setReason(event.target.value);
+              onChange={(value) => {
+                setReason(value);
                 setError(null);
               }}
-              placeholder="Expliquez brièvement la raison de la suspension."
               rows={3}
+              disabled={busy}
             />
           </label>
 
@@ -269,7 +289,7 @@ export function ReportActionsClient({
               type="button"
               variant="danger"
               size="sm"
-              disabled={busy}
+              disabled={busy || !canConfirmSuspension}
               onClick={handleConfirmSuspendAuthor}
             >
               Confirmer la suspension

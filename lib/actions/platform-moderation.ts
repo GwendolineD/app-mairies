@@ -6,6 +6,8 @@ import { requirePlatformAdmin } from "@/lib/auth/session";
 import { resolvePendingReportsForUser } from "@/lib/services/report-resolution";
 import { ROUTES } from "@/lib/constants/routes";
 import { MEMBERSHIP_STATUS } from "@/lib/constants/statuses";
+import { validateSuspensionReason } from "@/lib/constants/moderation";
+import { notifyUserSuspended } from "@/lib/email/suspension-notification";
 import { createClient } from "@/lib/supabase/server";
 
 export type ModerationActionResult =
@@ -19,8 +21,13 @@ export async function suspendMembershipAction(
   const { userId: actorUserId } = await requirePlatformAdmin();
 
   const trimmedReason = reason.trim();
-  if (!membershipId || !trimmedReason) {
+  if (!membershipId) {
     return { success: false, error: "Paramètres invalides." };
+  }
+
+  const reasonError = validateSuspensionReason(reason);
+  if (reasonError) {
+    return { success: false, error: reasonError };
   }
 
   const supabase = await createClient();
@@ -62,6 +69,18 @@ export async function suspendMembershipAction(
     metadata: { reason: trimmedReason },
   });
 
+  notifyUserSuspended({
+    userId: membership.user_id,
+    reason: trimmedReason,
+    scope: "single",
+    communeId: membership.commune_id,
+  }).catch((err) =>
+    console.error(
+      "[platform-moderation] Failed to send user suspension email:",
+      err,
+    ),
+  );
+
   revalidatePath(ROUTES.backoffice.communeDetail(membership.commune_id));
   revalidatePath(ROUTES.backoffice.userDetail(membership.user_id));
   revalidatePath(ROUTES.backoffice.communes);
@@ -76,8 +95,13 @@ export async function suspendUserFromAllCommunesAction(
   const { userId: actorUserId } = await requirePlatformAdmin();
 
   const trimmedReason = reason.trim();
-  if (!userId || !trimmedReason) {
+  if (!userId) {
     return { success: false, error: "Paramètres invalides." };
+  }
+
+  const reasonError = validateSuspensionReason(reason);
+  if (reasonError) {
+    return { success: false, error: reasonError };
   }
 
   const supabase = await createClient();
@@ -140,6 +164,18 @@ export async function suspendUserFromAllCommunesAction(
       membership_count: memberships.length,
     },
   });
+
+  notifyUserSuspended({
+    userId,
+    reason: trimmedReason,
+    scope: "all",
+    communeIds: memberships.map((m) => m.commune_id),
+  }).catch((err) =>
+    console.error(
+      "[platform-moderation] Failed to send multi-commune suspension email:",
+      err,
+    ),
+  );
 
   return { success: true };
 }

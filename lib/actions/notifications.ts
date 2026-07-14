@@ -108,3 +108,21 @@ export async function dismissNotificationPrompt(): Promise<void> {
 
   revalidatePath("/accueil");
 }
+
+export async function updateEmailLifecyclePreference(
+  enabled: boolean,
+): Promise<{ error?: string; success?: boolean }> {
+  const ctx = await requireActiveMembership();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("user_notification_preferences")
+    .upsert(
+      { user_id: ctx.userId, email_lifecycle_enabled: enabled },
+      { onConflict: "user_id" },
+    );
+
+  if (error) return { error: error.message };
+  revalidatePath(ROUTES.profil);
+  return { success: true };
+}

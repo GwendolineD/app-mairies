@@ -5,7 +5,7 @@ import {
 } from "@/components/features/admin-shell/admin-nav";
 import { AdminSidebar } from "@/components/features/admin-shell/admin-sidebar";
 import { InAppHistoryTracker } from "@/components/features/in-app-history-tracker";
-import type { AdminNavItem } from "@/lib/constants/routes";
+import type { AdminNavBadges, AdminNavItem } from "@/lib/constants/routes";
 import { ROUTES } from "@/lib/constants/routes";
 
 type Props = {
@@ -15,6 +15,7 @@ type Props = {
   sidebarTitle: string;
   sidebarSectionLabel?: string;
   backHref?: string;
+  badges?: AdminNavBadges;
 };
 
 export function AdminShell({
@@ -24,6 +25,7 @@ export function AdminShell({
   sidebarTitle,
   sidebarSectionLabel,
   backHref = ROUTES.accueil,
+  badges,
 }: Props) {
   return (
     <div className="flex h-dvh w-full flex-col overflow-hidden bg-background text-text">
@@ -38,15 +40,16 @@ export function AdminShell({
           backHref={backHref}
           sectionLabel={sidebarSectionLabel}
           title={sidebarTitle}
+          badges={badges}
         />
 
-        <main className="min-w-0 flex-1 overflow-y-auto bg-surface px-5 py-4 pb-28 md:px-6 md:py-6 md:pb-6 lg:px-8">
+        <main className="min-w-0 flex-1 overflow-y-auto bg-surface px-5 pb-28 md:px-6 md:pb-6 lg:px-8">
           <InAppHistoryTracker />
           {children}
         </main>
       </div>
 
-      <AdminMobileBottomNav navItems={navItems} />
+      <AdminMobileBottomNav navItems={navItems} badges={badges} />
     </div>
   );
 }

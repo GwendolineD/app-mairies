@@ -74,18 +74,16 @@ Icônes et épingle carte : placeholders (`icon_url`, `map_pin_url` null) — à
 | `/backoffice/*` | Backoffice éditeur | Super admin (`profiles.is_platform_admin`) |
 | `/suspendu` | Page réclamation (membership suspendue) | Membership suspendue |
 
-## Cron (cycle de vie annonces)
+## Cron Jobs
 
-Configurer Vercel Cron ou équivalent :
+Deux crons à configurer via [cron-job.org](https://cron-job.org) :
 
-```
-GET /api/cron/announcements-lifecycle
-Authorization: Bearer $CRON_SECRET
-```
+1. **Lifecycle Collector** (quotidien à 06:00) — `GET /api/cron/lifecycle`
+2. **Email Sender** (toutes les 2 min) — `GET /api/cron/email-sender`
 
-- Nudge 30 jours (sans date)
-- Alerte J-3 avant expiration
-- Passage en `expiree` à J+7 après `target_date`
+Les deux nécessitent le header `Authorization: Bearer $CRON_SECRET`.
+
+Voir [`docs/cron-config.md`](docs/cron-config.md) pour la configuration détaillée.
 
 ## Notifications push (Web Push)
 

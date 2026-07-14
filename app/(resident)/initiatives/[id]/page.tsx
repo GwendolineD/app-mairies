@@ -22,6 +22,9 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { LinkifiedText } from "@/components/ui/linkified-text";
 import type { InitiativeEditData, InitiativeRecord } from "@/lib/types";
 import { PageStack } from "@/components/ui/page-stack";
+import { ContentNudgeBannerServer } from "@/components/features/content-nudge-banner-server";
+import { ContentSuspendedBanner } from "@/components/features/content-suspended-indicator";
+import { MultilineText } from "@/components/ui/multiline-text";
 import { formatMemberSince, formatRelativeTime } from "@/lib/datetime";
 import { formatDisplayName } from "@/lib/utils/display-name";
 import { formatAddressLines, parseAddressLabelParts, resolveAddressPostcode } from "@/lib/utils/format-address";
@@ -104,11 +107,17 @@ export default async function InitiativeDetailPage(props: {
             </div>
             <h1 className="text-xl font-bold text-text">Initiative suspendue</h1>
             {isAuthorOfSuspended ? (
-              <p className="text-sm text-muted">
-                Votre initiative a été suspendue par la modération. Si vous pensez
-                qu&apos;il s&apos;agit d&apos;une erreur, veuillez contacter
-                l&apos;assistance.
-              </p>
+              <div className="space-y-3 text-sm text-muted">
+                <p>
+                  Votre initiative a été suspendue par la modération. Si vous pensez
+                  qu&apos;il s&apos;agit d&apos;une erreur, veuillez contacter
+                  l&apos;assistance.
+                </p>
+                <MultilineText
+                  text={initiative.suspension_reason}
+                  className="rounded-sm border border-border/60 bg-warm px-3 py-2 text-left text-sm font-medium text-text"
+                />
+              </div>
             ) : (
               <p className="text-sm text-muted">
                 Ce contenu a été suspendu et n&apos;est plus disponible.
@@ -210,6 +219,27 @@ export default async function InitiativeDetailPage(props: {
   return (
     <PageStack gap="5">
       <HistoryBackLink />
+
+      {initiative.suspended_at ? (
+        <ContentSuspendedBanner
+          suspendedAt={initiative.suspended_at}
+          suspensionReason={initiative.suspension_reason}
+        />
+      ) : null}
+
+      {isAuthor && !initiative.suspended_at ? (
+        <ContentNudgeBannerServer
+          content={{
+            contentType: "initiative",
+            status: initiative.status,
+            createdAt: initiative.created_at,
+            nudgeSnoozedUntil: (initiative as Record<string, unknown>).nudge_snoozed_until as string | null,
+          }}
+          contentId={initiative.id}
+          contentTitle={initiative.title}
+          contentType="initiative"
+        />
+      ) : null}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
         <Card className={`space-y-5 ${MAIN_DETAIL_CARD_CLASS}`}>

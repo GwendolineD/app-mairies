@@ -27,7 +27,7 @@ type SlideTheme = {
 
 const PERIOD_LABEL: Record<BannerSlide["period"], string> = {
   week: "cette semaine",
-  month: "ce mois",
+  month: "ce mois-ci",
 };
 
 const DEMANDES_SUBTITLE =

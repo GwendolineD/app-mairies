@@ -43,6 +43,7 @@ import { AVATAR_PUBLIC_ID } from "@/lib/services/cloudinary";
 import { AnnouncementCard } from "@/components/features/announcement-card";
 import { InitiativeCard } from "@/components/features/initiative-card";
 import { EventCard } from "@/components/features/event-card";
+import { ContentActionRequiredBadge } from "@/components/features/content-action-required-badge";
 import type { AnnouncementWithAuthor } from "@/lib/queries/announcements";
 import type { InitiativeWithAuthor } from "@/lib/queries/initiatives";
 import type { AgendaEventRecord, NotificationPreferences } from "@/lib/types";
@@ -80,6 +81,7 @@ type InviteData = {
 type SettingsData = {
   notificationPrefs: NotificationPreferences;
   pushPublicKey: string | null;
+  emailLifecycleEnabled: boolean;
   isPlatformAdmin: boolean;
   hasPassword: boolean;
   staffWarning: string | null;
@@ -452,7 +454,18 @@ function AnnouncementsPanel({
       />
       <div className="space-y-3">
         {list.items.map((a) => (
-          <AnnouncementCard key={a.id} announcement={a} layout="horizontal" />
+          <div key={a.id} className="relative">
+            <ContentActionRequiredBadge
+              content={{
+                contentType: "announcement",
+                status: a.status,
+                targetDate: a.target_date,
+                createdAt: a.created_at,
+                nudgeSnoozedUntil: (a as Record<string, unknown>).nudge_snoozed_until as string | null | undefined,
+              }}
+            />
+            <AnnouncementCard announcement={a} layout="horizontal" />
+          </div>
         ))}
       </div>
       <ProfileListPagination
@@ -500,7 +513,17 @@ function InitiativesPanel({
       />
       <div className="space-y-3">
         {list.items.map((i) => (
-          <InitiativeCard key={i.id} initiative={i} layout="horizontal" />
+          <div key={i.id} className="relative">
+            <ContentActionRequiredBadge
+              content={{
+                contentType: "initiative",
+                status: i.status,
+                createdAt: i.created_at,
+                nudgeSnoozedUntil: (i as Record<string, unknown>).nudge_snoozed_until as string | null | undefined,
+              }}
+            />
+            <InitiativeCard initiative={i} layout="horizontal" />
+          </div>
         ))}
       </div>
       <ProfileListPagination
@@ -542,7 +565,18 @@ function EventsPanel({ list }: { list: ProfileListResult<AgendaEventRecord> }) {
       />
       <div className="space-y-3">
         {list.items.map((e) => (
-          <EventCard key={e.id} event={e} layout="horizontal" />
+          <div key={e.id} className="relative">
+            <ContentActionRequiredBadge
+              content={{
+                contentType: "event",
+                status: e.status,
+                endsAt: e.ends_at,
+                createdAt: e.created_at,
+                nudgeSnoozedUntil: (e as Record<string, unknown>).nudge_snoozed_until as string | null | undefined,
+              }}
+            />
+            <EventCard event={e} layout="horizontal" />
+          </div>
         ))}
       </div>
       <ProfileListPagination
@@ -577,6 +611,7 @@ function SettingsPanel({ settings }: { settings: SettingsData }) {
       <NotificationPreferencesForm
         initial={settings.notificationPrefs}
         pushPublicKey={settings.pushPublicKey}
+        emailLifecycleEnabled={settings.emailLifecycleEnabled}
         cardClassName={PROFILE_SETTINGS_CARD_CLASS}
       />
       <DeleteAccountSection

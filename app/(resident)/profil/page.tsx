@@ -71,6 +71,7 @@ async function ProfilContent({
     notificationPrefs,
     pushPublicKey,
     userResult,
+    emailLifecycleResult,
   ] = await Promise.all([
     needsContent
       ? fetchActiveTabContent(supabase, activeTab, scope, page)
@@ -85,6 +86,11 @@ async function ProfilContent({
     getNotificationPreferences(supabase, ctx.userId),
     getPushPublicKey(),
     supabase.auth.getUser(),
+    supabase
+      .from("user_notification_preferences")
+      .select("email_lifecycle_enabled")
+      .eq("user_id", ctx.userId)
+      .maybeSingle(),
   ]);
 
   const user = userResult.data.user;
@@ -173,6 +179,7 @@ async function ProfilContent({
       settings={{
         notificationPrefs,
         pushPublicKey,
+        emailLifecycleEnabled: emailLifecycleResult.data?.email_lifecycle_enabled ?? true,
         isPlatformAdmin: profile.is_platform_admin,
         hasPassword,
         staffWarning,
