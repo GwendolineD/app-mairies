@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   ArrowUpRight,
   CalendarCheck,
@@ -20,15 +19,9 @@ import { EventParticipantButton } from "@/components/features/event-participant-
 import { ParticipantsAvatarRow } from "@/components/features/event-participants-list";
 import { VolunteersAvatarRow } from "@/components/features/event-volunteers-list";
 import { EventVolunteerButton } from "@/components/features/event-volunteer-button";
-import { deleteEvent } from "@/lib/actions/events";
-import { OutcomeChoiceOptions } from "@/components/features/outcome-choice-options";
-import {
-  getEventOutcomeCopy,
-  type OutcomeReason,
-} from "@/lib/constants/content-outcomes";
+import { DeleteEventModal } from "@/components/features/delete-event-modal";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Modal } from "@/components/ui/modal";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { ROUTES } from "@/lib/constants/routes";
 import type { EventVolunteer } from "@/lib/queries/events";
@@ -392,95 +385,5 @@ function SourceInitiativeCard({
       </div>
       <p className="text-sm font-semibold text-text">{initiative.title}</p>
     </Card>
-  );
-}
-
-function DeleteEventModal({
-  eventId,
-  open,
-  onClose,
-  redirectHref,
-}: {
-  eventId: string;
-  open: boolean;
-  onClose: () => void;
-  redirectHref: string;
-}) {
-  const router = useRouter();
-  const [deleting, setDeleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [outcome, setOutcome] = useState<OutcomeReason | null>(null);
-  const copy = getEventOutcomeCopy();
-
-  function handleClose() {
-    if (deleting) return;
-    setOutcome(null);
-    setError(null);
-    onClose();
-  }
-
-  async function handleDelete() {
-    if (!outcome) return;
-    setDeleting(true);
-    setError(null);
-    const result = await deleteEvent(eventId, outcome);
-    setDeleting(false);
-    if ("error" in result) {
-      setError(result.error);
-      return;
-    }
-    setOutcome(null);
-    onClose();
-    router.push(redirectHref);
-  }
-
-  return (
-    <Modal
-      open={open}
-      onClose={handleClose}
-      closeDisabled={deleting}
-      title="Supprimer l'événement"
-      showCloseButton
-      size="sm"
-    >
-      <div className="space-y-4">
-        <OutcomeChoiceOptions
-          question={copy.question}
-          fulfilledLabel={copy.fulfilled}
-          unfulfilledLabel={copy.unfulfilled}
-          value={outcome}
-          onChange={setOutcome}
-          disabled={deleting}
-        />
-
-        <p className="text-sm font-medium text-muted">
-          Êtes-vous sûr de vouloir supprimer cet événement ? Cette action est
-          irréversible.
-        </p>
-
-        {error ? <p className="text-xs text-coral">{error}</p> : null}
-
-        <div className="flex justify-end gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={handleClose}
-            disabled={deleting}
-          >
-            Annuler
-          </Button>
-          <Button
-            type="button"
-            variant="danger"
-            size="sm"
-            onClick={handleDelete}
-            disabled={deleting || !outcome}
-          >
-            {deleting ? "Suppression…" : "Supprimer"}
-          </Button>
-        </div>
-      </div>
-    </Modal>
   );
 }

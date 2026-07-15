@@ -207,6 +207,7 @@ export default async function AnnonceDetailPage(props: {
           contentId={ann.id}
           contentTitle={ann.title}
           contentType="announcement"
+          announcementType={ann.type}
         />
       ) : null}
 

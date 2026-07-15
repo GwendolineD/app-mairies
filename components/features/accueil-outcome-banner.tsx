@@ -42,10 +42,10 @@ const EVENTS_SUBTITLE =
 const SLIDE_THEMES: Record<BannerSlide["key"], SlideTheme> = {
   demandes: {
     Icon: Megaphone,
-    containerClass: "border-coral/30 bg-coral/5",
-    iconWrapClass: "bg-coral/15 text-coral",
-    heartClass: "text-coral",
-    dotClass: "bg-coral",
+    containerClass: "border-purple/30 bg-purple/5",
+    iconWrapClass: "bg-purple/15 text-purple",
+    heartClass: "text-purple",
+    dotClass: "bg-purple",
     buildTitle: (count, period) =>
       count === 1
         ? `1 voisin a trouvé l'aide qu'il cherchait ${PERIOD_LABEL[period]}`

@@ -4,6 +4,7 @@ import {
   formatEmailSubjectVariable,
 } from "@/lib/email/format-variable";
 import { createServiceClient } from "@/lib/supabase/server";
+import { profileSettingsUrl } from "@/lib/utils/app-url";
 
 export type TemplateVariables = Record<string, string | number | undefined>;
 
@@ -20,6 +21,7 @@ function getGlobalVariables(): TemplateVariables {
   return {
     ...GLOBAL_VARIABLES,
     logo_url: process.env.APP_LOGO_URL ?? "",
+    settings_url: profileSettingsUrl(),
   };
 }
 
@@ -68,9 +70,10 @@ export async function renderTemplate(
     return null;
   }
 
+  // Globals last so static URLs (settings, logo) stay correct even if queue snapshots are stale.
   const allVariables: TemplateVariables = {
-    ...getGlobalVariables(),
     ...variables,
+    ...getGlobalVariables(),
   };
 
   return {

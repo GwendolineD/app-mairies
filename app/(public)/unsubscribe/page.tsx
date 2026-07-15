@@ -1,8 +1,39 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { verifyUnsubscribeToken } from "@/lib/email/unsubscribe-token";
+import { APP_NAME } from "@/lib/constants/app";
+import { ILLUSTRATIONS } from "@/lib/constants/illustrations";
 import { ROUTES } from "@/lib/constants/routes";
+import { createServiceClient } from "@/lib/supabase/server";
 import { UnsubscribeButton } from "./unsubscribe-button";
+
+function UnsubscribeShell({ children }: { children: React.ReactNode }) {
+  const logo = ILLUSTRATIONS.auth.logoHorizontal;
+
+  return (
+    <div className="flex min-h-dvh flex-col items-center justify-center gap-6 p-4">
+      {logo ? (
+        <Link
+          href={ROUTES.home}
+          className="rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-purple/30"
+          aria-label={`${APP_NAME} — Accueil`}
+        >
+          <Image
+            src={logo}
+            alt={`Logo ${APP_NAME}`}
+            width={168}
+            height={48}
+            priority
+            style={{ width: "auto" }}
+            className="h-12 object-contain"
+          />
+        </Link>
+      ) : null}
+      {children}
+    </div>
+  );
+}
 
 export default async function UnsubscribePage(props: {
   searchParams: Promise<{ token?: string }>;
@@ -11,7 +42,7 @@ export default async function UnsubscribePage(props: {
 
   if (!token) {
     return (
-      <div className="flex min-h-dvh items-center justify-center p-4">
+      <UnsubscribeShell>
         <Card className="max-w-md space-y-4 p-8 text-center">
           <h1 className="text-xl font-bold text-text">Lien invalide</h1>
           <p className="text-sm text-muted">
@@ -24,7 +55,7 @@ export default async function UnsubscribePage(props: {
             Se connecter pour gérer mes préférences
           </Link>
         </Card>
-      </div>
+      </UnsubscribeShell>
     );
   }
 
@@ -32,7 +63,7 @@ export default async function UnsubscribePage(props: {
 
   if (!verified) {
     return (
-      <div className="flex min-h-dvh items-center justify-center p-4">
+      <UnsubscribeShell>
         <Card className="max-w-md space-y-4 p-8 text-center">
           <h1 className="text-xl font-bold text-text">Lien expiré</h1>
           <p className="text-sm text-muted">
@@ -46,12 +77,18 @@ export default async function UnsubscribePage(props: {
             Se connecter
           </Link>
         </Card>
-      </div>
+      </UnsubscribeShell>
     );
   }
 
+  const service = await createServiceClient();
+  const { data: authData } = await service.auth.admin.getUserById(
+    verified.userId,
+  );
+  const targetEmail = authData?.user?.email;
+
   return (
-    <div className="flex min-h-dvh items-center justify-center p-4">
+    <UnsubscribeShell>
       <Card className="max-w-md space-y-4 p-8 text-center">
         <h1 className="text-xl font-bold text-text">
           Désinscrire des emails de suivi
@@ -61,14 +98,14 @@ export default async function UnsubscribePage(props: {
           expirées, invitations, etc.). Les notifications in-app resteront
           actives.
         </p>
+        {targetEmail && (
+          <p className="text-xs text-muted">
+            Compte concerné :{" "}
+            <span className="font-semibold text-text">{targetEmail}</span>
+          </p>
+        )}
         <UnsubscribeButton userId={verified.userId} />
-        <Link
-          href={ROUTES.profil}
-          className="block text-sm font-medium text-purple hover:underline"
-        >
-          Gérer toutes mes préférences
-        </Link>
       </Card>
-    </div>
+    </UnsubscribeShell>
   );
 }

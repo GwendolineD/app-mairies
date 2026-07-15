@@ -1,9 +1,13 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 
 import { ContentNudgeBanner } from "@/components/features/content-nudge-banner";
+import { DeleteAnnouncementModal } from "@/components/features/delete-announcement-modal";
+import { DeleteEventModal } from "@/components/features/delete-event-modal";
+import { DeleteInitiativeModal } from "@/components/features/delete-initiative-modal";
 import { snoozeContentNudge, type ContentType } from "@/lib/actions/content-lifecycle";
+import type { AnnouncementType } from "@/lib/constants/announcement-types";
 import type { NudgeableContent } from "@/lib/utils/content-nudge";
 
 type Props = {
@@ -11,8 +15,7 @@ type Props = {
   contentId: string;
   contentTitle: string;
   contentType: ContentType;
-  onDelete?: () => void;
-  onEditDeadline?: () => void;
+  announcementType?: AnnouncementType;
 };
 
 export function ContentNudgeBannerWithActions({
@@ -20,9 +23,9 @@ export function ContentNudgeBannerWithActions({
   contentId,
   contentTitle,
   contentType,
-  onDelete,
-  onEditDeadline,
+  announcementType,
 }: Props) {
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   function handleSnooze() {
@@ -32,14 +35,40 @@ export function ContentNudgeBannerWithActions({
   }
 
   return (
-    <ContentNudgeBanner
-      content={content}
-      contentId={contentId}
-      contentTitle={contentTitle}
-      onDelete={onDelete}
-      onEditDeadline={onEditDeadline}
-      onSnooze={handleSnooze}
-      snoozeLoading={isPending}
-    />
+    <>
+      <ContentNudgeBanner
+        content={content}
+        contentId={contentId}
+        contentTitle={contentTitle}
+        onDelete={() => setDeleteOpen(true)}
+        onSnooze={handleSnooze}
+        snoozeLoading={isPending}
+      />
+
+      {contentType === "announcement" && announcementType ? (
+        <DeleteAnnouncementModal
+          announcementId={contentId}
+          announcementType={announcementType}
+          open={deleteOpen}
+          onClose={() => setDeleteOpen(false)}
+        />
+      ) : null}
+
+      {contentType === "initiative" ? (
+        <DeleteInitiativeModal
+          initiativeId={contentId}
+          open={deleteOpen}
+          onClose={() => setDeleteOpen(false)}
+        />
+      ) : null}
+
+      {contentType === "event" ? (
+        <DeleteEventModal
+          eventId={contentId}
+          open={deleteOpen}
+          onClose={() => setDeleteOpen(false)}
+        />
+      ) : null}
+    </>
   );
 }

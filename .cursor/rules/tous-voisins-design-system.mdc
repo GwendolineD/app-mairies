@@ -1,18 +1,18 @@
 ---
-description: Vie Locale — charte graphique complète (ADN, couleurs, typo, composants, motion, tokens)
+description: Tous voisins — charte graphique complète (ADN, couleurs, typo, composants, motion, tokens)
 alwaysApply: true
 ---
 
-# Vie Locale Design System
+# Tous voisins Design System
 
-Référence officielle : charte graphique Vie Locale. **Ne jamais inventer de couleurs, dégradés ou styles hors de ce système.**
+Référence officielle : charte graphique Tous voisins. **Ne jamais inventer de couleurs, dégradés ou styles hors de ce système.**
 
 **Sources de vérité code :**
 
 1. **Tokens** (couleurs, radius, ombres, dégradés) → `app/globals.css`
 2. **Composants UI** → **shadcn/ui** dans `components/ui/` (Button, Card, Dialog, Input, Label, Textarea, Select, Popover, DropdownMenu…)
 
-**Règle impérative :** utiliser les composants shadcn du projet — **pas** de `<button>`, `<input>`, modales ou cartes HTML bruts stylés à la main. Les wrappers Vie Locale (`Modal`, `FormField`, `GradientButton`) s’appuient sur shadcn en dessous ; ne pas les contourner.
+**Règle impérative :** utiliser les composants shadcn du projet — **pas** de `<button>`, `<input>`, modales ou cartes HTML bruts stylés à la main. Les wrappers Tous voisins (`Modal`, `FormField`, `GradientButton`) s’appuient sur shadcn en dessous ; ne pas les contourner.
 
 ---
 
@@ -100,7 +100,7 @@ Chargée via `next/font` dans `app/layout.tsx`. Poids disponibles : Regular, Med
 
 ---
 
-## Composants UI — shadcn/ui + wrappers Vie Locale
+## Composants UI — shadcn/ui + wrappers Tous voisins
 
 Stack : **Tailwind CSS v4** + **shadcn/ui** (`@base-ui/react`). Ajouter un composant manquant :
 
@@ -145,14 +145,14 @@ Utilitaire `cn()` : `@/lib/utils` (réexport aussi `@/lib/utils/cn`).
 ### Champs de formulaire (`components/ui/form-field.tsx`, shadcn `input` / `textarea` / `label`)
 
 - Base shadcn : `Input`, `Textarea`, `Label` dans `components/ui/`.
-- Wrapper projet : `FormField`, `Input`, `Select`, `Textarea` depuis `form-field.tsx` (styles Vie Locale via `formFieldClassName`).
+- Wrapper projet : `FormField`, `Input`, `Select`, `Textarea` depuis `form-field.tsx` (styles Tous voisins via `formFieldClassName`).
 - Contour : `rounded-sm` (8px), `border border-border`, fond `bg-surface`.
 - Focus : `focus-visible:border-purple` + ring violet discret — pas de ring générique hors charte.
 - Autocomplete / listes déroulantes : panneau en `rounded-sm`, items sans radius propre.
 - Hauteur auth (inscription, connexion) : `py-3.5` mobile, `md:py-2.5` desktop.
 - Champs spécialisés : `icon-field.tsx`, `password-field.tsx`, `ban-autocomplete.tsx` — réutilisent `Input` / `formFieldClassName`.
 
-### Cartes (`components/ui/card.tsx` — shadcn + tokens Vie Locale)
+### Cartes (`components/ui/card.tsx` — shadcn + tokens Tous voisins)
 
 ```tsx
 <Card className="p-6">…</Card>

@@ -22,8 +22,9 @@ import {
 } from "@/components/features/accueil-hub-sections";
 import { AccueilOutcomeBanner } from "@/components/features/accueil-outcome-banner";
 import { AccueilPageHeader } from "@/components/features/accueil-page-header";
+import { NeighborInviteBlock } from "@/components/features/profile/neighbor-invite-block";
 import type { EventCardData } from "@/components/features/event-card";
-import { resolveFirstName } from "@/lib/utils/display-name";
+import { resolveDisplayName, resolveFirstName } from "@/lib/utils/display-name";
 import { fetchAccueilBannerSlides } from "@/lib/queries/dashboard-charts";
 
 export default async function ResidentAccueilPage() {
@@ -40,6 +41,7 @@ export default async function ResidentAccueilPage() {
     initiativesRes,
     eventsRes,
     fulfilledBannerSlides,
+    invitesResult,
   ] = await Promise.all([
     countNeighborAnnouncementsDueToday(supabase, communeId, membershipId),
     countAnnouncements(supabase, { communeId }),
@@ -48,6 +50,11 @@ export default async function ResidentAccueilPage() {
     listInitiativesPage(supabase, { communeId }, { limit: 1 }),
     listEventsPage(supabase, { communeId }, { limit: 1 }),
     fetchAccueilBannerSlides(supabase, communeId),
+    supabase
+      .from("neighbor_invites")
+      .select("id", { count: "exact", head: true })
+      .eq("commune_id", communeId)
+      .eq("inviter_membership_id", membershipId),
   ]);
 
   const featuredAnnouncement = await listFeaturedAnnouncementForAccueil(
@@ -72,6 +79,9 @@ export default async function ResidentAccueilPage() {
       volunteers_registered: volunteerCounts[featuredEvent.id] ?? 0,
     };
   }
+
+  const communeName = ctx.activeMembership!.commune?.name ?? "Votre commune";
+  const inviteCount = invitesResult.count ?? 0;
 
   return (
     <PageStack gap="6">
@@ -104,6 +114,13 @@ export default async function ResidentAccueilPage() {
       </div>
 
       <AccueilQuickActions />
+
+      <NeighborInviteBlock
+        senderName={resolveDisplayName(ctx.profile)}
+        communeName={communeName}
+        inviteCount={inviteCount}
+        desktopSplit
+      />
     </PageStack>
   );
 }

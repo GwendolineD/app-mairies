@@ -43,7 +43,6 @@ import { AVATAR_PUBLIC_ID } from "@/lib/services/cloudinary";
 import { AnnouncementCard } from "@/components/features/announcement-card";
 import { InitiativeCard } from "@/components/features/initiative-card";
 import { EventCard } from "@/components/features/event-card";
-import { ContentActionRequiredBadge } from "@/components/features/content-action-required-badge";
 import type { AnnouncementWithAuthor } from "@/lib/queries/announcements";
 import type { InitiativeWithAuthor } from "@/lib/queries/initiatives";
 import type { AgendaEventRecord, NotificationPreferences } from "@/lib/types";
@@ -454,18 +453,21 @@ function AnnouncementsPanel({
       />
       <div className="space-y-3">
         {list.items.map((a) => (
-          <div key={a.id} className="relative">
-            <ContentActionRequiredBadge
-              content={{
-                contentType: "announcement",
-                status: a.status,
-                targetDate: a.target_date,
-                createdAt: a.created_at,
-                nudgeSnoozedUntil: (a as Record<string, unknown>).nudge_snoozed_until as string | null | undefined,
-              }}
-            />
-            <AnnouncementCard announcement={a} layout="horizontal" />
-          </div>
+          <AnnouncementCard
+            key={a.id}
+            announcement={a}
+            layout="horizontal"
+            nudgeContent={{
+              contentType: "announcement",
+              status: a.status,
+              targetDate: a.target_date,
+              createdAt: a.created_at,
+              nudgeSnoozedUntil: (a as Record<string, unknown>).nudge_snoozed_until as
+                | string
+                | null
+                | undefined,
+            }}
+          />
         ))}
       </div>
       <ProfileListPagination
@@ -513,17 +515,20 @@ function InitiativesPanel({
       />
       <div className="space-y-3">
         {list.items.map((i) => (
-          <div key={i.id} className="relative">
-            <ContentActionRequiredBadge
-              content={{
-                contentType: "initiative",
-                status: i.status,
-                createdAt: i.created_at,
-                nudgeSnoozedUntil: (i as Record<string, unknown>).nudge_snoozed_until as string | null | undefined,
-              }}
-            />
-            <InitiativeCard initiative={i} layout="horizontal" />
-          </div>
+          <InitiativeCard
+            key={i.id}
+            initiative={i}
+            layout="horizontal"
+            nudgeContent={{
+              contentType: "initiative",
+              status: i.status,
+              createdAt: i.created_at,
+              nudgeSnoozedUntil: (i as Record<string, unknown>).nudge_snoozed_until as
+                | string
+                | null
+                | undefined,
+            }}
+          />
         ))}
       </div>
       <ProfileListPagination
@@ -565,18 +570,21 @@ function EventsPanel({ list }: { list: ProfileListResult<AgendaEventRecord> }) {
       />
       <div className="space-y-3">
         {list.items.map((e) => (
-          <div key={e.id} className="relative">
-            <ContentActionRequiredBadge
-              content={{
-                contentType: "event",
-                status: e.status,
-                endsAt: e.ends_at,
-                createdAt: e.created_at,
-                nudgeSnoozedUntil: (e as Record<string, unknown>).nudge_snoozed_until as string | null | undefined,
-              }}
-            />
-            <EventCard event={e} layout="horizontal" />
-          </div>
+          <EventCard
+            key={e.id}
+            event={e}
+            layout="horizontal"
+            nudgeContent={{
+              contentType: "event",
+              status: e.status,
+              endsAt: e.ends_at,
+              createdAt: e.created_at,
+              nudgeSnoozedUntil: (e as Record<string, unknown>).nudge_snoozed_until as
+                | string
+                | null
+                | undefined,
+            }}
+          />
         ))}
       </div>
       <ProfileListPagination

@@ -1,12 +1,14 @@
 import { ContentNudgeBannerWithActions } from "@/components/features/content-nudge-banner-with-actions";
 import { getContentNudgeReason, type NudgeableContent } from "@/lib/utils/content-nudge";
 import type { ContentType } from "@/lib/actions/content-lifecycle";
+import type { AnnouncementType } from "@/lib/constants/announcement-types";
 
 type Props = {
   content: NudgeableContent;
   contentId: string;
   contentTitle: string;
   contentType: ContentType;
+  announcementType?: AnnouncementType;
 };
 
 /**
@@ -18,6 +20,7 @@ export function ContentNudgeBannerServer({
   contentId,
   contentTitle,
   contentType,
+  announcementType,
 }: Props) {
   const reason = getContentNudgeReason(content);
   if (!reason) return null;
@@ -28,6 +31,7 @@ export function ContentNudgeBannerServer({
       contentId={contentId}
       contentTitle={contentTitle}
       contentType={contentType}
+      announcementType={announcementType}
     />
   );
 }

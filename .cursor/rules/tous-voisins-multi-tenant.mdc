@@ -4,7 +4,7 @@ globs: ["**/*.ts", "**/*.tsx"]
 alwaysApply: true
 ---
 
-# Vie Locale Multi-Tenant
+# Tous voisins Multi-Tenant
 
 ## Non-negotiables
 

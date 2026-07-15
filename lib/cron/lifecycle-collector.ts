@@ -142,7 +142,6 @@ async function collectInviteReminders(service: SupabaseClient): Promise<number> 
         sender_name: senderName,
         commune_name: communeName,
         invite_link: `${appUrl}/inscription?token=${invite.token}`,
-        settings_url: `${appUrl}${ROUTES.profil}`,
       },
       related_content_type: "neighbor_invite",
       related_content_id: invite.id,
@@ -253,7 +252,6 @@ async function collectEngagementReminders(service: SupabaseClient): Promise<numb
           user_name: profile.display_name ?? "Voisin·e",
           commune_name: communeName,
           app_url: `${appUrl}${ROUTES.annonces.new()}`,
-          settings_url: `${appUrl}${ROUTES.profil}`,
           unsubscribe_link: buildUnsubscribeLink(profile.user_id),
         },
       });
@@ -346,7 +344,6 @@ async function collectAnnouncementExpiredNudges(service: SupabaseClient): Promis
           user_name: userName,
           announcement_title: ann.title,
           announcement_url: announcementUrl,
-          settings_url: `${appUrl}${ROUTES.profil}`,
           unsubscribe_link: buildUnsubscribeLink(userId),
         },
         related_content_type: "announcement",
@@ -439,7 +436,6 @@ async function collectAnnouncementStaleNudges(service: SupabaseClient): Promise<
           user_name: userName,
           announcement_title: ann.title,
           announcement_url: announcementUrl,
-          settings_url: `${appUrl}${ROUTES.profil}`,
           unsubscribe_link: buildUnsubscribeLink(userId),
         },
         related_content_type: "announcement",
@@ -531,7 +527,6 @@ async function collectInitiativeStaleNudges(service: SupabaseClient): Promise<nu
           user_name: userName,
           initiative_title: ini.title,
           initiative_url: initiativeUrl,
-          settings_url: `${appUrl}${ROUTES.profil}`,
           unsubscribe_link: buildUnsubscribeLink(userId),
         },
         related_content_type: "initiative",
@@ -623,7 +618,6 @@ async function collectEventPastNudges(service: SupabaseClient): Promise<number> 
           user_name: userName,
           event_title: evt.title,
           event_url: eventUrl,
-          settings_url: `${appUrl}${ROUTES.profil}`,
           unsubscribe_link: buildUnsubscribeLink(userId),
         },
         related_content_type: "event",
@@ -713,7 +707,6 @@ async function collectNotificationReminders(service: SupabaseClient): Promise<nu
         variables: {
           user_name: profile.display_name ?? "Voisin·e",
           commune_name: communeName,
-          settings_url: `${appUrl}${ROUTES.profil}`,
           unsubscribe_link: buildUnsubscribeLink(profile.user_id),
         },
       });
@@ -723,7 +716,7 @@ async function collectNotificationReminders(service: SupabaseClient): Promise<nu
     void notifyUser(profile.user_id, {
       title: "Activez les notifications",
       body: "Ne manquez pas les annonces et événements de votre commune !",
-      url: ROUTES.profil,
+      url: `${ROUTES.profil}?tab=parametres`,
       tag: "notification-activation-reminder",
     });
   }

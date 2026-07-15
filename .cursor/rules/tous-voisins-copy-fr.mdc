@@ -4,32 +4,37 @@ globs: ["**/*.tsx"]
 alwaysApply: false
 ---
 
-# Vie Locale Copy (FR)
+# Tous voisins Copy (FR)
 
 ## Language & tone
+
 - All **user-visible** strings: **French (fr-FR)** — grammar, punctuation (including non-breaking thin spaces before `:!?;%»` where appropriate), civic-friendly vocabulary.
 - **Warm, approachable, respectful** tone: sound like a collaborative neighbor, not a cold admin tool.
 - Use **sentence case** for titles when the design system agrees; otherwise match existing headings.
 
 ## People & names (display)
-- Default public attribution: **`Prénom L.`** (first name + last initial + trailing dot). Example: *Camille R.*
+
+- Default public attribution: **`Prénom L.`** (first name + last initial + trailing dot). Example: _Camille R._
 - Expand to fuller display only where the product explicitly allows it **and** privacy rules permit.
 
 ## Buttons & CTAs — action verbs
+
 Prefer **verbs + outcome** instead of vague defaults when space allows:
 
-| ❌ Vague | ✅ Action-oriented |
-|---|---|
-| Continuer | Voir les détails |
-| Envoyer | Publier l’initiative |
-| OK | Confirmer l’archive |
+| ❌ Vague  | ✅ Action-oriented   |
+| --------- | -------------------- |
+| Continuer | Voir les détails     |
+| Envoyer   | Publier l’initiative |
+| OK        | Confirmer l’archive  |
 
 Reuse established microcopy tokens for repeated actions (“Publier”, “Archiver”, “Signaler”). Keep labels short (< ~40 chars) for narrow layouts.
 
 ## Microcopy checklist
+
 Errors: explain calmly + propose a fix (“Réessayez” / lien support). Empty states: one friendly line + concrete next step. Avoid dramatizing unless safety requires it — align with `ethical-nudge-ux`.
 
 ## Error messages (UI)
+
 - **Tous les messages d’erreur visibles par l’utilisateur·rice doivent être en français (fr-FR)** — jamais de texte brut renvoyé par Supabase, une API ou une lib tierce en anglais.
 - **Ne jamais afficher** `error.message` d’un SDK directement dans l’UI : passer par un mapper ou un message métier rédigé en français.
 - **Auth Supabase** : utiliser `formatAuthError()` (`lib/utils/auth-errors.ts`) dans les server actions (`signUp`, `signIn`, etc.) avec un fallback français générique si le code/message n’est pas reconnu.

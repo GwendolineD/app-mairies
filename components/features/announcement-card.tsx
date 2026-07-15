@@ -17,12 +17,16 @@ import { formatRelativeTime } from "@/lib/datetime";
 import { formatShortDate } from "@/lib/datetime";
 import { formatAddressLabel, formatAddressLines } from "@/lib/utils/format-address";
 import { ContentSuspendedBadge } from "@/components/features/content-suspended-indicator";
+import { ContentActionRequiredBadge } from "@/components/features/content-action-required-badge";
+import type { NudgeableContent } from "@/lib/utils/content-nudge";
 
 type Props = {
   announcement: AnnouncementWithAuthor;
   layout?: "vertical" | "horizontal";
   /** Visually highlights the card (eg. selected map marker). */
   highlighted?: boolean;
+  /** When set, shows "Action requise" overlay if nudge conditions match. */
+  nudgeContent?: NudgeableContent;
 };
 
 type AuthorProfile = {
@@ -106,6 +110,7 @@ export function AnnouncementCard({
   announcement: a,
   layout = "vertical",
   highlighted = false,
+  nudgeContent,
 }: Props) {
   const highlightRing = highlighted
     ? "border-purple ring-2 ring-purple/35 shadow-[0_12px_32px_rgba(154,82,255,0.15)]"
@@ -122,10 +127,13 @@ export function AnnouncementCard({
       <Link href={ROUTES.annonces.detail(a.id)} className="block">
         <Card
           className={cn(
-            "flex h-28 flex-row items-stretch gap-0 overflow-hidden rounded-lg p-0 transition hover:scale-[1.02] hover:border-purple/45",
+            "relative flex h-28 flex-row items-stretch gap-0 overflow-hidden rounded-lg p-0 transition hover:scale-[1.02] hover:border-purple/45",
             highlightRing,
           )}
         >
+          {!a.suspended_at && nudgeContent ? (
+            <ContentActionRequiredBadge content={nudgeContent} />
+          ) : null}
           <div className="relative size-28 shrink-0 overflow-hidden">
             <CloudImage src={resolveImageUrl(a)} alt="" />
           </div>

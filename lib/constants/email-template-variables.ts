@@ -1,5 +1,6 @@
 import { APP_NAME } from "@/lib/constants/app";
 import { ILLUSTRATIONS } from "@/lib/constants/illustrations";
+import { profileSettingsUrl } from "@/lib/utils/app-url";
 
 export const EMAIL_TEMPLATE_VARIABLES: Record<string, string[]> = {
   "cancellation-request-admin": [
@@ -107,6 +108,67 @@ export const EMAIL_TEMPLATE_VARIABLES: Record<string, string[]> = {
     "logo_url",
     "app_name",
   ],
+  "invite-reminder": [
+    "sender_name",
+    "commune_name",
+    "invite_link",
+    "settings_url",
+    "logo_url",
+    "app_name",
+  ],
+  "engagement-first-week": [
+    "user_name",
+    "commune_name",
+    "app_url",
+    "settings_url",
+    "unsubscribe_link",
+    "logo_url",
+    "app_name",
+  ],
+  "announcement-expired-nudge": [
+    "user_name",
+    "announcement_title",
+    "announcement_url",
+    "settings_url",
+    "unsubscribe_link",
+    "logo_url",
+    "app_name",
+  ],
+  "announcement-stale-60d": [
+    "user_name",
+    "announcement_title",
+    "announcement_url",
+    "settings_url",
+    "unsubscribe_link",
+    "logo_url",
+    "app_name",
+  ],
+  "initiative-stale-60d": [
+    "user_name",
+    "initiative_title",
+    "initiative_url",
+    "settings_url",
+    "unsubscribe_link",
+    "logo_url",
+    "app_name",
+  ],
+  "event-past-nudge": [
+    "user_name",
+    "event_title",
+    "event_url",
+    "settings_url",
+    "unsubscribe_link",
+    "logo_url",
+    "app_name",
+  ],
+  "notification-activation-reminder": [
+    "user_name",
+    "commune_name",
+    "settings_url",
+    "unsubscribe_link",
+    "logo_url",
+    "app_name",
+  ],
 };
 
 export function getEmailTemplateVariables(slug: string): string[] {
@@ -142,6 +204,14 @@ export function getEmailTemplateMockValue(variable: string): string {
     appeal_url: "http://localhost:3000/suspendu",
     restoration_summary: "Votre accès à Les Authieux a été rétabli.",
     app_url: "http://localhost:3000/accueil",
+    settings_url: profileSettingsUrl(),
+    unsubscribe_link: "http://localhost:3000/unsubscribe?token=example-token",
+    announcement_title: "Recherche aide pour déménagement",
+    announcement_url: "http://localhost:3000/annonces/abc123",
+    initiative_title: "Jardin partagé du quartier",
+    initiative_url: "http://localhost:3000/initiatives/def456",
+    event_title: "Fête des voisins 2026",
+    event_url: "http://localhost:3000/evenements/ghi789",
     support_email: "support@tous-voisins.fr",
     logo_url: ILLUSTRATIONS.auth.logoHorizontal,
     app_name: APP_NAME,

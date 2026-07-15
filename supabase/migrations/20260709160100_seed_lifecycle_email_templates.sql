@@ -263,11 +263,12 @@ VALUES
     <div class="header">
       <img src="{{logo_url}}" alt="{{app_name}}">
     </div>
-    <h2>Ne manquez rien dans votre commune !</h2>
+    <h2>Félicitations !</h2>
     <div class="content">
       <p>Bonjour {{user_name}},</p>
-      <p>Vous avez rejoint {{commune_name}} sur {{app_name}} — super ! Pour être prévenu dès qu''un voisin publie une annonce ou un événement, activez les notifications.</p>
-      <p>Cela prend 10 secondes et vous pouvez les désactiver à tout moment.</p>
+      <p>Vous avez rejoint {{commune_name}} sur {{app_name}}.</p>
+      <p><strong>Ne ratez rien de la vie de votre commune !</strong><br>Activez les notifications pour être prévenu·e au fil de l''eau : annonces, événements, initiatives, messages reçus…</p>
+      <p>L''activation prend quelques secondes. Vos préférences restent modifiables à tout moment.</p>
       <p style="text-align:center;">
         <a href="{{settings_url}}" class="cta">Activer les notifications</a>
       </p>

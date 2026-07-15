@@ -10,7 +10,10 @@ import {
 import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";
 import { ContentSuspendedBadge } from "@/components/features/content-suspended-indicator";
+import { ContentActionRequiredBadge } from "@/components/features/content-action-required-badge";
 import { cn } from "@/lib/utils/cn";
+import type { NudgeableContent } from "@/lib/utils/content-nudge";
+import { getContentNudgeReason } from "@/lib/utils/content-nudge";
 import { formatDisplayName } from "@/lib/utils/display-name";
 import { formatEventRange, formatRelativeTime } from "@/lib/datetime";
 
@@ -41,6 +44,7 @@ type Props = {
   initiative: InitiativeCardData;
   layout?: "vertical" | "horizontal";
   highlighted?: boolean;
+  nudgeContent?: NudgeableContent;
 };
 
 type AuthorProfile = InitiativeCardData["author_membership"] extends infer M
@@ -122,6 +126,7 @@ export function InitiativeCard({
   initiative: i,
   layout = "vertical",
   highlighted = false,
+  nudgeContent,
 }: Props) {
   const highlightRing = highlighted
     ? "border-purple ring-2 ring-purple/35 shadow-[0_12px_32px_rgba(154,82,255,0.15)]"
@@ -130,16 +135,21 @@ export function InitiativeCard({
   const address = resolveAddress(i);
   const supportCount = i.support_count ?? 0;
   const profiles = i.author_membership?.profiles ?? null;
+  const showActionRequired =
+    Boolean(nudgeContent) && !i.suspended_at && getContentNudgeReason(nudgeContent!);
 
   if (layout === "horizontal") {
     return (
       <Link href={ROUTES.initiatives.detail(i.id)} className="block">
         <Card
           className={cn(
-            "flex h-28 flex-row items-stretch gap-0 overflow-hidden rounded-lg p-0 transition hover:scale-[1.02] hover:border-purple/45",
+            "relative flex h-28 flex-row items-stretch gap-0 overflow-hidden rounded-lg p-0 transition hover:scale-[1.02] hover:border-purple/45",
             highlightRing,
           )}
         >
+          {showActionRequired && nudgeContent ? (
+            <ContentActionRequiredBadge content={nudgeContent} />
+          ) : null}
           <div className="relative size-28 shrink-0 overflow-hidden">
             {imageUrl ? (
               <CloudImage src={imageUrl} alt="" />
@@ -152,12 +162,12 @@ export function InitiativeCard({
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col p-2">
             {i.suspended_at ? (
               <ContentSuspendedBadge />
-            ) : (
+            ) : !showActionRequired ? (
               <SupportBadge
                 count={supportCount}
                 className="absolute right-2 top-2 text-xs [&_svg]:size-3.5"
               />
-            )}
+            ) : null}
             <div className="flex items-center gap-1">
               {i.category_slug ? (
                 <CategoryTag
