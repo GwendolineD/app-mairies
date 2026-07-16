@@ -163,11 +163,11 @@ async function collectInviteReminders(service: SupabaseClient): Promise<number> 
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Collect: engagement reminders (3-6 day old users with no content)
+// Collect: engagement reminders (3-30 day old users with no content)
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function collectEngagementReminders(service: SupabaseClient): Promise<number> {
-  const sixDaysAgo = new Date(Date.now() - 6 * DAY_MS).toISOString();
+  const thirtyDaysAgo = new Date(Date.now() - 30 * DAY_MS).toISOString();
   const threeDaysAgo = new Date(Date.now() - 3 * DAY_MS).toISOString();
   const appUrl = getAppUrl();
 
@@ -176,7 +176,7 @@ async function collectEngagementReminders(service: SupabaseClient): Promise<numb
     .select("user_id, display_name, active_commune_id")
     .is("engagement_reminder_sent_at", null)
     .lt("created_at", threeDaysAgo)
-    .gt("created_at", sixDaysAgo)
+    .gt("created_at", thirtyDaysAgo)
     .limit(200);
 
   if (error) throw new Error(`collectEngagementReminders: ${error.message}`);
