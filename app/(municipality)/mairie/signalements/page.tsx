@@ -22,6 +22,7 @@ import { ReportRestoreStatus } from "@/components/features/reports/report-restor
 import { ReportContextPastille } from "@/components/features/reports/report-context-pastille";
 import { ReportListToolbar } from "@/components/features/reports/report-list-toolbar";
 import { ReportRelatedCountLink } from "@/components/features/reports/report-related-count-link";
+import { MultilineText } from "@/components/ui/multiline-text";
 import {
   buildReportResolutionMetaMaps,
   getReportResolutionMeta,
@@ -91,6 +92,7 @@ export default async function MairieSignalementsPage(props: {
   const announcementTypeMap: Record<string, string> = {};
   const contentSuspendedAtById: Record<string, string | null> = {};
   const contentSuspendedByUserIdById: Record<string, string | null> = {};
+  const contentSuspensionReasonById: Record<string, string | null> = {};
 
   const annIds = contentIds.filter((c) => c.type === "announcement").map((c) => c.id);
   const iniIds = contentIds.filter((c) => c.type === "initiative").map((c) => c.id);
@@ -100,19 +102,19 @@ export default async function MairieSignalementsPage(props: {
     annIds.length > 0
       ? supabase
           .from("announcements")
-          .select("id, title, author_membership_id, type, suspended_at, suspended_by")
+          .select("id, title, author_membership_id, type, suspended_at, suspended_by, suspension_reason")
           .in("id", annIds)
       : Promise.resolve({ data: null }),
     iniIds.length > 0
       ? supabase
           .from("initiatives")
-          .select("id, title, author_membership_id, suspended_at, suspended_by")
+          .select("id, title, author_membership_id, suspended_at, suspended_by, suspension_reason")
           .in("id", iniIds)
       : Promise.resolve({ data: null }),
     evtIds.length > 0
       ? supabase
           .from("events")
-          .select("id, title, author_membership_id, suspended_at, suspended_by")
+          .select("id, title, author_membership_id, suspended_at, suspended_by, suspension_reason")
           .in("id", evtIds)
       : Promise.resolve({ data: null }),
   ]);
@@ -123,18 +125,21 @@ export default async function MairieSignalementsPage(props: {
     announcementTypeMap[row.id] = row.type;
     contentSuspendedAtById[row.id] = row.suspended_at;
     contentSuspendedByUserIdById[row.id] = row.suspended_by;
+    contentSuspensionReasonById[row.id] = row.suspension_reason;
   }
   for (const row of initiativesResult.data ?? []) {
     titleMap[row.id] = row.title;
     authorMembershipIdMap[row.id] = row.author_membership_id;
     contentSuspendedAtById[row.id] = row.suspended_at;
     contentSuspendedByUserIdById[row.id] = row.suspended_by;
+    contentSuspensionReasonById[row.id] = row.suspension_reason;
   }
   for (const row of eventsResult.data ?? []) {
     titleMap[row.id] = row.title;
     authorMembershipIdMap[row.id] = row.author_membership_id;
     contentSuspendedAtById[row.id] = row.suspended_at;
     contentSuspendedByUserIdById[row.id] = row.suspended_by;
+    contentSuspensionReasonById[row.id] = row.suspension_reason;
   }
 
   const authorUserIdMap: Record<string, string> = {};
@@ -324,6 +329,12 @@ export default async function MairieSignalementsPage(props: {
                     status={report.status}
                     resolution={report.resolution}
                     meta={resolutionMeta}
+                    suspensionReason={
+                      report.resolution === "content_suspended" &&
+                      report.context_type !== "user"
+                        ? contentSuspensionReasonById[report.context_id] ?? null
+                        : null
+                    }
                   />
                 </div>
 
@@ -336,10 +347,13 @@ export default async function MairieSignalementsPage(props: {
                   />
                 ) : null}
 
-                <p className="my-3 text-sm text-muted">
-                  <span className="font-medium text-text">Motif :</span>{" "}
-                  {report.reason}
-                </p>
+                <div className="my-3 text-sm text-muted">
+                  <span className="font-medium text-text">Motif du signalement :</span>
+                  <MultilineText
+                    text={report.reason}
+                    className="mt-1 text-sm font-medium text-muted"
+                  />
+                </div>
 
                 <div className="flex flex-wrap items-end justify-between gap-2">
                   {isPending ? (

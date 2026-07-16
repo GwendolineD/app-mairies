@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils/cn";
 
 type Props = {
   title: string;
-  subtitle?: string;
+  subtitle?: React.ReactNode;
   subtitleClassName?: string;
   /** hero = landing/marketing H1 ; screen = titres d'écran mobile */
   size?: "hero" | "screen";
@@ -39,16 +39,20 @@ export function PageHeading({
         >
           {title}
         </h1>
-        {subtitle ? (
-          <p
-            className={cn(
-              "mt-2 text-sm font-medium leading-5 text-muted",
-              centered && "text-pretty",
-              subtitleClassName,
-            )}
-          >
-            {subtitle}
-          </p>
+        {subtitle != null ? (
+          typeof subtitle === "string" ? (
+            <p
+              className={cn(
+                "mt-2 text-sm font-medium leading-5 text-muted",
+                centered && "text-pretty",
+                subtitleClassName,
+              )}
+            >
+              {subtitle}
+            </p>
+          ) : (
+            subtitle
+          )
         ) : null}
       </div>
       {actions ? <div className="shrink-0">{actions}</div> : null}

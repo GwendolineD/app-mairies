@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { logAudit } from "@/lib/audit/log";
 import { RECOVERY_COOKIE_NAME } from "@/lib/constants/auth";
 import { ROUTES } from "@/lib/constants/routes";
+import { sendEmailChangeVerification } from "@/lib/email/send-email-change-verification";
 import { resendVerificationEmailIfNeeded, sendVerificationEmail } from "@/lib/email/send-verification-email";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getAppUrl } from "@/lib/utils/app-url";
@@ -472,23 +473,22 @@ export async function requestEmailChange(
     return { error: "Cette adresse e-mail est déjà la vôtre." };
   }
 
-  const redirectTo = `${getAppUrl()}${ROUTES.authCallback}`;
-  const { error } = await supabase.auth.updateUser(
-    { email: parsed.data.email },
-    { emailRedirectTo: redirectTo },
-  );
+  const userName =
+    (typeof user.user_metadata?.first_name === "string"
+      ? user.user_metadata.first_name
+      : null) ??
+    user.email?.split("@")[0] ??
+    "Bonjour";
 
-  if (error) {
-    if (isRateLimitError(error)) {
-      return {
-        error: formatAuthError(
-          error,
-          "Trop de demandes envoyées. Patientez quelques instants et réessayez.",
-        ),
-      };
-    }
+  const result = await sendEmailChangeVerification({
+    email: user.email ?? "",
+    newEmail: parsed.data.email,
+    userName,
+  });
+
+  if (!result.success) {
     return {
-      error: formatAuthError(error, "Impossible de modifier l'email."),
+      error: result.error ?? "Impossible de modifier l'email.",
     };
   }
 

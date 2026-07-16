@@ -80,6 +80,7 @@ type InviteData = {
 type SettingsData = {
   notificationPrefs: NotificationPreferences;
   pushPublicKey: string | null;
+  emailLifecycleEnabled: boolean;
   isPlatformAdmin: boolean;
   hasPassword: boolean;
   staffWarning: string | null;
@@ -452,7 +453,21 @@ function AnnouncementsPanel({
       />
       <div className="space-y-3">
         {list.items.map((a) => (
-          <AnnouncementCard key={a.id} announcement={a} layout="horizontal" />
+          <AnnouncementCard
+            key={a.id}
+            announcement={a}
+            layout="horizontal"
+            nudgeContent={{
+              contentType: "announcement",
+              status: a.status,
+              targetDate: a.target_date,
+              createdAt: a.created_at,
+              nudgeSnoozedUntil: (a as Record<string, unknown>).nudge_snoozed_until as
+                | string
+                | null
+                | undefined,
+            }}
+          />
         ))}
       </div>
       <ProfileListPagination
@@ -500,7 +515,20 @@ function InitiativesPanel({
       />
       <div className="space-y-3">
         {list.items.map((i) => (
-          <InitiativeCard key={i.id} initiative={i} layout="horizontal" />
+          <InitiativeCard
+            key={i.id}
+            initiative={i}
+            layout="horizontal"
+            nudgeContent={{
+              contentType: "initiative",
+              status: i.status,
+              createdAt: i.created_at,
+              nudgeSnoozedUntil: (i as Record<string, unknown>).nudge_snoozed_until as
+                | string
+                | null
+                | undefined,
+            }}
+          />
         ))}
       </div>
       <ProfileListPagination
@@ -542,7 +570,21 @@ function EventsPanel({ list }: { list: ProfileListResult<AgendaEventRecord> }) {
       />
       <div className="space-y-3">
         {list.items.map((e) => (
-          <EventCard key={e.id} event={e} layout="horizontal" />
+          <EventCard
+            key={e.id}
+            event={e}
+            layout="horizontal"
+            nudgeContent={{
+              contentType: "event",
+              status: e.status,
+              endsAt: e.ends_at,
+              createdAt: e.created_at,
+              nudgeSnoozedUntil: (e as Record<string, unknown>).nudge_snoozed_until as
+                | string
+                | null
+                | undefined,
+            }}
+          />
         ))}
       </div>
       <ProfileListPagination
@@ -577,6 +619,7 @@ function SettingsPanel({ settings }: { settings: SettingsData }) {
       <NotificationPreferencesForm
         initial={settings.notificationPrefs}
         pushPublicKey={settings.pushPublicKey}
+        emailLifecycleEnabled={settings.emailLifecycleEnabled}
         cardClassName={PROFILE_SETTINGS_CARD_CLASS}
       />
       <DeleteAccountSection

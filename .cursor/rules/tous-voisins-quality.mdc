@@ -3,7 +3,7 @@ description: Performance, maintainability, scalability — cross-cutting enginee
 alwaysApply: true
 ---
 
-# Vie Locale Quality
+# Tous voisins Quality
 
 Cross-cutting defaults for a maintainable, scalable, performant app. Structure and naming → `architecture.mdc`. Data access and queries → `data-supabase.mdc`. Tenant scope → `vie-locale-multi-tenant.mdc`.
 

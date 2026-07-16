@@ -32,6 +32,8 @@ import { formatDetailAddressLines, resolveAddressPostcode } from "@/lib/utils/fo
 import type { AnnouncementEditData } from "@/lib/types";
 import { PageStack } from "@/components/ui/page-stack";
 import { ContentSuspendedBanner } from "@/components/features/content-suspended-indicator";
+import { ContentNudgeBannerServer } from "@/components/features/content-nudge-banner-server";
+import { MultilineText } from "@/components/ui/multiline-text";
 
 const MAIN_DETAIL_CARD_CLASS =
   "rounded-none border-0 bg-transparent p-0 !shadow-none";
@@ -93,11 +95,17 @@ export default async function AnnonceDetailPage(props: {
             </div>
             <h1 className="text-xl font-bold text-text">Annonce suspendue</h1>
             {isAuthorOfSuspended ? (
-              <p className="text-sm text-muted">
-                Votre annonce a été suspendue par la modération. Si vous pensez
-                qu&apos;il s&apos;agit d&apos;une erreur, veuillez contacter
-                l&apos;assistance.
-              </p>
+              <div className="space-y-3 text-sm text-muted">
+                <p>
+                  Votre annonce a été suspendue par la modération. Si vous pensez
+                  qu&apos;il s&apos;agit d&apos;une erreur, veuillez contacter
+                  l&apos;assistance.
+                </p>
+                <MultilineText
+                  text={data.suspension_reason}
+                  className="rounded-sm border border-border/60 bg-warm px-3 py-2 text-left text-sm font-medium text-text"
+                />
+              </div>
             ) : (
               <p className="text-sm text-muted">
                 Ce contenu a été suspendu et n&apos;est plus disponible.
@@ -181,7 +189,26 @@ export default async function AnnonceDetailPage(props: {
       <HistoryBackLink />
 
       {ann.suspended_at ? (
-        <ContentSuspendedBanner suspendedAt={ann.suspended_at} />
+        <ContentSuspendedBanner
+          suspendedAt={ann.suspended_at}
+          suspensionReason={ann.suspension_reason}
+        />
+      ) : null}
+
+      {isAuthor && !ann.suspended_at ? (
+        <ContentNudgeBannerServer
+          content={{
+            contentType: "announcement",
+            status: ann.status,
+            targetDate: ann.target_date,
+            createdAt: ann.created_at,
+            nudgeSnoozedUntil: (ann as Record<string, unknown>).nudge_snoozed_until as string | null,
+          }}
+          contentId={ann.id}
+          contentTitle={ann.title}
+          contentType="announcement"
+          announcementType={ann.type}
+        />
       ) : null}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
@@ -297,15 +324,6 @@ export default async function AnnonceDetailPage(props: {
             )}
           </DetailLocationSidebarCard>
 
-          <div className="hidden md:flex md:justify-center">
-            <ReportButton
-              contextType="announcement"
-              contextId={ann.id}
-              showIcon
-              className="text-sm font-medium text-muted"
-            />
-          </div>
-
           {/* Similar announcements */}
           <Suspense fallback={<SimilarAnnouncementsSkeleton />}>
             <SimilarAnnouncements
@@ -314,6 +332,15 @@ export default async function AnnonceDetailPage(props: {
               excludeId={ann.id}
             />
           </Suspense>
+
+          <div className="hidden md:flex md:justify-center">
+            <ReportButton
+              contextType="announcement"
+              contextId={ann.id}
+              showIcon
+              className="text-sm font-medium text-muted"
+            />
+          </div>
         </aside>
       </div>
 

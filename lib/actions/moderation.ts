@@ -14,7 +14,15 @@ import {
   resolvePendingReportsForUser,
 } from "@/lib/services/report-resolution";
 import { MEMBERSHIP_STATUS } from "@/lib/constants/statuses";
+import { validateSuspensionReason } from "@/lib/constants/moderation";
 import { formatDisplayName } from "@/lib/utils/display-name";
+import {
+  notifyContentRestored,
+  notifyContentSuspended,
+  notifyUserBanned,
+  notifyUserRestored,
+  notifyUserSuspended,
+} from "@/lib/email/suspension-notification";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { ConversationContextType } from "@/lib/types";
 
@@ -107,10 +115,16 @@ export async function suspendContent(
   reason: string,
   relatedReportId?: string,
 ): Promise<ModerationActionResult> {
-  const trimmedReason = reason.trim();
-  if (!contentId || !trimmedReason) {
+  if (!contentId) {
     return { success: false, error: "Paramètres invalides." };
   }
+
+  const reasonError = validateSuspensionReason(reason);
+  if (reasonError) {
+    return { success: false, error: reasonError };
+  }
+
+  const trimmedReason = reason.trim();
 
   const table = TABLE_MAP[type];
   if (!table) return { success: false, error: "Type de contenu invalide." };
@@ -198,6 +212,14 @@ export async function suspendContent(
     metadata: { reason: trimmedReason, related_report_id: relatedReportId },
   });
 
+  notifyContentSuspended({
+    type,
+    contentId,
+    reason: trimmedReason,
+  }).catch((err) =>
+    console.error("[moderation] Failed to send content suspension email:", err),
+  );
+
   revalidateContentPaths(type, contentId, content.commune_id);
   return { success: true };
 }
@@ -281,6 +303,10 @@ export async function reactivateContent(
     communeId: content.commune_id,
   });
 
+  notifyContentRestored({ type, contentId }).catch((err) =>
+    console.error("[moderation] Failed to send content restoration email:", err),
+  );
+
   revalidateContentPaths(type, contentId, content.commune_id);
   return { success: true, restoredAt, actorName };
 }
@@ -289,10 +315,16 @@ export async function suspendMembershipByStaff(
   membershipId: string,
   reason: string,
 ): Promise<ModerationActionResult> {
-  const trimmedReason = reason.trim();
-  if (!membershipId || !trimmedReason) {
+  if (!membershipId) {
     return { success: false, error: "Paramètres invalides." };
   }
+
+  const reasonError = validateSuspensionReason(reason);
+  if (reasonError) {
+    return { success: false, error: reasonError };
+  }
+
+  const trimmedReason = reason.trim();
 
   const supabase = await createClient();
 
@@ -369,6 +401,15 @@ export async function suspendMembershipByStaff(
     communeId: membership.commune_id,
     metadata: { reason: trimmedReason },
   });
+
+  notifyUserSuspended({
+    userId: membership.user_id,
+    reason: trimmedReason,
+    scope: "single",
+    communeId: membership.commune_id,
+  }).catch((err) =>
+    console.error("[moderation] Failed to send user suspension email:", err),
+  );
 
   revalidatePath(ROUTES.mairie.habitants);
   revalidatePath(ROUTES.mairie.signalements);
@@ -454,6 +495,14 @@ export async function reactivateMembership(
     communeId: membership.commune_id,
   });
 
+  notifyUserRestored({
+    userId: membership.user_id,
+    context: "membership",
+    communeId: membership.commune_id,
+  }).catch((err) =>
+    console.error("[moderation] Failed to send user restoration email:", err),
+  );
+
   revalidatePath(ROUTES.mairie.habitants);
   revalidatePath(ROUTES.mairie.signalements);
   revalidatePath(ROUTES.backoffice.signalements);
@@ -468,11 +517,17 @@ export async function banUserFromPlatform(
   reason: string,
 ): Promise<ModerationActionResult> {
   const ctx = await requirePlatformAdmin();
-  const trimmedReason = reason.trim();
 
-  if (!userId || !trimmedReason) {
+  if (!userId) {
     return { success: false, error: "Paramètres invalides." };
   }
+
+  const reasonError = validateSuspensionReason(reason);
+  if (reasonError) {
+    return { success: false, error: reasonError };
+  }
+
+  const trimmedReason = reason.trim();
 
   const supabase = await createClient();
   const serviceClient = await createServiceClient();
@@ -549,6 +604,14 @@ export async function banUserFromPlatform(
     metadata: { reason: trimmedReason },
   });
 
+  notifyUserBanned({
+    userId,
+    reason: trimmedReason,
+    userEmail: authData.user.email,
+  }).catch((err) =>
+    console.error("[moderation] Failed to send user ban email:", err),
+  );
+
   revalidatePath(ROUTES.backoffice.userDetail(userId));
   revalidatePath(ROUTES.backoffice.communes);
 
@@ -621,6 +684,16 @@ export async function unbanUserFromPlatform(
     targetType: "user",
     targetId: userId,
   });
+
+  if (authData?.user?.email) {
+    notifyUserRestored({
+      userId,
+      context: "unban",
+      userEmail: authData.user.email,
+    }).catch((err) =>
+      console.error("[moderation] Failed to send user restoration email:", err),
+    );
+  }
 
   revalidatePath(ROUTES.backoffice.userDetail(userId));
   revalidatePath(ROUTES.backoffice.communes);

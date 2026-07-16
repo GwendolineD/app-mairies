@@ -11,3 +11,15 @@ export function resolveFirstName(profile: {
   const fromDisplay = profile.display_name?.trim().split(/\s+/)[0];
   return fromDisplay ?? "là";
 }
+
+export function resolveDisplayName(profile: {
+  display_name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+}): string {
+  const fullName = [profile.first_name, profile.last_name]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  return fullName || profile.display_name?.trim() || "Voisin·e";
+}

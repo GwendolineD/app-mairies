@@ -5,7 +5,7 @@ import { logAudit } from "@/lib/audit/log";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
-import { sanitizeHtml } from "@/lib/utils/sanitize-html";
+import { sanitizeEmailHtml, sanitizeHtml } from "@/lib/utils/sanitize-html";
 import { createPilotCommuneSchema, updateCommuneInfoSchema } from "@/lib/validations/schemas";
 import type { AccessStatus } from "@/lib/types";
 
@@ -506,7 +506,7 @@ export async function updateCommuneSubscribedSince(
 
 export async function updateEmailTemplate(
   slug: string,
-  data: { subject: string; bodyHtml: string },
+  data: { subject: string; bodyHtml: string; description: string | null },
 ): Promise<PlatformActionResult> {
   const { userId } = await requirePlatformAdmin();
 
@@ -514,10 +514,12 @@ export async function updateEmailTemplate(
     return { success: false, error: "Sujet et contenu HTML requis." };
   }
 
-  const sanitizedHtml = sanitizeHtml(data.bodyHtml);
+  const sanitizedHtml = sanitizeEmailHtml(data.bodyHtml);
   if (!sanitizedHtml.trim()) {
     return { success: false, error: "Sujet et contenu HTML requis." };
   }
+
+  const normalizedDescription = data.description?.trim() || null;
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -525,6 +527,7 @@ export async function updateEmailTemplate(
     .update({
       subject: data.subject.trim(),
       body_html: sanitizedHtml,
+      description: normalizedDescription,
     })
     .eq("slug", slug);
 
@@ -542,5 +545,6 @@ export async function updateEmailTemplate(
   });
 
   revalidatePath(ROUTES.backoffice.emails);
+  revalidatePath(`${ROUTES.backoffice.emails}/${slug}`);
   return { success: true };
 }

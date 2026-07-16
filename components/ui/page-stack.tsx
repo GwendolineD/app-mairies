@@ -13,10 +13,12 @@ const gapClass = {
   "6": "gap-6",
 } as const;
 
-/** Vertical page layout — padding comes from `app/(resident)/layout.tsx` main. */
+/** Vertical page layout — horizontal padding comes from the shell `main`. */
 export function PageStack({ children, className, gap = "6" }: Props) {
   return (
-    <div className={cn("flex flex-col", gapClass[gap], className)}>{children}</div>
+    <div className={cn("flex flex-col pt-4 md:pt-6", gapClass[gap], className)}>
+      {children}
+    </div>
   );
 }
 

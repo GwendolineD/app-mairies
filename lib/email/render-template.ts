@@ -1,5 +1,10 @@
 import { APP_NAME } from "@/lib/constants/app";
+import {
+  formatEmailHtmlVariable,
+  formatEmailSubjectVariable,
+} from "@/lib/email/format-variable";
 import { createServiceClient } from "@/lib/supabase/server";
+import { profileSettingsUrl } from "@/lib/utils/app-url";
 
 export type TemplateVariables = Record<string, string | number | undefined>;
 
@@ -16,14 +21,19 @@ function getGlobalVariables(): TemplateVariables {
   return {
     ...GLOBAL_VARIABLES,
     logo_url: process.env.APP_LOGO_URL ?? "",
+    settings_url: profileSettingsUrl(),
   };
 }
 
-function replaceVariables(template: string, variables: TemplateVariables): string {
+function replaceVariables(
+  template: string,
+  variables: TemplateVariables,
+  format: (value: string | number | undefined) => string,
+): string {
   return template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
     const value = variables[key];
     if (value === undefined) return match;
-    return String(value);
+    return format(value);
   });
 }
 
@@ -60,14 +70,15 @@ export async function renderTemplate(
     return null;
   }
 
+  // Globals last so static URLs (settings, logo) stay correct even if queue snapshots are stale.
   const allVariables: TemplateVariables = {
-    ...getGlobalVariables(),
     ...variables,
+    ...getGlobalVariables(),
   };
 
   return {
-    subject: replaceVariables(template.subject, allVariables),
-    html: replaceVariables(template.body_html, allVariables),
+    subject: replaceVariables(template.subject, allVariables, formatEmailSubjectVariable),
+    html: replaceVariables(template.body_html, allVariables, formatEmailHtmlVariable),
   };
 }
 

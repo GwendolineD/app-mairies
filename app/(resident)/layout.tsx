@@ -63,7 +63,7 @@ export default async function ResidentRootLayout({
           supportEmail={supportEmail}
         />
 
-        <main className="min-w-0 flex-1 overflow-y-auto bg-surface px-5 py-4 pb-28 md:px-6 md:py-6 md:pb-6 lg:px-8">
+        <main className="min-w-0 flex-1 overflow-y-auto bg-surface px-5 pb-28 md:px-6 md:pb-6 lg:px-8">
           <PwaInstallBanner
             hasSeenOnboarding={ctx.profile.has_seen_onboarding ?? false}
           />

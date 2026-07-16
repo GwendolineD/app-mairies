@@ -38,6 +38,8 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const tokenHash = searchParams.get("token_hash");
+  const token = searchParams.get("token");
+  const email = searchParams.get("email");
   const type = searchParams.get("type");
   const rawNext = searchParams.get("next") ?? ROUTES.accueil;
   const isValidPath =
@@ -50,7 +52,7 @@ export async function GET(request: NextRequest) {
     return authCallbackErrorRedirect(appOrigin, flow);
   }
 
-  if (!code && !(tokenHash && type)) {
+  if (!code && !(tokenHash && type) && !(token && email && type)) {
     return authCallbackErrorRedirect(appOrigin, flow);
   }
 
@@ -89,8 +91,17 @@ export async function GET(request: NextRequest) {
 
   let exchangeError: Error | null = null;
 
-  // Prefer token_hash + verifyOtp for SSR email flows (email change, etc.)
-  if (tokenHash && type) {
+  // Email change uses raw OTP + target email: GoTrue hashes the stored token
+  // with the new email, so token_hash from generateLink cannot be matched.
+  if (token && email && type) {
+    const { error } = await supabase.auth.verifyOtp({
+      type: type as EmailOtpType,
+      token,
+      email,
+    });
+    if (error) exchangeError = error;
+    // Prefer token_hash + verifyOtp for SSR email flows (recovery, signup, etc.)
+  } else if (tokenHash && type) {
     const { error } = await supabase.auth.verifyOtp({
       type: type as EmailOtpType,
       token_hash: tokenHash,

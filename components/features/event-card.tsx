@@ -10,7 +10,9 @@ import {
 import { Card } from "@/components/ui/card";
 import { CategoryTag } from "@/components/ui/category-tag";
 import { ContentSuspendedBadge } from "@/components/features/content-suspended-indicator";
+import { ContentActionRequiredBadge } from "@/components/features/content-action-required-badge";
 import { cn } from "@/lib/utils/cn";
+import type { NudgeableContent } from "@/lib/utils/content-nudge";
 import { getEventRangeParts } from "@/lib/datetime";
 import type { AgendaEventRecord } from "@/lib/types";
 
@@ -35,6 +37,7 @@ type Props = {
   layout?: "vertical" | "horizontal";
   highlighted?: boolean;
   hrefBuilder?: (id: string) => string;
+  nudgeContent?: NudgeableContent;
 };
 
 function resolveImageUrl(event: EventCardData): string | null {
@@ -99,6 +102,7 @@ export function EventCard({
   layout = "vertical",
   highlighted = false,
   hrefBuilder = ROUTES.evenements.detail,
+  nudgeContent,
 }: Props) {
   const detailHref = hrefBuilder(e.id);
   const highlightRing = highlighted
@@ -112,10 +116,13 @@ export function EventCard({
       <Link href={detailHref} className="block">
         <Card
           className={cn(
-            "flex h-28 flex-row items-stretch gap-0 overflow-hidden rounded-lg p-0 transition hover:border-orange/45",
+            "relative flex h-28 flex-row items-stretch gap-0 overflow-hidden rounded-lg p-0 transition hover:border-orange/45",
             highlightRing,
           )}
         >
+          {!e.suspended_at && nudgeContent ? (
+            <ContentActionRequiredBadge content={nudgeContent} />
+          ) : null}
           <div className="relative size-28 shrink-0 overflow-hidden">
             {imageUrl ? (
               <CloudImage src={imageUrl} alt="" />

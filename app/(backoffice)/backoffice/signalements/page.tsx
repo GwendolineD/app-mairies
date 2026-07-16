@@ -22,6 +22,7 @@ import { ReportRestoreStatus } from "@/components/features/reports/report-restor
 import { ReportContextPastille } from "@/components/features/reports/report-context-pastille";
 import { ReportListToolbar } from "@/components/features/reports/report-list-toolbar";
 import { ReportRelatedCountLink } from "@/components/features/reports/report-related-count-link";
+import { MultilineText } from "@/components/ui/multiline-text";
 import {
   buildReportResolutionMetaMaps,
   getReportResolutionMeta,
@@ -87,6 +88,7 @@ export default async function BackofficeSignalementsPage(props: {
   const announcementTypeMap: Record<string, string> = {};
   const contentSuspendedAtById: Record<string, string | null> = {};
   const contentSuspendedByUserIdById: Record<string, string | null> = {};
+  const contentSuspensionReasonById: Record<string, string | null> = {};
 
   for (const table of ["announcements", "initiatives", "events"] as const) {
     const ctxType =
@@ -100,7 +102,7 @@ export default async function BackofficeSignalementsPage(props: {
       if (table === "announcements") {
         const { data } = await supabase
           .from("announcements")
-          .select("id, title, author_membership_id, type, suspended_at, suspended_by")
+          .select("id, title, author_membership_id, type, suspended_at, suspended_by, suspension_reason")
           .in("id", ids);
         for (const row of data ?? []) {
           titleMap[row.id] = row.title;
@@ -108,17 +110,19 @@ export default async function BackofficeSignalementsPage(props: {
           announcementTypeMap[row.id] = row.type;
           contentSuspendedAtById[row.id] = row.suspended_at;
           contentSuspendedByUserIdById[row.id] = row.suspended_by;
+          contentSuspensionReasonById[row.id] = row.suspension_reason;
         }
       } else {
         const { data } = await supabase
           .from(table)
-          .select("id, title, author_membership_id, suspended_at, suspended_by")
+          .select("id, title, author_membership_id, suspended_at, suspended_by, suspension_reason")
           .in("id", ids);
         for (const row of data ?? []) {
           titleMap[row.id] = row.title;
           authorMembershipIdMap[row.id] = row.author_membership_id;
           contentSuspendedAtById[row.id] = row.suspended_at;
           contentSuspendedByUserIdById[row.id] = row.suspended_by;
+          contentSuspensionReasonById[row.id] = row.suspension_reason;
         }
       }
     }
@@ -313,6 +317,12 @@ export default async function BackofficeSignalementsPage(props: {
                     status={report.status}
                     resolution={report.resolution}
                     meta={resolutionMeta}
+                    suspensionReason={
+                      report.resolution === "content_suspended" &&
+                      report.context_type !== "user"
+                        ? contentSuspensionReasonById[report.context_id] ?? null
+                        : null
+                    }
                   />
                 </div>
 
@@ -328,10 +338,13 @@ export default async function BackofficeSignalementsPage(props: {
                   />
                 ) : null}
 
-                <p className="my-3 text-sm text-muted">
-                  <span className="font-medium text-text">Motif :</span>{" "}
-                  {report.reason}
-                </p>
+                <div className="my-3 text-sm text-muted">
+                  <span className="font-medium text-text">Motif du signalement :</span>
+                  <MultilineText
+                    text={report.reason}
+                    className="mt-1 text-sm font-medium text-muted"
+                  />
+                </div>
 
                 <div className="flex flex-wrap items-end justify-between gap-2">
                   {isPending ? (

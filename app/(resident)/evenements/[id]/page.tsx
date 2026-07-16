@@ -33,6 +33,9 @@ import { DetailLocationSidebarCard } from "@/components/features/detail-location
 import { AnnouncementAddressLines } from "@/components/features/announcement-address-lines";
 import type { AgendaEventRecord, EventEditData } from "@/lib/types";
 import { PageStack } from "@/components/ui/page-stack";
+import { ContentNudgeBannerServer } from "@/components/features/content-nudge-banner-server";
+import { ContentSuspendedBanner } from "@/components/features/content-suspended-indicator";
+import { MultilineText } from "@/components/ui/multiline-text";
 
 const MAIN_DETAIL_CARD_CLASS =
   "rounded-none border-0 bg-transparent p-0 !shadow-none";
@@ -109,11 +112,17 @@ export default async function EvenementDetailPage(props: {
             </div>
             <h1 className="text-xl font-bold text-text">Événement suspendu</h1>
             {isAuthorOfSuspended ? (
-              <p className="text-sm text-muted">
-                Votre événement a été suspendu par la modération. Si vous pensez
-                qu&apos;il s&apos;agit d&apos;une erreur, veuillez contacter
-                l&apos;assistance.
-              </p>
+              <div className="space-y-3 text-sm text-muted">
+                <p>
+                  Votre événement a été suspendu par la modération. Si vous pensez
+                  qu&apos;il s&apos;agit d&apos;une erreur, veuillez contacter
+                  l&apos;assistance.
+                </p>
+                <MultilineText
+                  text={event.suspension_reason}
+                  className="rounded-sm border border-border/60 bg-warm px-3 py-2 text-left text-sm font-medium text-text"
+                />
+              </div>
             ) : (
               <p className="text-sm text-muted">
                 Ce contenu a été suspendu et n&apos;est plus disponible.
@@ -223,6 +232,28 @@ export default async function EvenementDetailPage(props: {
   return (
     <PageStack gap="5">
       <HistoryBackLink />
+
+      {event.suspended_at ? (
+        <ContentSuspendedBanner
+          suspendedAt={event.suspended_at}
+          suspensionReason={event.suspension_reason}
+        />
+      ) : null}
+
+      {isAuthor && !event.suspended_at ? (
+        <ContentNudgeBannerServer
+          content={{
+            contentType: "event",
+            status: event.status,
+            endsAt: event.ends_at,
+            createdAt: event.created_at,
+            nudgeSnoozedUntil: (event as Record<string, unknown>).nudge_snoozed_until as string | null,
+          }}
+          contentId={event.id}
+          contentTitle={event.title}
+          contentType="event"
+        />
+      ) : null}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
         <Card className={`space-y-5 ${MAIN_DETAIL_CARD_CLASS}`}>

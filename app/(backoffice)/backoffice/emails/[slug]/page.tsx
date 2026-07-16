@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getEmailTemplate } from "@/lib/queries/email-templates";
-import { EmailTemplateEditHeader } from "@/components/features/backoffice/email-template-edit-header";
 import { EmailTemplateEditor } from "@/components/features/backoffice/email-template-editor";
 import { HistoryBackLink } from "@/components/ui/history-back-link";
 import { PageStack } from "@/components/ui/page-stack";
@@ -21,10 +20,6 @@ export default async function BackofficeEmailTemplateEditPage(props: {
   return (
     <PageStack>
       <HistoryBackLink fallbackHref={ROUTES.backoffice.emails} />
-      <EmailTemplateEditHeader
-        slug={template.slug}
-        description={template.description}
-      />
       <EmailTemplateEditor template={template} />
     </PageStack>
   );

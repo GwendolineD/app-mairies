@@ -4,12 +4,14 @@ globs: ["**/*.tsx"]
 alwaysApply: false
 ---
 
-# Vie Locale Destructive Actions
+# Tous voisins Destructive Actions
 
 ## Destruction & archival — confirmation modals encouraged
+
 Use a **focused confirmation dialog** before irreversible loss or materially significant state (`delete`, permanent removal, GDPR erasure helpers, destructive imports).
 
 Requirements:
+
 - **Title states the consequence** plainly (e.g. “Supprimer cette annonce ?”).
 - **Body summarizes what disappears** — counts, commune scope — without fear-mongering copy.
 - **Primary button names the irrevocable verb** (“Supprimer définitivement”, “Archiver”) paired with **secondary “Annuler”** at equal prominence (no shrunken dismiss).
@@ -18,9 +20,11 @@ Requirements:
 Avoid guilt scripting (“vous allez sérieusement perdre…”); factual is enough.
 
 ## Exits vs sludge (`ethical-nudge-ux`)
+
 **Forbidden friction patterns** when users leave flows: unsubscribe, downgrade, cancel onboarding, logout, commune switch-away, discard draft with explicit intent.
 
 Examples of **disallowed sludge:**
+
 - burying abandon/cancel beneath extra screens versus entry
 - timer pressure to stay
 - deceptive “sticky” dismissal targets

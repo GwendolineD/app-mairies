@@ -6,9 +6,10 @@ import {
   suspendMembershipAction,
   suspendUserFromAllCommunesAction,
 } from "@/lib/actions/platform-moderation";
+import { SuspensionReasonTextarea } from "@/components/features/moderation/suspension-reason-textarea";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import { Textarea } from "@/components/ui/form-field";
+import { validateSuspensionReason } from "@/lib/constants/moderation";
 
 type Props = {
   mode: "membership" | "all";
@@ -39,17 +40,17 @@ export function SuspendUserButton({
   }
 
   function handleConfirm() {
-    const trimmedReason = reason.trim();
-    if (!trimmedReason) {
-      setError("Merci d'indiquer une raison de suspension.");
+    const validationError = validateSuspensionReason(reason);
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
     startTransition(async () => {
       const result =
         mode === "all"
-          ? await suspendUserFromAllCommunesAction(userId, trimmedReason)
-          : await suspendMembershipAction(membershipId!, trimmedReason);
+          ? await suspendUserFromAllCommunesAction(userId, reason.trim())
+          : await suspendMembershipAction(membershipId!, reason.trim());
 
       if (!result.success) {
         setError(result.error ?? "Impossible de suspendre cet utilisateur.");
@@ -87,14 +88,14 @@ export function SuspendUserButton({
 
           <label className="block space-y-2">
             <span className="text-sm font-semibold text-text">Raison</span>
-            <Textarea
+            <SuspensionReasonTextarea
               value={reason}
-              onChange={(event) => {
-                setReason(event.target.value);
+              onChange={(value) => {
+                setReason(value);
                 setError(null);
               }}
-              placeholder="Expliquez brièvement la raison de la suspension."
               rows={4}
+              disabled={isPending}
             />
           </label>
 

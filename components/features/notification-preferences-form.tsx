@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Bell, BellOff, CalendarDays, HandHeart, Heart, Megaphone, Sparkles, Users } from "lucide-react";
-import { updateNotificationPreferences } from "@/lib/actions/notifications";
+import { Bell, BellOff, CalendarDays, HandHeart, Heart, Mail, Megaphone, Sparkles, Users } from "lucide-react";
+import { updateNotificationPreferences, updateEmailLifecyclePreference } from "@/lib/actions/notifications";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils/cn";
 type Props = {
   initial: NotificationPreferences;
   pushPublicKey: string | null;
+  emailLifecycleEnabled?: boolean;
   cardClassName?: string;
 };
 
@@ -75,9 +76,11 @@ const GROUP_ICONS: Record<keyof NotificationPreferences, typeof Megaphone> = {
 export function NotificationPreferencesForm({
   initial,
   pushPublicKey,
+  emailLifecycleEnabled: initialEmailLifecycle = true,
   cardClassName,
 }: Props) {
   const [prefs, setPrefs] = useState<NotificationPreferences>(initial);
+  const [emailEnabled, setEmailEnabled] = useState(initialEmailLifecycle);
   const [saving, startSaving] = useTransition();
   const push = usePushSubscription(pushPublicKey);
   const pushRow = (
@@ -143,6 +146,34 @@ export function NotificationPreferencesForm({
       ))}
 
       {push.state === "on" ? pushRow : null}
+
+      <section className="space-y-2">
+        <div>
+          <p className="text-sm font-semibold text-text">Emails de suivi</p>
+          <p className="text-xs text-muted">
+            Rappels, relances et suggestions envoyés par email (invitations, annonces expirées, etc.).
+          </p>
+        </div>
+        <ul className="divide-y divide-border/60 rounded-2xl border border-border/60">
+          <li className="flex items-center justify-between gap-3 px-4 py-3">
+            <span className="flex items-center gap-3 text-sm font-medium text-text">
+              <Mail className="size-4 text-muted" aria-hidden />
+              Recevoir les emails de suivi
+            </span>
+            <Switch
+              checked={emailEnabled}
+              onCheckedChange={(checked) => {
+                setEmailEnabled(checked);
+                startSaving(async () => {
+                  await updateEmailLifecyclePreference(checked);
+                });
+              }}
+              disabled={saving}
+              aria-label={`Emails de suivi — ${emailEnabled ? "activé" : "désactivé"}`}
+            />
+          </li>
+        </ul>
+      </section>
     </Card>
   );
 }

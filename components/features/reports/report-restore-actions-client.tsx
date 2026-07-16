@@ -29,6 +29,7 @@ const RESTORE_COPY: Record<
     buttonLabel: string;
     title: string;
     disclaimer: string;
+    emailNotice?: string;
     confirmLabel: string;
   }
 > = {
@@ -37,13 +38,15 @@ const RESTORE_COPY: Record<
     title: "Restaurer le contenu",
     disclaimer:
       "Le contenu redeviendra visible pour les résident·es de la commune. Les signalements associés resteront marqués comme traités.",
+    emailNotice: "L'auteur·rice de ce contenu sera prévenu par email.",
     confirmLabel: "Confirmer la restauration",
   },
   user_suspended: {
     buttonLabel: "Restaurer l'auteur",
     title: "Restaurer l'auteur",
     disclaimer:
-      "L'auteur·rice pourra de nouveau accéder à la commune et publier du contenu. Les signalements associés resteront marqués comme traités.",
+      "L'auteur·rice pourra de nouveau accéder à la commune et publier du contenu.",
+    emailNotice: "L'auteur·rice sera prévenu·e par email.",
     confirmLabel: "Confirmer la restauration",
   },
 };
@@ -134,7 +137,12 @@ export function ReportRestoreActionsClient({
         closeDisabled={busy}
       >
         <div className="space-y-4">
-          <p className="text-sm font-medium text-muted">{copy.disclaimer}</p>
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-muted">{copy.disclaimer}</p>
+            {copy.emailNotice ? (
+              <p className="text-sm font-medium text-muted">{copy.emailNotice}</p>
+            ) : null}
+          </div>
 
           {error ? (
             <p className="text-sm font-medium text-coral">{error}</p>

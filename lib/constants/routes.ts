@@ -123,6 +123,9 @@ export type AdminNavItem = {
   hidden?: boolean;
 };
 
+/** Dynamic badge counts keyed by nav item href. */
+export type AdminNavBadges = Record<string, number>;
+
 export const MUNICIPALITY_SIDEBAR_STORAGE_KEY = "vl:municipality-sidebar-collapsed";
 export const BACKOFFICE_SIDEBAR_STORAGE_KEY = "vl:backoffice-sidebar-collapsed";
 

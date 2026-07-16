@@ -24,6 +24,7 @@ import {
 } from "@/lib/utils/supabase-errors";
 import { fanoutNewContentNotification } from "@/lib/services/notification-fanout";
 import { incrementMembershipPublishCounter } from "@/lib/services/membership-publish-counters";
+import { cancelPendingEmails } from "@/lib/cron/cancel-pending-emails";
 
 type AnnouncementStatusUpdate = Extract<
   AnnouncementStatusValue,
@@ -247,6 +248,8 @@ export async function softDeleteAnnouncement(
   revalidatePath(ROUTES.annonces.detail(id));
   revalidatePath(ROUTES.accueil);
   revalidatePath(ROUTES.mairie.dashboard);
+
+  void cancelPendingEmails("announcement", id);
 
   void logAudit({
     action: "content.delete_announcement",
