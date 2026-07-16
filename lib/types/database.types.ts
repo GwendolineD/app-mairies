@@ -113,11 +113,11 @@ export type Database = {
           commune_id: string
           created_at: string
           description: string | null
-          expired_notified_at: string | null
-          expiring_soon_sent_at: string | null
           id: string
+          nudge_snoozed_until: string | null
           photo_url: string | null
-          stale_nudge_sent_at: string | null
+          post_date_email_sent_at: string | null
+          stale_60d_email_sent_at: string | null
           status: Database["public"]["Enums"]["announcement_status"]
           suspended_at: string | null
           suspended_by: string | null
@@ -140,11 +140,11 @@ export type Database = {
           commune_id: string
           created_at?: string
           description?: string | null
-          expired_notified_at?: string | null
-          expiring_soon_sent_at?: string | null
           id?: string
+          nudge_snoozed_until?: string | null
           photo_url?: string | null
-          stale_nudge_sent_at?: string | null
+          post_date_email_sent_at?: string | null
+          stale_60d_email_sent_at?: string | null
           status?: Database["public"]["Enums"]["announcement_status"]
           suspended_at?: string | null
           suspended_by?: string | null
@@ -167,11 +167,11 @@ export type Database = {
           commune_id?: string
           created_at?: string
           description?: string | null
-          expired_notified_at?: string | null
-          expiring_soon_sent_at?: string | null
           id?: string
+          nudge_snoozed_until?: string | null
           photo_url?: string | null
-          stale_nudge_sent_at?: string | null
+          post_date_email_sent_at?: string | null
+          stale_60d_email_sent_at?: string | null
           status?: Database["public"]["Enums"]["announcement_status"]
           suspended_at?: string | null
           suspended_by?: string | null
@@ -870,6 +870,54 @@ export type Database = {
           },
         ]
       }
+      email_queue: {
+        Row: {
+          attempts: number
+          created_at: string
+          id: string
+          last_error: string | null
+          max_attempts: number
+          related_content_id: string | null
+          related_content_type: string | null
+          scheduled_at: string
+          sent_at: string | null
+          status: string
+          template_slug: string
+          to_email: string
+          variables: Json
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          max_attempts?: number
+          related_content_id?: string | null
+          related_content_type?: string | null
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: string
+          template_slug: string
+          to_email: string
+          variables?: Json
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          max_attempts?: number
+          related_content_id?: string | null
+          related_content_type?: string | null
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: string
+          template_slug?: string
+          to_email?: string
+          variables?: Json
+        }
+        Relationships: []
+      }
       email_templates: {
         Row: {
           body_html: string
@@ -979,7 +1027,9 @@ export type Database = {
           ends_at: string
           id: string
           is_official: boolean
+          nudge_snoozed_until: string | null
           photo_url: string | null
+          post_event_email_sent_at: string | null
           source_initiative_id: string | null
           starts_at: string
           status: Database["public"]["Enums"]["content_status"]
@@ -1002,7 +1052,9 @@ export type Database = {
           ends_at: string
           id?: string
           is_official?: boolean
+          nudge_snoozed_until?: string | null
           photo_url?: string | null
+          post_event_email_sent_at?: string | null
           source_initiative_id?: string | null
           starts_at: string
           status?: Database["public"]["Enums"]["content_status"]
@@ -1025,7 +1077,9 @@ export type Database = {
           ends_at?: string
           id?: string
           is_official?: boolean
+          nudge_snoozed_until?: string | null
           photo_url?: string | null
+          post_event_email_sent_at?: string | null
           source_initiative_id?: string | null
           starts_at?: string
           status?: Database["public"]["Enums"]["content_status"]
@@ -1152,10 +1206,12 @@ export type Database = {
           description: string | null
           id: string
           location_label: string | null
+          nudge_snoozed_until: string | null
           photo_url: string | null
           recurrence_rule: Json | null
           single_ends_at: string | null
           single_starts_at: string | null
+          stale_60d_email_sent_at: string | null
           status: Database["public"]["Enums"]["content_status"]
           suspended_at: string | null
           suspended_by: string | null
@@ -1175,10 +1231,12 @@ export type Database = {
           description?: string | null
           id?: string
           location_label?: string | null
+          nudge_snoozed_until?: string | null
           photo_url?: string | null
           recurrence_rule?: Json | null
           single_ends_at?: string | null
           single_starts_at?: string | null
+          stale_60d_email_sent_at?: string | null
           status?: Database["public"]["Enums"]["content_status"]
           suspended_at?: string | null
           suspended_by?: string | null
@@ -1198,10 +1256,12 @@ export type Database = {
           description?: string | null
           id?: string
           location_label?: string | null
+          nudge_snoozed_until?: string | null
           photo_url?: string | null
           recurrence_rule?: Json | null
           single_ends_at?: string | null
           single_starts_at?: string | null
+          stale_60d_email_sent_at?: string | null
           status?: Database["public"]["Enums"]["content_status"]
           suspended_at?: string | null
           suspended_by?: string | null
@@ -1483,6 +1543,7 @@ export type Database = {
           expires_at: string | null
           id: string
           inviter_membership_id: string
+          reminder_sent_at: string | null
           token: string
         }
         Insert: {
@@ -1493,6 +1554,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           inviter_membership_id: string
+          reminder_sent_at?: string | null
           token: string
         }
         Update: {
@@ -1503,6 +1565,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           inviter_membership_id?: string
+          reminder_sent_at?: string | null
           token?: string
         }
         Relationships: [
@@ -1618,11 +1681,13 @@ export type Database = {
           bio: string | null
           created_at: string
           display_name: string | null
+          engagement_reminder_sent_at: string | null
           first_name: string | null
           has_dismissed_notification_prompt: boolean
           has_seen_onboarding: boolean
           is_platform_admin: boolean
           last_name: string | null
+          notification_prompt_email_sent_at: string | null
           updated_at: string
           user_id: string
         }
@@ -1635,11 +1700,13 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name?: string | null
+          engagement_reminder_sent_at?: string | null
           first_name?: string | null
           has_dismissed_notification_prompt?: boolean
           has_seen_onboarding?: boolean
           is_platform_admin?: boolean
           last_name?: string | null
+          notification_prompt_email_sent_at?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1652,11 +1719,13 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name?: string | null
+          engagement_reminder_sent_at?: string | null
           first_name?: string | null
           has_dismissed_notification_prompt?: boolean
           has_seen_onboarding?: boolean
           is_platform_admin?: boolean
           last_name?: string | null
+          notification_prompt_email_sent_at?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1835,6 +1904,7 @@ export type Database = {
       user_notification_preferences: {
         Row: {
           created_at: string
+          email_lifecycle_enabled: boolean
           notify_event_participation: boolean
           notify_event_volunteer: boolean
           notify_initiative_support: boolean
@@ -1849,6 +1919,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          email_lifecycle_enabled?: boolean
           notify_event_participation?: boolean
           notify_event_volunteer?: boolean
           notify_initiative_support?: boolean
@@ -1863,6 +1934,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          email_lifecycle_enabled?: boolean
           notify_event_participation?: boolean
           notify_event_volunteer?: boolean
           notify_initiative_support?: boolean
