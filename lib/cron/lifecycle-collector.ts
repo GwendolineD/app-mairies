@@ -124,24 +124,27 @@ async function collectInviteReminders(service: SupabaseClient): Promise<number> 
 
   const { data: communes } = await service
     .from("communes")
-    .select("id, name")
+    .select("id, name, insee_code")
     .in("id", [...new Set(invites.map((i) => i.commune_id))]);
 
-  const communeMap = new Map((communes ?? []).map((c) => [c.id, c.name]));
+  const communeMap = new Map((communes ?? []).map((c) => [c.id, c]));
   const membershipMap = new Map((memberships ?? []).map((m) => [m.id, m]));
   const profileMap = new Map((profiles ?? []).map((p) => [p.user_id, p.display_name]));
 
   const queueRows = invites.map((invite) => {
     const membership = membershipMap.get(invite.inviter_membership_id);
     const senderName = membership ? (profileMap.get(membership.user_id) ?? "Un voisin") : "Un voisin";
-    const communeName = communeMap.get(invite.commune_id) ?? "";
+    const commune = communeMap.get(invite.commune_id);
+    const communeName = commune?.name ?? "";
+    const inseeCode = commune?.insee_code;
+    const inviteLink = `${appUrl}/inscription?invite=${invite.token}${inseeCode ? `&commune=${encodeURIComponent(inseeCode)}` : ""}${invite.email ? `&email=${encodeURIComponent(invite.email)}` : ""}`;
     return {
       to_email: invite.email,
       template_slug: "invite-reminder",
       variables: {
         sender_name: senderName,
         commune_name: communeName,
-        invite_link: `${appUrl}/inscription?token=${invite.token}`,
+        invite_link: inviteLink,
       },
       related_content_type: "neighbor_invite",
       related_content_id: invite.id,

@@ -381,7 +381,8 @@ export async function createNeighborInvite(
     .join(" ");
   const senderName = ctx.profile.display_name || profileName || "Un voisin";
   const communeName = ctx.activeMembership?.commune?.name ?? "votre commune";
-  const inviteLink = `${getAppUrl()}${ROUTES.inscription.root}?invite=${token}`;
+  const inseeCode = ctx.activeMembership?.commune?.insee_code;
+  const inviteLink = `${getAppUrl()}${ROUTES.inscription.root}?invite=${token}${inseeCode ? `&commune=${encodeURIComponent(inseeCode)}` : ""}${email ? `&email=${encodeURIComponent(email)}` : ""}`;
 
   const emailResult = await sendTemplatedEmail(email, "neighbor-invite", {
     sender_name: senderName,

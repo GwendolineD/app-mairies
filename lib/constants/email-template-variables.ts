@@ -63,6 +63,13 @@ export const EMAIL_TEMPLATE_VARIABLES: Record<string, string[]> = {
     "logo_url",
     "app_name",
   ],
+  "email-change-verification": [
+    "user_name",
+    "new_email",
+    "verification_link",
+    "logo_url",
+    "app_name",
+  ],
   "content-suspended": [
     "user_name",
     "commune_name",
@@ -181,6 +188,7 @@ export function getEmailTemplateMockValue(variable: string): string {
     commune_postcode: "27220",
     user_name: "Jean Dupont",
     user_email: "jean.dupont@example.fr",
+    new_email: "nouvelle.adresse@example.fr",
     request_date: "12 juin 2026",
     subscription_end_date: "31 déc. 2026",
     comment: "Première ligne du commentaire.\nDeuxième ligne pour tester les retours à la ligne.",
@@ -193,7 +201,8 @@ export function getEmailTemplateMockValue(variable: string): string {
     report_date: "17 juin 2026",
     moderation_url: "https://app.tous-voisins.fr/mairie/signalements",
     sender_name: "Marie Dupont",
-    invite_link: "http://localhost:3000/inscription?invite=abc123def456",
+    invite_link:
+      "http://localhost:3000/inscription?invite=abc123def456&commune=27027&email=voisin@exemple.fr",
     verification_link:
       "http://localhost:3000/auth/callback?type=magiclink&token_hash=example-token",
     suspension_reason:
