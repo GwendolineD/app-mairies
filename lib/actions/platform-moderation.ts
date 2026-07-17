@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit/log";
+import { reassignActiveCommuneAfterSuspension } from "@/lib/auth/reassign-active-commune";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import { resolvePendingReportsForUser } from "@/lib/services/report-resolution";
 import { ROUTES } from "@/lib/constants/routes";
@@ -57,6 +58,12 @@ export async function suspendMembershipAction(
   if (error) {
     return { success: false, error: error.message };
   }
+
+  await reassignActiveCommuneAfterSuspension(
+    supabase,
+    membership.user_id,
+    membership.commune_id,
+  );
 
   void logAudit({
     action: "moderation.suspend_membership_admin",
@@ -133,6 +140,13 @@ export async function suspendUserFromAllCommunesAction(
   if (error) {
     return { success: false, error: error.message };
   }
+
+  // All active memberships are now suspended: no fallback commune remains,
+  // so the user lands on /suspendu on next navigation.
+  await supabase
+    .from("profiles")
+    .update({ active_commune_id: null })
+    .eq("user_id", userId);
 
   for (const membership of memberships) {
     await resolvePendingReportsForUser(

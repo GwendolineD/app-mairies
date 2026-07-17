@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit/log";
+import { reassignActiveCommuneAfterSuspension } from "@/lib/auth/reassign-active-commune";
 import {
   requireCommuneStaff,
   requirePlatformAdmin,
@@ -374,6 +375,12 @@ export async function suspendMembershipByStaff(
   if (updateError) {
     return { success: false, error: updateError.message };
   }
+
+  await reassignActiveCommuneAfterSuspension(
+    supabase,
+    membership.user_id,
+    membership.commune_id,
+  );
 
   await supabase.from("moderation_actions").insert({
     actor_user_id: actorUserId,

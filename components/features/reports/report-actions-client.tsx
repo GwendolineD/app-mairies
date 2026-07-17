@@ -21,6 +21,7 @@ type Props = {
   contextType: string;
   contextId: string;
   authorMembershipId: string | null;
+  authorName: string | null;
   isAuthorSelf: boolean;
 };
 
@@ -32,6 +33,7 @@ export function ReportActionsClient({
   contextType,
   contextId,
   authorMembershipId,
+  authorName,
   isAuthorSelf,
 }: Props) {
   const router = useRouter();
@@ -250,7 +252,11 @@ export function ReportActionsClient({
       <Modal
         open={suspendAuthorOpen}
         onClose={handleCloseAuthorModal}
-        title="Suspendre l'auteur"
+        title={
+          authorName
+            ? `Suspendre l'auteur · ${authorName}`
+            : "Suspendre l'auteur"
+        }
         closeDisabled={busy}
       >
         <div className="space-y-4">
@@ -262,6 +268,15 @@ export function ReportActionsClient({
 
           <label className="block space-y-2">
             <span className="text-sm font-semibold text-text">Raison</span>
+            <div className="flex items-start gap-2.5 rounded-sm border border-purple/20 bg-soft-pink px-3 py-2.5">
+              <Eye
+                className="mt-0.5 size-4 shrink-0 text-purple"
+                aria-hidden
+              />
+              <p className="text-sm font-medium text-text">
+                Cette raison sera visible par l&apos;auteur·rice suspendu·e.
+              </p>
+            </div>
             <SuspensionReasonTextarea
               value={reason}
               onChange={(value) => {

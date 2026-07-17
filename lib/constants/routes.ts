@@ -13,6 +13,7 @@ export const ROUTES = {
   },
   accueil: "/accueil",
   suspendu: "/suspendu",
+  banni: "/banni",
   profil: "/profil",
   messages: {
     list: "/messages",

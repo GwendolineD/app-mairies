@@ -50,9 +50,7 @@ export default async function ResidentRootLayout({
       <ResidentHeader
         profile={ctx.profile}
         memberships={ctx.memberships}
-        activeCommuneId={
-          ctx.profile.active_commune_id ?? ctx.activeMembership?.commune_id
-        }
+        activeCommuneId={ctx.activeCommuneId}
         backofficeLinks={backofficeLinks}
         supportEmail={supportEmail}
       />

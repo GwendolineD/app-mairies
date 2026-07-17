@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
 import { formatCompactShortDate } from "@/lib/datetime";
-import { formatDisplayName } from "@/lib/utils/display-name";
+import { formatDisplayName, resolveDisplayName } from "@/lib/utils/display-name";
 import {
   buildReportListQuery,
   filterReports,
@@ -143,6 +143,7 @@ export default async function MairieSignalementsPage(props: {
   }
 
   const authorUserIdMap: Record<string, string> = {};
+  const authorNameByMembershipId: Record<string, string> = {};
   const membershipStatusById: Record<string, string> = {};
   const membershipSuspendedAtById: Record<string, string | null> = {};
   const authorMembershipIds = [
@@ -151,10 +152,13 @@ export default async function MairieSignalementsPage(props: {
   if (authorMembershipIds.length > 0) {
     const { data: authorMemberships } = await supabase
       .from("memberships")
-      .select("id, user_id, status, suspended_at")
+      .select(
+        "id, user_id, status, suspended_at, profiles:profiles!memberships_profiles_user_id_fkey(display_name, first_name, last_name)",
+      )
       .in("id", authorMembershipIds);
     for (const row of authorMemberships ?? []) {
       authorUserIdMap[row.id] = row.user_id;
+      authorNameByMembershipId[row.id] = resolveDisplayName(row.profiles ?? {});
       membershipStatusById[row.id] = row.status;
       membershipSuspendedAtById[row.id] = row.suspended_at;
     }
@@ -362,6 +366,11 @@ export default async function MairieSignalementsPage(props: {
                       contextType={report.context_type}
                       contextId={report.context_id}
                       authorMembershipId={authorMembershipId}
+                      authorName={
+                        authorMembershipId
+                          ? authorNameByMembershipId[authorMembershipId] ?? null
+                          : null
+                      }
                       isAuthorSelf={isAuthorSelf}
                     />
                   ) : restoreContext ? (
