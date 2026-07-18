@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Maximize2 } from "lucide-react";
+import { LightboxZoomableImage } from "@/components/features/lightbox-zoomable-image";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 
@@ -47,13 +48,9 @@ export function ImageWithLightbox({
         title="Photo"
         size="xl"
         showCloseButton
-        contentClassName="flex items-center justify-center overflow-hidden p-4 sm:p-6"
+        contentClassName="flex min-h-0 flex-1 overflow-hidden p-4 sm:p-6"
       >
-        <img
-          src={src}
-          alt={alt}
-          className="max-h-full max-w-full object-contain"
-        />
+        <LightboxZoomableImage src={src} alt={alt} active={open} />
       </Modal>
     </>
   );
