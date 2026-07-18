@@ -61,6 +61,60 @@ export function OnboardingModal({ open, onComplete, communeName }: Props) {
     touchStartX.current = null;
   }
 
+  const mobileNavHeader = (
+    <div className="mb-4 flex items-center gap-2 md:hidden">
+      {current > 0 ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="xs"
+          onClick={goPrev}
+          className="h-9 shrink-0 px-3 py-2"
+        >
+          <ChevronLeft className="size-3.5" />
+          Précédent
+        </Button>
+      ) : null}
+
+      <div className="min-w-0 flex-1" aria-hidden />
+
+      <Button
+        type="button"
+        variant="primary"
+        size="xs"
+        onClick={goNext}
+        className="h-9 shrink-0 px-3 py-2 font-semibold"
+      >
+        {isLast ? "C'est parti !" : "Suivant"}
+        {!isLast && <ChevronRight className="size-3.5" />}
+      </Button>
+    </div>
+  );
+
+  const mobilePagination = (
+    <div className="flex shrink-0 flex-col items-center gap-1.5 px-4 py-3 sm:px-5 md:hidden">
+      <span className="text-xs font-bold text-text">
+        {current + 1}/{TOTAL}
+      </span>
+      <div className="flex items-center gap-2">
+        {SLIDES.map((_, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => setCurrent(i)}
+            aria-label={`Aller au slide ${i + 1}`}
+            className={cn(
+              "size-3 cursor-pointer rounded-full transition-all duration-200",
+              i === current
+                ? "scale-110 bg-purple"
+                : "border-2 border-border bg-border hover:border-purple/40",
+            )}
+          />
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <DialogPrimitive.Root open={open} onOpenChange={() => {}}>
       <DialogPrimitive.Portal>
@@ -79,9 +133,11 @@ export function OnboardingModal({ open, onComplete, communeName }: Props) {
             slide={activeSlide}
             communeName={communeName}
             className="flex-1"
+            header={mobileNavHeader}
+            footer={mobilePagination}
           />
 
-          <div className="flex shrink-0 items-center gap-2 border-t border-border/40 px-4 py-3 sm:px-5">
+          <div className="hidden shrink-0 items-center gap-2 border-t border-border/40 px-4 py-3 sm:px-5 md:flex">
             <Button
               type="button"
               variant="ghost"
@@ -109,7 +165,7 @@ export function OnboardingModal({ open, onComplete, communeName }: Props) {
                       "size-2 cursor-pointer rounded-full transition-all duration-200",
                       i === current
                         ? "scale-110 bg-purple"
-                        : "border border-border bg-transparent hover:border-purple/40",
+                        : "border border-border bg-border hover:border-purple/40",
                     )}
                   />
                 ))}

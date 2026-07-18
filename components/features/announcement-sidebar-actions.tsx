@@ -42,10 +42,10 @@ export function AnnouncementSidebarActions({
     return (
       <Card className={cn("md:p-5", className)}>
         <h2 className="text-lg font-semibold text-text">Votre annonce</h2>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-4">
           <Button
             type="button"
-            className="w-full cursor-pointer"
+            className="w-full cursor-pointer max-md:py-3"
             onClick={() =>
               openAnnouncementModal({ editId: announcementId, initialData: editData })
             }
@@ -56,7 +56,7 @@ export function AnnouncementSidebarActions({
           <Button
             type="button"
             variant="outline"
-            className="w-full cursor-pointer border-coral bg-surface text-coral hover:bg-coral/5"
+            className="w-full cursor-pointer border-coral bg-surface text-coral hover:bg-coral/5 max-md:py-3"
             onClick={() => setDeleteOpen(true)}
           >
             <Trash2 className="size-4" aria-hidden />

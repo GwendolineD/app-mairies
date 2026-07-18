@@ -17,6 +17,8 @@ import { Modal } from "@/components/ui/modal";
 import { FormField, Input, Select, Textarea } from "@/components/ui/form-field";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils/cn";
+import { buildOptimizedCloudinaryUrl } from "@/lib/services/cloudinary";
+import { ImagePulseFrame } from "@/components/ui/image-pulse-frame";
 
 type CommuneOption = {
   id: string;
@@ -106,16 +108,15 @@ function AdminAssetCard({
 }) {
   return (
     <Card className="flex flex-col overflow-hidden p-0">
-      <div className="relative aspect-4/3 w-full bg-warm">
+      <ImagePulseFrame className="aspect-4/3 w-full">
         <Image
-          src={asset.preview_url}
+          src={buildOptimizedCloudinaryUrl(asset.preview_url, { width: 800 })}
           alt={asset.title}
           fill
           className="object-cover"
           sizes="(max-width: 768px) 100vw, 33vw"
-          unoptimized
         />
-      </div>
+      </ImagePulseFrame>
 
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div className="flex items-start justify-between gap-2">

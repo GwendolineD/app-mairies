@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { CloudUpload, Loader2, X } from "lucide-react";
 
 import { cn } from "@/lib/utils/cn";
+import { buildOptimizedCloudinaryUrl } from "@/lib/services/cloudinary";
+import { ImagePulseFrame } from "@/components/ui/image-pulse-frame";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png"];
@@ -109,13 +111,17 @@ export function ImageDropzone({
     onExistingImageClear?.();
   };
 
-  const displayUrl = preview ?? existingImageUrl ?? null;
+  const displayUrl =
+    preview ??
+    (existingImageUrl
+      ? buildOptimizedCloudinaryUrl(existingImageUrl, { width: 800 })
+      : null);
 
   if (displayUrl) {
     return (
-      <div
+      <ImagePulseFrame
         className={cn(
-          "relative aspect-[16/10] w-full overflow-hidden rounded-lg border border-border",
+          "aspect-[16/10] w-full overflow-hidden rounded-lg border border-border",
           className,
         )}
       >
@@ -135,7 +141,7 @@ export function ImageDropzone({
             <X className="size-4" />
           </button>
         )}
-      </div>
+      </ImagePulseFrame>
     );
   }
 

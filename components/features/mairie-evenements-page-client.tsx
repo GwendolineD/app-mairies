@@ -104,11 +104,12 @@ export function MairieEvenementsPageClient({
         </p>
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-          {items.map((event) => (
+          {items.map((event, index) => (
             <EventCard
               key={event.id}
               event={event}
               hrefBuilder={ROUTES.mairie.evenementDetail}
+              priority={index === 0}
             />
           ))}
         </div>

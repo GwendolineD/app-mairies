@@ -1,4 +1,5 @@
-// @ts-nocheck
+import Image from "next/image";
+import { buildOptimizedCloudinaryUrl } from "@/lib/services/cloudinary";
 import { cn } from "@/lib/utils/cn";
 import { participantInitials } from "@/lib/utils/names";
 import type { ParticipantProfile } from "@/lib/types";
@@ -11,6 +12,12 @@ const sizeClass: Record<Size, string> = {
   lg: "size-14 text-base",
 };
 
+const sizePx: Record<Size, number> = {
+  sm: 36,
+  md: 44,
+  lg: 56,
+};
+
 type Props = {
   profile: ParticipantProfile | null;
   size?: Size;
@@ -21,10 +28,11 @@ type Props = {
 export function Avatar({ profile, size = "md", className }: Props) {
   if (profile?.avatar_url) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={profile.avatar_url}
+      <Image
+        src={buildOptimizedCloudinaryUrl(profile.avatar_url, { width: 160 })}
         alt=""
+        width={sizePx[size]}
+        height={sizePx[size]}
         className={cn(
           "shrink-0 rounded-full border border-border/60 object-cover",
           sizeClass[size],

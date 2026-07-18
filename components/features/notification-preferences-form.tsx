@@ -116,7 +116,7 @@ export function NotificationPreferencesForm({
       {GROUPS.map((group) => (
         <section key={group.title} className="space-y-2">
           <div>
-            <p className="text-sm font-semibold text-text">{group.title}</p>
+            <p className="mb-1.5 text-base font-semibold text-text">{group.title}</p>
             <p className="text-xs text-muted">{group.description}</p>
           </div>
           <ul className="divide-y divide-border/60 rounded-2xl border border-border/60">
@@ -149,7 +149,7 @@ export function NotificationPreferencesForm({
 
       <section className="space-y-2">
         <div>
-          <p className="text-sm font-semibold text-text">Emails de suivi</p>
+          <p className="mb-1.5 text-base font-semibold text-text">Emails de suivi</p>
           <p className="text-xs text-muted">
             Rappels, relances et suggestions envoyés par email (invitations, annonces expirées, etc.).
           </p>

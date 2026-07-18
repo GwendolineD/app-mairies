@@ -31,7 +31,7 @@ const MapContentView = dynamic(
     ssr: false,
     loading: () => (
       <div className="space-y-4">
-        <Skeleton className="h-[420px] w-full rounded-lg md:h-[520px]" />
+        <Skeleton className="h-[360px] w-full rounded-lg md:h-[520px]" />
         <div className="flex gap-3 overflow-hidden">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-52 w-52 shrink-0 rounded-xl md:w-56" />
@@ -97,8 +97,13 @@ export function InitiativesPageClient({
       ) : (
         <>
           <ListGrid className="hidden gap-2 md:grid lg:grid-cols-4">
-            {items.map((item) => (
-              <InitiativeCard key={item.id} initiative={item} layout="vertical" />
+            {items.map((item, index) => (
+              <InitiativeCard
+                key={item.id}
+                initiative={item}
+                layout="vertical"
+                priority={index === 0}
+              />
             ))}
           </ListGrid>
           <InitiativesInfiniteList

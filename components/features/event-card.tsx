@@ -13,6 +13,10 @@ import { ContentSuspendedBadge } from "@/components/features/content-suspended-i
 import { ContentActionRequiredBadge } from "@/components/features/content-action-required-badge";
 import { cn } from "@/lib/utils/cn";
 import type { NudgeableContent } from "@/lib/utils/content-nudge";
+import {
+  contentActionRequiredCardBorder,
+  getContentNudgeReason,
+} from "@/lib/utils/content-nudge";
 import { getEventRangeParts } from "@/lib/datetime";
 import type { AgendaEventRecord } from "@/lib/types";
 
@@ -38,6 +42,8 @@ type Props = {
   highlighted?: boolean;
   hrefBuilder?: (id: string) => string;
   nudgeContent?: NudgeableContent;
+  /** Preload the card photo (first visible item in a list). */
+  priority?: boolean;
 };
 
 function resolveImageUrl(event: EventCardData): string | null {
@@ -103,6 +109,7 @@ export function EventCard({
   highlighted = false,
   hrefBuilder = ROUTES.evenements.detail,
   nudgeContent,
+  priority = false,
 }: Props) {
   const detailHref = hrefBuilder(e.id);
   const highlightRing = highlighted
@@ -110,22 +117,30 @@ export function EventCard({
     : "";
   const imageUrl = resolveImageUrl(e);
   const volunteersRegistered = e.volunteers_registered ?? 0;
+  const showActionRequired =
+    Boolean(nudgeContent) &&
+    !e.suspended_at &&
+    Boolean(getContentNudgeReason(nudgeContent!));
 
   if (layout === "horizontal") {
     return (
       <Link href={detailHref} className="block">
         <Card
           className={cn(
-            "relative flex h-28 flex-row items-stretch gap-0 overflow-hidden rounded-lg p-0 transition hover:border-orange/45",
+            "relative flex h-28 flex-row items-stretch gap-0 overflow-hidden rounded-lg p-0 transition hover:scale-[1.02]",
+            contentActionRequiredCardBorder(
+              showActionRequired,
+              "hover:border-orange/45",
+            ),
             highlightRing,
           )}
         >
-          {!e.suspended_at && nudgeContent ? (
+          {showActionRequired && nudgeContent ? (
             <ContentActionRequiredBadge content={nudgeContent} />
           ) : null}
           <div className="relative size-28 shrink-0 overflow-hidden">
             {imageUrl ? (
-              <CloudImage src={imageUrl} alt="" />
+              <CloudImage src={imageUrl} alt="" priority={priority} />
             ) : (
               <div className="flex size-full items-center justify-center bg-warm text-[10px] font-semibold text-muted">
                 Événement
@@ -175,7 +190,7 @@ export function EventCard({
       >
         <div className="relative aspect-[16/10] w-full overflow-hidden">
           {imageUrl ? (
-            <CloudImage src={imageUrl} alt="" />
+            <CloudImage src={imageUrl} alt="" priority={priority} />
           ) : (
             <div className="flex size-full items-center justify-center bg-warm text-[11px] font-semibold text-muted">
               Événement

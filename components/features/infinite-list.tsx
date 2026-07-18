@@ -64,8 +64,13 @@ export function AnnouncementsInfiniteList({
 
   return (
     <div className="space-y-3 md:hidden">
-      {items.map((a) => (
-        <AnnouncementCard key={a.id} announcement={a} layout="horizontal" />
+      {items.map((a, index) => (
+        <AnnouncementCard
+          key={a.id}
+          announcement={a}
+          layout="horizontal"
+          priority={index === 0}
+        />
       ))}
       {cursor ? (
         <div ref={sentinelRef} className="py-4 text-center text-sm text-muted">

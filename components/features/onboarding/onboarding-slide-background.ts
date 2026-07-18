@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { ILLUSTRATIONS } from "@/lib/constants/illustrations";
+import { buildOptimizedCloudinaryUrl } from "@/lib/services/cloudinary";
 import type { OnboardingSlideId } from "./onboarding-slide-content";
 
 const ONBOARDING_ILLUSTRATION_OVERLAY =
@@ -14,7 +15,10 @@ export function getOnboardingSlideBackground(slide: OnboardingSlideId): {
 } {
   switch (slide) {
     case "welcome": {
-      const url = ILLUSTRATIONS.resident.onboarding.welcome;
+      const url = buildOptimizedCloudinaryUrl(
+        ILLUSTRATIONS.resident.onboarding.welcome,
+        { width: 1200 },
+      );
       if (!url) return {};
       return {
         className: "bg-cover bg-right bg-no-repeat",
@@ -26,19 +30,25 @@ export function getOnboardingSlideBackground(slide: OnboardingSlideId): {
     case "accueil":
       return {};
     case "annonces": {
-      const url = ILLUSTRATIONS.resident.onboarding.annonces;
+      const url = buildOptimizedCloudinaryUrl(
+        ILLUSTRATIONS.resident.onboarding.annonces,
+        { width: 1200 },
+      );
       if (!url) return {};
       return {
-        className: "bg-no-repeat",
+        className:
+          "bg-no-repeat [background-position:right_bottom] max-md:[background-position:right_85%]",
         style: {
           backgroundImage: `url(${url})`,
-          backgroundPosition: "right bottom",
           backgroundSize: "min(68%, 230px) auto",
         },
       };
     }
     case "initiatives": {
-      const url = ILLUSTRATIONS.resident.onboarding.initiatives;
+      const url = buildOptimizedCloudinaryUrl(
+        ILLUSTRATIONS.resident.onboarding.initiatives,
+        { width: 1200 },
+      );
       if (!url) return {};
       return {
         className: "bg-no-repeat bg-bottom",
@@ -50,7 +60,10 @@ export function getOnboardingSlideBackground(slide: OnboardingSlideId): {
       };
     }
     case "evenements": {
-      const url = ILLUSTRATIONS.resident.onboarding.evenements;
+      const url = buildOptimizedCloudinaryUrl(
+        ILLUSTRATIONS.resident.onboarding.evenements,
+        { width: 1200 },
+      );
       if (!url) return {};
       return {
         className: "bg-cover bg-left bg-no-repeat",

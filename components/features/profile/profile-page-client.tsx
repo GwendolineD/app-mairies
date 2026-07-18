@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PageStack } from "@/components/ui/page-stack";
 import { ROUTES } from "@/lib/constants/routes";
+import { cn } from "@/lib/utils/cn";
 import { formatMemberSince } from "@/lib/datetime";
 import { updateAvatar } from "@/lib/actions/profile";
 import {
@@ -328,7 +329,7 @@ function ProfileHero({
                 </span>
               ) : null}
 
-              <span className="inline-flex items-center gap-1">
+              <span className="inline-flex items-center gap-1 max-md:mt-2">
                 <CalendarDays className="size-4 shrink-0" aria-hidden />
                 {membership.joinedAt
                   ? formatMemberSince(membership.joinedAt)
@@ -452,11 +453,12 @@ function AnnouncementsPanel({
         count={list.totalCount}
       />
       <div className="space-y-3">
-        {list.items.map((a) => (
+        {list.items.map((a, index) => (
           <AnnouncementCard
             key={a.id}
             announcement={a}
             layout="horizontal"
+            priority={index === 0}
             nudgeContent={{
               contentType: "announcement",
               status: a.status,
@@ -514,11 +516,12 @@ function InitiativesPanel({
         count={list.totalCount}
       />
       <div className="space-y-3">
-        {list.items.map((i) => (
+        {list.items.map((i, index) => (
           <InitiativeCard
             key={i.id}
             initiative={i}
             layout="horizontal"
+            priority={index === 0}
             nudgeContent={{
               contentType: "initiative",
               status: i.status,
@@ -569,11 +572,12 @@ function EventsPanel({ list }: { list: ProfileListResult<AgendaEventRecord> }) {
         count={list.totalCount}
       />
       <div className="space-y-3">
-        {list.items.map((e) => (
+        {list.items.map((e, index) => (
           <EventCard
             key={e.id}
             event={e}
             layout="horizontal"
+            priority={index === 0}
             nudgeContent={{
               contentType: "event",
               status: e.status,
@@ -620,7 +624,10 @@ function SettingsPanel({ settings }: { settings: SettingsData }) {
         initial={settings.notificationPrefs}
         pushPublicKey={settings.pushPublicKey}
         emailLifecycleEnabled={settings.emailLifecycleEnabled}
-        cardClassName={PROFILE_SETTINGS_CARD_CLASS}
+        cardClassName={cn(
+          PROFILE_SETTINGS_CARD_CLASS,
+          "max-md:border-t max-md:border-border/60 max-md:pt-6",
+        )}
       />
       <DeleteAccountSection
         isPlatformAdmin={settings.isPlatformAdmin}

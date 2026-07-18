@@ -1,5 +1,9 @@
+"use client";
+
 import Image from "next/image";
+import { buildOptimizedCloudinaryUrl } from "@/lib/services/cloudinary";
 import { cn } from "@/lib/utils/cn";
+import { ImagePulseFrame } from "@/components/ui/image-pulse-frame";
 
 type CloudImageProps = {
   src: string;
@@ -10,6 +14,8 @@ type CloudImageProps = {
   height?: number;
   sizes?: string;
   priority?: boolean;
+  /** Max delivery width for Cloudinary transforms (default: card thumbnails). */
+  deliveryWidth?: number;
 };
 
 export function CloudImage({
@@ -19,11 +25,14 @@ export function CloudImage({
   fill = true,
   sizes = "(max-width: 768px) 100vw, 50vw",
   priority = false,
+  deliveryWidth = 800,
   ...props
 }: CloudImageProps) {
-  return (
+  const optimizedSrc = buildOptimizedCloudinaryUrl(src, { width: deliveryWidth });
+
+  const image = (
     <Image
-      src={src}
+      src={optimizedSrc}
       alt={alt}
       className={cn("object-cover", className)}
       fill={fill}
@@ -32,4 +41,14 @@ export function CloudImage({
       {...props}
     />
   );
+
+  if (fill) {
+    return (
+      <ImagePulseFrame className="size-full" resetKey={optimizedSrc}>
+        {image}
+      </ImagePulseFrame>
+    );
+  }
+
+  return image;
 }

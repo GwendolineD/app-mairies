@@ -121,7 +121,11 @@ export function AccueilAnnouncementsHub({
       className={className}
       preview={
         featured ? (
-          <AnnouncementCard announcement={featured} layout="horizontal" />
+          <AnnouncementCard
+            announcement={featured}
+            layout="horizontal"
+            priority
+          />
         ) : undefined
       }
       emptyState={
@@ -168,7 +172,7 @@ export function AccueilInitiativesHub({
       className={className}
       preview={
         featured ? (
-          <InitiativeCard initiative={featured} layout="horizontal" />
+          <InitiativeCard initiative={featured} layout="horizontal" priority />
         ) : undefined
       }
       emptyState={
@@ -213,7 +217,7 @@ export function AccueilEventsHub({
       className={className}
       preview={
         featured ? (
-          <EventCard event={featured} layout="horizontal" />
+          <EventCard event={featured} layout="horizontal" priority />
         ) : undefined
       }
       emptyState={

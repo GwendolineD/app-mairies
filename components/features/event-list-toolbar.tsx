@@ -54,7 +54,7 @@ export function EventListToolbar({
       size="icon-sm"
       onClick={onCreateClick}
       aria-label="Créer un événement"
-      className="size-[42px] shrink-0 p-0 md:hidden [&_svg]:size-5"
+      className="size-[38px] shrink-0 p-0 md:hidden"
     >
       <Plus aria-hidden />
     </Button>
@@ -63,7 +63,7 @@ export function EventListToolbar({
       href={`${pathname}${buildEventListQuery({ ...params, create: "event" })}`}
       size="icon-sm"
       aria-label="Créer un événement"
-      className="size-[42px] shrink-0 p-0 md:hidden [&_svg]:size-5"
+      className="size-[38px] shrink-0 p-0 md:hidden"
     >
       <Plus aria-hidden />
     </Button>
@@ -92,7 +92,7 @@ export function EventListToolbar({
   );
 
   const viewToggle = (
-    <div className="inline-flex rounded-sm border border-border bg-surface p-0.5">
+    <div className="inline-flex rounded-sm border border-border bg-surface p-0.5 max-md:p-1">
       <ViewToggle
         active={params.vue === "liste"}
         onClick={() => navigate({ vue: "liste" })}
@@ -181,7 +181,7 @@ function ViewToggle({
       type="button"
       onClick={onClick}
       className={cn(
-        "inline-flex cursor-pointer items-center gap-1.5 rounded-sm px-2.5 py-1.5 text-xs font-semibold transition",
+        "inline-flex cursor-pointer items-center gap-1.5 rounded-sm px-2.5 py-1.5 text-xs font-semibold transition max-md:py-2.5 md:py-1.5",
         active ? "bg-soft-pink text-purple" : "text-muted hover:text-text",
       )}
     >
@@ -213,7 +213,7 @@ function SortPopover({
         render={
           <button
             type="button"
-            className="relative inline-flex cursor-pointer items-center gap-1.5 rounded-sm border border-border bg-surface px-2.5 py-1.5 text-xs font-semibold text-muted transition hover:border-purple/30"
+            className="relative inline-flex cursor-pointer items-center gap-1.5 rounded-sm border border-border bg-surface px-2.5 py-1.5 text-xs font-semibold text-muted transition hover:border-purple/30 max-md:py-2.5 md:py-1.5"
           >
             <ArrowUpDown className="size-3.5" aria-hidden />
             <span>{currentLabel}</span>
@@ -236,7 +236,7 @@ function SortPopover({
               setOpen(false);
             }}
             className={cn(
-              "flex w-full cursor-pointer items-center px-3 py-2.5 text-xs font-medium transition",
+              "flex w-full cursor-pointer items-center px-3 py-2.5 text-xs font-medium transition max-md:py-3.5 md:py-2.5",
               params.tri === opt.value
                 ? "bg-soft-pink text-purple"
                 : "text-text hover:bg-warm",
@@ -272,7 +272,7 @@ function CategoryFiltersPopover({
           <button
             type="button"
             className={cn(
-              "relative inline-flex cursor-pointer items-center gap-1.5 rounded-sm border bg-surface px-2.5 py-1.5 text-xs font-semibold transition hover:border-purple/30",
+              "relative inline-flex cursor-pointer items-center gap-1.5 rounded-sm border bg-surface px-2.5 py-1.5 text-xs font-semibold transition hover:border-purple/30 max-md:py-2.5 md:py-1.5",
               count > 0 ? "border-purple/40 text-purple" : "border-border text-muted",
             )}
           >

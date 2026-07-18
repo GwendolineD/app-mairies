@@ -4,6 +4,7 @@ import { ArrowLeft, CalendarDays, ExternalLink, Megaphone, Sparkles } from "luci
 import { ConversationThread } from "@/components/features/conversation-thread";
 import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
+import { buildOptimizedCloudinaryUrl } from "@/lib/services/cloudinary";
 import { listConversationMessages } from "@/lib/queries/messages";
 import type { ConversationContextStatus, ConversationContextType, MembershipStatus, MessageRow } from "@/lib/types";
 import {
@@ -283,7 +284,7 @@ function ContextPhoto({ url, title }: { url: string | null; title: string | null
   if (url) {
     return (
       <Image
-        src={url}
+        src={buildOptimizedCloudinaryUrl(url, { width: 120 })}
         alt=""
         width={40}
         height={40}
@@ -302,7 +303,7 @@ function SmallAvatar({ name, url }: { name: string; url: string | null }) {
   if (url) {
     return (
       <Image
-        src={url}
+        src={buildOptimizedCloudinaryUrl(url, { width: 80 })}
         alt=""
         width={20}
         height={20}

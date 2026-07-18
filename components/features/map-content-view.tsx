@@ -102,7 +102,7 @@ function InitialView({
     ranRef.current = true;
 
     if (hasUser) {
-      const zoom = zoomForRadiusMeters(center[0], initialRadiusMeters, 480);
+      const zoom = zoomForRadiusMeters(center[0], initialRadiusMeters, 360);
       map.setView(center, zoom, { animate: false });
       return;
     }
@@ -411,7 +411,7 @@ export function MapContentView({
   zoom,
   initialRadiusMeters = DEFAULT_INITIAL_RADIUS_METERS,
   showUserPin = false,
-  className = "h-[420px] md:h-[520px] rounded-lg overflow-hidden border border-border/70 shadow-card",
+  className = "h-[360px] md:h-[520px] rounded-lg overflow-hidden border border-border/70 shadow-card",
   carouselItems,
   carouselTitle = "Annonces autour de vous",
 }: Props) {
@@ -676,34 +676,34 @@ export function MapContentView({
               <span className="font-medium text-muted">({sortedItems.length})</span>
             </h3>
             {sortedItems.length > 1 ? (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-3 md:gap-1">
                 <button
                   type="button"
                   onClick={() => scrollCarouselByCard(-1)}
                   disabled={!canScrollPrev}
                   className={cn(
-                    "inline-flex size-7 cursor-pointer items-center justify-center rounded-full transition md:size-6",
+                    "inline-flex size-9 cursor-pointer items-center justify-center rounded-full transition md:size-6",
                     canScrollPrev
                       ? "bg-warm text-text hover:bg-border"
-                      : "cursor-not-allowed text-subtle opacity-40",
+                      : "invisible pointer-events-none",
                   )}
                   aria-label="Voir l'élément précédent"
                 >
-                  <ChevronLeft className="size-4" aria-hidden />
+                  <ChevronLeft className="size-5 md:size-4" aria-hidden />
                 </button>
                 <button
                   type="button"
                   onClick={() => scrollCarouselByCard(1)}
                   disabled={!canScrollNext}
                   className={cn(
-                    "inline-flex size-7 cursor-pointer items-center justify-center rounded-full transition md:size-6",
+                    "inline-flex size-9 cursor-pointer items-center justify-center rounded-full transition md:size-6",
                     canScrollNext
                       ? "bg-warm text-text hover:bg-border"
-                      : "cursor-not-allowed text-subtle opacity-40",
+                      : "invisible pointer-events-none",
                   )}
                   aria-label="Voir l'élément suivant"
                 >
-                  <ChevronRight className="size-4" aria-hidden />
+                  <ChevronRight className="size-5 md:size-4" aria-hidden />
                 </button>
               </div>
             ) : null}

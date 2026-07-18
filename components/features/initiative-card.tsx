@@ -13,7 +13,7 @@ import { ContentSuspendedBadge } from "@/components/features/content-suspended-i
 import { ContentActionRequiredBadge } from "@/components/features/content-action-required-badge";
 import { cn } from "@/lib/utils/cn";
 import type { NudgeableContent } from "@/lib/utils/content-nudge";
-import { getContentNudgeReason } from "@/lib/utils/content-nudge";
+import { getContentNudgeReason, contentActionRequiredCardBorder } from "@/lib/utils/content-nudge";
 import { formatDisplayName } from "@/lib/utils/display-name";
 import { formatEventRange, formatRelativeTime } from "@/lib/datetime";
 
@@ -45,6 +45,8 @@ type Props = {
   layout?: "vertical" | "horizontal";
   highlighted?: boolean;
   nudgeContent?: NudgeableContent;
+  /** Preload the card photo (first visible item in a list). */
+  priority?: boolean;
 };
 
 type AuthorProfile = InitiativeCardData["author_membership"] extends infer M
@@ -127,6 +129,7 @@ export function InitiativeCard({
   layout = "vertical",
   highlighted = false,
   nudgeContent,
+  priority = false,
 }: Props) {
   const highlightRing = highlighted
     ? "border-purple ring-2 ring-purple/35 shadow-[0_12px_32px_rgba(154,82,255,0.15)]"
@@ -143,7 +146,11 @@ export function InitiativeCard({
       <Link href={ROUTES.initiatives.detail(i.id)} className="block">
         <Card
           className={cn(
-            "relative flex h-28 flex-row items-stretch gap-0 overflow-hidden rounded-lg p-0 transition hover:scale-[1.02] hover:border-purple/45",
+            "relative flex h-28 flex-row items-stretch gap-0 overflow-hidden rounded-lg p-0 transition hover:scale-[1.02]",
+            contentActionRequiredCardBorder(
+              showActionRequired,
+              "hover:border-purple/45",
+            ),
             highlightRing,
           )}
         >
@@ -152,7 +159,7 @@ export function InitiativeCard({
           ) : null}
           <div className="relative size-28 shrink-0 overflow-hidden">
             {imageUrl ? (
-              <CloudImage src={imageUrl} alt="" />
+              <CloudImage src={imageUrl} alt="" priority={priority} />
             ) : (
               <div className="flex size-full items-center justify-center bg-warm text-[10px] font-semibold text-muted">
                 Initiative
@@ -198,6 +205,7 @@ export function InitiativeCard({
                       src={profiles.avatar_url}
                       alt=""
                       sizes="16px"
+                      deliveryWidth={160}
                     />
                   </div>
                 ) : (
@@ -232,7 +240,7 @@ export function InitiativeCard({
       >
         <div className="relative aspect-[16/10] w-full overflow-hidden">
           {imageUrl ? (
-            <CloudImage src={imageUrl} alt="" />
+            <CloudImage src={imageUrl} alt="" priority={priority} />
           ) : (
             <div className="flex size-full items-center justify-center bg-warm text-[11px] font-semibold text-muted">
               Initiative
@@ -283,6 +291,7 @@ export function InitiativeCard({
                     src={profiles.avatar_url}
                     alt=""
                     sizes="24px"
+                    deliveryWidth={160}
                   />
                 </div>
               ) : (

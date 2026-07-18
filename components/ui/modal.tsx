@@ -38,6 +38,8 @@ type Props = {
   footer?: React.ReactNode;
   /** Override padding/spacing on the scrollable body (eg. `p-0` for full-bleed content). */
   contentClassName?: string;
+  /** When false, body does not scroll — use for full-viewport media (lightbox). */
+  scrollable?: boolean;
 };
 
 export function Modal({
@@ -53,6 +55,7 @@ export function Modal({
   description,
   footer,
   contentClassName,
+  scrollable = true,
 }: Props) {
   const viewportStyle = useVisualViewportBottomSheet(open);
 
@@ -101,7 +104,8 @@ export function Modal({
         ) : null}
         <div
           className={cn(
-            "min-h-0 flex-1 overflow-y-auto px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-4",
+            "min-h-0 flex-1 px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-4",
+            scrollable ? "overflow-y-auto" : "overflow-hidden",
             contentClassName,
           )}
         >

@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Loader2 } from "lucide-react";
 import {
   TransformWrapper,
   TransformComponent,
   type ReactZoomPanPinchRef,
 } from "react-zoom-pan-pinch";
+import { buildOptimizedCloudinaryUrl } from "@/lib/services/cloudinary";
+import { cn } from "@/lib/utils/cn";
 
 type Props = {
   src: string;
@@ -15,13 +18,40 @@ type Props = {
 
 export function LightboxZoomableImage({ src, alt = "", active }: Props) {
   const ref = useRef<ReactZoomPanPinchRef>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [loaded, setLoaded] = useState(false);
+  const optimizedSrc = buildOptimizedCloudinaryUrl(src, { width: 1600 });
 
   useEffect(() => {
-    if (!active) ref.current?.resetTransform();
-  }, [active]);
+    if (!active) {
+      ref.current?.resetTransform();
+      setLoaded(false);
+      return;
+    }
+
+    setLoaded(false);
+    const img = imgRef.current;
+    if (img?.complete && img.naturalWidth > 0) {
+      setLoaded(true);
+    }
+  }, [active, optimizedSrc]);
+
+  const handleLoad = useCallback(() => {
+    setLoaded(true);
+  }, []);
 
   return (
-    <div className="h-full min-h-0 w-full">
+    <div className="relative flex h-full min-h-0 w-full items-center justify-center overflow-hidden">
+      {!loaded ? (
+        <div
+          className="absolute inset-0 z-10 flex items-center justify-center bg-warm animate-pulse"
+          aria-hidden={loaded}
+        >
+          <Loader2 className="size-8 animate-spin text-muted" />
+          <span className="sr-only">Chargement de l&apos;image…</span>
+        </div>
+      ) : null}
+
       <TransformWrapper
         ref={ref}
         initialScale={1}
@@ -32,16 +62,30 @@ export function LightboxZoomableImage({ src, alt = "", active }: Props) {
         doubleClick={{ mode: "toggle", step: 2 }}
         wheel={{ step: 0.1 }}
         pinch={{ step: 5 }}
+        wrapperStyle={{ width: "100%", height: "100%", maxHeight: "100%" }}
+        contentStyle={{
+          width: "100%",
+          height: "100%",
+          maxHeight: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
       >
         <TransformComponent
-          wrapperClass="!w-full !h-full"
-          contentClass="!w-full !h-full flex items-center justify-center"
+          wrapperClass="!size-full !max-h-full !max-w-full"
+          contentClass="!flex !size-full !max-h-full !max-w-full items-center justify-center"
         >
           <img
-            src={src}
+            ref={imgRef}
+            src={optimizedSrc}
             alt={alt}
             draggable={false}
-            className="max-h-full max-w-full touch-none object-contain"
+            onLoad={handleLoad}
+            className={cn(
+              "max-h-full max-w-full touch-none object-contain transition-opacity duration-200",
+              loaded ? "opacity-100" : "opacity-0",
+            )}
           />
         </TransformComponent>
       </TransformWrapper>

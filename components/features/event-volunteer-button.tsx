@@ -3,6 +3,11 @@
 import { useState, useTransition } from "react";
 import { HandHeart } from "lucide-react";
 import { toggleEventVolunteer } from "@/lib/actions/events";
+import {
+  ENGAGEMENT_ACTIVE_BUTTON_CLASS,
+  ENGAGEMENT_ACTIVE_ICON_CLASS,
+} from "@/components/features/engagement-button-styles";
+import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { cn } from "@/lib/utils/cn";
 
@@ -41,29 +46,41 @@ export function EventVolunteerButton({
     });
   }
 
+  const label = isPending
+    ? "Inscription…"
+    : volunteering
+      ? "Je suis bénévole"
+      : "Je deviens bénévole";
+
   return (
     <div className="relative">
-      <GradientButton
-        type="button"
-        gradient="events"
-        className={cn(
-          "w-full",
-          volunteering && "opacity-90 ring-2 ring-orange/30",
-          className,
-        )}
-        disabled={isPending}
-        onClick={handleToggle}
-      >
-        <HandHeart
-          className={cn("size-4", volunteering && "fill-white")}
-          aria-hidden
-        />
-        {isPending
-          ? "Inscription…"
-          : volunteering
-            ? "Je suis bénévole"
-            : "Je deviens bénévole"}
-      </GradientButton>
+      {volunteering ? (
+        <Button
+          type="button"
+          variant="secondary"
+          className={cn(
+            "w-full cursor-pointer",
+            ENGAGEMENT_ACTIVE_BUTTON_CLASS,
+            className,
+          )}
+          disabled={isPending}
+          onClick={handleToggle}
+        >
+          <HandHeart className={cn("size-4", ENGAGEMENT_ACTIVE_ICON_CLASS)} aria-hidden />
+          {label}
+        </Button>
+      ) : (
+        <GradientButton
+          type="button"
+          gradient="hero"
+          className={cn("w-full", className)}
+          disabled={isPending}
+          onClick={handleToggle}
+        >
+          <HandHeart className="size-4" aria-hidden />
+          {label}
+        </GradientButton>
+      )}
 
       {toastMessage ? (
         <div className="absolute -top-12 left-1/2 z-50 -translate-x-1/2 whitespace-nowrap rounded-sm bg-text px-3 py-1.5 text-xs font-semibold text-white shadow-card animate-in fade-in slide-in-from-bottom-2">

@@ -171,10 +171,10 @@ function AuthorActionsCard({
           Suivez l&apos;engagement des voisin·es et faites évoluer votre idée.
         </p>
       </div>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-4">
         <Button
           type="button"
-          className="w-full cursor-pointer"
+          className="w-full cursor-pointer max-md:py-3"
           onClick={() =>
             openInitiativeModal({ editId: initiativeId, initialData: editData })
           }
@@ -186,7 +186,7 @@ function AuthorActionsCard({
           <Button
             type="button"
             variant="outline"
-            className="w-full cursor-pointer border-orange bg-surface text-orange hover:bg-orange/5"
+            className="w-full cursor-pointer border-orange bg-surface text-orange hover:bg-orange/5 max-md:py-3"
             onClick={handleTransformToEvent}
           >
             <CalendarPlus className="size-4" aria-hidden />
@@ -196,7 +196,7 @@ function AuthorActionsCard({
         <Button
           type="button"
           variant="outline"
-          className="w-full cursor-pointer border-coral bg-surface text-coral hover:bg-coral/5"
+          className="w-full cursor-pointer border-coral bg-surface text-coral hover:bg-coral/5 max-md:py-3"
           onClick={() => setDeleteOpen(true)}
         >
           <Trash2 className="size-4" aria-hidden />
@@ -311,7 +311,7 @@ export function InitiativeSidebarActions({
             contextType="initiative"
             label={contactLabel}
             icon={<MessageCircle className="size-4" aria-hidden />}
-            className="py-4"
+            className="py-3"
           />
         </Card>
       </div>

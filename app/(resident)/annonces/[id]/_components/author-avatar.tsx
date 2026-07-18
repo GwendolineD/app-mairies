@@ -1,3 +1,5 @@
+import Image from "next/image";
+import { buildOptimizedCloudinaryUrl } from "@/lib/services/cloudinary";
 import { cn } from "@/lib/utils/cn";
 
 type Props = {
@@ -25,10 +27,11 @@ export function AuthorAvatar({ name, avatarUrl, className }: Props) {
 
   if (avatarUrl) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={avatarUrl}
+      <Image
+        src={buildOptimizedCloudinaryUrl(avatarUrl, { width: 160 })}
         alt=""
+        width={160}
+        height={160}
         className={cn(base, "object-cover")}
       />
     );

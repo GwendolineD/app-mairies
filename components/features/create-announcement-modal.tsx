@@ -23,6 +23,7 @@ import {
   uploadImageToCloudinary,
 } from "@/lib/services/cloudinary-client";
 import { clearFormDraft } from "@/lib/utils/form-draft";
+import { todayParisYmd } from "@/lib/datetime";
 import { Button } from "@/components/ui/button";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { FormField, formFieldClassName, Input, Textarea } from "@/components/ui/form-field";
@@ -504,6 +505,7 @@ export function CreateAnnouncementModal({
               <DatePickerField
                 value={targetDate}
                 onChange={setTargetDate}
+                minDate={isEditMode ? undefined : todayParisYmd()}
                 placeholder="Choisir une date"
                 className="w-fit min-w-[11.5rem]"
               />

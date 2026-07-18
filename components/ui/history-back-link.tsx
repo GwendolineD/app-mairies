@@ -28,7 +28,7 @@ export function HistoryBackLink({
   return (
     <div
       className={cn(
-        "sticky top-0 z-10 -mx-5 -mt-4 bg-surface px-5 pb-3 md:-mx-6 md:-mt-6 md:px-6 lg:-mx-8 lg:px-8",
+        "sticky top-0 z-10 -mx-5 -mt-4 flex min-h-11 items-center bg-surface px-5 py-3 md:-mx-6 md:-mt-6 md:px-6 lg:-mx-8 lg:px-8",
         className,
       )}
     >

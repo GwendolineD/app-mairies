@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Handshake, MessageCircle, PartyPopper, HandHeart, Lightbulb, Rocket } from "lucide-react";
 import { ILLUSTRATIONS } from "@/lib/constants/illustrations";
+import { buildOptimizedCloudinaryUrl } from "@/lib/services/cloudinary";
 import { homemadeApple } from "@/lib/fonts";
 import { cn } from "@/lib/utils/cn";
 
@@ -24,27 +25,27 @@ function WelcomeSlide({ communeName }: { communeName: string }) {
   return (
     <div className="flex flex-col items-start text-left">
       <p className="mb-5 text-2xl font-bold">Bienvenue 👋</p>
-      <h2 className="w-[70%] text-xl font-bold text-purple">
+      <h2 className="w-[70%] text-xl font-bold text-purple max-md:mb-1">
         {communeName} prend vie grâce à vous !
       </h2>
-      <p className="mt-3 w-4/5 text-sm font-medium leading-relaxed text-text">
+      <p className="mt-3 max-md:mt-6 w-4/5 text-sm font-medium leading-relaxed text-text">
         Ici, vos voisins partagent, s&apos;entraident et font bouger les choses
         ensemble. Rejoignez-les.
       </p>
       <p
         className={cn(
-          "mt-4 inline-flex -rotate-2 items-center gap-2 text-base font-bold text-text/80",
+          "mt-4 max-md:mt-8 max-md:mb-8 inline-flex -rotate-2 items-center gap-2 text-base font-bold text-text/80",
           homemadeApple.className,
         )}
       >
         Chaque petit geste compte
         {heartUrl ? (
           <Image
-            src={heartUrl}
+            src={buildOptimizedCloudinaryUrl(heartUrl, { width: 120 })}
             alt=""
-            width={36}
-            height={36}
-            className="size-9 shrink-0 object-contain"
+            width={44}
+            height={44}
+            className="size-11 shrink-0 object-contain"
           />
         ) : null}
       </p>
@@ -86,21 +87,21 @@ function AnnoncesSlide() {
       <p className="mt-2 mb-2 w-4/5 text-sm font-medium text-purple">
         En quelques clics, publiez ou répondez.
       </p>
-      <div className="mt-5 flex w-[85%] flex-col gap-4">
+      <div className="mt-5 flex w-[95%] flex-col gap-4">
         <ActionBlock
-          icon={<HandHeart className="size-4 text-pink" />}
+          icon={<HandHeart className="size-6 text-pink" />}
           title="Vous avez du temps ou du matériel ?"
           subtitle="Proposez votre aide"
           size="sm"
         />
         <ActionBlock
-          icon={<Handshake className="size-4 text-orange" />}
+          icon={<Handshake className="size-6 text-orange" />}
           title="Un coup de main, ça change tout"
           subtitle="Publiez votre demande"
           size="sm"
         />
         <ActionBlock
-          icon={<MessageCircle className="size-4 text-turquoise" />}
+          icon={<MessageCircle className="size-6 text-turquoise" />}
           title="Un voisin a besoin de vous"
           subtitle="Répondez à son annonce"
           size="sm"
@@ -132,7 +133,7 @@ function InitiativesSlide() {
         />
         <ActionBlock
           icon={<Rocket className="size-5 text-purple" />}
-          title="Les meilleures initiatives deviennent de vrais événements 🚀"
+          title="Les meilleures initiatives deviennent de vrais événements !"
         />
       </div>
     </div>
@@ -174,11 +175,11 @@ function EvenementsSlide({ communeName }: { communeName: string }) {
         </span>
         {heartUrl ? (
           <Image
-            src={heartUrl}
+            src={buildOptimizedCloudinaryUrl(heartUrl, { width: 120 })}
             alt=""
-            width={36}
-            height={36}
-            className="size-9 shrink-0 object-contain"
+            width={48}
+            height={48}
+            className="size-12 shrink-0 object-contain"
           />
         ) : null}
       </p>
@@ -202,18 +203,24 @@ function ActionBlock({
   return (
     <div
       className={cn(
-        "flex items-center border border-border/60 bg-warm/70",
-        isSmall ? "gap-2 rounded-lg px-3 py-2" : "gap-3 rounded-xl px-4 py-3",
+        "flex items-center border border-border/60 bg-warm/85",
+        isSmall ? "gap-3 rounded-lg px-3 py-2" : "gap-3 rounded-xl px-4 py-3",
       )}
     >
       <div className="shrink-0">{icon}</div>
       <div className="min-w-0 flex-1">
         {subtitle ? (
           <>
-            <p className={cn("font-semibold text-text", isSmall ? "text-xs" : "text-sm")}>
+            <p className={cn("text-sm font-bold text-text", isSmall && "mb-1.5")}>
               {title}
             </p>
-            <p className={cn("text-muted", isSmall ? "text-[11px]" : "text-xs")}>
+            <p
+              className={cn(
+                isSmall
+                  ? "text-xs font-medium text-[color-mix(in_srgb,var(--muted)_35%,var(--text))]"
+                  : "text-xs text-muted",
+              )}
+            >
               {subtitle}
             </p>
           </>

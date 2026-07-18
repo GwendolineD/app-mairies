@@ -191,7 +191,7 @@ export function BottomNav({
   return (
     <nav
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-50 flex items-stretch border-t border-border/80 bg-surface/95 backdrop-blur md:hidden",
+        "fixed bottom-0 left-0 right-0 z-[1100] flex items-stretch border-t border-border/80 bg-surface/95 backdrop-blur md:hidden",
         "supports-[backdrop-filter]:bg-surface/80",
         "pb-[max(env(safe-area-inset-bottom),8px)]",
       )}

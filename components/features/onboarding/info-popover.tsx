@@ -13,9 +13,14 @@ import type { OnboardingSlideId } from "./onboarding-slide-content";
 type Props = {
   slide: OnboardingSlideId;
   communeName?: string;
+  hideIllustrationOnMobile?: boolean;
 };
 
-export function InfoPopover({ slide, communeName: communeNameProp }: Props) {
+export function InfoPopover({
+  slide,
+  communeName: communeNameProp,
+  hideIllustrationOnMobile = false,
+}: Props) {
   const communeNameFromContext = useOnboardingCommuneName();
   const communeName = communeNameProp ?? communeNameFromContext;
 
@@ -38,7 +43,11 @@ export function InfoPopover({ slide, communeName: communeNameProp }: Props) {
         sideOffset={8}
         className="w-[min(calc(100vw-2rem),24rem)] max-h-[min(80dvh,28rem)] gap-0 overflow-hidden p-0"
       >
-        <OnboardingSlideFrame slide={slide} communeName={communeName} />
+        <OnboardingSlideFrame
+          slide={slide}
+          communeName={communeName}
+          hideIllustrationOnMobile={hideIllustrationOnMobile}
+        />
       </PopoverContent>
     </Popover>
   );

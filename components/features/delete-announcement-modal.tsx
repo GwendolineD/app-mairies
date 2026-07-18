@@ -72,7 +72,7 @@ export function DeleteAnnouncementModal({
           disabled={pending}
         />
 
-        <p className="text-sm font-medium leading-5 text-muted">
+        <p className="mt-2 mb-4 text-xs font-medium leading-5 text-muted">
           Votre annonce sera immédiatement retirée des résultats.
         </p>
 
@@ -83,6 +83,7 @@ export function DeleteAnnouncementModal({
             type="button"
             variant="ghost"
             size="sm"
+            className="max-md:py-2.5"
             disabled={pending}
             onClick={handleClose}
           >
@@ -92,7 +93,7 @@ export function DeleteAnnouncementModal({
             type="button"
             variant="danger"
             size="sm"
-            className="w-fit shrink-0"
+            className="w-fit shrink-0 max-md:py-2.5"
             disabled={pending || !outcome}
             onClick={handleConfirm}
           >

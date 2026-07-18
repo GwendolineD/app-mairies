@@ -16,6 +16,7 @@ import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
 import { FormField, Input } from "@/components/ui/form-field";
 import { cn } from "@/lib/utils/cn";
+import { buildOptimizedCloudinaryUrl } from "@/lib/services/cloudinary";
 
 type Props = {
   categories: InitiativeEventCategoryRow[];
@@ -131,7 +132,7 @@ function CategoryCard({
       <div className="flex gap-2">
         {category.map_pin_url ? (
           <img
-            src={category.map_pin_url}
+            src={buildOptimizedCloudinaryUrl(category.map_pin_url, { width: 160 })}
             alt="Pin carte"
             className="size-9 rounded border border-border object-contain"
           />
@@ -142,7 +143,9 @@ function CategoryCard({
         )}
         {category.default_image_url ? (
           <img
-            src={category.default_image_url}
+            src={buildOptimizedCloudinaryUrl(category.default_image_url, {
+              width: 160,
+            })}
             alt="Image par défaut"
             className="h-9 w-16 rounded border border-border object-cover"
           />

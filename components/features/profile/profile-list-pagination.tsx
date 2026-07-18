@@ -42,19 +42,19 @@ export function ProfileListPagination({
       <Button
         type="button"
         variant="secondary"
-        className="px-3 py-1.5 text-xs"
+        className="px-3 py-1.5 text-xs max-md:py-2.5 md:py-1.5"
         disabled={page <= 1 || isPending}
         onClick={() => navigate(page - 1)}
       >
         Précédent
       </Button>
-      <span>
+      <span className="px-3">
         Page {page} / {totalPages}
       </span>
       <Button
         type="button"
         variant="secondary"
-        className="px-3 py-1.5 text-xs"
+        className="px-3 py-1.5 text-xs max-md:py-2.5 md:py-1.5"
         disabled={page >= totalPages || isPending}
         onClick={() => navigate(page + 1)}
       >

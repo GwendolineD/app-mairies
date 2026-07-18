@@ -2,6 +2,8 @@ import Image from "next/image";
 import type { CommunicationAsset } from "@/lib/types";
 import { Card } from "@/components/ui/card";
 import { CommunicationDownloadButton } from "@/components/features/mairie/communication-download-button";
+import { buildOptimizedCloudinaryUrl } from "@/lib/services/cloudinary";
+import { ImagePulseFrame } from "@/components/ui/image-pulse-frame";
 
 type Props = {
   asset: CommunicationAsset;
@@ -10,16 +12,15 @@ type Props = {
 export function CommunicationCard({ asset }: Props) {
   return (
     <Card className="flex h-full flex-col overflow-hidden p-0">
-      <div className="relative aspect-4/3 w-full bg-warm">
+      <ImagePulseFrame className="aspect-4/3 w-full">
         <Image
-          src={asset.preview_url}
+          src={buildOptimizedCloudinaryUrl(asset.preview_url, { width: 800 })}
           alt={asset.title}
           fill
           className="object-cover"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          unoptimized
         />
-      </div>
+      </ImagePulseFrame>
 
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div className="min-w-0 flex-1 space-y-1">

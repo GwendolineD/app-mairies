@@ -65,3 +65,13 @@ export function getContentNudgeReason(
 
   return null;
 }
+
+/** Profile/list cards: coral border (2px) when action is required. */
+export function contentActionRequiredCardBorder(
+  actionRequired: boolean,
+  defaultHoverBorder: string,
+): string {
+  return actionRequired
+    ? "border-2 border-coral hover:border-coral"
+    : defaultHoverBorder;
+}

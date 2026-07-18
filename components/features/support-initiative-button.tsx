@@ -3,8 +3,12 @@
 import { useState, useTransition } from "react";
 import { Heart } from "lucide-react";
 import { toggleInitiativeSupport } from "@/lib/actions/initiatives";
+import {
+  ENGAGEMENT_ACTIVE_BUTTON_CLASS,
+  ENGAGEMENT_ACTIVE_ICON_CLASS,
+} from "@/components/features/engagement-button-styles";
 import { Button } from "@/components/ui/button";
-import { GradientText } from "@/components/ui/gradient-text";
+import { GradientButton } from "@/components/ui/gradient-button";
 import { cn } from "@/lib/utils/cn";
 
 type Props = {
@@ -49,35 +53,41 @@ export function SupportInitiativeButton({
     });
   }
 
+  const label = isPending
+    ? "Soutien…"
+    : supported
+      ? `Je soutiens${!hideCountInLabel && count > 0 ? ` (${count})` : ""}`
+      : "Je veux soutenir";
+
   return (
     <div className="relative">
-      <Button
-        type="button"
-        variant="secondary"
-        onClick={handleToggle}
-        disabled={isPending}
-        className={cn(
-          "gap-2",
-          supported && "bg-mint/15 border-mint/40 text-mint hover:bg-mint/25",
-          className,
-        )}
-      >
-        <Heart
+      {supported ? (
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={handleToggle}
+          disabled={isPending}
           className={cn(
-            "size-4",
-            supported ? "fill-mint" : "text-coral",
+            "w-full cursor-pointer",
+            ENGAGEMENT_ACTIVE_BUTTON_CLASS,
+            className,
           )}
-          aria-hidden
-        />
-        {!supported ? (
-          <GradientText className="font-bold">Je soutiens</GradientText>
-        ) : (
-          <span>
-            Soutenu
-            {!hideCountInLabel && count > 0 ? ` (${count})` : ""}
-          </span>
-        )}
-      </Button>
+        >
+          <Heart className={cn("size-4", ENGAGEMENT_ACTIVE_ICON_CLASS)} aria-hidden />
+          {label}
+        </Button>
+      ) : (
+        <GradientButton
+          type="button"
+          gradient="hero"
+          className={cn("w-full", className)}
+          disabled={isPending}
+          onClick={handleToggle}
+        >
+          <Heart className="size-4 text-white" aria-hidden />
+          {label}
+        </GradientButton>
+      )}
 
       {toastMessage ? (
         <div className="absolute -top-12 left-1/2 z-50 -translate-x-1/2 whitespace-nowrap rounded-sm bg-text px-3 py-1.5 text-xs font-semibold text-white shadow-card animate-in fade-in slide-in-from-bottom-2">

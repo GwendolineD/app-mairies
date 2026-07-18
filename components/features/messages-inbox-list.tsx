@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useTransition } from "react";
 import { ArchiveRestore, Megaphone, Sparkles, CalendarDays, MessageCircle, Inbox, Trash2, X } from "lucide-react";
 import {
@@ -19,6 +20,7 @@ import { RelativeTime } from "@/components/ui/relative-time";
 import { ArchiveConversationModal } from "@/components/features/archive-conversation-modal";
 import { DeleteConversationModal } from "@/components/features/delete-conversation-modal";
 import { getConversationStatusBadgeLabel } from "@/lib/utils/conversation-status-badge";
+import { buildOptimizedCloudinaryUrl } from "@/lib/services/cloudinary";
 
 const CONTEXT_ICON: Record<ConversationContextType, typeof MessageCircle> = {
   announcement: Megaphone,
@@ -304,10 +306,11 @@ function TabLink({
 function ContextPhoto({ url, title }: { url: string | null; title: string | null }) {
   if (url) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={url}
+      <Image
+        src={buildOptimizedCloudinaryUrl(url, { width: 120 })}
         alt=""
+        width={56}
+        height={56}
         className="block size-14 shrink-0 rounded-sm border border-border object-cover"
       />
     );
@@ -322,10 +325,11 @@ function ContextPhoto({ url, title }: { url: string | null; title: string | null
 function SmallAvatar({ name, url }: { name: string; url: string | null }) {
   if (url) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={url}
+      <Image
+        src={buildOptimizedCloudinaryUrl(url, { width: 80 })}
         alt=""
+        width={20}
+        height={20}
         className="block size-5 shrink-0 rounded-full border border-border object-cover"
       />
     );

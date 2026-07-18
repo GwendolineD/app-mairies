@@ -41,6 +41,8 @@ const MAIN_DETAIL_CARD_CLASS =
   "rounded-none border-0 bg-transparent p-0 !shadow-none";
 const DETAIL_CARD_CLASS =
   "rounded-none border-0 bg-transparent p-0 !shadow-none md:rounded-xl md:border md:border-border/60 md:bg-surface";
+const DETAIL_SIDEBAR_CLASS =
+  "space-y-8 md:space-y-4 [&>*+*]:max-md:border-t [&>*+*]:max-md:border-border/60 [&>*+*]:max-md:pt-6";
 const DESCRIPTION_SECTION_CLASS = "rounded-md border border-border/60 p-4";
 const DETAIL_BADGE_CLASS = "h-[22px] px-2.5 py-0 text-[10px] leading-none";
 const DETAIL_CATEGORY_TAG_CLASS = `${DETAIL_BADGE_CLASS} w-fit font-semibold`;
@@ -301,7 +303,7 @@ export default async function EvenementDetailPage(props: {
           </div>
         </Card>
 
-        <aside className="space-y-8 md:space-y-4">
+        <aside className={DETAIL_SIDEBAR_CLASS}>
           <EventSidebarActions
             isAuthor={isAuthor}
             eventId={event.id}

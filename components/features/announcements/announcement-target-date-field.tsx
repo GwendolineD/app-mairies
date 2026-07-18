@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { DatePickerField } from "@/components/ui/date-picker-field";
+import { todayParisYmd } from "@/lib/datetime";
 
 type Props = {
   name?: string;
@@ -17,6 +18,7 @@ export function AnnouncementTargetDateField({ name = "targetDate" }: Props) {
       <DatePickerField
         value={targetDate}
         onChange={setTargetDate}
+        minDate={todayParisYmd()}
         placeholder="Choisir une date"
         className="w-full"
       />

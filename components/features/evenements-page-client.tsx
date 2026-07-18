@@ -21,7 +21,7 @@ const MapContentView = dynamic(
     ssr: false,
     loading: () => (
       <div className="space-y-4">
-        <Skeleton className="h-[420px] w-full rounded-lg md:h-[520px]" />
+        <Skeleton className="h-[360px] w-full rounded-lg md:h-[520px]" />
         <div className="flex gap-3 overflow-hidden">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-52 w-52 shrink-0 rounded-xl md:w-56" />
@@ -99,13 +99,23 @@ export function EvenementsPageClient({
       ) : (
         <>
           <ListGrid className="hidden md:grid">
-            {items.map((event) => (
-              <EventCard key={event.id} event={event} layout="vertical" />
+            {items.map((event, index) => (
+              <EventCard
+                key={event.id}
+                event={event}
+                layout="vertical"
+                priority={index === 0}
+              />
             ))}
           </ListGrid>
           <div className="flex flex-col gap-3 md:hidden">
-            {items.map((event) => (
-              <EventCard key={event.id} event={event} layout="horizontal" />
+            {items.map((event, index) => (
+              <EventCard
+                key={event.id}
+                event={event}
+                layout="horizontal"
+                priority={index === 0}
+              />
             ))}
           </div>
           <EventPagination

@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Maximize2 } from "lucide-react";
 import { LightboxZoomableImage } from "@/components/features/lightbox-zoomable-image";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
+import { buildOptimizedCloudinaryUrl } from "@/lib/services/cloudinary";
+import { ImagePulseFrame } from "@/components/ui/image-pulse-frame";
 
 type Props = {
   src: string;
@@ -19,12 +21,23 @@ export function ImageWithLightbox({
   sizes = "(max-width: 768px) 100vw, 640px",
 }: Props) {
   const [open, setOpen] = useState(false);
+  const thumbnailSrc = buildOptimizedCloudinaryUrl(src, { width: 1200 });
+  const lightboxSrc = buildOptimizedCloudinaryUrl(src, { width: 1600 });
+
+  useEffect(() => {
+    if (!open) return;
+    const preload = new window.Image();
+    preload.src = lightboxSrc;
+  }, [open, lightboxSrc]);
 
   return (
     <>
-      <div className="relative aspect-[16/10] w-full overflow-hidden rounded-lg border border-border">
+      <ImagePulseFrame
+        className="aspect-[16/10] w-full overflow-hidden rounded-lg border border-border"
+        resetKey={thumbnailSrc}
+      >
         <Image
-          src={src}
+          src={thumbnailSrc}
           alt={alt}
           fill
           className="object-cover"
@@ -40,7 +53,7 @@ export function ImageWithLightbox({
         >
           <Maximize2 className="size-4" aria-hidden />
         </Button>
-      </div>
+      </ImagePulseFrame>
 
       <Modal
         open={open}
@@ -48,7 +61,9 @@ export function ImageWithLightbox({
         title="Photo"
         size="xl"
         showCloseButton
-        contentClassName="flex min-h-0 flex-1 overflow-hidden p-4 sm:p-6"
+        scrollable={false}
+        className="h-[90dvh] sm:h-auto"
+        contentClassName="flex h-0 min-h-0 flex-1 flex-col overflow-hidden overscroll-none p-4 sm:p-6"
       >
         <LightboxZoomableImage src={src} alt={alt} active={open} />
       </Modal>

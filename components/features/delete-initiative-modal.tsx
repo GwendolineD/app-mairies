@@ -52,6 +52,7 @@ export function DeleteInitiativeModal({ initiativeId, open, onClose }: Props) {
             type="button"
             variant="ghost"
             size="sm"
+            className="max-md:py-2.5"
             disabled={pending}
             onClick={onClose}
           >
@@ -61,7 +62,7 @@ export function DeleteInitiativeModal({ initiativeId, open, onClose }: Props) {
             type="button"
             variant="danger"
             size="sm"
-            className="w-fit shrink-0"
+            className="w-fit shrink-0 max-md:py-2.5"
             disabled={pending}
             onClick={handleConfirm}
           >

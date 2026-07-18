@@ -1,4 +1,5 @@
 import L from "leaflet";
+import { buildOptimizedCloudinaryUrl } from "@/lib/services/cloudinary";
 
 export type AnnouncementPinSize = "default" | "large";
 
@@ -30,8 +31,11 @@ export function createAnnouncementPinIcon(
     ? "drop-shadow(0 0 0 4px rgba(154,82,255,0.35)) drop-shadow(0 2px 8px rgba(37,38,48,0.22))"
     : "drop-shadow(0 2px 8px rgba(37,38,48,0.22))";
   const fallbackHtml = `<div style="background:${colorHex};width:${size - 8}px;height:${size - 8}px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(37,38,48,0.22);"></div>`;
-  const html = mapPinUrl
-    ? `<img src="${mapPinUrl}" alt="" width="${size}" height="${size}" style="width:${size}px;height:${size}px;object-fit:contain;display:block;filter:${shadow};" />`
+  const optimizedPinUrl = mapPinUrl
+    ? buildOptimizedCloudinaryUrl(mapPinUrl, { width: 80 })
+    : null;
+  const html = optimizedPinUrl
+    ? `<img src="${optimizedPinUrl}" alt="" width="${size}" height="${size}" style="width:${size}px;height:${size}px;object-fit:contain;display:block;filter:${shadow};" />`
     : fallbackHtml;
 
   return L.divIcon({
@@ -63,8 +67,11 @@ export function createClusterPinIcon(
 
   const fallbackHtml = `<div style="position:relative;"><div style="background:${colorHex};width:${size - 8}px;height:${size - 8}px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(37,38,48,0.22);"></div><span style="${badgeStyle}">${count}</span></div>`;
 
-  const html = mapPinUrl
-    ? `<div style="position:relative;"><img src="${mapPinUrl}" alt="" width="${size}" height="${size}" style="width:${size}px;height:${size}px;object-fit:contain;display:block;filter:${shadow};" /><span style="${badgeStyle}">${count}</span></div>`
+  const optimizedPinUrl = mapPinUrl
+    ? buildOptimizedCloudinaryUrl(mapPinUrl, { width: 80 })
+    : null;
+  const html = optimizedPinUrl
+    ? `<div style="position:relative;"><img src="${optimizedPinUrl}" alt="" width="${size}" height="${size}" style="width:${size}px;height:${size}px;object-fit:contain;display:block;filter:${shadow};" /><span style="${badgeStyle}">${count}</span></div>`
     : fallbackHtml;
 
   return L.divIcon({

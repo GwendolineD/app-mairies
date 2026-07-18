@@ -29,6 +29,46 @@ export function isCloudinaryDeliveryUrl(url: string): boolean {
   }
 }
 
+export type CloudinaryOptimizeOptions = {
+  width?: number;
+  quality?: "auto" | "auto:low" | "auto:eco";
+};
+
+/**
+ * Injects Cloudinary delivery transforms (f_auto, q_auto, optional resize) into a URL.
+ * Skips non-Cloudinary URLs, attachment URLs, and URLs that already have transforms.
+ */
+export function buildOptimizedCloudinaryUrl(
+  url: string,
+  options?: CloudinaryOptimizeOptions,
+): string {
+  if (!isCloudinaryDeliveryUrl(url) || url.includes("fl_attachment")) {
+    return url;
+  }
+
+  const uploadMarker = "/upload/";
+  const markerIndex = url.indexOf(uploadMarker);
+  if (markerIndex === -1) {
+    return url;
+  }
+
+  const prefix = url.slice(0, markerIndex + uploadMarker.length);
+  const suffix = url.slice(markerIndex + uploadMarker.length);
+
+  // Version-only path: v1234567890/... — no transforms yet.
+  if (!/^v\d+\//.test(suffix)) {
+    return url;
+  }
+
+  const quality = options?.quality ?? "auto";
+  const transforms = [`f_auto`, `q_${quality}`];
+  if (options?.width) {
+    transforms.push(`w_${options.width}`, "c_limit");
+  }
+
+  return `${prefix}${transforms.join(",")}/${suffix}`;
+}
+
 /** Safe basename for Cloudinary fl_attachment:flag (no extension — Cloudinary adds it). */
 export function sanitizeCloudinaryAttachmentFilename(title: string): string {
   return (

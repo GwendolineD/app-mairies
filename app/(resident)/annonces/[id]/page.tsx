@@ -365,14 +365,19 @@ async function SimilarAnnouncements({
   if (similar.length === 0) return null;
 
   return (
-    <Card className={`space-y-3 !p-4 md:!p-5 ${DETAIL_CARD_CLASS}`}>
+    <Card className={`space-y-3 !px-0 !py-4 md:!p-5 ${DETAIL_CARD_CLASS}`}>
       <h2 className={SIDEBAR_SECTION_TITLE_CLASS}>
         <Megaphone className="size-5 shrink-0 text-orange" aria-hidden />
         Annonces similaires
       </h2>
       <div className="space-y-3">
-        {similar.map((s: AnnouncementWithAuthor) => (
-          <AnnouncementCard key={s.id} announcement={s} layout="horizontal" />
+        {similar.map((s: AnnouncementWithAuthor, index) => (
+          <AnnouncementCard
+            key={s.id}
+            announcement={s}
+            layout="horizontal"
+            priority={index === 0}
+          />
         ))}
       </div>
     </Card>
@@ -381,7 +386,7 @@ async function SimilarAnnouncements({
 
 function SimilarAnnouncementsSkeleton() {
   return (
-    <Card className={`space-y-3 !p-4 md:!p-5 ${DETAIL_CARD_CLASS}`}>
+    <Card className={`space-y-3 !px-0 !py-4 md:!p-5 ${DETAIL_CARD_CLASS}`}>
       <div className="flex items-center gap-2">
         <Skeleton className="size-5 shrink-0 rounded-sm" />
         <Skeleton className="h-7 w-36 md:h-6" />

@@ -19,6 +19,10 @@ import { formatAddressLabel, formatAddressLines } from "@/lib/utils/format-addre
 import { ContentSuspendedBadge } from "@/components/features/content-suspended-indicator";
 import { ContentActionRequiredBadge } from "@/components/features/content-action-required-badge";
 import type { NudgeableContent } from "@/lib/utils/content-nudge";
+import {
+  contentActionRequiredCardBorder,
+  getContentNudgeReason,
+} from "@/lib/utils/content-nudge";
 
 type Props = {
   announcement: AnnouncementWithAuthor;
@@ -27,6 +31,8 @@ type Props = {
   highlighted?: boolean;
   /** When set, shows "Action requise" overlay if nudge conditions match. */
   nudgeContent?: NudgeableContent;
+  /** Preload the card photo (first visible item in a list). */
+  priority?: boolean;
 };
 
 type AuthorProfile = {
@@ -111,10 +117,15 @@ export function AnnouncementCard({
   layout = "vertical",
   highlighted = false,
   nudgeContent,
+  priority = false,
 }: Props) {
   const highlightRing = highlighted
     ? "border-purple ring-2 ring-purple/35 shadow-[0_12px_32px_rgba(154,82,255,0.15)]"
     : "";
+  const showActionRequired =
+    Boolean(nudgeContent) &&
+    !a.suspended_at &&
+    Boolean(getContentNudgeReason(nudgeContent!));
 
   if (layout === "horizontal") {
     const fullAddress = formatAddressLabel(
@@ -127,15 +138,23 @@ export function AnnouncementCard({
       <Link href={ROUTES.annonces.detail(a.id)} className="block">
         <Card
           className={cn(
-            "relative flex h-28 flex-row items-stretch gap-0 overflow-hidden rounded-lg p-0 transition hover:scale-[1.02] hover:border-purple/45",
+            "relative flex h-28 flex-row items-stretch gap-0 overflow-hidden rounded-lg p-0 transition hover:scale-[1.02]",
+            contentActionRequiredCardBorder(
+              showActionRequired,
+              "hover:border-purple/45",
+            ),
             highlightRing,
           )}
         >
-          {!a.suspended_at && nudgeContent ? (
+          {showActionRequired && nudgeContent ? (
             <ContentActionRequiredBadge content={nudgeContent} />
           ) : null}
           <div className="relative size-28 shrink-0 overflow-hidden">
-            <CloudImage src={resolveImageUrl(a)} alt="" />
+            <CloudImage
+              src={resolveImageUrl(a)}
+              alt=""
+              priority={priority}
+            />
           </div>
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col p-2">
             {a.suspended_at ? <ContentSuspendedBadge /> : null}
@@ -169,6 +188,7 @@ export function AnnouncementCard({
                       src={a.author_membership.profiles.avatar_url}
                       alt=""
                       sizes="16px"
+                      deliveryWidth={160}
                     />
                   </div>
                 ) : (
@@ -202,7 +222,7 @@ export function AnnouncementCard({
         )}
       >
         <div className="relative aspect-[16/10] w-full overflow-hidden">
-          <CloudImage src={resolveImageUrl(a)} alt="" />
+          <CloudImage src={resolveImageUrl(a)} alt="" priority={priority} />
           <AnnouncementTypePastille type={a.type} className="absolute left-2 top-2" />
         </div>
 
@@ -240,6 +260,7 @@ export function AnnouncementCard({
                   src={a.author_membership.profiles.avatar_url}
                   alt=""
                   sizes="24px"
+                  deliveryWidth={160}
                 />
               </div>
             ) : (

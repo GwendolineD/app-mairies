@@ -1,3 +1,5 @@
+import Image from "next/image";
+import { buildOptimizedCloudinaryUrl } from "@/lib/services/cloudinary";
 import { cn } from "@/lib/utils/cn";
 
 type Props = {
@@ -12,15 +14,22 @@ const SIZE_CLASSES = {
   md: "size-10",
 } as const;
 
+const SIZE_PX = {
+  sm: 32,
+  md: 40,
+} as const;
+
 export function UserAvatar({ name, url, size = "md", className }: Props) {
   const sizeClass = SIZE_CLASSES[size];
+  const sizePx = SIZE_PX[size];
 
   if (url) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={url}
+      <Image
+        src={buildOptimizedCloudinaryUrl(url, { width: 160 })}
         alt=""
+        width={sizePx}
+        height={sizePx}
         className={cn(
           "shrink-0 rounded-full border border-border object-cover",
           sizeClass,

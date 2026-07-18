@@ -51,8 +51,13 @@ export function InitiativesInfiniteList({
 
   return (
     <div className="space-y-3 md:hidden">
-      {items.map((item) => (
-        <InitiativeCard key={item.id} initiative={item} layout="horizontal" />
+      {items.map((item, index) => (
+        <InitiativeCard
+          key={item.id}
+          initiative={item}
+          layout="horizontal"
+          priority={index === 0}
+        />
       ))}
       {cursor ? (
         <div ref={sentinelRef} className="py-4 text-center text-sm text-muted">

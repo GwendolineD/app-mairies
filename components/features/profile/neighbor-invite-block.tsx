@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/form-field";
 import { ILLUSTRATIONS } from "@/lib/constants/illustrations";
+import { buildOptimizedCloudinaryUrl } from "@/lib/services/cloudinary";
 import { cn } from "@/lib/utils/cn";
 
 type Props = {
@@ -50,7 +51,7 @@ export function NeighborInviteBlock(props: Props) {
   const illustration = illustrationUrl ? (
     <div className="w-full">
       <Image
-        src={illustrationUrl}
+        src={buildOptimizedCloudinaryUrl(illustrationUrl, { width: 1200 })}
         alt=""
         width={0}
         height={0}
@@ -61,7 +62,6 @@ export function NeighborInviteBlock(props: Props) {
         }
         className="h-auto w-full"
         style={{ width: "100%", height: "auto" }}
-        unoptimized
       />
     </div>
   ) : null;
@@ -124,7 +124,7 @@ export function NeighborInviteBlock(props: Props) {
         )}
 
         {inviteCount > 0 ? (
-          <p className="text-xs leading-5 max-md:font-bold max-md:text-[color-mix(in_srgb,var(--mint)_55%,var(--text))] md:font-medium md:text-subtle">
+          <p className="text-xs leading-5 max-md:font-bold max-md:text-[color-mix(in_srgb,var(--mint)_65%,var(--text))] md:font-medium md:text-subtle">
             Bravo, {inviteCount} invitation{inviteCount !== 1 ? "s" : ""}{" "}
             envoyée
             {inviteCount !== 1 ? "s" : ""} depuis ce profil.

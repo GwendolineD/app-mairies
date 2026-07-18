@@ -91,7 +91,7 @@ export function EventSidebarActions({
             contextType="event"
             label={contactLabel}
             icon={<MessageCircle className="size-4" aria-hidden />}
-            className="py-4"
+            className="py-3"
           />
         </Card>
       </div>
@@ -194,10 +194,10 @@ function AuthorActionsCard({
           Modifiez les détails ou dupliquez cet événement.
         </p>
       </div>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-4">
         <Button
           type="button"
-          className="w-full cursor-pointer"
+          className="w-full cursor-pointer max-md:py-3"
           onClick={() =>
             openEventModal({ editId: eventId, initialData: editData })
           }
@@ -208,7 +208,7 @@ function AuthorActionsCard({
         <Button
           type="button"
           variant="outline"
-          className="w-full cursor-pointer"
+          className="w-full cursor-pointer max-md:py-3"
           onClick={handleDuplicate}
           disabled={!editData}
         >
@@ -218,7 +218,7 @@ function AuthorActionsCard({
         <Button
           type="button"
           variant="outline"
-          className="w-full cursor-pointer border-coral bg-surface text-coral hover:bg-coral/5"
+          className="w-full cursor-pointer border-coral bg-surface text-coral hover:bg-coral/5 max-md:py-3"
           onClick={() => setDeleteOpen(true)}
         >
           <Trash2 className="size-4" aria-hidden />
