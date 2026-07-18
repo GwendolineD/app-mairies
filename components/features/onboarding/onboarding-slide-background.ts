@@ -23,17 +23,8 @@ export function getOnboardingSlideBackground(slide: OnboardingSlideId): {
         },
       };
     }
-    case "accueil": {
-      const url = ILLUSTRATIONS.resident.accueil.nudgeEmpathique;
-      if (!url) return { className: "bg-soft-pink" };
-      return {
-        className: "bg-no-repeat bg-right-bottom",
-        style: {
-          backgroundImage: `${ONBOARDING_ILLUSTRATION_OVERLAY}, url(${url})`,
-          backgroundSize: "min(55%, 180px) auto",
-        },
-      };
-    }
+    case "accueil":
+      return {};
     case "annonces": {
       const url = ILLUSTRATIONS.resident.onboarding.annonces;
       if (!url) return {};

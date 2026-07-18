@@ -26,7 +26,7 @@ export function AssistanceTrigger({ variant, collapsed = false, onOpen }: Props)
       <button
         type="button"
         onClick={onOpen}
-        className="flex h-10 w-full cursor-pointer items-center gap-2.5 px-3 text-sm font-semibold text-text transition hover:bg-warm"
+        className="flex h-12 w-full cursor-pointer items-center gap-2.5 px-3 text-sm font-semibold text-text transition hover:bg-warm"
       >
         <LifeBuoy className="size-4 shrink-0 text-muted" aria-hidden />
         Assistance

@@ -26,9 +26,9 @@ export function InfoPopover({ slide, communeName: communeNameProp }: Props) {
           <button
             type="button"
             aria-label="En savoir plus sur cette section"
-            className="inline-flex cursor-pointer items-center justify-center rounded-full p-1 text-muted transition hover:bg-warm hover:text-text"
+            className="inline-flex cursor-pointer items-center justify-center rounded-full p-1.5 text-muted transition hover:bg-warm hover:text-text md:p-1"
           >
-            <Info className="size-4" />
+            <Info className="size-5 md:size-4" />
           </button>
         }
       />

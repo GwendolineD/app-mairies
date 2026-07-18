@@ -144,7 +144,7 @@ export function ResidentMobileHeaderMenu({
                       disabled={disabled || busy}
                       onClick={() => selectCommune(m.commune_id)}
                       className={cn(
-                        "flex h-10 w-full cursor-pointer items-center gap-3 px-3 text-left text-sm transition hover:bg-warm disabled:cursor-not-allowed disabled:opacity-50",
+                        "flex h-12 w-full cursor-pointer items-center gap-3 px-3 text-left text-sm transition hover:bg-warm disabled:cursor-not-allowed disabled:opacity-50",
                         isActive && "bg-soft-pink/70",
                       )}
                     >
@@ -172,7 +172,7 @@ export function ResidentMobileHeaderMenu({
             <Button
               type="button"
               variant="ghost"
-              className="h-10 w-full justify-start gap-2 px-3 text-sm font-semibold text-purple"
+              className="h-12 w-full justify-start gap-2 px-3 text-sm font-semibold text-purple"
               onClick={() => {
                 setOpen(false);
                 setJoinOpen(true);
@@ -187,7 +187,7 @@ export function ResidentMobileHeaderMenu({
             <Link
               href={ROUTES.profil}
               onClick={() => setOpen(false)}
-              className="flex h-10 w-full cursor-pointer items-center gap-2.5 px-3 text-sm font-semibold text-text transition hover:bg-warm"
+              className="flex h-12 w-full cursor-pointer items-center gap-2.5 px-3 text-sm font-semibold text-text transition hover:bg-warm"
             >
               <User className="size-4 shrink-0 text-muted" aria-hidden />
               Mon profil
@@ -206,7 +206,7 @@ export function ResidentMobileHeaderMenu({
                   key={link.id}
                   href={link.href}
                   onClick={() => setOpen(false)}
-                  className="flex h-10 w-full cursor-pointer items-center gap-2.5 px-3 text-sm font-semibold text-text transition hover:bg-warm"
+                  className="flex h-12 w-full cursor-pointer items-center gap-2.5 px-3 text-sm font-semibold text-text transition hover:bg-warm"
                 >
                   <Icon className="size-4 shrink-0 text-muted" aria-hidden />
                   {link.label}
@@ -219,7 +219,7 @@ export function ResidentMobileHeaderMenu({
                 setOpen(false);
                 void signOut();
               }}
-              className="flex h-10 w-full cursor-pointer items-center gap-2.5 px-3 text-sm font-semibold text-coral transition hover:bg-warm"
+              className="flex h-12 w-full cursor-pointer items-center gap-2.5 px-3 text-sm font-semibold text-coral transition hover:bg-warm"
             >
               <LogOut className="size-4 shrink-0" aria-hidden />
               Se déconnecter

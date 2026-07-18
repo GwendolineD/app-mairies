@@ -18,6 +18,7 @@ export function OnboardingSlideFrame({ slide, communeName, className }: Props) {
     <div
       className={cn(
         "relative overflow-y-auto pt-8 pr-5 pb-4 pl-4 sm:pt-10 sm:pr-6 sm:pb-5 sm:pl-5",
+        "max-md:bg-none!",
         slideBackground.className,
         className,
       )}

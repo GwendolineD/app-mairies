@@ -124,7 +124,7 @@ export function NeighborInviteBlock(props: Props) {
         )}
 
         {inviteCount > 0 ? (
-          <p className="text-xs font-medium leading-5 text-subtle">
+          <p className="text-xs leading-5 max-md:font-bold max-md:text-[color-mix(in_srgb,var(--mint)_55%,var(--text))] md:font-medium md:text-subtle">
             Bravo, {inviteCount} invitation{inviteCount !== 1 ? "s" : ""}{" "}
             envoyée
             {inviteCount !== 1 ? "s" : ""} depuis ce profil.

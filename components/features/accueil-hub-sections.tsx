@@ -36,7 +36,7 @@ function AccueilHubSection({
   return (
     <Card
       className={cn(
-        "flex flex-col gap-4 max-md:rounded-none max-md:border-0 max-md:p-0 max-md:!bg-transparent max-md:!shadow-none md:rounded-3xl md:border md:border-border/60 md:bg-surface md:p-5 md:shadow-card lg:rounded-xl",
+        "flex flex-col gap-4 max-md:rounded-none max-md:border-0 max-md:bg-background max-md:p-0 max-md:pb-6 max-md:shadow-none md:rounded-3xl md:border md:border-border/60 md:bg-surface md:p-5 md:shadow-card lg:rounded-xl",
         className,
       )}
     >
@@ -70,7 +70,7 @@ function AccueilHubSection({
         variant="secondary"
         size="default"
         href={ctaHref}
-        className="mt-auto w-full py-3 font-bold"
+        className="mt-auto w-full py-3 font-bold max-md:border max-md:border-border/60 max-md:bg-surface max-md:shadow-card max-md:hover:bg-warm"
       >
         {ctaLabel}
       </Button>

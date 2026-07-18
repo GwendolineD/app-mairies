@@ -26,6 +26,10 @@ import { NeighborInviteBlock } from "@/components/features/profile/neighbor-invi
 import type { EventCardData } from "@/components/features/event-card";
 import { resolveDisplayName, resolveFirstName } from "@/lib/utils/display-name";
 import { fetchAccueilBannerSlides } from "@/lib/queries/dashboard-charts";
+import { cn } from "@/lib/utils/cn";
+
+const mobileSectionDivider =
+  "max-md:border-t max-md:border-border/60 max-md:pt-6";
 
 export default async function ResidentAccueilPage() {
   const ctx = await requireActiveMembership();
@@ -93,7 +97,7 @@ export default async function ResidentAccueilPage() {
 
       <AccueilOutcomeBanner slides={fulfilledBannerSlides} />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-stretch">
+      <div className="grid grid-cols-1 gap-6 max-md:gap-0 lg:grid-cols-2 lg:items-stretch">
         <AccueilAnnouncementsHub
           totalCount={totalAnnouncements}
           demandeCount={demandeCount}
@@ -104,23 +108,30 @@ export default async function ResidentAccueilPage() {
         <AccueilInitiativesHub
           totalCount={initiativesRes.totalCount}
           featured={featuredInitiative}
-          className="lg:col-start-1 lg:row-start-2"
+          className={cn("lg:col-start-1 lg:row-start-2", mobileSectionDivider)}
         />
         <AccueilEventsHub
           totalCount={eventsRes.totalCount}
           featured={featuredEventWithVolunteers}
-          className="lg:col-start-2 lg:row-start-1 lg:h-full"
+          className={cn(
+            "lg:col-start-2 lg:row-start-1 lg:h-full",
+            mobileSectionDivider,
+          )}
         />
       </div>
 
-      <AccueilQuickActions />
+      <div className={mobileSectionDivider}>
+        <AccueilQuickActions />
+      </div>
 
-      <NeighborInviteBlock
-        senderName={resolveDisplayName(ctx.profile)}
-        communeName={communeName}
-        inviteCount={inviteCount}
-        desktopSplit
-      />
+      <div className={mobileSectionDivider}>
+        <NeighborInviteBlock
+          senderName={resolveDisplayName(ctx.profile)}
+          communeName={communeName}
+          inviteCount={inviteCount}
+          desktopSplit
+        />
+      </div>
     </PageStack>
   );
 }

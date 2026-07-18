@@ -132,7 +132,7 @@ export function AccueilQuickActions() {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs font-bold tracking-wide text-muted">
+      <p className="text-sm font-bold text-text md:text-xs md:tracking-wide md:text-muted">
         Participer en 1 clic
       </p>
       <div className="grid grid-cols-3 gap-2 md:gap-3">
