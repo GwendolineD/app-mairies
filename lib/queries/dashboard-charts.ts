@@ -176,10 +176,9 @@ export async function fetchWeeklyMembershipGrowth(
 }
 
 function resolveBannerSlideCount(
-  weekCount: number,
+  _weekCount: number,
   monthCount: number,
-): { count: number; period: "week" | "month" } | null {
-  if (weekCount > 0) return { count: weekCount, period: "week" };
+): { count: number; period: "month" } | null {
   if (monthCount > 0) return { count: monthCount, period: "month" };
   return null;
 }

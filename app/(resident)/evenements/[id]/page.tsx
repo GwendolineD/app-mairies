@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { ImageWithLightbox } from "@/components/features/image-with-lightbox";
 import { notFound } from "next/navigation";
 import { requireActiveMembership } from "@/lib/auth/session";
 import { unwrapOrThrow } from "@/lib/queries/helpers";
@@ -276,17 +276,7 @@ export default async function EvenementDetailPage(props: {
               </h1>
             </header>
 
-            {imageUrl ? (
-              <div className="relative aspect-[16/10] w-full overflow-hidden rounded-lg border border-border">
-                <Image
-                  src={imageUrl}
-                  alt=""
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 640px"
-                />
-              </div>
-            ) : null}
+            {imageUrl ? <ImageWithLightbox src={imageUrl} /> : null}
 
             <EventDetailDateLabel
               start={event.starts_at}

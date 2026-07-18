@@ -13,7 +13,7 @@ const CONTENT_TABLE_MAP = {
   event: "events",
 } as const satisfies Record<ConversationContextType, "announcements" | "initiatives" | "events">;
 
-type UserRestorationContext = "membership" | "unban";
+type UserRestorationContext = "membership" | "unban" | "all";
 
 function buildContentUrl(type: ConversationContextType, contentId: string): string {
   const appUrl = getAppUrl();
@@ -31,18 +31,32 @@ function formatCommuneLabel(names: string[]): string {
 
 function buildRestorationSummary(
   context: UserRestorationContext,
-  communeName: string,
+  communeLabel: string,
 ): string {
   if (context === "unban") {
     return "Votre compte et l'ensemble de vos adhésions ont été rétablis.";
   }
-  return `Votre accès à ${communeName} a été rétabli.`;
+  if (context === "all") {
+    return `Votre accès à ${communeLabel} a été rétabli.`;
+  }
+  return `Votre accès à ${communeLabel} a été rétabli.`;
 }
 
 function buildRestorationAppUrl(context: UserRestorationContext): string {
   const appUrl = getAppUrl();
   if (context === "unban") return `${appUrl}${ROUTES.connexion}`;
   return `${appUrl}${ROUTES.accueil}`;
+}
+
+async function resolveCommuneNames(
+  communeIds: string[],
+): Promise<string[]> {
+  const service = await createServiceClient();
+  const { data: communes } = await service
+    .from("communes")
+    .select("name")
+    .in("id", communeIds);
+  return (communes ?? []).map((c) => c.name);
 }
 
 async function resolveUserEmailAndName(
@@ -263,28 +277,32 @@ export async function notifyUserRestored(params: {
   userId: string;
   context: UserRestorationContext;
   communeId?: string;
+  communeIds?: string[];
   userEmail?: string;
 }): Promise<void> {
-  const { userId, context, communeId, userEmail } = params;
+  const { userId, context, communeId, communeIds, userEmail } = params;
   const recipient = await resolveUserEmailAndName(userId, userEmail);
   if (!recipient) return;
 
   const service = await createServiceClient();
   const supportEmail = await getPlatformSupportEmail();
 
-  let communeName = "votre commune";
-  if (context === "membership" && communeId) {
+  let communeLabel = "votre commune";
+  if (context === "all" && communeIds?.length) {
+    const names = await resolveCommuneNames(communeIds);
+    communeLabel = formatCommuneLabel(names);
+  } else if (context === "membership" && communeId) {
     const { data: commune } = await service
       .from("communes")
       .select("name")
       .eq("id", communeId)
       .maybeSingle();
-    communeName = commune?.name ?? communeName;
+    communeLabel = commune?.name ?? communeLabel;
   }
 
   await sendModerationEmail(recipient.email, "user-restored", {
     user_name: recipient.userName,
-    restoration_summary: buildRestorationSummary(context, communeName),
+    restoration_summary: buildRestorationSummary(context, communeLabel),
     app_url: buildRestorationAppUrl(context),
     support_email: supportEmail,
   });

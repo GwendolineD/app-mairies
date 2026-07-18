@@ -5,6 +5,7 @@ import { MembershipStatusBadge } from "@/components/features/backoffice/membersh
 import { ChangeRoleButton } from "@/components/features/backoffice/change-role-button";
 import { MembershipRoleBadge } from "@/components/features/backoffice/membership-role-badge";
 import { DeleteUserAccountButton } from "@/components/features/backoffice/delete-user-account-button";
+import { RestoreUserButton } from "@/components/features/backoffice/restore-user-button";
 import { SuspendUserButton } from "@/components/features/backoffice/suspend-user-button";
 import { HistoryBackLink } from "@/components/ui/history-back-link";
 import { Card } from "@/components/ui/card";
@@ -29,6 +30,9 @@ export default async function BackofficeUserDetailPage(props: {
   const hasActiveMembership = user.memberships.some(
     (membership) => membership.status === MEMBERSHIP_STATUS.active,
   );
+  const hasSuspendedMembership = user.memberships.some(
+    (membership) => membership.status === MEMBERSHIP_STATUS.suspended,
+  );
 
   return (
     <PageStack>
@@ -41,6 +45,13 @@ export default async function BackofficeUserDetailPage(props: {
         />
 
         <div className="flex flex-wrap items-center gap-2">
+          {hasSuspendedMembership ? (
+            <RestoreUserButton
+              mode="all"
+              userId={user.userId}
+              label="Restaurer toutes les communes"
+            />
+          ) : null}
           <SuspendUserButton
             mode="all"
             userId={user.userId}
@@ -117,13 +128,22 @@ export default async function BackofficeUserDetailPage(props: {
                     currentUserIsPlatformAdmin
                     size="sm"
                   />
-                  <SuspendUserButton
-                    mode="membership"
-                    membershipId={membership.membershipId}
-                    userId={user.userId}
-                    label="Suspendre de cette commune"
-                    disabled={membership.status !== MEMBERSHIP_STATUS.active}
-                  />
+                  {membership.status === MEMBERSHIP_STATUS.suspended ? (
+                    <RestoreUserButton
+                      mode="membership"
+                      membershipId={membership.membershipId}
+                      userId={user.userId}
+                      label="Restaurer cette commune"
+                    />
+                  ) : (
+                    <SuspendUserButton
+                      mode="membership"
+                      membershipId={membership.membershipId}
+                      userId={user.userId}
+                      label="Suspendre de cette commune"
+                      disabled={membership.status !== MEMBERSHIP_STATUS.active}
+                    />
+                  )}
                 </div>
               </div>
             </Card>

@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { ImageWithLightbox } from "@/components/features/image-with-lightbox";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Calendar, Megaphone } from "lucide-react";
@@ -259,18 +259,12 @@ export default async function AnnonceDetailPage(props: {
               </div>
             </header>
 
-            <div className="relative aspect-[16/10] w-full overflow-hidden rounded-lg border border-border">
-              <Image
-                src={
-                  ann.photo_url ??
-                  getCategoryDefaultPhotoUrl(ann.category_slug)
-                }
-                alt=""
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 640px"
-              />
-            </div>
+            <ImageWithLightbox
+              src={
+                ann.photo_url ??
+                getCategoryDefaultPhotoUrl(ann.category_slug)
+              }
+            />
 
             <section className={DESCRIPTION_SECTION_CLASS}>
               <h2 className="mb-2 text-sm font-semibold leading-5 text-text">
