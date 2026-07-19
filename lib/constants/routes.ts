@@ -69,6 +69,8 @@ export const ROUTES = {
     legalDetail: (slug: string) => `/backoffice/legal/${slug}`,
     communication: "/backoffice/communication",
     audit: "/backoffice/audit",
+    invitations: "/backoffice/invitations",
+    contenus: "/backoffice/contenus",
   },
   legal: {
     cgu: "/legal/cgu",
@@ -143,6 +145,8 @@ export const MUNICIPALITY_NAV: readonly AdminNavItem[] = [
 export const BACKOFFICE_NAV: readonly AdminNavItem[] = [
   { href: ROUTES.backoffice.admin, label: "Dashboard", icon: "layout-dashboard" },
   { href: ROUTES.backoffice.communes, label: "Communes pilotées", icon: "building2" },
+  { href: ROUTES.backoffice.contenus, label: "Contenus", icon: "calendar-days" },
+  { href: ROUTES.backoffice.invitations, label: "Invitations", icon: "users" },
   { href: ROUTES.backoffice.signalements, label: "Signalements", icon: "flag" },
   { href: ROUTES.backoffice.assistance, label: "Assistance", icon: "life-buoy" },
   { href: ROUTES.backoffice.categories, label: "Catégories annonces", icon: "tags" },

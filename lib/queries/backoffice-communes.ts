@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { ALL_ACCESS_STATUSES } from "@/lib/constants/access-status";
+import { ALL_ACCESS_STATUSES, PILOT_ACCESS_STATUSES } from "@/lib/constants/access-status";
 import type { BackofficeCommunesListParams } from "@/lib/utils/backoffice-search-params";
 import type { AccessStatus } from "@/lib/types";
 
@@ -75,6 +75,25 @@ async function fetchActiveCountsByCommuneIds(
     initiatives: countByCommuneId(initiatives ?? []),
     events: countByCommuneId(events ?? []),
   };
+}
+
+export type PilotCommuneOption = {
+  id: string;
+  name: string;
+  postcode: string | null;
+};
+
+export async function listPilotCommuneOptions(
+  supabase: SupabaseClient,
+): Promise<PilotCommuneOption[]> {
+  const { data, error } = await supabase
+    .from("communes")
+    .select("id, name, postcode")
+    .in("access_status", [...PILOT_ACCESS_STATUSES])
+    .order("name");
+
+  if (error) return [];
+  return (data ?? []) as PilotCommuneOption[];
 }
 
 export async function listPilotCommunesPage(
