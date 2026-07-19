@@ -49,6 +49,7 @@ export function CommunicationDownloadButton({ fileUrl, title }: Props) {
   const [loading, setLoading] = useState(false);
   const iconButtonClass = cn(
     buttonVariants({ variant: "secondary", size: "icon-sm" }),
+    "max-md:size-9 max-md:[&_svg:not([class*='size-'])]:size-4",
   );
 
   const isCloudinary = isCloudinaryDeliveryUrl(fileUrl);

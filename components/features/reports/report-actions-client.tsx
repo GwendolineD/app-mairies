@@ -12,6 +12,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { cn } from "@/lib/utils/cn";
 import { suspendContent, suspendMembershipByStaff } from "@/lib/actions/moderation";
 import { resolveReportAction } from "@/lib/actions/municipality";
 import type { ConversationContextType } from "@/lib/types";
@@ -23,6 +24,7 @@ type Props = {
   authorMembershipId: string | null;
   authorName: string | null;
   isAuthorSelf: boolean;
+  contentDeleted?: boolean;
 };
 
 const suspendButtonClassName =
@@ -35,6 +37,7 @@ export function ReportActionsClient({
   authorMembershipId,
   authorName,
   isAuthorSelf,
+  contentDeleted = false,
 }: Props) {
   const router = useRouter();
   const [busy, run] = useTransition();
@@ -113,12 +116,14 @@ export function ReportActionsClient({
   const suspendAuthorDisabled = busy || isAuthorSelf;
   const canConfirmSuspension = validateSuspensionReason(reason) === null;
 
+  const mobileActionButtonClass = "max-md:h-auto max-md:px-3 max-md:py-2";
+
   const suspendAuthorButton = (
     <Button
       type="button"
       variant="secondary"
       size="xs"
-      className={suspendButtonClassName}
+      className={cn(suspendButtonClassName, mobileActionButtonClass)}
       disabled={suspendAuthorDisabled}
       onClick={() => {
         setReason("");
@@ -132,13 +137,13 @@ export function ReportActionsClient({
 
   return (
     <>
-      <div className="flex flex-wrap gap-1.5">
-        {contextType !== "user" && (
+      <div className="flex flex-wrap gap-1.5 max-md:gap-x-3 max-md:gap-y-2.5">
+        {contextType !== "user" && !contentDeleted && (
           <Button
             type="button"
             variant="secondary"
             size="xs"
-            className={suspendButtonClassName}
+            className={cn(suspendButtonClassName, mobileActionButtonClass)}
             disabled={busy}
             onClick={() => {
               setReason("");
@@ -178,6 +183,7 @@ export function ReportActionsClient({
           type="button"
           variant="ghost"
           size="xs"
+          className={mobileActionButtonClass}
           disabled={busy}
           onClick={handleDismiss}
         >

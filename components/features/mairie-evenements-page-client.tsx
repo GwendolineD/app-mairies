@@ -38,13 +38,14 @@ export function MairieEvenementsPageClient({
   statusFilter,
 }: Props) {
   const { openEventModal } = useCreationModals();
+  const pageTitle = `Événements mairie (${total})`;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="space-y-2 md:space-y-4">
+    <div className="flex flex-col gap-4 max-md:gap-6 md:gap-4">
+      <div className="flex flex-col gap-2 max-md:mt-3 max-md:gap-4 md:gap-4">
         <div className="mb-3 hidden md:block">
           <PageHeading
-            title="Événements"
+            title={pageTitle}
             subtitle="Événements officiels publiés par la mairie"
             actions={
               <Button
@@ -68,27 +69,27 @@ export function MairieEvenementsPageClient({
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2 px-0 md:px-0">
-          {STATUS_FILTERS.map((f) => (
-            <Button
-              key={f.key}
-              href={buildPageHref(1, f.key)}
-              variant={statusFilter === f.key ? "primary" : "secondary"}
-              className="px-4 py-2 text-xs"
-            >
-              {f.label}
-            </Button>
-          ))}
-        </div>
+        <PageHeading title={pageTitle} className="md:hidden" />
 
-        <div className="flex items-center justify-between gap-3 md:hidden">
-          <PageHeading title="Événements" />
+        <div className="flex flex-wrap items-center justify-between gap-2 max-md:gap-3">
+          <div className="flex flex-wrap gap-2 max-md:gap-3">
+            {STATUS_FILTERS.map((f) => (
+              <Button
+                key={f.key}
+                href={buildPageHref(1, f.key)}
+                variant={statusFilter === f.key ? "primary" : "secondary"}
+                className="px-4 py-2 text-xs max-md:py-2.5"
+              >
+                {f.label}
+              </Button>
+            ))}
+          </div>
           <Button
             type="button"
             variant="primary"
             size="icon-sm"
             aria-label="Créer un événement"
-            className="size-[34px] shrink-0 p-0"
+            className="size-[38px] shrink-0 p-0 md:hidden"
             onClick={() => openEventModal()}
           >
             <Plus aria-hidden />

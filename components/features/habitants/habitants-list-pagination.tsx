@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
@@ -22,10 +23,23 @@ type Props = {
   totalCount: number;
 };
 
+function pageSizeLabel(option: number) {
+  return `${option} par page`;
+}
+
 export function HabitantsListPagination({ params, totalCount }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [selectSide, setSelectSide] = useState<"top" | "bottom">("bottom");
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 767px)");
+    const update = () => setSelectSide(media.matches ? "top" : "bottom");
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
 
   const page = params.page;
   const limit = params.limit;
@@ -44,7 +58,7 @@ export function HabitantsListPagination({ params, totalCount }: Props) {
       <Select
         items={HABITANTS_PAGE_SIZES.map((option) => ({
           value: String(option),
-          label: `${option} / page`,
+          label: pageSizeLabel(option),
         }))}
         value={String(limit)}
         onValueChange={(value) => {
@@ -52,13 +66,17 @@ export function HabitantsListPagination({ params, totalCount }: Props) {
           navigate({ limit: Number(value), page: 1 });
         }}
       >
-        <SelectTrigger className="min-w-28 rounded-sm">
+        <SelectTrigger className="min-w-28 rounded-sm max-md:h-10 max-md:py-2.5">
           <SelectValue />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent side={selectSide} align="end">
           {HABITANTS_PAGE_SIZES.map((option) => (
-            <SelectItem key={option} value={String(option)}>
-              {option} / page
+            <SelectItem
+              key={option}
+              value={String(option)}
+              className="max-md:py-2.5"
+            >
+              {pageSizeLabel(option)}
             </SelectItem>
           ))}
         </SelectContent>

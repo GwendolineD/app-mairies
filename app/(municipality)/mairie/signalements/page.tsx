@@ -326,6 +326,14 @@ export default async function MairieSignalementsPage(props: {
                         )}
                       </p>
                     </div>
+                  ) : report.context_type !== "user" ? (
+                    <span className="rounded-full bg-warm px-2.5 py-0.5 text-xs font-semibold text-muted">
+                      Contenu supprimé
+                    </span>
+                  ) : !authorMembershipId ? (
+                    <span className="rounded-full bg-warm px-2.5 py-0.5 text-xs font-semibold text-muted">
+                      Utilisateur supprimé
+                    </span>
                   ) : (
                     <span className="min-w-0 flex-1" aria-hidden />
                   )}
@@ -372,6 +380,9 @@ export default async function MairieSignalementsPage(props: {
                           : null
                       }
                       isAuthorSelf={isAuthorSelf}
+                      contentDeleted={
+                        report.context_type !== "user" && !contentTitle
+                      }
                     />
                   ) : restoreContext ? (
                     <ReportRestoreStatus

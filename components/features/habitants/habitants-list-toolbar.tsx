@@ -116,7 +116,7 @@ function HabitantsSearch({
         onChange={(event) => setSearch(event.target.value)}
         placeholder="Rechercher par nom ou prénom…"
         aria-label="Rechercher par nom ou prénom"
-        className="h-10 py-0 pr-9 text-sm placeholder:text-xs md:h-8 md:py-1 md:text-base md:placeholder:text-sm"
+        className="h-10 max-md:rounded-sm py-0 pr-9 text-sm placeholder:text-xs md:h-8 md:rounded-lg md:py-1 md:text-base md:placeholder:text-sm"
       />
       {search ? (
         <button
@@ -150,7 +150,7 @@ function SortPopover({
         render={
           <button
             type="button"
-            className="relative inline-flex cursor-pointer items-center gap-1.5 rounded-sm border border-border bg-surface px-2.5 py-1.5 text-xs font-semibold text-muted transition hover:border-purple/30"
+            className="relative inline-flex cursor-pointer items-center gap-1.5 rounded-sm border border-border bg-surface px-2.5 py-1.5 text-xs font-semibold text-muted transition hover:border-purple/30 max-md:py-2.5 md:py-1.5"
           >
             <ArrowUpDown className="size-3.5" aria-hidden />
             <span>{currentLabel}</span>
@@ -173,7 +173,7 @@ function SortPopover({
               setOpen(false);
             }}
             className={cn(
-              "flex w-full cursor-pointer items-center px-3 py-2.5 text-xs font-medium transition",
+              "flex w-full cursor-pointer items-center px-3 py-2.5 text-xs font-medium transition max-md:py-3.5 md:py-2.5",
               params.tri === option.value
                 ? "bg-soft-pink text-purple"
                 : "text-text hover:bg-warm",
@@ -252,7 +252,7 @@ function FiltersPopover({
           <button
             type="button"
             className={cn(
-              "relative inline-flex cursor-pointer items-center gap-1.5 rounded-sm border bg-surface px-2.5 py-1.5 text-xs font-semibold transition hover:border-purple/30",
+              "relative inline-flex cursor-pointer items-center gap-1.5 rounded-sm border bg-surface px-2.5 py-1.5 text-xs font-semibold transition hover:border-purple/30 max-md:py-2.5 md:py-1.5",
               count > 0
                 ? "border-purple/40 text-purple"
                 : "border-border text-muted",

@@ -119,14 +119,14 @@ export default async function MairieAccueilPage() {
 
       <DashboardOutcomeSection stats={outcomeStats} />
 
-      <Card className="space-y-3 max-md:rounded-none max-md:border-0 max-md:p-0 max-md:!bg-transparent max-md:!shadow-none md:rounded-lg md:border md:border-border/60 md:bg-surface md:p-6 md:shadow-card">
+      <Card className="space-y-3 max-md:rounded-none max-md:border-0 max-md:border-t max-md:border-border/60 max-md:p-0 max-md:pt-6 max-md:!bg-transparent max-md:!shadow-none md:rounded-lg md:border md:border-border/60 md:bg-surface md:p-6 md:shadow-card">
         <h2 className="text-lg font-semibold text-text">
           Activité hebdomadaire
         </h2>
         <DashboardContentChart data={contentData} />
       </Card>
 
-      <Card className="space-y-3 max-md:rounded-none max-md:border-0 max-md:p-0 max-md:!bg-transparent max-md:!shadow-none md:rounded-lg md:border md:border-border/60 md:bg-surface md:p-6 md:shadow-card">
+      <Card className="space-y-3 max-md:rounded-none max-md:border-0 max-md:border-t max-md:border-border/60 max-md:p-0 max-md:pt-6 max-md:!bg-transparent max-md:!shadow-none md:rounded-lg md:border md:border-border/60 md:bg-surface md:p-6 md:shadow-card">
         <h2 className="text-lg font-semibold text-text">
           Évolution des inscriptions
         </h2>

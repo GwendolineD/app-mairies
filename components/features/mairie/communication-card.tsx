@@ -11,8 +11,8 @@ type Props = {
 
 export function CommunicationCard({ asset }: Props) {
   return (
-    <Card className="flex h-full flex-col overflow-hidden p-0">
-      <ImagePulseFrame className="aspect-4/3 w-full">
+    <Card className="flex h-full flex-col overflow-hidden p-0 max-md:rounded-xl max-md:*:[img:first-child]:rounded-t-xl">
+      <ImagePulseFrame className="aspect-4/3 w-full max-md:overflow-hidden max-md:rounded-t-xl">
         <Image
           src={buildOptimizedCloudinaryUrl(asset.preview_url, { width: 800 })}
           alt={asset.title}
