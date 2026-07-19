@@ -139,7 +139,9 @@ export function InitiativeCard({
   const supportCount = i.support_count ?? 0;
   const profiles = i.author_membership?.profiles ?? null;
   const showActionRequired =
-    Boolean(nudgeContent) && !i.suspended_at && getContentNudgeReason(nudgeContent!);
+    Boolean(nudgeContent) &&
+    !i.suspended_at &&
+    Boolean(getContentNudgeReason(nudgeContent!));
 
   if (layout === "horizontal") {
     return (

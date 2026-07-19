@@ -62,19 +62,19 @@ export function LightboxZoomableImage({ src, alt = "", active }: Props) {
         doubleClick={{ mode: "toggle", step: 2 }}
         wheel={{ step: 0.1 }}
         pinch={{ step: 5 }}
-        wrapperStyle={{ width: "100%", height: "100%", maxHeight: "100%" }}
-        contentStyle={{
-          width: "100%",
-          height: "100%",
-          maxHeight: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
       >
         <TransformComponent
           wrapperClass="!size-full !max-h-full !max-w-full"
           contentClass="!flex !size-full !max-h-full !max-w-full items-center justify-center"
+          wrapperStyle={{ width: "100%", height: "100%", maxHeight: "100%" }}
+          contentStyle={{
+            width: "100%",
+            height: "100%",
+            maxHeight: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
         >
           <img
             ref={imgRef}
