@@ -7,6 +7,7 @@ import {
   BackofficeListResultCount,
 } from "@/components/features/backoffice/backoffice-list-toolbar";
 import { CommuneDetailHeader } from "@/components/features/backoffice/commune-detail-header";
+import { CommuneDetailTabs } from "@/components/features/backoffice/commune-detail-tabs";
 import { CommuneSubscriptionSection } from "@/components/features/backoffice/commune-subscription-section";
 import { CommuneTrialSection } from "@/components/features/backoffice/commune-trial-section";
 import { CommuneWelcomeMessageEditor } from "@/components/features/backoffice/commune-welcome-message-editor";
@@ -81,159 +82,173 @@ export default async function BackofficeCommuneDetailPage(props: {
         mairieAddressLng={stats.commune.mairie_address_lng}
       />
 
-      <div className="space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Card className="space-y-1 p-4">
-            <p className="text-[10px] font-semibold uppercase text-muted">
+            <p className="text-[11px] font-semibold uppercase text-muted">
               Adhérent·es actifs
             </p>
-            <p className="text-3xl font-bold text-purple">
+            <p className="text-2xl font-bold text-purple md:text-3xl">
               {stats.activeMembersCount}
             </p>
           </Card>
           <Card className="space-y-1 p-4">
-            <p className="text-[10px] font-semibold uppercase text-muted">
+            <p className="text-[11px] font-semibold uppercase text-muted">
               Annonces actives
             </p>
-            <p className="text-3xl font-bold text-coral">
+            <p className="text-2xl font-bold text-coral md:text-3xl">
               {stats.activeAnnouncementsCount}
             </p>
           </Card>
           <Card className="space-y-1 p-4">
-            <p className="text-[10px] font-semibold uppercase text-muted">
+            <p className="text-[11px] font-semibold uppercase text-muted">
               Initiatives actives
             </p>
-            <p className="text-3xl font-bold text-mint">
+            <p className="text-2xl font-bold text-mint md:text-3xl">
               {stats.activeInitiativesCount}
             </p>
           </Card>
           <Card className="space-y-1 p-4">
-            <p className="text-[10px] font-semibold uppercase text-muted">
+            <p className="text-[11px] font-semibold uppercase text-muted">
               Événements actifs
             </p>
-            <p className="text-3xl font-bold text-orange">
+            <p className="text-2xl font-bold text-orange md:text-3xl">
               {stats.activeEventsCount}
             </p>
           </Card>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-3">
           <Card className="space-y-1 p-4">
-            <p className="text-[10px] font-semibold uppercase text-muted">
+            <p className="text-[11px] font-semibold uppercase text-muted">
               Annonces créées
             </p>
-            <p className="text-2xl font-bold text-text">
+            <p className="text-xl font-bold text-text md:text-2xl">
               {stats.totalAnnouncementsCount}
             </p>
           </Card>
           <Card className="space-y-1 p-4">
-            <p className="text-[10px] font-semibold uppercase text-muted">
+            <p className="text-[11px] font-semibold uppercase text-muted">
               Initiatives créées
             </p>
-            <p className="text-2xl font-bold text-text">
+            <p className="text-xl font-bold text-text md:text-2xl">
               {stats.totalInitiativesCount}
             </p>
           </Card>
           <Card className="space-y-1 p-4">
-            <p className="text-[10px] font-semibold uppercase text-muted">
+            <p className="text-[11px] font-semibold uppercase text-muted">
               Événements créés
             </p>
-            <p className="text-2xl font-bold text-text">
+            <p className="text-xl font-bold text-text md:text-2xl">
               {stats.totalEventsCount}
             </p>
           </Card>
-        </div>
       </div>
 
-      <CommuneTrialSection
-        communeId={stats.commune.id}
-        accessStatus={stats.commune.access_status}
-        trialAccessCode={stats.commune.trial_access_code}
-        trialMaxMembers={stats.commune.trial_max_members}
-        currentMembersCount={stats.activeMembersCount}
-      />
+      <CommuneDetailTabs
+        tabs={[
+          { id: "subscription", label: "Abonnement" },
+          { id: "members", label: "Adhérents" },
+          { id: "settings", label: "Réglages" },
+        ]}
+        defaultTab="subscription"
+      >
+        {{
+          subscription: (
+            <div className="space-y-6">
+              <CommuneTrialSection
+                communeId={stats.commune.id}
+                accessStatus={stats.commune.access_status}
+                trialAccessCode={stats.commune.trial_access_code}
+                trialMaxMembers={stats.commune.trial_max_members}
+                currentMembersCount={stats.activeMembersCount}
+              />
+              <CommuneSubscriptionSection
+                communeId={stats.commune.id}
+                subscribedSince={subscriptionInfo.subscribedSince}
+                periods={subscriptionInfo.periods}
+                cancellationsBySubscription={cancellationsBySubscription}
+              />
+            </div>
+          ),
+          members: (
+            <section className="space-y-4">
+              <BackofficeListFilters
+                {...memberListQueryProps}
+                searchPlaceholder="Rechercher par nom ou prénom"
+                roleOptions={[
+                  { value: "member", label: ROLE_LABELS.member },
+                  { value: "staff", label: ROLE_LABELS.staff },
+                  { value: "mayor", label: ROLE_LABELS.mayor },
+                ]}
+                statusOptions={[
+                  { value: "active", label: "Active" },
+                  { value: "suspended", label: "Suspendue" },
+                ]}
+              />
 
-      <CommuneSubscriptionSection
-        communeId={stats.commune.id}
-        subscribedSince={subscriptionInfo.subscribedSince}
-        periods={subscriptionInfo.periods}
-        cancellationsBySubscription={cancellationsBySubscription}
-      />
+              <BackofficeListResultCount {...memberListQueryProps} />
 
-      <CommuneWelcomeMessageEditor
-        communeId={stats.commune.id}
-        initialMessage={stats.commune.welcomeMessage}
-      />
-
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold leading-7 text-text">Adhérent·es</h2>
-
-        <BackofficeListFilters
-          {...memberListQueryProps}
-          searchPlaceholder="Rechercher par nom ou prénom"
-          roleOptions={[
-            { value: "member", label: ROLE_LABELS.member },
-            { value: "staff", label: ROLE_LABELS.staff },
-            { value: "mayor", label: ROLE_LABELS.mayor },
-          ]}
-          statusOptions={[
-            { value: "active", label: "Active" },
-            { value: "suspended", label: "Suspendue" },
-          ]}
-        />
-
-        <BackofficeListResultCount {...memberListQueryProps} />
-
-        {membersPage.items.length === 0 ? (
-          <Card className="p-6 text-sm font-medium text-muted">
-            Aucun adhérent·e ne correspond à votre recherche.
-          </Card>
-        ) : (
-          <div className="space-y-2">
-            {membersPage.items.map((member) => (
-              <div
-                key={member.membershipId}
-                className="flex flex-col gap-2 sm:flex-row sm:items-stretch"
-              >
-                <BackofficeListLinkCard
-                  href={ROUTES.backoffice.userDetail(member.userId)}
-                  title={member.fullName}
-                  titleAside={
-                    <div className="flex flex-wrap items-center gap-2">
-                      <MembershipRoleBadge
-                        role={member.role}
-                        isPlatformAdmin={member.isPlatformAdmin}
+              {membersPage.items.length === 0 ? (
+                <Card className="p-6 text-sm font-medium text-muted">
+                  Aucun adhérent·e ne correspond à votre recherche.
+                </Card>
+              ) : (
+                <div className="space-y-2">
+                  {membersPage.items.map((member) => (
+                    <div
+                      key={member.membershipId}
+                      className="flex flex-col gap-2 sm:flex-row sm:items-stretch"
+                    >
+                      <BackofficeListLinkCard
+                        href={ROUTES.backoffice.userDetail(member.userId)}
+                        title={member.fullName}
+                        titleAside={
+                          <div className="flex flex-wrap items-center gap-2">
+                            <MembershipRoleBadge
+                              role={member.role}
+                              isPlatformAdmin={member.isPlatformAdmin}
+                            />
+                            <MembershipStatusBadge status={member.status} />
+                          </div>
+                        }
+                        fields={[
+                          {
+                            label: "Adhésion",
+                            value: formatShortDate(member.joinedAt),
+                          },
+                        ]}
+                        className="min-w-0 flex-1"
                       />
-                      <MembershipStatusBadge status={member.status} />
+                      <div className="flex shrink-0 items-center sm:px-1">
+                        <ChangeRoleButton
+                          membershipId={member.membershipId}
+                          userId={member.userId}
+                          communeId={id}
+                          role={member.role}
+                          isPlatformAdmin={member.isPlatformAdmin}
+                          memberName={member.fullName}
+                          currentUserIsPlatformAdmin
+                          size="sm"
+                        />
+                      </div>
                     </div>
-                  }
-                  fields={[
-                    {
-                      label: "Adhésion",
-                      value: formatShortDate(member.joinedAt),
-                    },
-                  ]}
-                  className="min-w-0 flex-1"
-                />
-                <div className="flex shrink-0 items-center sm:px-1">
-                  <ChangeRoleButton
-                    membershipId={member.membershipId}
-                    userId={member.userId}
-                    communeId={id}
-                    role={member.role}
-                    isPlatformAdmin={member.isPlatformAdmin}
-                    memberName={member.fullName}
-                    currentUserIsPlatformAdmin
-                    size="sm"
-                  />
+                  ))}
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              )}
 
-        <BackofficeListPagination {...memberListQueryProps} />
-      </section>
+              <BackofficeListPagination {...memberListQueryProps} />
+            </section>
+          ),
+          settings: (
+            <section className="space-y-6">
+              <Card className="space-y-3 p-6">
+                <h3 className="text-sm font-semibold text-text">Message de bienvenue</h3>
+                <CommuneWelcomeMessageEditor
+                  communeId={stats.commune.id}
+                  initialMessage={stats.commune.welcomeMessage}
+                />
+              </Card>
+            </section>
+          ),
+        }}
+      </CommuneDetailTabs>
     </PageStack>
   );
 }
