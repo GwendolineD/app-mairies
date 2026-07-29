@@ -23,7 +23,7 @@ export function PageHeading({
   return (
     <header
       className={cn(
-        actions && "flex items-start justify-between gap-3",
+        actions && "flex flex-wrap items-start justify-between gap-3",
         centered && !actions && "text-center",
         className,
       )}
@@ -34,7 +34,7 @@ export function PageHeading({
             "text-text",
             size === "hero"
               ? "text-balance text-5xl font-bold leading-[56px]"
-              : "text-[28px] font-bold leading-9",
+              : "text-2xl font-bold leading-8 md:text-[28px] md:leading-9",
           )}
         >
           {title}

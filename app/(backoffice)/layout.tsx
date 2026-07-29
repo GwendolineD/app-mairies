@@ -1,3 +1,4 @@
+import { Toaster } from "sonner";
 import { AdminShell } from "@/components/features/admin-shell/admin-shell";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import {
@@ -35,11 +36,13 @@ export default async function BackofficeLayout({
       navItems={BACKOFFICE_NAV}
       storageKey={BACKOFFICE_SIDEBAR_STORAGE_KEY}
       sidebarTitle="Backoffice"
+      mobileNav="drawer"
       badges={{
         [ROUTES.backoffice.signalements]: pendingReportsCount,
       }}
     >
       {children}
+      <Toaster position="top-center" richColors closeButton />
     </AdminShell>
   );
 }
