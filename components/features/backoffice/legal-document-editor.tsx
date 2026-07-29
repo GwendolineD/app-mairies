@@ -8,12 +8,19 @@ import {
   Heading2,
   Heading3,
   Italic,
+  Link2,
   List,
   ListOrdered,
   Loader2,
+  Minus,
+  Quote,
+  Strikethrough,
+  Underline,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
+import { toast } from "sonner";
 import { updateLegalDocument } from "@/lib/actions/legal-documents";
 import {
   legalDocumentEditorExtensions,
@@ -22,6 +29,7 @@ import {
 import type { LegalDocumentSlug } from "@/lib/legal/seed-content";
 import type { LegalDocument } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { FormField, Input } from "@/components/ui/form-field";
 import { cn } from "@/lib/utils/cn";
 
 type Props = {
@@ -51,7 +59,7 @@ function ToolbarButton({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "inline-flex size-8 cursor-pointer items-center justify-center rounded-sm border border-border bg-surface text-text transition hover:bg-warm disabled:cursor-not-allowed disabled:opacity-50",
+        "inline-flex size-11 md:size-8 cursor-pointer items-center justify-center rounded-sm border border-border bg-surface text-text transition hover:bg-warm disabled:cursor-not-allowed disabled:opacity-50",
         active && "border-purple bg-soft-pink text-purple",
       )}
     >
@@ -73,8 +81,12 @@ export function LegalDocumentEditor({ document }: Props) {
   const [savedTitle, setSavedTitle] = useState(document.title);
   const [savedContentHtml, setSavedContentHtml] = useState(document.content_html);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const initialContent = useMemo(() => {
     if (hasTiptapContent(document.content_json)) {
@@ -95,7 +107,7 @@ export function LegalDocumentEditor({ document }: Props) {
       attributes: {
         class: cn(
           legalDocumentProseClassName,
-          "min-h-[420px] rounded-sm border border-border bg-surface px-4 py-3 outline-none focus-visible:border-purple",
+          "min-h-[50dvh] max-h-[70dvh] overflow-y-auto rounded-sm border border-border bg-surface px-4 py-3 outline-none focus-visible:border-purple",
         ),
       },
     },
@@ -105,11 +117,20 @@ export function LegalDocumentEditor({ document }: Props) {
     title !== savedTitle ||
     (editor ? editor.getHTML() !== savedContentHtml : false);
 
+  // Unsaved changes guard
+  useEffect(() => {
+    if (!hasChanges) return;
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      e.preventDefault();
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasChanges]);
+
   function handleSave() {
     if (!editor || !hasChanges || isPending) return;
 
     setError(null);
-    setSuccess(false);
 
     const contentHtml = editor.getHTML();
     const contentJson = editor.getJSON() as Record<string, unknown>;
@@ -123,39 +144,38 @@ export function LegalDocumentEditor({ document }: Props) {
       });
 
       if (!result.success) {
-        setError(result.error ?? "Enregistrement impossible.");
+        const msg = result.error ?? "Enregistrement impossible.";
+        setError(msg);
+        toast.error(msg);
         return;
       }
 
       setSavedTitle(title);
       setSavedContentHtml(contentHtml);
-      setSuccess(true);
+      toast.success("Document enregistré");
       router.refresh();
     });
   }
 
+  function handleInsertLink() {
+    if (!editor) return;
+    const url = window.prompt("URL du lien :");
+    if (!url) return;
+    editor.chain().focus().setLink({ href: url }).run();
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <label
-          htmlFor="legal-document-title"
-          className="text-sm font-semibold text-text"
-        >
-          Titre du document
-        </label>
-        <input
+    <div className={cn("space-y-6", hasChanges && "pb-24")}>
+      <FormField label="Titre du document">
+        <Input
           id="legal-document-title"
           value={title}
-          onChange={(event) => {
-            setTitle(event.target.value);
-            setSuccess(false);
-          }}
-          className="w-full rounded-sm border border-border bg-surface px-3 py-2 text-sm font-medium text-text outline-none transition focus-visible:border-purple"
+          onChange={(event) => setTitle(event.target.value)}
         />
-      </div>
+      </FormField>
 
       <div className="space-y-3">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="sticky top-0 z-10 flex flex-wrap items-center gap-1.5 rounded-sm border border-border bg-surface/95 p-1.5 backdrop-blur md:gap-2 md:p-2">
           <ToolbarButton
             label="Titre principal"
             active={editor?.isActive("heading", { level: 1 }) ?? false}
@@ -197,6 +217,22 @@ export function LegalDocumentEditor({ document }: Props) {
             <Italic className="size-4" aria-hidden />
           </ToolbarButton>
           <ToolbarButton
+            label="Souligné"
+            active={editor?.isActive("underline") ?? false}
+            disabled={!editor || isPending}
+            onClick={() => editor?.chain().focus().toggleUnderline().run()}
+          >
+            <Underline className="size-4" aria-hidden />
+          </ToolbarButton>
+          <ToolbarButton
+            label="Barré"
+            active={editor?.isActive("strike") ?? false}
+            disabled={!editor || isPending}
+            onClick={() => editor?.chain().focus().toggleStrike().run()}
+          >
+            <Strikethrough className="size-4" aria-hidden />
+          </ToolbarButton>
+          <ToolbarButton
             label="Liste à puces"
             active={editor?.isActive("bulletList") ?? false}
             disabled={!editor || isPending}
@@ -212,35 +248,63 @@ export function LegalDocumentEditor({ document }: Props) {
           >
             <ListOrdered className="size-4" aria-hidden />
           </ToolbarButton>
+          <ToolbarButton
+            label="Citation"
+            active={editor?.isActive("blockquote") ?? false}
+            disabled={!editor || isPending}
+            onClick={() => editor?.chain().focus().toggleBlockquote().run()}
+          >
+            <Quote className="size-4" aria-hidden />
+          </ToolbarButton>
+          <ToolbarButton
+            label="Lien"
+            active={editor?.isActive("link") ?? false}
+            disabled={!editor || isPending}
+            onClick={handleInsertLink}
+          >
+            <Link2 className="size-4" aria-hidden />
+          </ToolbarButton>
+          <ToolbarButton
+            label="Séparateur"
+            disabled={!editor || isPending}
+            onClick={() => editor?.chain().focus().setHorizontalRule().run()}
+          >
+            <Minus className="size-4" aria-hidden />
+          </ToolbarButton>
         </div>
 
         <EditorContent editor={editor} />
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <Button
-          type="button"
-          variant="primary"
-          size="sm"
-          disabled={!hasChanges || isPending || !editor}
-          onClick={handleSave}
-        >
-          {isPending ? (
-            <>
-              <Loader2 className="size-4 animate-spin" aria-hidden />
-              Enregistrement…
-            </>
-          ) : (
-            "Enregistrer"
-          )}
-        </Button>
-        {success ? (
-          <p className="text-sm font-medium text-mint">Document enregistré.</p>
-        ) : null}
-        {error ? (
-          <p className="text-sm font-medium text-coral">{error}</p>
-        ) : null}
-      </div>
+      {error ? (
+        <p className="text-sm font-medium text-coral" role="alert">{error}</p>
+      ) : null}
+
+      {hasChanges && isMounted
+        ? createPortal(
+            <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border/80 bg-surface/95 px-5 py-3 backdrop-blur md:px-6 lg:px-8">
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  disabled={isPending || !editor}
+                  onClick={handleSave}
+                >
+                  {isPending ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin" aria-hidden />
+                      Enregistrement…
+                    </>
+                  ) : (
+                    "Enregistrer"
+                  )}
+                </Button>
+              </div>
+            </div>,
+            window.document.body,
+          )
+        : null}
     </div>
   );
 }
