@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ResponsiveFilterBar } from "@/components/ui/responsive-filter-bar";
 import { resolveEndDateAfterStartChange } from "@/lib/datetime";
 import type { PilotCommuneOption } from "@/lib/queries/backoffice-communes";
 import type { ContentCategoryOption } from "@/lib/queries/backoffice-contenus";
@@ -28,6 +29,7 @@ import {
   BACKOFFICE_CONTENT_SUBTYPES,
   BACKOFFICE_CONTENT_TYPES,
   BACKOFFICE_CONTENT_TYPE_LABELS,
+  activeBackofficeContenusFilterCount,
   buildBackofficeContenusListQuery,
   type BackofficeContenusListParams,
   type BackofficeContentStatus,
@@ -172,6 +174,23 @@ export function ContenusToolbar({
     navigate({ statuses: next });
   }
 
+  const filterCount = activeBackofficeContenusFilterCount(params);
+
+  function clearAllFilters() {
+    navigate({
+      types: ["announcement"],
+      commune: undefined,
+      statuses: [],
+      suspended: undefined,
+      subtype: undefined,
+      category: undefined,
+      official: undefined,
+      dateFrom: undefined,
+      dateTo: undefined,
+      sort: BACKOFFICE_CONTENT_SORT.newest,
+    });
+  }
+
   return (
     <div className="flex flex-col gap-3">
       <div className="relative max-w-md w-full">
@@ -194,7 +213,10 @@ export function ContenusToolbar({
         ) : null}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <ResponsiveFilterBar
+        filterCount={filterCount}
+        onClearAll={clearAllFilters}
+      >
         <Popover open={typeMenuOpen} onOpenChange={setTypeMenuOpen}>
           <PopoverTrigger
             render={
@@ -436,7 +458,7 @@ export function ContenusToolbar({
           }
           maxDate={params.dateTo}
           placeholder="Date de début"
-          className="w-40"
+          className="w-full md:w-40"
           aria-label="Date de début"
         />
 
@@ -445,7 +467,7 @@ export function ContenusToolbar({
           onChange={(value) => navigate({ dateTo: value || undefined })}
           minDate={params.dateFrom}
           placeholder="Date de fin"
-          className="w-40"
+          className="w-full md:w-40"
           aria-label="Date de fin"
         />
 
@@ -478,7 +500,7 @@ export function ContenusToolbar({
         {isPending ? (
           <span className="text-xs font-medium text-muted">Mise à jour…</span>
         ) : null}
-      </div>
+      </ResponsiveFilterBar>
     </div>
   );
 }

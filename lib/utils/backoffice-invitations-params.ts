@@ -111,3 +111,15 @@ export function buildBackofficeInvitationsListQuery(
   const qs = sp.toString();
   return qs ? `?${qs}` : "";
 }
+
+export function activeBackofficeInvitationsFilterCount(
+  params: BackofficeInvitationsListParams,
+): number {
+  let count = 0;
+  if (params.commune) count += 1;
+  if (params.status) count += 1;
+  if (params.reminded != null) count += 1;
+  if (params.dateFrom) count += 1;
+  if (params.dateTo) count += 1;
+  return count;
+}

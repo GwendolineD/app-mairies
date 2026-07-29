@@ -249,3 +249,24 @@ export function statusesForContentType(
   if (selected.length === 0) return valid;
   return valid.filter((status) => selected.includes(status));
 }
+
+export function activeBackofficeContenusFilterCount(
+  params: BackofficeContenusListParams,
+): number {
+  let count = 0;
+  const defaultTypes: BackofficeContentType[] = ["announcement"];
+  const typesMatch =
+    params.types.length === defaultTypes.length &&
+    params.types.every((t) => defaultTypes.includes(t));
+  if (!typesMatch) count += 1;
+  if (params.commune) count += 1;
+  if (params.statuses.length > 0) count += 1;
+  if (params.suspended != null) count += 1;
+  if (params.subtype) count += 1;
+  if (params.category) count += 1;
+  if (params.official != null) count += 1;
+  if (params.dateFrom) count += 1;
+  if (params.dateTo) count += 1;
+  if (params.sort !== BACKOFFICE_CONTENT_SORT.newest) count += 1;
+  return count;
+}

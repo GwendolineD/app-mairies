@@ -12,11 +12,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ResponsiveFilterBar } from "@/components/ui/responsive-filter-bar";
 import { resolveEndDateAfterStartChange } from "@/lib/datetime";
 import type { PilotCommuneOption } from "@/lib/queries/backoffice-communes";
 import {
   INVITATION_DERIVED_STATUS,
   INVITATION_DERIVED_STATUS_LABELS,
+  activeBackofficeInvitationsFilterCount,
   buildBackofficeInvitationsListQuery,
   type BackofficeInvitationsListParams,
 } from "@/lib/utils/backoffice-invitations-params";
@@ -61,6 +63,18 @@ export function InvitationsToolbar({
     navigate({ q: undefined });
   }
 
+  const filterCount = activeBackofficeInvitationsFilterCount(params);
+
+  function clearAllFilters() {
+    navigate({
+      commune: undefined,
+      status: undefined,
+      reminded: undefined,
+      dateFrom: undefined,
+      dateTo: undefined,
+    });
+  }
+
   return (
     <div className="flex flex-col gap-3">
       <div className="relative max-w-md w-full">
@@ -83,7 +97,10 @@ export function InvitationsToolbar({
         ) : null}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <ResponsiveFilterBar
+        filterCount={filterCount}
+        onClearAll={clearAllFilters}
+      >
         <Select
           items={[
             { value: "all", label: "Toutes les communes" },
@@ -193,7 +210,7 @@ export function InvitationsToolbar({
           }
           maxDate={params.dateTo}
           placeholder="Date de début"
-          className="w-40"
+          className="w-full md:w-40"
           aria-label="Date de début"
         />
 
@@ -202,14 +219,14 @@ export function InvitationsToolbar({
           onChange={(value) => navigate({ dateTo: value || undefined })}
           minDate={params.dateFrom}
           placeholder="Date de fin"
-          className="w-40"
+          className="w-full md:w-40"
           aria-label="Date de fin"
         />
 
         {isPending ? (
           <span className="text-xs font-medium text-muted">Mise à jour…</span>
         ) : null}
-      </div>
+      </ResponsiveFilterBar>
     </div>
   );
 }

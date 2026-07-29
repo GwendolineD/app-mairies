@@ -145,3 +145,11 @@ export function buildBackofficeMembersListQuery(
 }
 
 export { ALL_ACCESS_STATUSES, PILOT_ACCESS_STATUSES };
+
+export function activeBackofficeCommunesFilterCount(
+  params: BackofficeCommunesListParams,
+): number {
+  let count = 0;
+  if (params.statuses.length > 0) count += 1;
+  return count;
+}

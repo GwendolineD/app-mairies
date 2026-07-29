@@ -22,9 +22,10 @@ import {
   type AuditCategoryValue,
   type AuditSeverityValue,
 } from "@/lib/constants/audit";
-import { buildBackofficeAuditListQuery } from "@/lib/utils/audit-search-params";
+import { buildBackofficeAuditListQuery, activeBackofficeAuditFilterCount } from "@/lib/utils/audit-search-params";
 import type { BackofficeAuditListParams } from "@/lib/utils/audit-search-params";
 import { AuditMetaBadge } from "./audit-meta-badge";
+import { ResponsiveFilterBar } from "@/components/ui/responsive-filter-bar";
 
 type AuditLogToolbarProps = {
   params: BackofficeAuditListParams;
@@ -68,6 +69,18 @@ export function AuditLogToolbar({ params }: AuditLogToolbarProps) {
     navigate({ q: undefined });
   }
 
+  const filterCount = activeBackofficeAuditFilterCount(params);
+
+  function clearAllFilters() {
+    navigate({
+      category: undefined,
+      severity: undefined,
+      deviceType: undefined,
+      dateFrom: undefined,
+      dateTo: undefined,
+    });
+  }
+
   return (
     <div className="flex flex-col gap-3">
       <div className="relative max-w-md w-full">
@@ -90,7 +103,10 @@ export function AuditLogToolbar({ params }: AuditLogToolbarProps) {
         ) : null}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <ResponsiveFilterBar
+        filterCount={filterCount}
+        onClearAll={clearAllFilters}
+      >
         <Select
           items={[
             { value: "all", label: "Toutes catégories" },
@@ -203,7 +219,7 @@ export function AuditLogToolbar({ params }: AuditLogToolbarProps) {
           }
           maxDate={params.dateTo}
           placeholder="Date de début"
-          className="w-40"
+          className="w-full md:w-40"
           aria-label="Date de début"
         />
 
@@ -212,14 +228,14 @@ export function AuditLogToolbar({ params }: AuditLogToolbarProps) {
           onChange={(value) => navigate({ dateTo: value || undefined })}
           minDate={params.dateFrom}
           placeholder="Date de fin"
-          className="w-40"
+          className="w-full md:w-40"
           aria-label="Date de fin"
         />
 
         {isPending ? (
           <span className="text-xs font-medium text-muted">Mise à jour…</span>
         ) : null}
-      </div>
+      </ResponsiveFilterBar>
     </div>
   );
 }
