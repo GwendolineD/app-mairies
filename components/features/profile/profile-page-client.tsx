@@ -76,6 +76,7 @@ type InviteData = {
   senderName: string;
   communeName: string;
   inviteCount: number;
+  showNeighborInvite: boolean;
 };
 
 type SettingsData = {
@@ -150,11 +151,13 @@ export function ProfilePageClient({
         </section>
 
         <aside className="space-y-5 px-4 md:px-0">
-          <NeighborInviteBlock
-            senderName={invite.senderName}
-            communeName={invite.communeName}
-            inviteCount={invite.inviteCount}
-          />
+          {invite.showNeighborInvite ? (
+            <NeighborInviteBlock
+              senderName={invite.senderName}
+              communeName={invite.communeName}
+              inviteCount={invite.inviteCount}
+            />
+          ) : null}
           <PwaInstallCard />
         </aside>
       </div>

@@ -59,6 +59,7 @@ async function ProfilContent({
   const membership = ctx.activeMembership!;
   const communeId = membership.commune_id;
   const membershipId = membership.id;
+  const isCommuneTrial = membership.commune?.access_status === "trial";
   const scope = { communeId, membershipId };
 
   const supabase = await createClient();
@@ -76,13 +77,15 @@ async function ProfilContent({
     needsContent
       ? fetchActiveTabContent(supabase, activeTab, scope, page)
       : Promise.resolve(null),
-    supabase
-      .from("neighbor_invites")
-      .select("id, email, created_at", { count: "exact" })
-      .eq("commune_id", communeId)
-      .eq("inviter_membership_id", membershipId)
-      .order("created_at", { ascending: false })
-      .limit(3),
+    isCommuneTrial
+      ? Promise.resolve({ count: 0, data: [] })
+      : supabase
+          .from("neighbor_invites")
+          .select("id, email, created_at", { count: "exact" })
+          .eq("commune_id", communeId)
+          .eq("inviter_membership_id", membershipId)
+          .order("created_at", { ascending: false })
+          .limit(3),
     getNotificationPreferences(supabase, ctx.userId),
     getPushPublicKey(),
     supabase.auth.getUser(),
@@ -175,6 +178,7 @@ async function ProfilContent({
         senderName: displayName,
         communeName,
         inviteCount,
+        showNeighborInvite: !isCommuneTrial,
       }}
       settings={{
         notificationPrefs,

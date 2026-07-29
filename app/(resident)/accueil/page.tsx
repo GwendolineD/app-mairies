@@ -35,6 +35,8 @@ export default async function ResidentAccueilPage() {
   const ctx = await requireActiveMembership();
   const communeId = ctx.activeMembership!.commune_id;
   const membershipId = ctx.activeMembership!.id;
+  const isCommuneTrial =
+    ctx.activeMembership?.commune?.access_status === "trial";
   const supabase = await createClient();
 
   const [
@@ -54,11 +56,13 @@ export default async function ResidentAccueilPage() {
     listInitiativesPage(supabase, { communeId }, { limit: 1 }),
     listEventsPage(supabase, { communeId }, { limit: 1 }),
     fetchAccueilBannerSlides(supabase, communeId),
-    supabase
-      .from("neighbor_invites")
-      .select("id", { count: "exact", head: true })
-      .eq("commune_id", communeId)
-      .eq("inviter_membership_id", membershipId),
+    isCommuneTrial
+      ? Promise.resolve({ count: 0 })
+      : supabase
+          .from("neighbor_invites")
+          .select("id", { count: "exact", head: true })
+          .eq("commune_id", communeId)
+          .eq("inviter_membership_id", membershipId),
   ]);
 
   const featuredAnnouncement = await listFeaturedAnnouncementForAccueil(
@@ -124,14 +128,16 @@ export default async function ResidentAccueilPage() {
         <AccueilQuickActions />
       </div>
 
-      <div className={mobileSectionDivider}>
-        <NeighborInviteBlock
-          senderName={resolveDisplayName(ctx.profile)}
-          communeName={communeName}
-          inviteCount={inviteCount}
-          desktopSplit
-        />
-      </div>
+      {!isCommuneTrial ? (
+        <div className={mobileSectionDivider}>
+          <NeighborInviteBlock
+            senderName={resolveDisplayName(ctx.profile)}
+            communeName={communeName}
+            inviteCount={inviteCount}
+            desktopSplit
+          />
+        </div>
+      ) : null}
     </PageStack>
   );
 }
