@@ -351,6 +351,10 @@ export async function createNeighborInvite(
 ): Promise<NeighborInviteState> {
   const ctx = await requireActiveMembership();
 
+  if (ctx.activeMembership?.commune?.access_status === "trial") {
+    return { error: "Invitations entre voisins désactivées en mode essai." };
+  }
+
   const email = (formData.get("email") as string)?.trim().toLowerCase();
   if (!email || !email.includes("@")) {
     return { error: "Adresse e-mail invalide." };
