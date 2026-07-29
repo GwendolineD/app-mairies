@@ -1,6 +1,5 @@
 import {
   ANNOUNCEMENT_STATUS,
-  EVENT_STATUS,
   INITIATIVE_STATUS,
 } from "@/lib/constants/statuses";
 
