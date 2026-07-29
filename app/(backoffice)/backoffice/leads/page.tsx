@@ -27,7 +27,7 @@ export default async function BackofficeLeadsPage() {
         ) : (
           rows.map((lead) => (
             <Card key={lead.id} className="space-y-2 p-4 text-sm">
-              <p className="font-semibold text-text">{lead.email}</p>
+              <p className="truncate font-semibold text-text">{lead.email}</p>
               <p className="text-xs font-medium text-muted">
                 INSEE {lead.insee_code ?? "—"}
                 {typeof lead.metadata === "object" &&

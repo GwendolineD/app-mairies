@@ -29,7 +29,7 @@ export function AuditLogDetail({
         type="button"
         variant="ghost"
         size="sm"
-        className="h-auto px-0 py-0 text-xs font-medium text-purple hover:bg-transparent hover:opacity-80"
+        className="h-auto min-h-[44px] px-0 py-2 text-xs font-medium text-purple hover:bg-transparent hover:opacity-80 md:min-h-0 md:py-0"
         onClick={() => setOpen((value) => !value)}
       >
         {open ? (

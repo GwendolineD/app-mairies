@@ -122,7 +122,7 @@ export function ReportRestoreActionsClient({
       <Button
         type="button"
         variant="secondary"
-        size="xs"
+        size="sm"
         className={restoreButtonClassName}
         disabled={busy}
         onClick={() => setOpen(true)}

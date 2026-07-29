@@ -143,7 +143,7 @@ export default async function BackofficeAuditPage(props: {
                     ) : null}
                   </div>
 
-                  <div className="ml-auto flex shrink-0 items-center gap-3">
+                  <div className="flex shrink-0 flex-wrap items-center gap-2 md:ml-auto md:gap-3">
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-warm px-2.5 py-1 text-xs font-medium text-muted">
                       <DeviceIcon deviceType={log.device_type} />
                       {formatDeviceLabel(

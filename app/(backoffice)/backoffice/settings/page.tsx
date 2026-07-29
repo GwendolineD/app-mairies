@@ -36,7 +36,7 @@ export default async function BackofficeSettingsPage() {
         subtitle={`Paramètres globaux de la plateforme ${APP_NAME}.`}
       />
 
-      <Card className="max-w-lg space-y-6 p-6">
+      <Card className="space-y-6 p-6">
         <PlatformSettingsForm
           initialSupportEmail={settings?.support_email ?? "contact@tous-voisins.fr"}
           initialErrorIllustrationUrls={initialErrorIllustrationUrls}

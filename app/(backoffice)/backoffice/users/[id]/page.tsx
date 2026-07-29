@@ -90,7 +90,7 @@ export default async function BackofficeUserDetailPage(props: {
       </div>
 
       <section className="space-y-3">
-        <PageHeading title="Communes" />
+        <h2 className="text-lg font-semibold leading-7 text-text">Communes</h2>
 
         {user.memberships.length === 0 ? (
           <Card className="p-6 text-sm font-medium text-muted">

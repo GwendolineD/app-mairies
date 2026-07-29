@@ -476,7 +476,7 @@ export function BackofficeListLinkCard({
       )}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-base font-semibold text-text">{title}</p>
+        <p className="min-w-0 truncate text-base font-semibold text-text">{title}</p>
         {titleAside}
       </div>
 

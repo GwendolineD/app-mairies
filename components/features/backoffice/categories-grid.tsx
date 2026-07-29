@@ -101,11 +101,11 @@ function CategoryCard({
             <p className="text-xs text-muted">{category.slug}</p>
           </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={onEdit}
-            className="inline-flex size-8 cursor-pointer items-center justify-center rounded-sm text-muted transition hover:bg-warm hover:text-text"
+            className="inline-flex size-11 md:size-8 cursor-pointer items-center justify-center rounded-sm text-muted transition hover:bg-warm hover:text-text"
             aria-label="Modifier"
           >
             <Pencil className="size-4" aria-hidden />
@@ -113,7 +113,7 @@ function CategoryCard({
           <button
             type="button"
             onClick={onDelete}
-            className="inline-flex size-8 cursor-pointer items-center justify-center rounded-sm text-muted transition hover:bg-coral/10 hover:text-coral"
+            className="inline-flex size-11 md:size-8 cursor-pointer items-center justify-center rounded-sm text-muted transition hover:bg-coral/10 hover:text-coral"
             aria-label="Supprimer"
           >
             <Trash2 className="size-4" aria-hidden />
