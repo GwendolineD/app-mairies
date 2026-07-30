@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
 
 type Tab = {
@@ -15,7 +15,26 @@ type Props = {
 };
 
 export function CommuneDetailTabs({ tabs, defaultTab, children }: Props) {
-  const [activeTab, setActiveTab] = useState(defaultTab ?? tabs[0]?.id ?? "");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const fallbackTab = defaultTab ?? tabs[0]?.id ?? "";
+  const rawTab = searchParams.get("tab");
+  const activeTab = tabs.some((tab) => tab.id === rawTab) ? rawTab! : fallbackTab;
+
+  function setTab(tabId: string) {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (tabId === fallbackTab) {
+      params.delete("tab");
+    } else {
+      params.set("tab", tabId);
+    }
+
+    const qs = params.toString();
+    router.replace(`${pathname}${qs ? `?${qs}` : ""}`, { scroll: false });
+  }
 
   return (
     <div className="space-y-4">
@@ -26,7 +45,7 @@ export function CommuneDetailTabs({ tabs, defaultTab, children }: Props) {
             type="button"
             role="tab"
             aria-selected={activeTab === tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => setTab(tab.id)}
             className={cn(
               "shrink-0 cursor-pointer px-3 py-2 text-sm font-semibold transition",
               activeTab === tab.id
