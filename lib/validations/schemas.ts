@@ -295,6 +295,16 @@ export const updateCommuneInfoSchema = z.object({
   mairieAddressLng: z.coerce.number().optional(),
 });
 
+export const communeSiretSchema = z.object({
+  siret: z.union([
+    z.literal(""),
+    z
+      .string()
+      .trim()
+      .regex(/^\d{14}$/, "Le SIRET doit comporter exactement 14 chiffres"),
+  ]),
+});
+
 export const communicationAssetSchema = z.object({
   title: z.string().trim().min(1, "Titre requis").max(200, "Titre trop long"),
   description: z

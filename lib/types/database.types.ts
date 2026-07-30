@@ -532,6 +532,7 @@ export type Database = {
           plan: Database["public"]["Enums"]["commune_plan"]
           postcode: string | null
           settings: Json
+          siret: string | null
           subscribed_since: string | null
           subscription_ends_at: string | null
           subscription_paid: boolean
@@ -561,6 +562,7 @@ export type Database = {
           plan?: Database["public"]["Enums"]["commune_plan"]
           postcode?: string | null
           settings?: Json
+          siret?: string | null
           subscribed_since?: string | null
           subscription_ends_at?: string | null
           subscription_paid?: boolean
@@ -590,6 +592,7 @@ export type Database = {
           plan?: Database["public"]["Enums"]["commune_plan"]
           postcode?: string | null
           settings?: Json
+          siret?: string | null
           subscribed_since?: string | null
           subscription_ends_at?: string | null
           subscription_paid?: boolean

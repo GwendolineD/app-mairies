@@ -8,6 +8,7 @@ import {
 } from "@/components/features/backoffice/backoffice-list-toolbar";
 import { CommuneDetailHeader } from "@/components/features/backoffice/commune-detail-header";
 import { CommuneDetailTabs } from "@/components/features/backoffice/commune-detail-tabs";
+import { CommuneSiretEditor } from "@/components/features/backoffice/commune-siret-editor";
 import { CommuneSubscriptionSection } from "@/components/features/backoffice/commune-subscription-section";
 import { CommuneTrialSection } from "@/components/features/backoffice/commune-trial-section";
 import { CommuneWelcomeMessageEditor } from "@/components/features/backoffice/commune-welcome-message-editor";
@@ -114,6 +115,13 @@ export default async function BackofficeCommuneDetailPage(props: {
                 trialMaxMembers={stats.commune.trial_max_members}
                 currentMembersCount={stats.activeMembersCount}
               />
+              <section className="space-y-3">
+                <h3 className="text-sm font-semibold text-text">SIRET</h3>
+                <CommuneSiretEditor
+                  communeId={stats.commune.id}
+                  initialSiret={stats.commune.siret ?? ""}
+                />
+              </section>
               <CommuneSubscriptionSection
                 communeId={stats.commune.id}
                 subscribedSince={subscriptionInfo.subscribedSince}

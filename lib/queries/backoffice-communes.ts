@@ -229,6 +229,7 @@ export type CommuneDetailStats = {
     mairie_address_postcode: string | null;
     mairie_address_lat: number | null;
     mairie_address_lng: number | null;
+    siret: string | null;
   };
   activeMembersCount: number;
   activeAnnouncementsCount: number;
@@ -246,7 +247,7 @@ export async function getCommuneDetailStats(
   const { data: commune, error } = await supabase
     .from("communes")
     .select(
-      "id, name, postcode, insee_code, access_status, trial_access_code, trial_max_members, created_at, settings, mairie_address_street, mairie_address_city, mairie_address_postcode, mairie_address_lat, mairie_address_lng",
+      "id, name, postcode, insee_code, access_status, trial_access_code, trial_max_members, created_at, settings, mairie_address_street, mairie_address_city, mairie_address_postcode, mairie_address_lat, mairie_address_lng, siret",
     )
     .eq("id", communeId)
     .maybeSingle();
@@ -316,6 +317,7 @@ export async function getCommuneDetailStats(
       mairie_address_postcode: commune.mairie_address_postcode as string | null,
       mairie_address_lat: commune.mairie_address_lat as number | null,
       mairie_address_lng: commune.mairie_address_lng as number | null,
+      siret: commune.siret as string | null,
     },
     activeMembersCount: activeMembersCount ?? 0,
     activeAnnouncementsCount: activeAnnouncementsCount ?? 0,

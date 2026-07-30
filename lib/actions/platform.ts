@@ -6,7 +6,7 @@ import { requirePlatformAdmin } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
 import { sanitizeEmailHtml, sanitizeHtml } from "@/lib/utils/sanitize-html";
-import { createPilotCommuneSchema, updateCommuneInfoSchema } from "@/lib/validations/schemas";
+import { createPilotCommuneSchema, communeSiretSchema, updateCommuneInfoSchema } from "@/lib/validations/schemas";
 import type { AccessStatus } from "@/lib/types";
 
 export type PlatformActionResult =
@@ -219,6 +219,47 @@ export async function updateCommuneWelcomeMessageAsAdmin(
   if (error) {
     return { success: false, error: error.message };
   }
+
+  revalidatePath(ROUTES.backoffice.communeDetail(communeId));
+  return { success: true };
+}
+
+export async function updateCommuneSiret(
+  communeId: string,
+  siret: string,
+): Promise<PlatformActionResult> {
+  const { userId } = await requirePlatformAdmin();
+
+  if (!communeId) {
+    return { success: false, error: "Commune introuvable." };
+  }
+
+  const parsed = communeSiretSchema.safeParse({ siret });
+  if (!parsed.success) {
+    const firstIssue = parsed.error.issues[0]?.message ?? "Paramètres invalides.";
+    return { success: false, error: firstIssue };
+  }
+
+  const normalizedSiret = parsed.data.siret.trim();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("communes")
+    .update({ siret: normalizedSiret || null })
+    .eq("id", communeId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  void logAudit({
+    action: "admin.update_commune_siret",
+    category: "admin",
+    userId,
+    targetType: "commune",
+    targetId: communeId,
+    communeId,
+  });
 
   revalidatePath(ROUTES.backoffice.communeDetail(communeId));
   return { success: true };

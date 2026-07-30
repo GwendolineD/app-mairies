@@ -17,7 +17,7 @@ import {
   deleteSubscriptionPeriod,
 } from "@/lib/actions/platform";
 import { cn } from "@/lib/utils/cn";
-import { clampEndDate, formatShortDate } from "@/lib/datetime";
+import { clampEndDate, formatCompactShortDate, formatShortDate } from "@/lib/datetime";
 import { formatEuros } from "@/lib/utils/format-currency";
 import { Button } from "@/components/ui/button";
 import { DatePickerField } from "@/components/ui/date-picker-field";
@@ -366,7 +366,7 @@ export function CommuneSubscriptionSection({
       <div className="flex items-center gap-4">
         {subscribedSince ? (
           <span className="text-sm text-muted">
-            Depuis le {formatShortDate(subscribedSince)}
+            Abonné depuis le {formatCompactShortDate(subscribedSince)}
           </span>
         ) : null}
         <Button
