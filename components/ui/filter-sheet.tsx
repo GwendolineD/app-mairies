@@ -102,20 +102,15 @@ export function FilterSheet({
       title={title}
       size="sm"
       contentClassName="p-0"
+      headerTrailing={
+        onClearAll && count > 0 ? (
+          <Button type="button" variant="ghost" size="sm" onClick={onClearAll}>
+            Tout effacer
+          </Button>
+        ) : null
+      }
       footer={
-        <div className="flex items-center justify-between gap-2">
-          {onClearAll && count > 0 ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={onClearAll}
-            >
-              Tout effacer
-            </Button>
-          ) : (
-            <span />
-          )}
+        <div className="flex items-center justify-end gap-2">
           <Button type="button" variant="primary" size="sm" onClick={onClose}>
             {totalResults != null
               ? `Voir les ${totalResults} résultats`
@@ -167,7 +162,7 @@ export function FilterRow({
   iconClassName,
 }: FilterRowProps) {
   return (
-    <div className="flex w-full items-center gap-3 px-4 py-2.5 transition hover:bg-warm/60 md:py-2">
+    <div className="flex w-full items-center gap-3 px-4 py-2 transition hover:bg-warm/60 md:py-2">
       <button
         type="button"
         role="checkbox"
@@ -189,7 +184,7 @@ export function FilterRow({
       <button
         type="button"
         onClick={onRowSelect}
-        className="flex min-h-11 flex-1 cursor-pointer items-center gap-2 text-left text-sm font-medium text-text md:min-h-0"
+        className="flex min-h-10 flex-1 cursor-pointer items-center gap-2 text-left text-sm font-medium text-text md:min-h-0"
       >
         {Icon ? (
           <span

@@ -66,7 +66,7 @@ export function ActiveSubscriptionEuroIcon({
           <Euro
             className={cn(
               "size-4 shrink-0",
-              isPaid ? "text-purple" : "text-purple opacity-40",
+              isPaid ? "text-purple" : "text-muted",
             )}
             aria-hidden
           />

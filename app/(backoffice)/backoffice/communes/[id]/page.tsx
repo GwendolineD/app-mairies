@@ -15,6 +15,7 @@ import { ChangeRoleButton } from "@/components/features/backoffice/change-role-b
 import { MembershipRoleBadge } from "@/components/features/backoffice/membership-role-badge";
 import { MembershipStatusBadge } from "@/components/features/backoffice/membership-status-badge";
 import { HistoryBackLink } from "@/components/ui/history-back-link";
+import { CommuneDetailStats } from "@/components/features/backoffice/commune-detail-stats";
 import { Card } from "@/components/ui/card";
 import { PageStack } from "@/components/ui/page-stack";
 import { ROUTES } from "@/lib/constants/routes";
@@ -82,64 +83,15 @@ export default async function BackofficeCommuneDetailPage(props: {
         mairieAddressLng={stats.commune.mairie_address_lng}
       />
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <Card className="space-y-1 p-4">
-            <p className="text-[11px] font-semibold uppercase text-muted">
-              Adhérent·es actifs
-            </p>
-            <p className="text-2xl font-bold text-purple md:text-3xl">
-              {stats.activeMembersCount}
-            </p>
-          </Card>
-          <Card className="space-y-1 p-4">
-            <p className="text-[11px] font-semibold uppercase text-muted">
-              Annonces actives
-            </p>
-            <p className="text-2xl font-bold text-coral md:text-3xl">
-              {stats.activeAnnouncementsCount}
-            </p>
-          </Card>
-          <Card className="space-y-1 p-4">
-            <p className="text-[11px] font-semibold uppercase text-muted">
-              Initiatives actives
-            </p>
-            <p className="text-2xl font-bold text-mint md:text-3xl">
-              {stats.activeInitiativesCount}
-            </p>
-          </Card>
-          <Card className="space-y-1 p-4">
-            <p className="text-[11px] font-semibold uppercase text-muted">
-              Événements actifs
-            </p>
-            <p className="text-2xl font-bold text-orange md:text-3xl">
-              {stats.activeEventsCount}
-            </p>
-          </Card>
-          <Card className="space-y-1 p-4">
-            <p className="text-[11px] font-semibold uppercase text-muted">
-              Annonces créées
-            </p>
-            <p className="text-xl font-bold text-text md:text-2xl">
-              {stats.totalAnnouncementsCount}
-            </p>
-          </Card>
-          <Card className="space-y-1 p-4">
-            <p className="text-[11px] font-semibold uppercase text-muted">
-              Initiatives créées
-            </p>
-            <p className="text-xl font-bold text-text md:text-2xl">
-              {stats.totalInitiativesCount}
-            </p>
-          </Card>
-          <Card className="space-y-1 p-4">
-            <p className="text-[11px] font-semibold uppercase text-muted">
-              Événements créés
-            </p>
-            <p className="text-xl font-bold text-text md:text-2xl">
-              {stats.totalEventsCount}
-            </p>
-          </Card>
-      </div>
+      <CommuneDetailStats
+        activeMembersCount={stats.activeMembersCount}
+        activeAnnouncementsCount={stats.activeAnnouncementsCount}
+        activeInitiativesCount={stats.activeInitiativesCount}
+        activeEventsCount={stats.activeEventsCount}
+        totalAnnouncementsCount={stats.totalAnnouncementsCount}
+        totalInitiativesCount={stats.totalInitiativesCount}
+        totalEventsCount={stats.totalEventsCount}
+      />
 
       <CommuneDetailTabs
         tabs={[
@@ -192,31 +144,26 @@ export default async function BackofficeCommuneDetailPage(props: {
               ) : (
                 <div className="space-y-2">
                   {membersPage.items.map((member) => (
-                    <div
+                    <BackofficeListLinkCard
                       key={member.membershipId}
-                      className="flex flex-col gap-2 sm:flex-row sm:items-stretch"
-                    >
-                      <BackofficeListLinkCard
-                        href={ROUTES.backoffice.userDetail(member.userId)}
-                        title={member.fullName}
-                        titleAside={
-                          <div className="flex flex-wrap items-center gap-2">
-                            <MembershipRoleBadge
-                              role={member.role}
-                              isPlatformAdmin={member.isPlatformAdmin}
-                            />
-                            <MembershipStatusBadge status={member.status} />
-                          </div>
-                        }
-                        fields={[
-                          {
-                            label: "Adhésion",
-                            value: formatShortDate(member.joinedAt),
-                          },
-                        ]}
-                        className="min-w-0 flex-1"
-                      />
-                      <div className="flex shrink-0 items-center sm:px-1">
+                      href={ROUTES.backoffice.userDetail(member.userId)}
+                      title={member.fullName}
+                      titleAside={
+                        <div className="flex flex-wrap items-center gap-2">
+                          <MembershipRoleBadge
+                            role={member.role}
+                            isPlatformAdmin={member.isPlatformAdmin}
+                          />
+                          <MembershipStatusBadge status={member.status} />
+                        </div>
+                      }
+                      fields={[
+                        {
+                          label: "Adhésion",
+                          value: formatShortDate(member.joinedAt),
+                        },
+                      ]}
+                      footer={
                         <ChangeRoleButton
                           membershipId={member.membershipId}
                           userId={member.userId}
@@ -227,8 +174,8 @@ export default async function BackofficeCommuneDetailPage(props: {
                           currentUserIsPlatformAdmin
                           size="sm"
                         />
-                      </div>
-                    </div>
+                      }
+                    />
                   ))}
                 </div>
               )}

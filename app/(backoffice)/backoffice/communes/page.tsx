@@ -51,8 +51,9 @@ export default async function BackofficeCommunesPage(props: {
       <BackofficeListResultCount {...listQueryProps} />
 
       {items.length === 0 ? (
-        <Card className="p-6 text-sm font-medium text-muted">
-          Aucune commune pilotée ne correspond à votre recherche.
+        <Card className="max-md:rounded-xl p-6 text-sm font-medium text-muted">
+          Aucune commune pilotée ne correspond à votre recherche. Pensez à
+          modifier les filtres.
         </Card>
       ) : (
         <div className="space-y-2">

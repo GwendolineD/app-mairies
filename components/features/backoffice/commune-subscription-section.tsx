@@ -3,6 +3,15 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition, useEffect } from "react";
 import {
+  CalendarRange,
+  CircleDollarSign,
+  RefreshCw,
+  Scale,
+  Trash2,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
+import {
   createCommuneSubscriptionPeriod,
   markSubscriptionPaid,
   deleteSubscriptionPeriod,
@@ -118,6 +127,107 @@ function PaymentStatusBadge({
         Payé
       </span>
     </Tooltip>
+  );
+}
+
+function SubscriptionInfoRow({
+  icon: Icon,
+  label,
+  children,
+}: {
+  icon: LucideIcon;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex min-w-0 items-start gap-2 text-sm">
+      <Icon className="mt-0.5 size-4 shrink-0 text-subtle" aria-hidden />
+      <div className="min-w-0">
+        <p className="text-xs font-semibold uppercase text-muted">{label}</p>
+        <div className="font-medium text-text">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function SubscriptionPeriodMobileCard({
+  period,
+  cancellation,
+  isPending,
+  onMarkPaid,
+  onDelete,
+}: {
+  period: SubscriptionPeriod;
+  cancellation?: CancellationInfo;
+  isPending: boolean;
+  onMarkPaid: (id: string) => void;
+  onDelete: (id: string) => void;
+}) {
+  return (
+    <div className="space-y-3 rounded-xl border border-border/60 bg-warm/30 p-4">
+      <SubscriptionInfoRow icon={CalendarRange} label="Période">
+        <span>
+          {formatShortDate(period.starts_at)} → {formatShortDate(period.ends_at)}
+        </span>
+      </SubscriptionInfoRow>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <SubscriptionInfoRow icon={CircleDollarSign} label="Montant">
+          <span className="font-semibold">{formatEuros(period.amount_cents)}</span>
+        </SubscriptionInfoRow>
+        <SubscriptionInfoRow icon={Wallet} label="Paiement">
+          <PaymentStatusBadge
+            status={period.payment_status}
+            paidAt={period.paid_at}
+            paymentMethod={period.payment_method}
+          />
+        </SubscriptionInfoRow>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <SubscriptionInfoRow icon={RefreshCw} label="Renouvellement auto">
+          {period.auto_renew ? "Oui" : "Non"}
+        </SubscriptionInfoRow>
+        <SubscriptionInfoRow icon={Scale} label="Résiliation">
+          {cancellation ? (
+            <CancellationBadge
+              createdAt={cancellation.createdAt}
+              requesterName={cancellation.requesterName}
+              comment={cancellation.comment}
+            />
+          ) : (
+            <span className="text-muted">—</span>
+          )}
+        </SubscriptionInfoRow>
+      </div>
+
+      <div className="flex flex-wrap gap-2 border-t border-border/60 pt-3">
+        {period.payment_status === "unpaid" ? (
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            disabled={isPending}
+            onClick={() => onMarkPaid(period.id)}
+            className="gap-1.5 text-xs text-mint"
+          >
+            <Wallet className="size-3.5" aria-hidden />
+            Marquer payé
+          </Button>
+        ) : null}
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          disabled={isPending}
+          onClick={() => onDelete(period.id)}
+          className="gap-1.5 text-xs text-coral"
+        >
+          <Trash2 className="size-3.5" aria-hidden />
+          Supprimer
+        </Button>
+      </div>
+    </div>
   );
 }
 
@@ -266,7 +376,7 @@ export function CommuneSubscriptionSection({
         )}
       </div>
 
-      <Card className="space-y-6 p-6">
+      <Card className="space-y-6 rounded-xl p-6">
         <div>
           <div className="mb-3 flex items-center justify-between">
             <p className="text-sm font-semibold text-text">
@@ -285,84 +395,99 @@ export function CommuneSubscriptionSection({
           {periods.length === 0 ? (
             <p className="text-sm text-muted">Aucune période enregistrée.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-xs font-semibold uppercase text-muted">
-                    <th className="py-2 pr-3">Début</th>
-                    <th className="py-2 pr-3">Fin</th>
-                    <th className="py-2 pr-3">Montant</th>
-                    <th className="py-2 pr-3">Paiement</th>
-                    <th className="py-2 pr-3">Renew auto</th>
-                    <th className="py-2 pr-3">Résiliation</th>
-                    <th className="py-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {periods.map((period) => {
-                    const cancellation = cancellationsBySubscription[period.id];
-                    return (
-                      <tr key={period.id} className="border-b border-border/60">
-                        <td className="py-2 pr-3 font-medium">
-                          {formatShortDate(period.starts_at)}
-                        </td>
-                        <td className="py-2 pr-3">
-                          {formatShortDate(period.ends_at)}
-                        </td>
-                        <td className="py-2 pr-3 font-semibold">
-                          {formatEuros(period.amount_cents)}
-                        </td>
-                        <td className="py-2 pr-3">
-                          <PaymentStatusBadge
-                            status={period.payment_status}
-                            paidAt={period.paid_at}
-                            paymentMethod={period.payment_method}
-                          />
-                        </td>
-                        <td className="py-2 pr-3 text-muted">
-                          {period.auto_renew ? "Oui" : "Non"}
-                        </td>
-                        <td className="py-2 pr-3">
-                          {cancellation ? (
-                            <CancellationBadge
-                              createdAt={cancellation.createdAt}
-                              requesterName={cancellation.requesterName}
-                              comment={cancellation.comment}
+            <>
+              <div className="space-y-3 md:hidden">
+                {periods.map((period) => (
+                  <SubscriptionPeriodMobileCard
+                    key={period.id}
+                    period={period}
+                    cancellation={cancellationsBySubscription[period.id]}
+                    isPending={isPending}
+                    onMarkPaid={openMarkPaidModal}
+                    onDelete={openDeleteModal}
+                  />
+                ))}
+              </div>
+
+              <div className="hidden overflow-x-auto md:block">
+                <table className="w-full min-w-max text-sm">
+                  <thead>
+                    <tr className="border-b border-border text-left text-xs font-semibold uppercase text-muted">
+                      <th className="py-2 pr-3">Début</th>
+                      <th className="py-2 pr-3">Fin</th>
+                      <th className="py-2 pr-3">Montant</th>
+                      <th className="py-2 pr-3">Paiement</th>
+                      <th className="py-2 pr-3">Renew auto</th>
+                      <th className="py-2 pr-3">Résiliation</th>
+                      <th className="py-2">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {periods.map((period) => {
+                      const cancellation = cancellationsBySubscription[period.id];
+                      return (
+                        <tr key={period.id} className="border-b border-border/60">
+                          <td className="py-2 pr-3 font-medium">
+                            {formatShortDate(period.starts_at)}
+                          </td>
+                          <td className="py-2 pr-3">
+                            {formatShortDate(period.ends_at)}
+                          </td>
+                          <td className="py-2 pr-3 font-semibold">
+                            {formatEuros(period.amount_cents)}
+                          </td>
+                          <td className="py-2 pr-3">
+                            <PaymentStatusBadge
+                              status={period.payment_status}
+                              paidAt={period.paid_at}
+                              paymentMethod={period.payment_method}
                             />
-                          ) : (
-                            <span className="text-xs text-muted">—</span>
-                          )}
-                        </td>
-                        <td className="py-2">
-                          <div className="flex gap-2">
-                            {period.payment_status === "unpaid" ? (
+                          </td>
+                          <td className="py-2 pr-3 text-muted">
+                            {period.auto_renew ? "Oui" : "Non"}
+                          </td>
+                          <td className="py-2 pr-3">
+                            {cancellation ? (
+                              <CancellationBadge
+                                createdAt={cancellation.createdAt}
+                                requesterName={cancellation.requesterName}
+                                comment={cancellation.comment}
+                              />
+                            ) : (
+                              <span className="text-xs text-muted">—</span>
+                            )}
+                          </td>
+                          <td className="py-2">
+                            <div className="flex gap-2">
+                              {period.payment_status === "unpaid" ? (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  disabled={isPending}
+                                  onClick={() => openMarkPaidModal(period.id)}
+                                  className="text-xs text-mint"
+                                >
+                                  Marquer payé
+                                </Button>
+                              ) : null}
                               <Button
                                 type="button"
                                 variant="ghost"
                                 disabled={isPending}
-                                onClick={() => openMarkPaidModal(period.id)}
-                                className="text-xs text-mint"
+                                onClick={() => openDeleteModal(period.id)}
+                                className="text-xs text-coral"
                               >
-                                Marquer payé
+                                Supprimer
                               </Button>
-                            ) : null}
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              disabled={isPending}
-                              onClick={() => openDeleteModal(period.id)}
-                              className="text-xs text-coral"
-                            >
-                              Supprimer
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       </Card>

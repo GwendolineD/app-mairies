@@ -393,7 +393,7 @@ export function BackofficeListFilters({
 
         <FilterSection title="Abonnement">
           <FilterRow
-            checked={!subscription}
+            checked={!subscription && !payment}
             onCheckboxToggle={() =>
               navigate({ subscription: undefined, payment: undefined })
             }
@@ -404,18 +404,53 @@ export function BackofficeListFilters({
             label="Tous les abonnements"
           />
           <FilterRow
-            checked={subscription === "with"}
+            checked={subscription === "with" && payment === "paid"}
             onCheckboxToggle={() =>
               navigate({
-                subscription: subscription === "with" ? undefined : "with",
-                payment: subscription === "with" ? undefined : payment,
+                subscription: "with",
+                payment:
+                  subscription === "with" && payment === "paid"
+                    ? undefined
+                    : "paid",
+              })
+            }
+            onRowSelect={() => {
+              navigate({ subscription: "with", payment: "paid" });
+              setOpen(false);
+            }}
+            label="Abonnement actif — payé"
+          />
+          <FilterRow
+            checked={subscription === "with" && payment === "unpaid"}
+            onCheckboxToggle={() =>
+              navigate({
+                subscription: "with",
+                payment:
+                  subscription === "with" && payment === "unpaid"
+                    ? undefined
+                    : "unpaid",
+              })
+            }
+            onRowSelect={() => {
+              navigate({ subscription: "with", payment: "unpaid" });
+              setOpen(false);
+            }}
+            label="Abonnement actif — impayé"
+          />
+          <FilterRow
+            checked={subscription === "with" && !payment}
+            onCheckboxToggle={() =>
+              navigate({
+                subscription:
+                  subscription === "with" && !payment ? undefined : "with",
+                payment: undefined,
               })
             }
             onRowSelect={() => {
               navigate({ subscription: "with", payment: undefined });
               setOpen(false);
             }}
-            label="Avec abonnement actif"
+            label="Abonnement actif (tous)"
           />
           <FilterRow
             checked={subscription === "without"}
@@ -432,46 +467,6 @@ export function BackofficeListFilters({
             label="Sans abonnement actif"
           />
         </FilterSection>
-
-        {subscription === "with" ? (
-          <FilterSection title="Paiement">
-            <FilterRow
-              checked={!payment}
-              onCheckboxToggle={() => navigate({ payment: undefined })}
-              onRowSelect={() => {
-                navigate({ payment: undefined });
-                setOpen(false);
-              }}
-              label="Tous les paiements"
-            />
-            <FilterRow
-              checked={payment === "paid"}
-              onCheckboxToggle={() =>
-                navigate({
-                  payment: payment === "paid" ? undefined : "paid",
-                })
-              }
-              onRowSelect={() => {
-                navigate({ payment: "paid" });
-                setOpen(false);
-              }}
-              label="Payé"
-            />
-            <FilterRow
-              checked={payment === "unpaid"}
-              onCheckboxToggle={() =>
-                navigate({
-                  payment: payment === "unpaid" ? undefined : "unpaid",
-                })
-              }
-              onRowSelect={() => {
-                navigate({ payment: "unpaid" });
-                setOpen(false);
-              }}
-              label="Impayé"
-            />
-          </FilterSection>
-        ) : null}
       </>
     ) : null;
 
@@ -749,6 +744,7 @@ export function BackofficeListLinkCard({
   mobileFieldSplitAfter,
   statsRowLeading,
   metaTrailing,
+  footer,
   className,
 }: {
   href: string;
@@ -761,6 +757,8 @@ export function BackofficeListLinkCard({
   /** Rendered before primary stats (e.g. subscription icon on the adherents row). */
   statsRowLeading?: React.ReactNode;
   metaTrailing?: React.ReactNode;
+  /** Rendered below fields, outside the title link (e.g. member actions). */
+  footer?: React.ReactNode;
   className?: string;
 }) {
   function renderField(field: ListField) {
@@ -801,7 +799,7 @@ export function BackofficeListLinkCard({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-border/60 bg-surface px-4 py-4 transition hover:bg-warm",
+        "rounded-xl border border-border/60 bg-surface px-4 py-4 transition hover:bg-warm",
         className,
       )}
     >
@@ -836,6 +834,8 @@ export function BackofficeListLinkCard({
           </p>
         ) : null}
       </div>
+
+      {footer ? <div className="mt-3">{footer}</div> : null}
     </div>
   );
 }

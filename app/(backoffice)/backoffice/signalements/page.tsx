@@ -7,10 +7,9 @@ import { Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
 import { formatCompactShortDate } from "@/lib/datetime";
-import { formatDisplayName, resolveDisplayName } from "@/lib/utils/display-name";
+import { formatDisplayName } from "@/lib/utils/display-name";
 import {
   buildReportListQuery,
-  filterReports,
   getReportContextLabel,
   hasActiveReportFilters,
   isReportListUrlCanonical,
@@ -23,15 +22,9 @@ import { ReportContextPastille } from "@/components/features/reports/report-cont
 import { ReportListToolbar } from "@/components/features/reports/report-list-toolbar";
 import { ReportRelatedCountLink } from "@/components/features/reports/report-related-count-link";
 import { MultilineText } from "@/components/ui/multiline-text";
-import {
-  buildReportResolutionMetaMaps,
-  getReportResolutionMeta,
-} from "@/lib/queries/report-resolution-meta";
-import {
-  buildReportRestoreContextMaps,
-  buildRestoredByNameMap,
-  getReportRestoreContext,
-} from "@/lib/queries/report-restore-context";
+import { getReportResolutionMeta } from "@/lib/queries/report-resolution-meta";
+import { getReportRestoreContext } from "@/lib/queries/report-restore-context";
+import { getSignalementsPageData } from "@/lib/queries/backoffice-signalements";
 
 export const dynamic = "force-dynamic";
 
@@ -68,148 +61,20 @@ export default async function BackofficeSignalementsPage(props: {
 
   const listParams = parseReportListParams(rawSearchParams);
   const supabase = await createClient();
-
-  const { data: reports } = await supabase
-    .from("reports")
-    .select(
-      `*, reporter_membership:memberships!reports_reporter_membership_id_fkey(
-        profiles:profiles!memberships_profiles_user_id_fkey(display_name, first_name, last_name)
-      ), commune:communes!reports_commune_id_fkey(name)`,
-    )
-    .order("created_at", { ascending: listParams.tri === "oldest" })
-    .limit(100);
-
-  const contentIds = (reports ?? [])
-    .filter((r) => r.context_type !== "user")
-    .map((r) => ({ type: r.context_type, id: r.context_id }));
-
-  const titleMap: Record<string, string> = {};
-  const authorMembershipIdMap: Record<string, string> = {};
-  const announcementTypeMap: Record<string, string> = {};
-  const contentSuspendedAtById: Record<string, string | null> = {};
-  const contentSuspendedByUserIdById: Record<string, string | null> = {};
-  const contentSuspensionReasonById: Record<string, string | null> = {};
-
-  for (const table of ["announcements", "initiatives", "events"] as const) {
-    const ctxType =
-      table === "announcements"
-        ? "announcement"
-        : table === "initiatives"
-          ? "initiative"
-          : "event";
-    const ids = contentIds.filter((c) => c.type === ctxType).map((c) => c.id);
-    if (ids.length > 0) {
-      if (table === "announcements") {
-        const { data } = await supabase
-          .from("announcements")
-          .select("id, title, author_membership_id, type, suspended_at, suspended_by, suspension_reason")
-          .in("id", ids);
-        for (const row of data ?? []) {
-          titleMap[row.id] = row.title;
-          authorMembershipIdMap[row.id] = row.author_membership_id;
-          announcementTypeMap[row.id] = row.type;
-          contentSuspendedAtById[row.id] = row.suspended_at;
-          contentSuspendedByUserIdById[row.id] = row.suspended_by;
-          contentSuspensionReasonById[row.id] = row.suspension_reason;
-        }
-      } else {
-        const { data } = await supabase
-          .from(table)
-          .select("id, title, author_membership_id, suspended_at, suspended_by, suspension_reason")
-          .in("id", ids);
-        for (const row of data ?? []) {
-          titleMap[row.id] = row.title;
-          authorMembershipIdMap[row.id] = row.author_membership_id;
-          contentSuspendedAtById[row.id] = row.suspended_at;
-          contentSuspendedByUserIdById[row.id] = row.suspended_by;
-          contentSuspensionReasonById[row.id] = row.suspension_reason;
-        }
-      }
-    }
-  }
-
-  const authorUserIdMap: Record<string, string> = {};
-  const authorNameByMembershipId: Record<string, string> = {};
-  const membershipStatusById: Record<string, string> = {};
-  const membershipSuspendedAtById: Record<string, string | null> = {};
-  const authorMembershipIds = [
-    ...new Set(Object.values(authorMembershipIdMap)),
-  ];
-  if (authorMembershipIds.length > 0) {
-    const { data: authorMemberships } = await supabase
-      .from("memberships")
-      .select(
-        "id, user_id, status, suspended_at, profiles:profiles!memberships_profiles_user_id_fkey(display_name, first_name, last_name)",
-      )
-      .in("id", authorMembershipIds);
-    for (const row of authorMemberships ?? []) {
-      authorUserIdMap[row.id] = row.user_id;
-      authorNameByMembershipId[row.id] = resolveDisplayName(row.profiles ?? {});
-      membershipStatusById[row.id] = row.status;
-      membershipSuspendedAtById[row.id] = row.suspended_at;
-    }
-  }
-
-  const userReportUserIds = [
-    ...new Set(
-      (reports ?? [])
-        .filter((report) => report.context_type === "user")
-        .map((report) => report.context_id),
-    ),
-  ];
-  const userReportMembershipIdMap: Record<string, string> = {};
-  if (userReportUserIds.length > 0) {
-    const { data: userReportMemberships } = await supabase
-      .from("memberships")
-      .select("id, user_id, commune_id, status, suspended_at")
-      .in("user_id", userReportUserIds);
-    for (const row of userReportMemberships ?? []) {
-      userReportMembershipIdMap[`${row.commune_id}:${row.user_id}`] = row.id;
-      membershipStatusById[row.id] = row.status;
-      membershipSuspendedAtById[row.id] = row.suspended_at;
-    }
-  }
-
-  const resolutionMetaMaps = await buildReportResolutionMetaMaps(supabase, {
-    reports: reports ?? [],
-    contentIds: contentIds.map((entry) => entry.id),
-    membershipIds: [
-      ...authorMembershipIds,
-      ...Object.values(userReportMembershipIdMap),
-    ],
-    contentSuspendedAtById,
-    contentSuspendedByUserIdById,
-    membershipSuspendedAtById,
-  });
-
-  const restoreContextMaps = await buildReportRestoreContextMaps(supabase, {
-    contentIds: contentIds.map((entry) => entry.id),
-    membershipIds: [
-      ...authorMembershipIds,
-      ...Object.values(userReportMembershipIdMap),
-    ],
-    contentSuspendedAtById,
-    membershipStatusById,
-  });
-
-  const restoredByNameMap = await buildRestoredByNameMap(
-    supabase,
-    reports ?? [],
-  );
-
-  const reportCountByContext = new Map<string, number>();
-  for (const report of reports ?? []) {
-    if (report.context_type === "user") continue;
-    const key = `${report.context_type}:${report.context_id}`;
-    reportCountByContext.set(key, (reportCountByContext.get(key) ?? 0) + 1);
-  }
-
-  const filteredReports = filterReports(
-    reports ?? [],
-    listParams,
-    announcementTypeMap,
+  const {
+    filteredReports,
     titleMap,
-  );
+    authorMembershipIdMap,
+    announcementTypeMap,
+    contentSuspensionReasonById,
+    authorUserIdMap,
+    authorNameByMembershipId,
+    userReportMembershipIdMap,
+    resolutionMetaMaps,
+    restoreContextMaps,
+    restoredByNameMap,
+    reportCountByContext,
+  } = await getSignalementsPageData(supabase, listParams);
 
   return (
     <PageStack>
