@@ -901,16 +901,16 @@ function ListFieldIconStat({ label, value, icon }: ListField & { icon: LucideIco
           />
         }
       >
-        <Icon className="size-4 shrink-0 text-subtle" aria-hidden />
+        <Icon className="size-5 shrink-0 text-subtle" aria-hidden />
         <span className="tabular-nums text-text">{value}</span>
       </PopoverTrigger>
       <PopoverContent
         side="top"
         align="center"
         sideOffset={6}
-        className="w-auto min-w-0 gap-0 border-0 p-0 shadow-md ring-1 ring-foreground/10"
+        className="w-auto p-3"
       >
-        <span className="whitespace-nowrap px-2.5 py-1.5 text-sm font-semibold text-text">
+        <span className="whitespace-nowrap text-sm font-semibold text-text">
           {label}
         </span>
       </PopoverContent>
@@ -1022,7 +1022,7 @@ export function BackofficeListLinkCard({
         ) : null}
       </div>
 
-      {footer ? <div className="mt-3">{footer}</div> : null}
+      {footer ? <div className="mt-3 flex justify-end">{footer}</div> : null}
     </div>
   );
 }

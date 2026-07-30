@@ -436,6 +436,90 @@ export async function createCommuneSubscriptionPeriod(
   return { success: true };
 }
 
+export async function updateCommuneSubscriptionPeriod(
+  subscriptionId: string,
+  data: { startsAt: string; endsAt: string; amountCents: number },
+): Promise<PlatformActionResult> {
+  const { userId } = await requirePlatformAdmin();
+
+  if (!subscriptionId || !data.startsAt || !data.endsAt || data.amountCents < 0) {
+    return { success: false, error: "Paramètres invalides." };
+  }
+
+  if (data.endsAt < data.startsAt) {
+    return { success: false, error: "La date de fin doit être postérieure à la date de début." };
+  }
+
+  const supabase = await createClient();
+
+  const { data: subscription, error: fetchError } = await supabase
+    .from("commune_subscriptions")
+    .select("commune_id")
+    .eq("id", subscriptionId)
+    .single();
+
+  if (fetchError || !subscription) {
+    return { success: false, error: "Abonnement introuvable." };
+  }
+
+  const { data: overlap } = await supabase
+    .from("commune_subscriptions")
+    .select("id")
+    .eq("commune_id", subscription.commune_id)
+    .neq("id", subscriptionId)
+    .lte("starts_at", data.endsAt)
+    .gte("ends_at", data.startsAt)
+    .limit(1);
+
+  if (overlap?.length) {
+    return { success: false, error: "Les dates chevauchent une période existante." };
+  }
+
+  const { error } = await supabase
+    .from("commune_subscriptions")
+    .update({
+      starts_at: data.startsAt,
+      ends_at: data.endsAt,
+      amount_cents: data.amountCents,
+    })
+    .eq("id", subscriptionId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  const { data: commune } = await supabase
+    .from("communes")
+    .select("subscribed_since")
+    .eq("id", subscription.commune_id)
+    .single();
+
+  if (!commune?.subscribed_since || data.startsAt < commune.subscribed_since) {
+    await supabase
+      .from("communes")
+      .update({ subscribed_since: data.startsAt })
+      .eq("id", subscription.commune_id);
+  }
+
+  void logAudit({
+    action: "billing.update_subscription_period",
+    category: "billing",
+    severity: "critical",
+    userId,
+    targetType: "subscription",
+    targetId: subscriptionId,
+    communeId: subscription.commune_id,
+    metadata: {
+      starts_at: data.startsAt,
+      ends_at: data.endsAt,
+      amount_cents: data.amountCents,
+    },
+  });
+
+  revalidatePath(ROUTES.backoffice.communeDetail(subscription.commune_id));
+  return { success: true };
+}
+
 export async function markSubscriptionPaid(
   subscriptionId: string,
   paidAt: string,
@@ -480,6 +564,49 @@ export async function markSubscriptionPaid(
     targetId: subscriptionId,
     communeId: subscription.commune_id,
     metadata: { paid_at: paidAt, payment_method: paymentMethod.trim() },
+  });
+
+  revalidatePath(ROUTES.backoffice.communeDetail(subscription.commune_id));
+  return { success: true };
+}
+
+export async function markSubscriptionUnpaid(
+  subscriptionId: string,
+): Promise<PlatformActionResult> {
+  const { userId } = await requirePlatformAdmin();
+
+  const supabase = await createClient();
+  const { data: subscription, error: fetchError } = await supabase
+    .from("commune_subscriptions")
+    .select("commune_id")
+    .eq("id", subscriptionId)
+    .single();
+
+  if (fetchError || !subscription) {
+    return { success: false, error: "Abonnement introuvable." };
+  }
+
+  const { error } = await supabase
+    .from("commune_subscriptions")
+    .update({
+      payment_status: "unpaid",
+      paid_at: null,
+      payment_method: null,
+    })
+    .eq("id", subscriptionId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  void logAudit({
+    action: "billing.mark_unpaid",
+    category: "billing",
+    severity: "critical",
+    userId,
+    targetType: "subscription",
+    targetId: subscriptionId,
+    communeId: subscription.commune_id,
   });
 
   revalidatePath(ROUTES.backoffice.communeDetail(subscription.commune_id));

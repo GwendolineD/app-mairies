@@ -10,7 +10,7 @@ import { Textarea as ShadcnTextarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils/cn";
 
 export const formFieldClassName =
-  "h-auto w-full rounded-sm border-border bg-surface px-4 py-2.5 text-sm text-text outline-none placeholder:text-subtle focus-visible:border-purple focus-visible:ring-2 focus-visible:ring-purple/20 md:py-2";
+  "h-auto w-full rounded-sm border border-border bg-surface px-4 py-2.5 text-sm text-text outline-none placeholder:text-subtle focus-visible:border-purple focus-visible:ring-2 focus-visible:ring-purple/20 md:py-2";
 
 type FieldProps = {
   className?: string;

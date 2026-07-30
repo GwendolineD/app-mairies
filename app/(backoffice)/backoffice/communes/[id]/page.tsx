@@ -226,13 +226,13 @@ export default async function BackofficeCommuneDetailPage(props: {
           ),
           settings: (
             <section className="space-y-6">
-              <Card className="space-y-3 p-6">
+              <section className="space-y-3">
                 <h3 className="text-sm font-semibold text-text">Message de bienvenue</h3>
                 <CommuneWelcomeMessageEditor
                   communeId={stats.commune.id}
                   initialMessage={stats.commune.welcomeMessage}
                 />
-              </Card>
+              </section>
             </section>
           ),
         }}

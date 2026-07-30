@@ -63,13 +63,13 @@ function InfoIconPopover({
           />
         }
       >
-        <Icon className="size-4 shrink-0 text-subtle" aria-hidden />
+        <Icon className="size-5 shrink-0 text-subtle" aria-hidden />
       </PopoverTrigger>
       <PopoverContent
         side="top"
         align="center"
         sideOffset={6}
-        className="max-w-xs space-y-1 text-xs"
+        className="w-72 max-w-[min(calc(100vw-2rem),18rem)] p-3 text-sm"
       >
         {children}
       </PopoverContent>
@@ -120,18 +120,20 @@ function NotificationPreferencesList({
   preferences: NotificationPreferences;
 }) {
   return (
-    <ul className="space-y-1">
+    <ul className="space-y-2">
       {(Object.keys(NOTIFICATION_PREF_LABELS) as NotificationPreferenceKey[]).map(
         (key) => (
           <li
             key={key}
-            className="flex items-start justify-between gap-3 font-medium text-muted"
+            className="flex min-h-6 items-start justify-between gap-3 py-1 font-medium leading-5 text-muted"
           >
             <span>{NOTIFICATION_PREF_LABELS[key]}</span>
             <span
               className={cn(
                 "shrink-0 font-semibold",
-                preferences[key] ? "text-mint" : "text-subtle",
+                preferences[key]
+                  ? "text-[color-mix(in_srgb,var(--mint)_75%,var(--text))]"
+                  : "text-subtle",
               )}
             >
               {preferences[key] ? "Activé" : "Désactivé"}
@@ -195,7 +197,7 @@ export function MemberCardStatsLeading({
   preferences: NotificationPreferences | null;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
       <MemberEmailPopover key="email" email={email} />
       <MemberAddressPopover
         key="address"

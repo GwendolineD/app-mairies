@@ -74,7 +74,7 @@ function ContentStatCard({
           {pluralActiveContent(activeCount)}
         </p>
       </div>
-      <p className="text-sm font-medium text-muted">
+      <p className="text-right text-sm font-medium text-muted">
         {totalCount} {pluralCreated(totalCount)}
       </p>
     </Card>
