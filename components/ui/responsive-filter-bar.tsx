@@ -2,85 +2,125 @@
 
 import { useState } from "react";
 
-import { FilterSheetTrigger } from "@/components/ui/filter-sheet";
-import { Modal } from "@/components/ui/modal";
-import { Button } from "@/components/ui/button";
+import {
+  FilterSheet,
+  FilterSheetTrigger,
+} from "@/components/ui/filter-sheet";
 
-type Props = {
-  /** Number of active filters (shown as badge) */
+type SheetState = {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+};
+
+export function useFilterSheetState(): SheetState {
+  const [open, setOpen] = useState(false);
+  return { open, setOpen };
+}
+
+type MobileSheetProps = {
+  open: boolean;
+  onClose: () => void;
   filterCount: number;
-  /** Total result count for footer */
   totalResults?: number;
-  /** Called when "clear all" is pressed */
   onClearAll?: () => void;
-  /** The filter controls to render */
   children: React.ReactNode;
 };
 
+export function FilterMobileSheetPanel({
+  open,
+  onClose,
+  filterCount,
+  totalResults,
+  onClearAll,
+  children,
+}: MobileSheetProps) {
+  return (
+    <FilterSheet
+      open={open}
+      onClose={onClose}
+      count={filterCount}
+      totalResults={totalResults}
+      onClearAll={onClearAll}
+    >
+      {children}
+    </FilterSheet>
+  );
+}
+
+export function FilterMobileTriggerButton({
+  filterCount,
+  onClick,
+  className,
+}: {
+  filterCount: number;
+  onClick: () => void;
+  className?: string;
+}) {
+  return (
+    <FilterSheetTrigger
+      count={filterCount}
+      iconOnly
+      className={className}
+      onClick={onClick}
+    />
+  );
+}
+
+export function FilterDesktopInline({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="hidden md:flex md:flex-wrap md:items-center md:gap-2">
+      {children}
+    </div>
+  );
+}
+
+type ResponsiveFilterBarProps = {
+  filterCount: number;
+  totalResults?: number;
+  onClearAll?: () => void;
+  children: React.ReactNode;
+  /** Mobile sheet content — defaults to `children` when omitted. */
+  mobileChildren?: React.ReactNode;
+};
+
 /**
- * On mobile (< md): shows a "Filtres (N)" trigger button that opens a bottom sheet.
- * On desktop (>= md): renders children inline.
+ * Desktop: inline filter controls.
+ * Mobile: use FilterMobileTriggerButton + FilterMobileSheetPanel separately
+ * when the trigger must sit beside the search field.
  */
 export function ResponsiveFilterBar({
   filterCount,
   totalResults,
   onClearAll,
   children,
-}: Props) {
-  const [open, setOpen] = useState(false);
+  mobileChildren,
+}: ResponsiveFilterBarProps) {
+  const { open, setOpen } = useFilterSheetState();
 
   return (
     <>
-      {/* Mobile: trigger + sheet */}
-      <div className="md:hidden">
-        <FilterSheetTrigger
-          count={filterCount}
-          onClick={() => setOpen(true)}
-        />
-        <Modal
-          open={open}
-          onClose={() => setOpen(false)}
-          title="Filtres"
-          size="sm"
-          scrollable
-          footer={
-            <div className="flex items-center justify-between gap-2 border-t border-border px-4 py-3">
-              {onClearAll && filterCount > 0 ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    onClearAll();
-                    setOpen(false);
-                  }}
-                >
-                  Tout effacer
-                </Button>
-              ) : (
-                <span />
-              )}
-              <Button
-                type="button"
-                variant="primary"
-                size="sm"
-                onClick={() => setOpen(false)}
-              >
-                {totalResults != null
-                  ? `Voir ${totalResults} résultat${totalResults !== 1 ? "s" : ""}`
-                  : "Appliquer"}
-              </Button>
-            </div>
-          }
-        >
-          <div className="flex flex-col gap-4 p-4">{children}</div>
-        </Modal>
-      </div>
-
-      {/* Desktop: inline */}
-      <div className="hidden md:block">
-        <div className="flex flex-wrap items-center gap-2">{children}</div>
-      </div>
+      <FilterMobileTriggerButton
+        filterCount={filterCount}
+        onClick={() => setOpen(true)}
+        className="md:hidden"
+      />
+      <FilterMobileSheetPanel
+        open={open}
+        onClose={() => setOpen(false)}
+        filterCount={filterCount}
+        totalResults={totalResults}
+        onClearAll={
+          onClearAll
+            ? () => {
+                onClearAll();
+                setOpen(false);
+              }
+            : undefined
+        }
+      >
+        {mobileChildren ?? children}
+      </FilterMobileSheetPanel>
+      <FilterDesktopInline>{children}</FilterDesktopInline>
     </>
   );
 }

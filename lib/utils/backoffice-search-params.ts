@@ -57,19 +57,45 @@ function parseAccessStatuses(
   return statuses;
 }
 
+export type CommuneSubscriptionFilter = "with" | "without";
+export type CommunePaymentFilter = "paid" | "unpaid";
+
 export type BackofficeCommunesListParams = {
   q: string;
   statuses: AccessStatus[];
+  subscription?: CommuneSubscriptionFilter;
+  payment?: CommunePaymentFilter;
   page: number;
   limit: number;
 };
 
+function parseCommuneSubscriptionFilter(
+  value: string | undefined,
+): CommuneSubscriptionFilter | undefined {
+  if (value === "with" || value === "without") return value;
+  return undefined;
+}
+
+function parseCommunePaymentFilter(
+  value: string | undefined,
+): CommunePaymentFilter | undefined {
+  if (value === "paid" || value === "unpaid") return value;
+  return undefined;
+}
+
 export function parseBackofficeCommunesListParams(
   searchParams: Record<string, string | string[] | undefined>,
 ): BackofficeCommunesListParams {
+  const subscription = parseCommuneSubscriptionFilter(
+    raw(searchParams, "subscription"),
+  );
+  const paymentRaw = parseCommunePaymentFilter(raw(searchParams, "payment"));
+
   return {
     q: (raw(searchParams, "q") ?? "").trim(),
     statuses: parseAccessStatuses(searchParams),
+    subscription,
+    payment: subscription === "with" ? paymentRaw : undefined,
     page: parsePage(raw(searchParams, "page")),
     limit: parseLimit(
       raw(searchParams, "limit"),
@@ -86,6 +112,10 @@ export function buildBackofficeCommunesListQuery(
   if (params.q) sp.set("q", params.q);
   for (const status of params.statuses ?? []) {
     sp.append("status", status);
+  }
+  if (params.subscription) sp.set("subscription", params.subscription);
+  if (params.subscription === "with" && params.payment) {
+    sp.set("payment", params.payment);
   }
   if (params.page && params.page > 1) sp.set("page", String(params.page));
   if (params.limit && params.limit !== DEFAULT_BACKOFFICE_COMMUNES_PAGE_SIZE) {
@@ -151,5 +181,7 @@ export function activeBackofficeCommunesFilterCount(
 ): number {
   let count = 0;
   if (params.statuses.length > 0) count += 1;
+  if (params.subscription) count += 1;
+  if (params.subscription === "with" && params.payment) count += 1;
   return count;
 }

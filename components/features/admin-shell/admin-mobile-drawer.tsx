@@ -82,88 +82,90 @@ export function AdminMobileDrawer({
         <Menu className="size-5" aria-hidden />
       </Drawer.Trigger>
 
+      <Drawer.SwipeArea className="fixed inset-y-0 left-0 z-[1050] w-4 md:hidden" />
+
       <Drawer.Portal>
         <Drawer.Backdrop className="fixed inset-0 z-[1100] bg-black/40 transition-opacity duration-200 data-closed:opacity-0 data-open:opacity-100" />
-        <Drawer.Popup className="fixed inset-y-0 left-0 z-[1200] flex w-72 flex-col bg-surface shadow-elevated transition-transform duration-200 data-closed:-translate-x-full data-open:translate-x-0">
-          <div className="flex items-center justify-between border-b border-border px-4 py-3">
-            <span className="text-sm font-bold text-text">Navigation</span>
-            <Drawer.Close
-              render={
-                <button
-                  type="button"
-                  className="inline-flex size-9 cursor-pointer items-center justify-center rounded-sm text-muted hover:bg-warm hover:text-text"
-                  aria-label="Fermer le menu"
-                />
-              }
-            >
-              <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <path d="M4 4l8 8M12 4l-8 8" />
-              </svg>
-            </Drawer.Close>
-          </div>
-
-          <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto py-2" aria-label="Navigation administration">
-            {visibleNavItems.map(({ href, label, icon }) => {
-              const Icon = ADMIN_NAV_ICONS[icon];
-              const active = href === activeHref;
-              const badge = badges?.[href];
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  onClick={() => setOpen(false)}
-                  className={cn(
-                    "flex items-center gap-3 px-4 py-3 text-sm font-semibold transition",
-                    active
-                      ? "bg-soft-pink text-coral"
-                      : "text-text hover:bg-soft-pink/70",
-                  )}
-                >
-                  {Icon ? (
-                    <Icon
-                      className={cn(
-                        "size-5 shrink-0",
-                        active ? "text-coral" : "text-coral/85",
-                      )}
-                      aria-hidden
+        <Drawer.Viewport className="fixed inset-y-0 left-0 z-[1200]">
+          <Drawer.Popup className="flex h-full w-72 flex-col bg-surface shadow-elevated transition-transform duration-200 data-closed:-translate-x-full data-open:translate-x-0">
+            <Drawer.Content className="flex min-h-0 flex-1 flex-col">
+              <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
+                <span className="text-sm font-bold text-text">Navigation</span>
+                <Drawer.Close
+                  render={
+                    <button
+                      type="button"
+                      className="inline-flex size-9 cursor-pointer items-center justify-center rounded-sm text-muted hover:bg-warm hover:text-text"
+                      aria-label="Fermer le menu"
                     />
-                  ) : null}
-                  <span className="flex-1">{label}</span>
-                  {badge && badge > 0 ? (
-                    <span className="flex size-5 items-center justify-center rounded-full bg-coral text-[10px] font-bold text-white">
-                      {badge > 99 ? "99+" : badge}
-                    </span>
-                  ) : null}
+                  }
+                >
+                  <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <path d="M4 4l8 8M12 4l-8 8" />
+                  </svg>
+                </Drawer.Close>
+              </div>
+
+              <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto py-2" aria-label="Navigation administration">
+                {visibleNavItems.map(({ href, label, icon }) => {
+                  const Icon = ADMIN_NAV_ICONS[icon];
+                  const active = href === activeHref;
+                  const badge = badges?.[href];
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={() => setOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 px-4 py-3 text-sm font-semibold transition",
+                        active
+                          ? "bg-soft-pink text-coral"
+                          : "text-text hover:bg-soft-pink/70",
+                      )}
+                    >
+                      {Icon ? (
+                        <Icon
+                          className={cn(
+                            "size-5 shrink-0",
+                            active ? "text-coral" : "text-coral/85",
+                          )}
+                          aria-hidden
+                        />
+                      ) : null}
+                      <span className="flex-1">{label}</span>
+                      {badge && badge > 0 ? (
+                        <span className="flex size-5 items-center justify-center rounded-full bg-coral text-[10px] font-bold text-white">
+                          {badge > 99 ? "99+" : badge}
+                        </span>
+                      ) : null}
+                    </Link>
+                  );
+                })}
+              </nav>
+
+              <div className="shrink-0 space-y-1 border-t border-border px-4 py-3">
+                <Link
+                  href={backHref}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 rounded-sm px-2 py-2.5 text-sm font-semibold text-text transition hover:bg-soft-pink/70"
+                >
+                  <ArrowLeft className="size-5 shrink-0 text-coral/85" aria-hidden />
+                  <span>Retour à l&apos;app</span>
                 </Link>
-              );
-            })}
-          </nav>
-
-          <div className="shrink-0 border-t border-border px-4 py-3 space-y-1">
-            <Link
-              href={backHref}
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 rounded-sm px-2 py-2.5 text-sm font-semibold text-text transition hover:bg-soft-pink/70"
-            >
-              <ArrowLeft className="size-5 shrink-0 text-coral/85" aria-hidden />
-              <span>Retour à l&apos;app</span>
-            </Link>
-            <form action={signOut}>
-              <button
-                type="submit"
-                className="flex w-full cursor-pointer items-center gap-3 rounded-sm px-2 py-2.5 text-sm font-semibold text-coral transition hover:bg-coral/5"
-              >
-                <LogOut className="size-5 shrink-0" aria-hidden />
-                <span>Se déconnecter</span>
-              </button>
-            </form>
-          </div>
-        </Drawer.Popup>
+                <form action={signOut}>
+                  <button
+                    type="submit"
+                    className="flex w-full cursor-pointer items-center gap-3 rounded-sm px-2 py-2.5 text-sm font-semibold text-coral transition hover:bg-coral/5"
+                  >
+                    <LogOut className="size-5 shrink-0" aria-hidden />
+                    <span>Se déconnecter</span>
+                  </button>
+                </form>
+              </div>
+            </Drawer.Content>
+          </Drawer.Popup>
+        </Drawer.Viewport>
       </Drawer.Portal>
-
-      <Drawer.SwipeArea
-        className="fixed inset-y-0 left-0 z-[1050] w-4 md:hidden"
-      />
     </Drawer.Root>
   );
 }

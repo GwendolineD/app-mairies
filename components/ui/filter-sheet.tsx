@@ -14,6 +14,8 @@ type FilterSheetTriggerProps = {
   label?: string;
   className?: string;
   onClick: () => void;
+  /** Icon-only square button (mobile toolbar placement next to search). */
+  iconOnly?: boolean;
 };
 
 export function FilterSheetTrigger({
@@ -21,7 +23,34 @@ export function FilterSheetTrigger({
   label = "Filtres",
   className,
   onClick,
+  iconOnly = false,
 }: FilterSheetTriggerProps) {
+  if (iconOnly) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={
+          count > 0 ? `Filtres (${count} actifs)` : "Ouvrir les filtres"
+        }
+        className={cn(
+          "relative inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-sm border bg-surface transition hover:border-purple/30",
+          count > 0
+            ? "border-purple/40 text-purple"
+            : "border-border text-muted",
+          className,
+        )}
+      >
+        <SlidersHorizontal className="size-4" aria-hidden />
+        {count > 0 ? (
+          <span className="absolute -top-1 -right-1 inline-flex size-4 items-center justify-center rounded-full bg-purple text-[10px] font-bold text-white">
+            {count > 99 ? "99+" : count}
+          </span>
+        ) : null}
+      </button>
+    );
+  }
+
   return (
     <button
       type="button"
@@ -38,7 +67,7 @@ export function FilterSheetTrigger({
       <span>{label}</span>
       {count > 0 ? (
         <span className="inline-flex size-4 items-center justify-center rounded-full bg-purple text-[10px] font-bold text-white">
-          {count}
+          {count > 99 ? "99+" : count}
         </span>
       ) : null}
     </button>
@@ -72,19 +101,9 @@ export function FilterSheet({
       onClose={onClose}
       title={title}
       size="sm"
-      headerPrefix={
-        count > 0 && onClearAll ? (
-          <button
-            type="button"
-            onClick={onClearAll}
-            className="cursor-pointer whitespace-nowrap text-xs font-semibold text-muted hover:text-text"
-          >
-            Tout effacer
-          </button>
-        ) : undefined
-      }
+      contentClassName="p-0"
       footer={
-        <div className="flex items-center justify-between gap-2 px-4 py-3">
+        <div className="flex items-center justify-between gap-2">
           {onClearAll && count > 0 ? (
             <Button
               type="button"
@@ -100,12 +119,12 @@ export function FilterSheet({
           <Button type="button" variant="primary" size="sm" onClick={onClose}>
             {totalResults != null
               ? `Voir les ${totalResults} résultats`
-              : "Appliquer"}
+              : "Fermer"}
           </Button>
         </div>
       }
     >
-      <div className="flex flex-col">{children}</div>
+      <div className="max-h-[70vh] overflow-y-auto">{children}</div>
     </Modal>
   );
 }
@@ -170,7 +189,7 @@ export function FilterRow({
       <button
         type="button"
         onClick={onRowSelect}
-        className="flex flex-1 cursor-pointer items-center gap-2 text-left text-sm font-medium text-text"
+        className="flex min-h-11 flex-1 cursor-pointer items-center gap-2 text-left text-sm font-medium text-text md:min-h-0"
       >
         {Icon ? (
           <span

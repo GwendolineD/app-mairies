@@ -12,7 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ResponsiveFilterBar } from "@/components/ui/responsive-filter-bar";
+import {
+  FilterDesktopInline,
+  FilterMobileSheetPanel,
+  FilterMobileTriggerButton,
+  useFilterSheetState,
+} from "@/components/ui/responsive-filter-bar";
 import { resolveEndDateAfterStartChange } from "@/lib/datetime";
 import type { PilotCommuneOption } from "@/lib/queries/backoffice-communes";
 import {
@@ -64,6 +69,7 @@ export function InvitationsToolbar({
   }
 
   const filterCount = activeBackofficeInvitationsFilterCount(params);
+  const { open, setOpen } = useFilterSheetState();
 
   function clearAllFilters() {
     navigate({
@@ -75,32 +81,8 @@ export function InvitationsToolbar({
     });
   }
 
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="relative max-w-md w-full">
-        <Input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Rechercher par email"
-          className="rounded-sm pr-9"
-          aria-label="Rechercher par email"
-        />
-        {search.length > 0 ? (
-          <button
-            type="button"
-            onClick={clearSearch}
-            className="absolute top-1/2 right-2 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-sm text-muted transition hover:text-text"
-            aria-label="Effacer la recherche"
-          >
-            <X className="size-4" aria-hidden />
-          </button>
-        ) : null}
-      </div>
-
-      <ResponsiveFilterBar
-        filterCount={filterCount}
-        onClearAll={clearAllFilters}
-      >
+  const filterControls = (
+    <>
         <Select
           items={[
             { value: "all", label: "Toutes les communes" },
@@ -226,7 +208,48 @@ export function InvitationsToolbar({
         {isPending ? (
           <span className="text-xs font-medium text-muted">Mise à jour…</span>
         ) : null}
-      </ResponsiveFilterBar>
+    </>
+  );
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex min-w-0 items-center gap-2">
+        <div className="relative min-w-0 flex-1 max-w-md">
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Rechercher par email"
+            className="rounded-sm pr-9 placeholder:text-xs md:placeholder:text-sm"
+            aria-label="Rechercher par email"
+          />
+          {search.length > 0 ? (
+            <button
+              type="button"
+              onClick={clearSearch}
+              className="absolute top-1/2 right-2 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-sm text-muted transition hover:text-text"
+              aria-label="Effacer la recherche"
+            >
+              <X className="size-4" aria-hidden />
+            </button>
+          ) : null}
+        </div>
+
+        <FilterMobileTriggerButton
+          filterCount={filterCount}
+          onClick={() => setOpen(true)}
+          className="shrink-0 md:hidden"
+        />
+        <FilterMobileSheetPanel
+          open={open}
+          onClose={() => setOpen(false)}
+          filterCount={filterCount}
+          onClearAll={clearAllFilters}
+        >
+          {filterControls}
+        </FilterMobileSheetPanel>
+      </div>
+
+      <FilterDesktopInline>{filterControls}</FilterDesktopInline>
     </div>
   );
 }

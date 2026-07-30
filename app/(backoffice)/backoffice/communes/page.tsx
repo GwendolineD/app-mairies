@@ -7,6 +7,7 @@ import {
   BackofficeListResultCount,
 } from "@/components/features/backoffice/backoffice-list-toolbar";
 import { AccessStatusBadge } from "@/components/features/backoffice/access-status-badge";
+import { ActiveSubscriptionEuroIcon } from "@/components/features/backoffice/active-subscription-euro-icon";
 import { Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
@@ -70,8 +71,12 @@ export default async function BackofficeCommunesPage(props: {
                   ) : null}
                 </>
               }
-              titleAside={
-                <AccessStatusBadge status={commune.access_status} />
+              titleAside={<AccessStatusBadge status={commune.access_status} />}
+              statsRowLeading={
+                <ActiveSubscriptionEuroIcon
+                  hasActiveSubscription={commune.hasActiveSubscription}
+                  paymentStatus={commune.currentPaymentStatus}
+                />
               }
               fields={[
                 { label: "Adhérent·es", value: commune.activeMembersCount },
@@ -79,6 +84,8 @@ export default async function BackofficeCommunesPage(props: {
                 { label: "Initiatives", value: commune.activeInitiativesCount },
                 { label: "Événements", value: commune.activeEventsCount },
               ]}
+              mobileFieldSplitAfter={1}
+              fieldsDisplay="icon"
               metaTrailing={
                 <>
                   créé le{" "}
