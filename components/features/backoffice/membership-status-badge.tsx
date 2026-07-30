@@ -23,7 +23,7 @@ const STATUS_CLASS: Record<MembershipStatus, string> = {
   left: "bg-muted/15 text-muted",
 };
 
-type Props = {
+type MembershipStatusBadgeProps = {
   status: MembershipStatus;
   suspendedAt?: string | null;
   suspendedByName?: string | null;
@@ -31,18 +31,98 @@ type Props = {
   className?: string;
 };
 
+type BanBadgeProps = {
+  bannedAt?: string | null;
+  banReason?: string | null;
+  className?: string;
+};
+
+type MemberStatusBadgesProps = MembershipStatusBadgeProps & BanBadgeProps;
+
 function buildSuspendedLabel(
   suspendedAt?: string | null,
   suspendedByName?: string | null,
 ): string {
-  const parts = ["Suspendue"];
+  const parts = ["Suspendu"];
   if (suspendedAt) {
-    parts.push(formatDay(suspendedAt));
+    parts.push(`le ${formatDay(suspendedAt)}`);
   }
   if (suspendedByName) {
     parts.push(`par ${suspendedByName}`);
   }
-  return parts.join(" · ");
+  return parts.join(" ");
+}
+
+function buildBannedLabel(bannedAt?: string | null): string {
+  if (bannedAt) {
+    return `Banni le ${formatDay(bannedAt)}`;
+  }
+  return "Banni";
+}
+
+function ReasonPopoverBadge({
+  label,
+  badgeClass,
+  ariaLabel,
+  title,
+  reason,
+  emptyReasonLabel,
+}: {
+  label: string;
+  badgeClass: string;
+  ariaLabel: string;
+  title: string;
+  reason?: string | null;
+  emptyReasonLabel: string;
+}) {
+  return (
+    <Popover>
+      <PopoverTrigger
+        nativeButton
+        render={
+          <button
+            type="button"
+            className={cn(badgeClass, "cursor-pointer hover:bg-coral/25")}
+            aria-label={ariaLabel}
+          >
+            {label}
+          </button>
+        }
+      />
+      <PopoverContent side="left" className="max-w-xs space-y-1 text-xs">
+        <p className="font-semibold text-text">{title}</p>
+        {getTrimmedMultilineText(reason) ? (
+          <MultilineText
+            text={reason}
+            className="font-medium leading-4 text-muted"
+          />
+        ) : (
+          <p className="font-medium leading-4 text-muted">{emptyReasonLabel}</p>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+export function BanBadge({ bannedAt, banReason, className }: BanBadgeProps) {
+  if (!bannedAt) return null;
+
+  const label = buildBannedLabel(bannedAt);
+  const badgeClass = cn(
+    "inline-flex max-w-full items-center rounded-full px-2.5 py-1 text-[10px] leading-tight font-semibold bg-coral/25 text-coral",
+    className,
+  );
+
+  return (
+    <ReasonPopoverBadge
+      label={label}
+      badgeClass={badgeClass}
+      ariaLabel="Voir le motif de bannissement"
+      title="Motif de bannissement"
+      reason={banReason}
+      emptyReasonLabel="Aucun motif enregistré."
+    />
+  );
 }
 
 export function MembershipStatusBadge({
@@ -51,7 +131,7 @@ export function MembershipStatusBadge({
   suspendedByName,
   suspendedReason,
   className,
-}: Props) {
+}: MembershipStatusBadgeProps) {
   const label =
     status === "suspended"
       ? buildSuspendedLabel(suspendedAt, suspendedByName)
@@ -69,30 +149,38 @@ export function MembershipStatusBadge({
   }
 
   return (
-    <Popover>
-      <PopoverTrigger
-        nativeButton
-        render={
-          <button
-            type="button"
-            className={cn(badgeClass, "cursor-pointer hover:bg-coral/25")}
-            aria-label="Voir le motif de suspension"
-          >
-            {label}
-          </button>
-        }
+    <ReasonPopoverBadge
+      label={label}
+      badgeClass={badgeClass}
+      ariaLabel="Voir le motif de suspension"
+      title="Motif de suspension"
+      reason={suspendedReason}
+      emptyReasonLabel="Aucun motif enregistré."
+    />
+  );
+}
+
+export function MemberStatusBadges({
+  status,
+  suspendedAt,
+  suspendedByName,
+  suspendedReason,
+  bannedAt,
+  banReason,
+  className,
+}: MemberStatusBadgesProps) {
+  return (
+    <div className={cn("flex flex-wrap items-center gap-2", className)}>
+      {bannedAt ? (
+        <BanBadge key="ban" bannedAt={bannedAt} banReason={banReason} />
+      ) : null}
+      <MembershipStatusBadge
+        key="membership-status"
+        status={status}
+        suspendedAt={suspendedAt}
+        suspendedByName={suspendedByName}
+        suspendedReason={suspendedReason}
       />
-      <PopoverContent side="left" className="max-w-xs space-y-1 text-xs">
-        <p className="font-semibold text-text">Motif de suspension</p>
-        {getTrimmedMultilineText(suspendedReason) ? (
-          <MultilineText
-            text={suspendedReason}
-            className="font-medium leading-4 text-muted"
-          />
-        ) : (
-          <p className="font-medium leading-4 text-muted">Aucun motif enregistré.</p>
-        )}
-      </PopoverContent>
-    </Popover>
+    </div>
   );
 }

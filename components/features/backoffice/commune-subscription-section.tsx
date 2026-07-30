@@ -3,8 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition, useEffect } from "react";
 import {
-  CalendarRange,
-  CircleDollarSign,
+  Euro,
+  Plus,
   RefreshCw,
   Scale,
   Trash2,
@@ -20,7 +20,6 @@ import { cn } from "@/lib/utils/cn";
 import { clampEndDate, formatShortDate } from "@/lib/datetime";
 import { formatEuros } from "@/lib/utils/format-currency";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { FormField } from "@/components/ui/form-field";
 import { Modal } from "@/components/ui/modal";
@@ -95,10 +94,11 @@ function PaymentStatusBadge({
     return (
       <span
         className={cn(
-          "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold",
+          "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold",
           "bg-orange/15 text-orange",
         )}
       >
+        <Euro className="size-3.5 shrink-0" aria-hidden />
         En attente
       </span>
     );
@@ -165,24 +165,22 @@ function SubscriptionPeriodMobileCard({
 }) {
   return (
     <div className="space-y-3 rounded-xl border border-border/60 bg-warm/30 p-4">
-      <SubscriptionInfoRow icon={CalendarRange} label="Période">
-        <span>
-          {formatShortDate(period.starts_at)} → {formatShortDate(period.ends_at)}
-        </span>
-      </SubscriptionInfoRow>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <SubscriptionInfoRow icon={CircleDollarSign} label="Montant">
-          <span className="font-semibold">{formatEuros(period.amount_cents)}</span>
-        </SubscriptionInfoRow>
-        <SubscriptionInfoRow icon={Wallet} label="Paiement">
-          <PaymentStatusBadge
-            status={period.payment_status}
-            paidAt={period.paid_at}
-            paymentMethod={period.payment_method}
-          />
-        </SubscriptionInfoRow>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-semibold text-text">
+          {formatEuros(period.amount_cents)}
+        </p>
+        <PaymentStatusBadge
+          status={period.payment_status}
+          paidAt={period.paid_at}
+          paymentMethod={period.payment_method}
+        />
       </div>
+
+      <p className="text-sm font-normal text-text">
+        Du{" "}
+        <span className="font-bold">{formatShortDate(period.starts_at)}</span> au{" "}
+        <span className="font-bold">{formatShortDate(period.ends_at)}</span>
+      </p>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <SubscriptionInfoRow icon={RefreshCw} label="Renouvellement auto">
@@ -365,38 +363,30 @@ export function CommuneSubscriptionSection({
 
   return (
     <section className="space-y-4">
-      <div className="flex items-baseline justify-between gap-4">
-        <h2 className="text-lg font-semibold leading-7 text-text">
-          Abonnement
-        </h2>
-        {subscribedSince && (
+      <div className="flex items-center gap-4">
+        {subscribedSince ? (
           <span className="text-sm text-muted">
-            Abonné depuis le {formatShortDate(subscribedSince)}
+            Depuis le {formatShortDate(subscribedSince)}
           </span>
-        )}
+        ) : null}
+        <Button
+          type="button"
+          variant="primary"
+          size="sm"
+          onClick={() => setAddModalOpen(true)}
+          className="ml-auto shrink-0 gap-1.5 font-semibold"
+        >
+          <Plus aria-hidden />
+          Ajouter
+        </Button>
       </div>
 
-      <Card className="space-y-6 rounded-xl p-6">
-        <div>
-          <div className="mb-3 flex items-center justify-between">
-            <p className="text-sm font-semibold text-text">
-              Périodes d&apos;abonnement
-            </p>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setAddModalOpen(true)}
-              className="text-xs"
-            >
-              + Ajouter
-            </Button>
-          </div>
-
-          {periods.length === 0 ? (
-            <p className="text-sm text-muted">Aucune période enregistrée.</p>
-          ) : (
-            <>
-              <div className="space-y-3 md:hidden">
+      <div className="space-y-6">
+        {periods.length === 0 ? (
+          <p className="text-sm text-muted">Aucune période enregistrée.</p>
+        ) : (
+          <>
+            <div className="space-y-3 md:hidden">
                 {periods.map((period) => (
                   <SubscriptionPeriodMobileCard
                     key={period.id}
@@ -489,8 +479,7 @@ export function CommuneSubscriptionSection({
               </div>
             </>
           )}
-        </div>
-      </Card>
+      </div>
 
       {/* Add period modal */}
       <Modal

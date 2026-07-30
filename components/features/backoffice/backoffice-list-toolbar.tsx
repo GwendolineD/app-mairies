@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Check, ChevronDown, User, X, type LucideIcon } from "lucide-react";
+import { Check, ChevronDown, Send, User, X, type LucideIcon } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { RESIDENT_NAV_ICONS } from "@/components/features/resident-nav";
@@ -32,9 +32,11 @@ import {
 import { buildBackofficeAuditListQuery } from "@/lib/utils/audit-search-params";
 import {
   activeBackofficeCommunesFilterCount,
+  activeBackofficeMembersFilterCount,
   buildBackofficeCommunesListQuery,
   buildBackofficeMembersListQuery,
   type BackofficeCommunesListParams,
+  type BackofficeMembersListParams,
   type CommunePaymentFilter,
   type CommuneSubscriptionFilter,
 } from "@/lib/utils/backoffice-search-params";
@@ -208,14 +210,26 @@ export function BackofficeListFilters({
       ? (params as unknown as BackofficeCommunesListParams)
       : null;
 
+  const memberParams =
+    queryVariant === "members"
+      ? (params as unknown as BackofficeMembersListParams)
+      : null;
+
+  const memberStatuses = memberParams?.statuses ?? [];
+  const memberBanned = memberParams?.banned ?? false;
+  const memberNotifications = memberParams?.notifications;
+  const memberRole = memberParams?.role;
+
   const filterCount =
     queryVariant === "communes" && communeParams
       ? activeBackofficeCommunesFilterCount(communeParams)
-      : urlStatuses.length > 0 ||
-          params.role ||
-          (params.status && !statusMultiSelect)
-        ? 1
-        : 0;
+      : queryVariant === "members" && memberParams
+        ? activeBackofficeMembersFilterCount(memberParams)
+        : urlStatuses.length > 0 ||
+            params.role ||
+            (params.status && !statusMultiSelect)
+          ? 1
+          : 0;
 
   useEffect(() => {
     setLocalStatuses(urlStatuses);
@@ -257,6 +271,41 @@ export function BackofficeListFilters({
       statuses: [],
       subscription: undefined,
       payment: undefined,
+    });
+    setLocalStatuses([]);
+  }
+
+  function navigateMemberStatuses(nextStatuses: string[]) {
+    setLocalStatuses(nextStatuses);
+    navigate({
+      statuses: nextStatuses,
+      status: undefined,
+    });
+  }
+
+  function toggleMemberStatus(status: string) {
+    const next = localStatuses.includes(status)
+      ? localStatuses.filter((value) => value !== status)
+      : [...localStatuses, status];
+    navigateMemberStatuses(next);
+  }
+
+  function clearMemberStatusFilters() {
+    navigate({
+      statuses: [],
+      status: undefined,
+      banned: undefined,
+    });
+    setLocalStatuses([]);
+  }
+
+  function clearMemberFilters() {
+    navigate({
+      statuses: [],
+      status: undefined,
+      banned: undefined,
+      role: undefined,
+      notifications: undefined,
     });
     setLocalStatuses([]);
   }
@@ -470,6 +519,130 @@ export function BackofficeListFilters({
       </>
     ) : null;
 
+  const memberFilterSections =
+    queryVariant === "members" ? (
+      <>
+        <FilterSection title="Statut">
+          <FilterRow
+            checked={
+              memberStatuses.length === 0 && !memberBanned
+            }
+            onCheckboxToggle={() => {
+              if (memberStatuses.length === 0 && !memberBanned) return;
+              clearMemberStatusFilters();
+            }}
+            onRowSelect={() => {
+              clearMemberStatusFilters();
+              setOpen(false);
+            }}
+            label="Tous les statuts"
+          />
+          <FilterRow
+            checked={memberStatuses.includes("active")}
+            onCheckboxToggle={() => toggleMemberStatus("active")}
+            onRowSelect={() => {
+              navigateMemberStatuses(["active"]);
+              setOpen(false);
+            }}
+            label="Active"
+          />
+          <FilterRow
+            checked={memberStatuses.includes("suspended")}
+            onCheckboxToggle={() => toggleMemberStatus("suspended")}
+            onRowSelect={() => {
+              navigateMemberStatuses(["suspended"]);
+              setOpen(false);
+            }}
+            label="Suspendu"
+          />
+          <FilterRow
+            checked={memberBanned}
+            onCheckboxToggle={() =>
+              navigate({ banned: memberBanned ? undefined : true })
+            }
+            onRowSelect={() => {
+              navigate({ banned: true });
+              setOpen(false);
+            }}
+            label="Banni"
+          />
+        </FilterSection>
+
+        {roleOptions ? (
+          <FilterSection title="Rôle">
+            <FilterRow
+              checked={!memberRole}
+              onCheckboxToggle={() => navigate({ role: undefined })}
+              onRowSelect={() => {
+                navigate({ role: undefined });
+                setOpen(false);
+              }}
+              label="Tous les rôles"
+            />
+            {roleOptions.map((option) => (
+              <FilterRow
+                key={option.value}
+                checked={memberRole === option.value}
+                onCheckboxToggle={() =>
+                  navigate({
+                    role:
+                      memberRole === option.value
+                        ? undefined
+                        : option.value,
+                  })
+                }
+                onRowSelect={() => {
+                  navigate({ role: option.value });
+                  setOpen(false);
+                }}
+                label={option.label}
+              />
+            ))}
+          </FilterSection>
+        ) : null}
+
+        <FilterSection title="Notifications">
+          <FilterRow
+            checked={!memberNotifications}
+            onCheckboxToggle={() => navigate({ notifications: undefined })}
+            onRowSelect={() => {
+              navigate({ notifications: undefined });
+              setOpen(false);
+            }}
+            label="Toutes"
+          />
+          <FilterRow
+            checked={memberNotifications === "active"}
+            onCheckboxToggle={() =>
+              navigate({
+                notifications:
+                  memberNotifications === "active" ? undefined : "active",
+              })
+            }
+            onRowSelect={() => {
+              navigate({ notifications: "active" });
+              setOpen(false);
+            }}
+            label="Actives"
+          />
+          <FilterRow
+            checked={memberNotifications === "inactive"}
+            onCheckboxToggle={() =>
+              navigate({
+                notifications:
+                  memberNotifications === "inactive" ? undefined : "inactive",
+              })
+            }
+            onRowSelect={() => {
+              navigate({ notifications: "inactive" });
+              setOpen(false);
+            }}
+            label="Inactives"
+          />
+        </FilterSection>
+      </>
+    ) : null;
+
   return (
     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       <div className="flex min-w-0 items-center gap-2">
@@ -493,21 +666,30 @@ export function BackofficeListFilters({
           ) : null}
         </div>
 
-        {queryVariant === "communes" ? (
+        {(queryVariant === "communes" || queryVariant === "members") ? (
           <>
             <FilterMobileTriggerButton
               filterCount={filterCount}
               onClick={() => setOpen(true)}
-              className="shrink-0 md:hidden"
+              className={cn(
+                "shrink-0",
+                queryVariant === "communes" && "md:hidden",
+              )}
             />
             <FilterMobileSheetPanel
               open={open}
               onClose={() => setOpen(false)}
               filterCount={filterCount}
               totalResults={totalCount}
-              onClearAll={clearCommuneFilters}
+              onClearAll={
+                queryVariant === "communes"
+                  ? clearCommuneFilters
+                  : clearMemberFilters
+              }
             >
-              {mobileFilterSections}
+              {queryVariant === "communes"
+                ? mobileFilterSections
+                : memberFilterSections}
             </FilterMobileSheetPanel>
           </>
         ) : null}
@@ -517,7 +699,7 @@ export function BackofficeListFilters({
         {desktopStatusFilter}
         {desktopSubscriptionFilters}
 
-        {statusOptions && !statusMultiSelect ? (
+        {statusOptions && !statusMultiSelect && queryVariant !== "members" ? (
           <Select
             items={[
               { value: "all", label: "Tous les statuts" },
@@ -549,7 +731,7 @@ export function BackofficeListFilters({
           </Select>
         ) : null}
 
-        {roleOptions ? (
+        {roleOptions && queryVariant !== "members" ? (
           <Select
             items={[
               { value: "all", label: "Tous les rôles" },
@@ -689,6 +871,7 @@ const LIST_FIELD_ICONS: Record<string, LucideIcon> = {
   Annonces: RESIDENT_NAV_ICONS.Annonces,
   Initiatives: RESIDENT_NAV_ICONS.Initiatives,
   "Événements": RESIDENT_NAV_ICONS["Événements"],
+  Invitations: Send,
 };
 
 function stopLinkNavigation(event: React.SyntheticEvent) {
@@ -806,7 +989,7 @@ export function BackofficeListLinkCard({
       <Link href={href} className="block cursor-pointer">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="min-w-0 truncate text-base font-semibold text-text">{title}</p>
-          {titleAside}
+          {titleAside ? <div key="title-aside">{titleAside}</div> : null}
         </div>
       </Link>
 
@@ -814,7 +997,9 @@ export function BackofficeListLinkCard({
         {hasMobileSplit ? (
           <div className="flex w-full flex-col gap-y-2 text-sm font-medium text-muted md:flex md:w-auto md:flex-row md:flex-wrap md:items-center md:gap-x-3 md:gap-y-2">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 md:contents">
-              {statsRowLeading}
+              {statsRowLeading ? (
+                <div key="stats-leading">{statsRowLeading}</div>
+              ) : null}
               {primaryFields.map(renderField)}
             </div>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 md:contents">
@@ -823,7 +1008,9 @@ export function BackofficeListLinkCard({
           </div>
         ) : (
           <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 text-sm font-medium text-muted md:w-auto">
-            {statsRowLeading}
+            {statsRowLeading ? (
+              <div key="stats-leading">{statsRowLeading}</div>
+            ) : null}
             {fields.map(renderField)}
           </div>
         )}

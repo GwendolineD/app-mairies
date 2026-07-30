@@ -12,8 +12,11 @@ import { CommuneSubscriptionSection } from "@/components/features/backoffice/com
 import { CommuneTrialSection } from "@/components/features/backoffice/commune-trial-section";
 import { CommuneWelcomeMessageEditor } from "@/components/features/backoffice/commune-welcome-message-editor";
 import { ChangeRoleButton } from "@/components/features/backoffice/change-role-button";
+import {
+  MemberCardStatsLeading,
+} from "@/components/features/backoffice/member-card-popovers";
 import { MembershipRoleBadge } from "@/components/features/backoffice/membership-role-badge";
-import { MembershipStatusBadge } from "@/components/features/backoffice/membership-status-badge";
+import { MemberStatusBadges } from "@/components/features/backoffice/membership-status-badge";
 import { HistoryBackLink } from "@/components/ui/history-back-link";
 import { CommuneDetailStats } from "@/components/features/backoffice/commune-detail-stats";
 import { Card } from "@/components/ui/card";
@@ -95,7 +98,7 @@ export default async function BackofficeCommuneDetailPage(props: {
 
       <CommuneDetailTabs
         tabs={[
-          { id: "subscription", label: "Abonnement" },
+          { id: "subscription", label: "Abonnements" },
           { id: "members", label: "Adhérents" },
           { id: "settings", label: "Réglages" },
         ]}
@@ -129,10 +132,6 @@ export default async function BackofficeCommuneDetailPage(props: {
                   { value: "staff", label: ROLE_LABELS.staff },
                   { value: "mayor", label: ROLE_LABELS.mayor },
                 ]}
-                statusOptions={[
-                  { value: "active", label: "Active" },
-                  { value: "suspended", label: "Suspendue" },
-                ]}
               />
 
               <BackofficeListResultCount {...memberListQueryProps} />
@@ -151,18 +150,52 @@ export default async function BackofficeCommuneDetailPage(props: {
                       titleAside={
                         <div className="flex flex-wrap items-center gap-2">
                           <MembershipRoleBadge
+                            key="role"
                             role={member.role}
                             isPlatformAdmin={member.isPlatformAdmin}
                           />
-                          <MembershipStatusBadge status={member.status} />
+                          <MemberStatusBadges
+                            key="status"
+                            status={member.status}
+                            suspendedAt={member.suspendedAt}
+                            suspendedByName={member.suspendedByName}
+                            suspendedReason={member.suspendedReason}
+                            bannedAt={member.bannedAt}
+                            banReason={member.banReason}
+                          />
                         </div>
+                      }
+                      fieldsDisplay="icon"
+                      statsRowLeading={
+                        <MemberCardStatsLeading
+                          email={member.email}
+                          street={member.addressStreet}
+                          lieuDit={member.addressLieuDit}
+                          postcode={member.addressPostcode}
+                          city={member.addressCity}
+                          hasPush={member.hasPushNotifications}
+                          preferences={member.notificationPreferences}
+                        />
                       }
                       fields={[
                         {
-                          label: "Adhésion",
-                          value: formatShortDate(member.joinedAt),
+                          label: "Annonces",
+                          value: member.totalAnnouncements,
+                        },
+                        {
+                          label: "Initiatives",
+                          value: member.totalInitiatives,
+                        },
+                        {
+                          label: "Événements",
+                          value: member.totalEvents,
+                        },
+                        {
+                          label: "Invitations",
+                          value: member.invitationCount,
                         },
                       ]}
+                      metaTrailing={`Adhésion · ${formatShortDate(member.joinedAt)}`}
                       footer={
                         <ChangeRoleButton
                           membershipId={member.membershipId}
