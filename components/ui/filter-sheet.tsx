@@ -34,7 +34,7 @@ export function FilterSheetTrigger({
           count > 0 ? `Filtres (${count} actifs)` : "Ouvrir les filtres"
         }
         className={cn(
-          "relative inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-sm border bg-surface transition hover:border-purple/30",
+          "relative inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-sm border bg-surface transition hover:border-purple/30 md:size-8",
           count > 0
             ? "border-purple/40 text-purple"
             : "border-border text-muted",

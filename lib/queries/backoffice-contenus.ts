@@ -13,7 +13,7 @@ import type {
 } from "@/lib/utils/backoffice-contenus-params";
 import { statusesForContentType } from "@/lib/utils/backoffice-contenus-params";
 
-const MERGE_FETCH_CAP = 500;
+export type ContentTypeCounts = Record<BackofficeContentType, number>;
 
 export type ContentListRow = {
   id: string;
@@ -412,17 +412,6 @@ async function fetchEvents(
   return ((data ?? []) as EventRow[]).map((row) => mapContentRow("event", row));
 }
 
-function sortContentRows(
-  rows: ContentListRow[],
-  sort: BackofficeContenusListParams["sort"],
-): ContentListRow[] {
-  return [...rows].sort((a, b) => {
-    const aTime = new Date(a.createdAt).getTime();
-    const bTime = new Date(b.createdAt).getTime();
-    return sort === "oldest" ? aTime - bTime : bTime - aTime;
-  });
-}
-
 async function listSingleTypePage(
   supabase: SupabaseClient,
   params: BackofficeContenusListParams,
@@ -456,47 +445,19 @@ async function listSingleTypePage(
   return { items, totalCount };
 }
 
-async function listMergedTypesPage(
+export async function countAllContentTypes(
   supabase: SupabaseClient,
-  params: BackofficeContenusListParams,
-): Promise<{ items: ContentListRow[]; totalCount: number }> {
-  const offset = (params.page - 1) * params.limit;
-  const fetchLimit = Math.min(
-    MERGE_FETCH_CAP,
-    offset + params.limit,
-  );
-
-  const [announcementCount, initiativeCount, eventCount, ...batches] =
-    await Promise.all([
-      params.types.includes("announcement")
-        ? countAnnouncements(supabase, params)
-        : Promise.resolve(0),
-      params.types.includes("initiative")
-        ? countInitiatives(supabase, params)
-        : Promise.resolve(0),
-      params.types.includes("event")
-        ? countEvents(supabase, params)
-        : Promise.resolve(0),
-      params.types.includes("announcement")
-        ? fetchAnnouncements(supabase, params, { limit: fetchLimit })
-        : Promise.resolve([]),
-      params.types.includes("initiative")
-        ? fetchInitiatives(supabase, params, { limit: fetchLimit })
-        : Promise.resolve([]),
-      params.types.includes("event")
-        ? fetchEvents(supabase, params, { limit: fetchLimit })
-        : Promise.resolve([]),
-    ]);
-
-  const merged = sortContentRows(
-    batches.flat() as ContentListRow[],
-    params.sort,
-  );
-  const totalCount = announcementCount + initiativeCount + eventCount;
+): Promise<ContentTypeCounts> {
+  const [announcements, initiatives, events] = await Promise.all([
+    supabase.from("announcements").select("id", { count: "exact", head: true }),
+    supabase.from("initiatives").select("id", { count: "exact", head: true }),
+    supabase.from("events").select("id", { count: "exact", head: true }),
+  ]);
 
   return {
-    items: merged.slice(offset, offset + params.limit),
-    totalCount,
+    announcement: announcements.count ?? 0,
+    initiative: initiatives.count ?? 0,
+    event: events.count ?? 0,
   };
 }
 
@@ -504,11 +465,7 @@ export async function listContenusPage(
   supabase: SupabaseClient,
   params: BackofficeContenusListParams,
 ): Promise<{ items: ContentListRow[]; totalCount: number }> {
-  if (params.types.length === 1) {
-    return listSingleTypePage(supabase, params, params.types[0]!);
-  }
-
-  return listMergedTypesPage(supabase, params);
+  return listSingleTypePage(supabase, params, params.tab);
 }
 
 export type ContentCategoryOption = {

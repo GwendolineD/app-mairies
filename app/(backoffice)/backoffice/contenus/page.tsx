@@ -1,9 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
+import Link from "next/link";
 import {
   BackofficeListLinkCard,
   BackofficeListPagination,
   BackofficeListResultCount,
 } from "@/components/features/backoffice/backoffice-list-toolbar";
+import { ContentCategoryBadge } from "@/components/features/backoffice/content-category-badge";
+import { ContentStatusBadge } from "@/components/features/backoffice/content-status-badge";
 import { ContentTypeBadge } from "@/components/features/backoffice/content-type-badge";
 import { AnnouncementTypeTag } from "@/components/ui/announcement-type-tag";
 import { Card } from "@/components/ui/card";
@@ -11,9 +14,11 @@ import { CategoryTag } from "@/components/ui/category-tag";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
 import { isAnnouncementType } from "@/lib/constants/announcement-types";
+import { ROUTES } from "@/lib/constants/routes";
 import { formatShortDate } from "@/lib/datetime";
 import { listPilotCommuneOptions } from "@/lib/queries/backoffice-communes";
 import {
+  countAllContentTypes,
   listContentCategoryOptions,
   listContenusPage,
 } from "@/lib/queries/backoffice-contenus";
@@ -29,11 +34,13 @@ export default async function BackofficeContenusPage(props: {
   const params = parseBackofficeContenusListParams(searchParams);
   const supabase = await createClient();
 
-  const [{ items, totalCount }, communes, categories] = await Promise.all([
-    listContenusPage(supabase, params),
-    listPilotCommuneOptions(supabase),
-    listContentCategoryOptions(supabase, params.types),
-  ]);
+  const [counts, { items, totalCount }, communes, categories] =
+    await Promise.all([
+      countAllContentTypes(supabase),
+      listContenusPage(supabase, params),
+      listPilotCommuneOptions(supabase),
+      listContentCategoryOptions(supabase, [params.tab]),
+    ]);
 
   const listQueryProps = {
     params,
@@ -44,15 +51,14 @@ export default async function BackofficeContenusPage(props: {
 
   return (
     <PageStack>
-      <PageHeading
-        title="Contenus"
-        subtitle="Annonces, initiatives et événements publiés sur l'ensemble des communes pilotées."
-      />
+      <PageHeading title="Contenus" />
 
       <ContenusToolbar
         params={params}
         communes={communes}
         categories={categories}
+        totalCount={totalCount}
+        counts={counts}
       />
 
       <BackofficeListResultCount {...listQueryProps} />
@@ -71,6 +77,7 @@ export default async function BackofficeContenusPage(props: {
               titleAside={
                 <div className="flex flex-wrap items-center gap-2">
                   <ContentTypeBadge contentType={item.contentType} />
+                  <ContentStatusBadge status={item.status} />
                   {item.suspended ? (
                     <CategoryTag
                       label="Suspendu"
@@ -86,10 +93,21 @@ export default async function BackofficeContenusPage(props: {
                 </div>
               }
               fields={[
-                { label: "Commune", value: item.communeName },
-                { label: "Statut", value: item.status },
-                { label: "Catégorie", value: item.categoryLabel },
-                { label: "Auteur·e", value: item.authorName },
+                {
+                  label: "Catégorie",
+                  standalone: true,
+                  value: (
+                    <ContentCategoryBadge
+                      contentType={item.contentType}
+                      categorySlug={item.categorySlug}
+                    />
+                  ),
+                },
+                {
+                  label: "Commune",
+                  value: item.communeName,
+                  href: ROUTES.backoffice.communeDetail(item.communeId),
+                },
                 ...(item.subtype && isAnnouncementType(item.subtype)
                   ? [
                       {
@@ -101,6 +119,22 @@ export default async function BackofficeContenusPage(props: {
                     ]
                   : []),
               ]}
+              metaLeading={
+                <p className="min-w-0 truncate">
+                  <span className="text-subtle">Créé par</span>
+                  {" · "}
+                  {item.authorUserId ? (
+                    <Link
+                      href={ROUTES.backoffice.userDetail(item.authorUserId)}
+                      className="text-text transition hover:text-purple"
+                    >
+                      {item.authorName}
+                    </Link>
+                  ) : (
+                    <span className="text-text">{item.authorName}</span>
+                  )}
+                </p>
+              }
               metaTrailing={
                 <>
                   publié le{" "}

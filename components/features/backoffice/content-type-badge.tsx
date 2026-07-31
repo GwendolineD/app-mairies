@@ -17,7 +17,7 @@ export function ContentTypeBadge({ contentType, className }: Props) {
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-semibold",
+        "inline-flex h-5 shrink-0 items-center rounded-full px-2.5 text-xs font-semibold leading-none",
         TYPE_CLASS[contentType],
         className,
       )}

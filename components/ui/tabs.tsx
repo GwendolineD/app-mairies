@@ -33,7 +33,7 @@ function TabsTrigger({
       className={cn(
         "relative shrink-0 cursor-pointer rounded-sm px-3 py-2 text-sm font-semibold text-muted outline-none transition select-none",
         "hover:text-text focus-visible:ring-2 focus-visible:ring-purple/30",
-        "data-[selected]:bg-soft-pink data-[selected]:text-purple",
+        "data-active:bg-soft-pink data-active:text-purple",
         "disabled:pointer-events-none disabled:opacity-50",
         className,
       )}

@@ -1,8 +1,7 @@
 "use client";
 
-import { Check, ChevronDown, X } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { DatePickerField } from "@/components/ui/date-picker-field";
@@ -12,136 +11,61 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  FilterRow,
+  FilterSection,
+  FilterSheetTrigger,
+} from "@/components/ui/filter-sheet";
+import { Label } from "@/components/ui/label";
 import {
-  FilterDesktopInline,
   FilterMobileSheetPanel,
   FilterMobileTriggerButton,
   useFilterSheetState,
 } from "@/components/ui/responsive-filter-bar";
 import { resolveEndDateAfterStartChange } from "@/lib/datetime";
 import type { PilotCommuneOption } from "@/lib/queries/backoffice-communes";
-import type { ContentCategoryOption } from "@/lib/queries/backoffice-contenus";
+import type {
+  ContentCategoryOption,
+  ContentTypeCounts,
+} from "@/lib/queries/backoffice-contenus";
 import {
   BACKOFFICE_CONTENT_SORT,
-  BACKOFFICE_CONTENT_STATUSES,
-  BACKOFFICE_CONTENT_STATUS_LABELS,
-  BACKOFFICE_CONTENT_SUBTYPES,
-  BACKOFFICE_CONTENT_TYPES,
   BACKOFFICE_CONTENT_TYPE_LABELS,
   activeBackofficeContenusFilterCount,
-  buildBackofficeContenusListQuery,
+  statusesForContentType,
+  BACKOFFICE_CONTENT_STATUS_LABELS,
   type BackofficeContenusListParams,
   type BackofficeContentStatus,
-  type BackofficeContentType,
 } from "@/lib/utils/backoffice-contenus-params";
 import { cn } from "@/lib/utils/cn";
+import { ContenusStatsBar, CONTENT_TYPE_CONFIG } from "./contenus-stats-bar";
+import { useContenusTabFilters } from "./use-contenus-tab-filters";
 
 type ContenusToolbarProps = {
   params: BackofficeContenusListParams;
   communes: PilotCommuneOption[];
   categories: ContentCategoryOption[];
+  totalCount: number;
+  counts: ContentTypeCounts;
 };
-
-function multiSelectLabel(
-  selected: string[],
-  options: { value: string; label: string }[],
-  emptyLabel: string,
-): string {
-  if (selected.length === 0) return emptyLabel;
-  if (selected.length === 1) {
-    const match = options.find((option) => option.value === selected[0]);
-    return match?.label ?? emptyLabel;
-  }
-  return `${selected.length} sélectionnés`;
-}
-
-function MultiSelectOption({
-  label,
-  checked,
-  onToggle,
-  onSelectOnly,
-}: {
-  label: string;
-  checked: boolean;
-  onToggle: () => void;
-  onSelectOnly: () => void;
-}) {
-  return (
-    <div className="flex items-center gap-2 rounded-sm px-1.5 py-1 text-sm font-medium hover:bg-warm">
-      <button
-        type="button"
-        role="checkbox"
-        aria-checked={checked}
-        aria-label={`${checked ? "Retirer" : "Ajouter"} ${label}`}
-        onPointerDown={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-        }}
-        onClick={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          onToggle();
-        }}
-        className={cn(
-          "flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-sm border border-border bg-surface transition",
-          checked && "border-purple bg-purple text-white",
-        )}
-      >
-        {checked ? <Check className="size-3" aria-hidden /> : null}
-      </button>
-      <button
-        type="button"
-        onClick={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          onSelectOnly();
-        }}
-        className="min-w-0 flex-1 cursor-pointer truncate text-left text-text"
-      >
-        {label}
-      </button>
-    </div>
-  );
-}
 
 export function ContenusToolbar({
   params,
   communes,
   categories,
+  totalCount,
+  counts,
 }: ContenusToolbarProps) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const { navigate, switchTab } = useContenusTabFilters(params);
   const [search, setSearch] = useState(params.q);
-  const [typeMenuOpen, setTypeMenuOpen] = useState(false);
-  const [statusMenuOpen, setStatusMenuOpen] = useState(false);
+  const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(false);
 
-  const typeOptions = BACKOFFICE_CONTENT_TYPES.map((type) => ({
-    value: type,
-    label: BACKOFFICE_CONTENT_TYPE_LABELS[type],
-  }));
-
-  const statusOptions = BACKOFFICE_CONTENT_STATUSES.map((status) => ({
+  const statusOptions = statusesForContentType(params.tab, []).map((status) => ({
     value: status,
     label: BACKOFFICE_CONTENT_STATUS_LABELS[status],
   }));
 
-  const showSubtypeFilter = params.types.includes("announcement");
-  const showOfficialFilter = params.types.includes("event");
-
-  function navigate(next: Partial<BackofficeContenusListParams>) {
-    startTransition(() => {
-      router.push(
-        `${pathname}${buildBackofficeContenusListQuery({ ...params, page: 1, ...next })}`,
-      );
-    });
-  }
+  const showSubtypeFilter = params.tab === "announcement";
+  const showOfficialFilter = params.tab === "event";
 
   useEffect(() => {
     setSearch(params.q);
@@ -154,22 +78,11 @@ export function ContenusToolbar({
     }, 300);
 
     return () => window.clearTimeout(timeout);
-  }, [search, params.q]);
+  }, [search, params.q, navigate]);
 
   function clearSearch() {
     setSearch("");
     navigate({ q: undefined });
-  }
-
-  function toggleType(type: BackofficeContentType) {
-    const next = params.types.includes(type)
-      ? params.types.filter((value) => value !== type)
-      : [...params.types, type];
-    navigate({
-      types: next.length > 0 ? next : ["announcement"],
-      subtype: next.includes("announcement") ? params.subtype : undefined,
-      official: next.includes("event") ? params.official : undefined,
-    });
   }
 
   function toggleStatus(status: BackofficeContentStatus) {
@@ -182,9 +95,13 @@ export function ContenusToolbar({
   const filterCount = activeBackofficeContenusFilterCount(params);
   const { open, setOpen } = useFilterSheetState();
 
+  function closeFilters() {
+    setOpen(false);
+    setDesktopFiltersOpen(false);
+  }
+
   function clearAllFilters() {
     navigate({
-      types: ["announcement"],
       commune: undefined,
       statuses: [],
       suspended: undefined,
@@ -197,296 +114,314 @@ export function ContenusToolbar({
     });
   }
 
-  const filterControls = (
+  const filterSections = (
     <>
-        <Popover open={typeMenuOpen} onOpenChange={setTypeMenuOpen}>
-          <PopoverTrigger
-            render={
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="min-w-40 justify-between rounded-sm"
-              />
-            }
-          >
-            {multiSelectLabel(
-              params.types,
-              typeOptions,
-              "Types de contenu",
-            )}
-            <ChevronDown className="size-4 text-muted" aria-hidden />
-          </PopoverTrigger>
-          <PopoverContent align="start" className="w-44 rounded-sm p-1">
-            {typeOptions.map((option) => (
-              <MultiSelectOption
-                key={option.value}
-                label={option.label}
-                checked={params.types.includes(option.value)}
-                onToggle={() => toggleType(option.value)}
-                onSelectOnly={() => {
-                  navigate({ types: [option.value] });
-                  setTypeMenuOpen(false);
-                }}
-              />
-            ))}
-          </PopoverContent>
-        </Popover>
-
-        <Select
-          items={[
-            { value: "all", label: "Toutes les communes" },
-            ...communes.map((commune) => ({
-              value: commune.id,
-              label: commune.postcode
-                ? `${commune.name} (${commune.postcode})`
-                : commune.name,
-            })),
-          ]}
-          value={params.commune ?? "all"}
-          onValueChange={(value) => {
-            if (!value || value === "all") {
-              navigate({ commune: undefined });
-              return;
-            }
-            navigate({ commune: value });
+      <FilterSection title="Commune">
+        <FilterRow
+          checked={!params.commune}
+          onCheckboxToggle={() => {
+            if (!params.commune) return;
+            navigate({ commune: undefined });
           }}
-        >
-          <SelectTrigger className="min-w-44 rounded-sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Toutes les communes</SelectItem>
-            {communes.map((commune) => (
-              <SelectItem key={commune.id} value={commune.id}>
-                {commune.postcode
-                  ? `${commune.name} (${commune.postcode})`
-                  : commune.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Popover open={statusMenuOpen} onOpenChange={setStatusMenuOpen}>
-          <PopoverTrigger
-            render={
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="min-w-36 justify-between rounded-sm"
-              />
-            }
-          >
-            {multiSelectLabel(
-              params.statuses,
-              statusOptions,
-              "Tous les statuts",
-            )}
-            <ChevronDown className="size-4 text-muted" aria-hidden />
-          </PopoverTrigger>
-          <PopoverContent align="start" className="w-44 rounded-sm p-1">
-            {statusOptions.map((option) => (
-              <MultiSelectOption
-                key={option.value}
-                label={option.label}
-                checked={params.statuses.includes(option.value)}
-                onToggle={() => toggleStatus(option.value)}
-                onSelectOnly={() => {
-                  navigate({ statuses: [option.value] });
-                  setStatusMenuOpen(false);
-                }}
-              />
-            ))}
-          </PopoverContent>
-        </Popover>
-
-        <Select
-          items={[
-            { value: "all", label: "Modération : toutes" },
-            { value: "true", label: "Suspendus uniquement" },
-            { value: "false", label: "Non suspendus" },
-          ]}
-          value={
-            params.suspended === true
-              ? "true"
-              : params.suspended === false
-                ? "false"
-                : "all"
-          }
-          onValueChange={(value) => {
-            if (!value || value === "all") {
-              navigate({ suspended: undefined });
-              return;
-            }
-            navigate({ suspended: value === "true" });
+          onRowSelect={() => {
+            navigate({ commune: undefined });
+            closeFilters();
           }}
-        >
-          <SelectTrigger className="min-w-44 rounded-sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Modération : toutes</SelectItem>
-            <SelectItem value="true">Suspendus uniquement</SelectItem>
-            <SelectItem value="false">Non suspendus</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {showSubtypeFilter ? (
-          <Select
-            items={[
-              { value: "all", label: "Tous les sous-types" },
-              ...BACKOFFICE_CONTENT_SUBTYPES.map((subtype) => ({
-                value: subtype,
-                label: subtype === "demande" ? "Demande" : "Offre",
-              })),
-            ]}
-            value={params.subtype ?? "all"}
-            onValueChange={(value) => {
-              if (!value || value === "all") {
-                navigate({ subtype: undefined });
-                return;
+          label="Toutes les communes"
+        />
+        {communes.map((commune) => {
+          const label = commune.postcode
+            ? `${commune.name} (${commune.postcode})`
+            : commune.name;
+          const checked = params.commune === commune.id;
+          return (
+            <FilterRow
+              key={commune.id}
+              checked={checked}
+              onCheckboxToggle={() =>
+                navigate({
+                  commune: checked ? undefined : commune.id,
+                })
               }
-              navigate({
-                subtype: value as BackofficeContenusListParams["subtype"],
-              });
-            }}
-          >
-            <SelectTrigger className="min-w-40 rounded-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tous les sous-types</SelectItem>
-              <SelectItem value="demande">Demande</SelectItem>
-              <SelectItem value="offre">Offre</SelectItem>
-            </SelectContent>
-          </Select>
-        ) : null}
+              onRowSelect={() => {
+                navigate({ commune: commune.id });
+                closeFilters();
+              }}
+              label={label}
+            />
+          );
+        })}
+      </FilterSection>
 
-        {categories.length > 0 ? (
-          <Select
-            items={[
-              { value: "all", label: "Toutes catégories" },
-              ...categories.map((category) => ({
-                value: category.slug,
-                label: category.label,
-              })),
-            ]}
-            value={params.category ?? "all"}
-            onValueChange={(value) => {
-              if (!value || value === "all") {
-                navigate({ category: undefined });
-                return;
-              }
-              navigate({ category: value });
-            }}
-          >
-            <SelectTrigger className="min-w-40 rounded-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Toutes catégories</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={`${category.contentType}:${category.slug}`} value={category.slug}>
-                  {category.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : null}
+      <FilterSection title="Statut">
+        <FilterRow
+          checked={params.statuses.length === 0}
+          onCheckboxToggle={() => {
+            if (params.statuses.length === 0) return;
+            navigate({ statuses: [] });
+          }}
+          onRowSelect={() => {
+            navigate({ statuses: [] });
+            closeFilters();
+          }}
+          label="Tous les statuts"
+        />
+        {statusOptions.map((option) => {
+          const checked = params.statuses.includes(option.value);
+          return (
+            <FilterRow
+              key={option.value}
+              checked={checked}
+              onCheckboxToggle={() => toggleStatus(option.value)}
+              onRowSelect={() => {
+                navigate({ statuses: [option.value] });
+                closeFilters();
+              }}
+              label={option.label}
+            />
+          );
+        })}
+      </FilterSection>
 
-        {showOfficialFilter ? (
-          <Select
-            items={[
-              { value: "all", label: "Événements : tous" },
-              { value: "true", label: "Officiels mairie" },
-              { value: "false", label: "Communautaires" },
-            ]}
-            value={
-              params.official === true
-                ? "true"
-                : params.official === false
-                  ? "false"
-                  : "all"
-            }
-            onValueChange={(value) => {
-              if (!value || value === "all") {
-                navigate({ official: undefined });
-                return;
-              }
-              navigate({ official: value === "true" });
-            }}
-          >
-            <SelectTrigger className="min-w-44 rounded-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Événements : tous</SelectItem>
-              <SelectItem value="true">Officiels mairie</SelectItem>
-              <SelectItem value="false">Communautaires</SelectItem>
-            </SelectContent>
-          </Select>
-        ) : null}
-
-        <DatePickerField
-          value={params.dateFrom ?? ""}
-          onChange={(value) =>
+      <FilterSection title="Modération">
+        <FilterRow
+          checked={params.suspended === undefined}
+          onCheckboxToggle={() => {
+            if (params.suspended === undefined) return;
+            navigate({ suspended: undefined });
+          }}
+          onRowSelect={() => {
+            navigate({ suspended: undefined });
+            closeFilters();
+          }}
+          label="Toutes"
+        />
+        <FilterRow
+          checked={params.suspended === true}
+          onCheckboxToggle={() =>
             navigate({
-              dateFrom: value || undefined,
-              dateTo: params.dateTo
-                ? resolveEndDateAfterStartChange(value, params.dateTo)
-                : undefined,
+              suspended: params.suspended === true ? undefined : true,
             })
           }
-          maxDate={params.dateTo}
-          placeholder="Date de début"
-          className="w-full md:w-40"
-          aria-label="Date de début"
-        />
-
-        <DatePickerField
-          value={params.dateTo ?? ""}
-          onChange={(value) => navigate({ dateTo: value || undefined })}
-          minDate={params.dateFrom}
-          placeholder="Date de fin"
-          className="w-full md:w-40"
-          aria-label="Date de fin"
-        />
-
-        <Select
-          items={[
-            { value: BACKOFFICE_CONTENT_SORT.newest, label: "Plus récents" },
-            { value: BACKOFFICE_CONTENT_SORT.oldest, label: "Plus anciens" },
-          ]}
-          value={params.sort}
-          onValueChange={(value) => {
-            if (!value) return;
-            navigate({
-              sort: value as BackofficeContenusListParams["sort"],
-            });
+          onRowSelect={() => {
+            navigate({ suspended: true });
+            closeFilters();
           }}
-        >
-          <SelectTrigger className="min-w-36 rounded-sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={BACKOFFICE_CONTENT_SORT.newest}>
-              Plus récents
-            </SelectItem>
-            <SelectItem value={BACKOFFICE_CONTENT_SORT.oldest}>
-              Plus anciens
-            </SelectItem>
-          </SelectContent>
-        </Select>
+          label="Suspendus uniquement"
+        />
+        <FilterRow
+          checked={params.suspended === false}
+          onCheckboxToggle={() =>
+            navigate({
+              suspended: params.suspended === false ? undefined : false,
+            })
+          }
+          onRowSelect={() => {
+            navigate({ suspended: false });
+            closeFilters();
+          }}
+          label="Non suspendus"
+        />
+      </FilterSection>
 
-        {isPending ? (
-          <span className="text-xs font-medium text-muted">Mise à jour…</span>
-        ) : null}
+      {showSubtypeFilter ? (
+        <FilterSection title="Sous-type">
+          <FilterRow
+            checked={!params.subtype}
+            onCheckboxToggle={() => {
+              if (!params.subtype) return;
+              navigate({ subtype: undefined });
+            }}
+            onRowSelect={() => {
+              navigate({ subtype: undefined });
+              closeFilters();
+            }}
+            label="Tous les sous-types"
+          />
+          <FilterRow
+            checked={params.subtype === "demande"}
+            onCheckboxToggle={() =>
+              navigate({
+                subtype: params.subtype === "demande" ? undefined : "demande",
+              })
+            }
+            onRowSelect={() => {
+              navigate({ subtype: "demande" });
+              closeFilters();
+            }}
+            label="Demande"
+          />
+          <FilterRow
+            checked={params.subtype === "offre"}
+            onCheckboxToggle={() =>
+              navigate({
+                subtype: params.subtype === "offre" ? undefined : "offre",
+              })
+            }
+            onRowSelect={() => {
+              navigate({ subtype: "offre" });
+              closeFilters();
+            }}
+            label="Offre"
+          />
+        </FilterSection>
+      ) : null}
+
+      {categories.length > 0 ? (
+        <FilterSection title="Catégorie">
+          <FilterRow
+            checked={!params.category}
+            onCheckboxToggle={() => {
+              if (!params.category) return;
+              navigate({ category: undefined });
+            }}
+            onRowSelect={() => {
+              navigate({ category: undefined });
+              closeFilters();
+            }}
+            label="Toutes les catégories"
+          />
+          {categories.map((category) => {
+            const checked = params.category === category.slug;
+            return (
+              <FilterRow
+                key={`${category.contentType}:${category.slug}`}
+                checked={checked}
+                onCheckboxToggle={() =>
+                  navigate({
+                    category: checked ? undefined : category.slug,
+                  })
+                }
+                onRowSelect={() => {
+                  navigate({ category: category.slug });
+                  closeFilters();
+                }}
+                label={category.label}
+              />
+            );
+          })}
+        </FilterSection>
+      ) : null}
+
+      {showOfficialFilter ? (
+        <FilterSection title="Événement">
+          <FilterRow
+            checked={params.official === undefined}
+            onCheckboxToggle={() => {
+              if (params.official === undefined) return;
+              navigate({ official: undefined });
+            }}
+            onRowSelect={() => {
+              navigate({ official: undefined });
+              closeFilters();
+            }}
+            label="Tous"
+          />
+          <FilterRow
+            checked={params.official === true}
+            onCheckboxToggle={() =>
+              navigate({
+                official: params.official === true ? undefined : true,
+              })
+            }
+            onRowSelect={() => {
+              navigate({ official: true });
+              closeFilters();
+            }}
+            label="Officiels mairie"
+          />
+          <FilterRow
+            checked={params.official === false}
+            onCheckboxToggle={() =>
+              navigate({
+                official: params.official === false ? undefined : false,
+              })
+            }
+            onRowSelect={() => {
+              navigate({ official: false });
+              closeFilters();
+            }}
+            label="Communautaires"
+          />
+        </FilterSection>
+      ) : null}
+
+      <FilterSection title="Période">
+        <FilterRow
+          checked={!params.dateFrom && !params.dateTo}
+          onCheckboxToggle={() => {
+            if (!params.dateFrom && !params.dateTo) return;
+            navigate({ dateFrom: undefined, dateTo: undefined });
+          }}
+          onRowSelect={() => {
+            navigate({ dateFrom: undefined, dateTo: undefined });
+          }}
+          label="Toutes les dates"
+        />
+        <ContenusDateRangeFields
+          dateFrom={params.dateFrom}
+          dateTo={params.dateTo}
+          onChange={(dateFrom, dateTo) => navigate({ dateFrom, dateTo })}
+        />
+      </FilterSection>
+
+      <FilterSection title="Tri">
+        <FilterRow
+          checked={params.sort === BACKOFFICE_CONTENT_SORT.newest}
+          onCheckboxToggle={() => {
+            if (params.sort === BACKOFFICE_CONTENT_SORT.newest) return;
+            navigate({ sort: BACKOFFICE_CONTENT_SORT.newest });
+          }}
+          onRowSelect={() => {
+            navigate({ sort: BACKOFFICE_CONTENT_SORT.newest });
+            closeFilters();
+          }}
+          label="Plus récents"
+        />
+        <FilterRow
+          checked={params.sort === BACKOFFICE_CONTENT_SORT.oldest}
+          onCheckboxToggle={() => {
+            if (params.sort === BACKOFFICE_CONTENT_SORT.oldest) return;
+            navigate({ sort: BACKOFFICE_CONTENT_SORT.oldest });
+          }}
+          onRowSelect={() => {
+            navigate({ sort: BACKOFFICE_CONTENT_SORT.oldest });
+            closeFilters();
+          }}
+          label="Plus anciens"
+        />
+      </FilterSection>
     </>
   );
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
+      <ContenusStatsBar
+        counts={counts}
+        activeTab={params.tab}
+        onTabSelect={switchTab}
+      />
+
+      <nav className="flex gap-1 overflow-x-auto border-b border-border">
+        {(["announcement", "initiative", "event"] as const).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            role="tab"
+            aria-selected={params.tab === tab}
+            onClick={() => switchTab(tab)}
+            className={cn(
+              "shrink-0 cursor-pointer px-3 py-2 text-sm font-semibold transition",
+              params.tab === tab
+                ? CONTENT_TYPE_CONFIG[tab].tabActiveClass
+                : "text-muted hover:text-text",
+            )}
+          >
+            {BACKOFFICE_CONTENT_TYPE_LABELS[tab]}
+          </button>
+        ))}
+      </nav>
+
       <div className="flex min-w-0 items-center gap-2">
         <div className="relative min-w-0 flex-1 max-w-md">
           <Input
@@ -508,22 +443,131 @@ export function ContenusToolbar({
           ) : null}
         </div>
 
-        <FilterMobileTriggerButton
-          filterCount={filterCount}
-          onClick={() => setOpen(true)}
-          className="shrink-0 md:hidden"
-        />
-        <FilterMobileSheetPanel
-          open={open}
-          onClose={() => setOpen(false)}
-          filterCount={filterCount}
-          onClearAll={clearAllFilters}
-        >
-          {filterControls}
-        </FilterMobileSheetPanel>
-      </div>
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <FilterMobileTriggerButton
+            filterCount={filterCount}
+            onClick={() => setOpen(true)}
+            className="md:hidden"
+          />
+          <FilterMobileSheetPanel
+            open={open}
+            onClose={() => setOpen(false)}
+            filterCount={filterCount}
+            totalResults={totalCount}
+            onClearAll={clearAllFilters}
+          >
+            {filterSections}
+          </FilterMobileSheetPanel>
 
-      <FilterDesktopInline>{filterControls}</FilterDesktopInline>
+          <Popover open={desktopFiltersOpen} onOpenChange={setDesktopFiltersOpen}>
+            <PopoverTrigger
+              render={
+                <FilterSheetTrigger
+                  count={filterCount}
+                  iconOnly
+                  className="hidden md:inline-flex"
+                  onClick={() => undefined}
+                />
+              }
+            />
+            <PopoverContent
+              align="end"
+              sideOffset={8}
+              className="w-[min(92vw,360px)] gap-0 p-0"
+            >
+              <div className="border-b border-border px-4 py-3">
+                <div className="flex items-center justify-between gap-2">
+                  <h2 className="text-sm font-bold text-text">Filtres</h2>
+                  <div className="flex items-center gap-1">
+                    {filterCount > 0 ? (
+                      <button
+                        type="button"
+                        onClick={clearAllFilters}
+                        className="cursor-pointer whitespace-nowrap text-xs font-semibold text-muted hover:text-text"
+                      >
+                        Tout effacer
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => setDesktopFiltersOpen(false)}
+                      aria-label="Fermer les filtres"
+                      className="inline-flex size-7 cursor-pointer items-center justify-center rounded-sm text-muted hover:bg-warm hover:text-text"
+                    >
+                      <X className="size-4" aria-hidden />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="max-h-[70vh] overflow-y-auto">{filterSections}</div>
+
+              <div className="border-t border-border px-4 py-3">
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    onClick={() => setDesktopFiltersOpen(false)}
+                  >
+                    Voir les {totalCount} résultats
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ContenusDateRangeFields({
+  dateFrom,
+  dateTo,
+  onChange,
+}: {
+  dateFrom?: string;
+  dateTo?: string;
+  onChange: (dateFrom?: string, dateTo?: string) => void;
+}) {
+  return (
+    <div className="grid grid-cols-1 gap-3 px-4 py-2.5 sm:grid-cols-2">
+      <div className="space-y-1">
+        <Label htmlFor="contenus-date-from" className="text-xs text-subtle">
+          Date de début
+        </Label>
+        <DatePickerField
+          id="contenus-date-from"
+          value={dateFrom ?? ""}
+          onChange={(value) =>
+            onChange(
+              value || undefined,
+              dateTo
+                ? resolveEndDateAfterStartChange(value, dateTo)
+                : undefined,
+            )
+          }
+          maxDate={dateTo}
+          placeholder="Choisir une date"
+          className="w-full"
+          aria-label="Date de début"
+        />
+      </div>
+      <div className="space-y-1">
+        <Label htmlFor="contenus-date-to" className="text-xs text-subtle">
+          Date de fin
+        </Label>
+        <DatePickerField
+          id="contenus-date-to"
+          value={dateTo ?? ""}
+          onChange={(value) => onChange(dateFrom, value || undefined)}
+          minDate={dateFrom}
+          placeholder="Choisir une date"
+          className="w-full"
+          aria-label="Date de fin"
+        />
+      </div>
     </div>
   );
 }

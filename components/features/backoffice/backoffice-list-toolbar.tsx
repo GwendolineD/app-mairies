@@ -864,6 +864,10 @@ type ListField = {
   label: string;
   value: React.ReactNode;
   icon?: LucideIcon;
+  /** When set, the value is rendered as a link (e.g. commune or author). */
+  href?: string;
+  /** When true, renders `value` only — no "Label · value" prefix. */
+  standalone?: boolean;
 };
 
 const LIST_FIELD_ICONS: Record<string, LucideIcon> = {
@@ -926,6 +930,7 @@ export function BackofficeListLinkCard({
   fieldsDisplay = "text",
   mobileFieldSplitAfter,
   statsRowLeading,
+  metaLeading,
   metaTrailing,
   footer,
   className,
@@ -939,6 +944,8 @@ export function BackofficeListLinkCard({
   mobileFieldSplitAfter?: number;
   /** Rendered before primary stats (e.g. subscription icon on the adherents row). */
   statsRowLeading?: React.ReactNode;
+  /** Second meta row, left-aligned (e.g. author). Shown with metaTrailing on its own line. */
+  metaLeading?: React.ReactNode;
   metaTrailing?: React.ReactNode;
   /** Rendered below fields, outside the title link (e.g. member actions). */
   footer?: React.ReactNode;
@@ -959,11 +966,30 @@ export function BackofficeListLinkCard({
       }
     }
 
+    if (field.standalone) {
+      return (
+        <div key={field.label} className="shrink-0">
+          {field.value}
+        </div>
+      );
+    }
+
+    const valueNode = field.href ? (
+      <Link
+        href={field.href}
+        className="text-text transition hover:text-purple"
+      >
+        {field.value}
+      </Link>
+    ) : (
+      <span className="text-text">{field.value}</span>
+    );
+
     return (
       <p key={field.label} className="min-w-0 truncate">
         <span className="text-subtle">{field.label}</span>
         {" · "}
-        <span className="text-text">{field.value}</span>
+        {valueNode}
       </p>
     );
   }
@@ -982,43 +1008,61 @@ export function BackofficeListLinkCard({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border/60 bg-surface px-4 py-4 transition hover:bg-warm",
+        "rounded-xl border border-border/60 bg-surface px-4 py-4",
         className,
       )}
     >
-      <Link href={href} className="block cursor-pointer">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="min-w-0 truncate text-base font-semibold text-text">{title}</p>
-          {titleAside ? <div key="title-aside">{titleAside}</div> : null}
-        </div>
-      </Link>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Link
+          href={href}
+          className="min-w-0 truncate text-base font-semibold text-text transition hover:text-purple"
+        >
+          {title}
+        </Link>
+        {titleAside ? <div key="title-aside">{titleAside}</div> : null}
+      </div>
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        {hasMobileSplit ? (
-          <div className="flex w-full flex-col gap-y-2 text-sm font-medium text-muted md:flex md:w-auto md:flex-row md:flex-wrap md:items-center md:gap-x-3 md:gap-y-2">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 md:contents">
+      <div className="mt-3 flex flex-col gap-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          {hasMobileSplit ? (
+            <div className="flex w-full flex-col gap-y-2 text-sm font-medium text-muted md:flex md:w-auto md:flex-row md:flex-wrap md:items-center md:gap-x-3 md:gap-y-2">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2 md:contents">
+                {statsRowLeading ? (
+                  <div key="stats-leading">{statsRowLeading}</div>
+                ) : null}
+                {primaryFields.map(renderField)}
+              </div>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2 md:contents">
+                {secondaryFields.map(renderField)}
+              </div>
+            </div>
+          ) : (
+            <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 text-sm font-medium text-muted md:w-auto">
               {statsRowLeading ? (
                 <div key="stats-leading">{statsRowLeading}</div>
               ) : null}
-              {primaryFields.map(renderField)}
+              {fields.map(renderField)}
             </div>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 md:contents">
-              {secondaryFields.map(renderField)}
-            </div>
-          </div>
-        ) : (
-          <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 text-sm font-medium text-muted md:w-auto">
-            {statsRowLeading ? (
-              <div key="stats-leading">{statsRowLeading}</div>
-            ) : null}
-            {fields.map(renderField)}
-          </div>
-        )}
+          )}
 
-        {metaTrailing ? (
-          <p className="ml-auto shrink-0 text-right text-xs font-medium text-muted">
-            {metaTrailing}
-          </p>
+          {metaTrailing && !metaLeading ? (
+            <p className="ml-auto shrink-0 text-right text-xs font-medium text-muted">
+              {metaTrailing}
+            </p>
+          ) : null}
+        </div>
+
+        {metaLeading ? (
+          <div className="flex items-center justify-between gap-x-4 gap-y-2">
+            <div className="min-w-0 truncate text-xs font-medium text-muted">
+              {metaLeading}
+            </div>
+            {metaTrailing ? (
+              <p className="shrink-0 text-right text-xs font-medium text-muted">
+                {metaTrailing}
+              </p>
+            ) : null}
+          </div>
         ) : null}
       </div>
 
