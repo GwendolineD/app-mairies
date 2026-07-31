@@ -80,6 +80,7 @@ export default async function BackofficeCommuneDetailPage(props: {
         createdAt={stats.commune.created_at}
         communeId={stats.commune.id}
         accessStatus={stats.commune.access_status}
+        population={stats.commune.population}
         mairieAddressStreet={stats.commune.mairie_address_street}
         mairieAddressCity={stats.commune.mairie_address_city}
         mairieAddressPostcode={stats.commune.mairie_address_postcode}

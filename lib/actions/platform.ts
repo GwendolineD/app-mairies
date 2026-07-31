@@ -22,12 +22,13 @@ type GeoCommune = {
   nom: string;
   codesPostaux: string[];
   codeDepartement: string;
+  population?: number;
   centre: { coordinates: [number, number] };
 };
 
 async function fetchGeoCommune(inseeCode: string): Promise<GeoCommune | null> {
   const res = await fetch(
-    `https://geo.api.gouv.fr/communes/${encodeURIComponent(inseeCode)}?fields=code,nom,codesPostaux,codeDepartement,centre&format=json&geometry=centre`,
+    `https://geo.api.gouv.fr/communes/${encodeURIComponent(inseeCode)}?fields=code,nom,codesPostaux,codeDepartement,centre,population&format=json&geometry=centre`,
     { next: { revalidate: 86400 } },
   );
   if (!res.ok) return null;
@@ -114,6 +115,7 @@ export async function createPilotCommuneAction(
       mairie_address_postcode: mairiePostcode,
       mairie_address_lat: mairieLat,
       mairie_address_lng: mairieLng,
+      population: geo?.population ?? null,
       settings: { address: mairieStreet },
     })
     .select("id")
@@ -275,6 +277,7 @@ export async function updateCommuneInfo(
     mairieAddressPostcode?: string;
     mairieAddressLat?: number;
     mairieAddressLng?: number;
+    population?: number | null;
   },
 ): Promise<PlatformActionResult> {
   const { userId } = await requirePlatformAdmin();
@@ -322,6 +325,7 @@ export async function updateCommuneInfo(
       mairie_address_postcode: mairiePostcode,
       mairie_address_lat: data.mairieAddressLat ?? null,
       mairie_address_lng: data.mairieAddressLng ?? null,
+      population: data.population ?? null,
       settings: nextSettings,
     })
     .eq("id", communeId);
@@ -341,6 +345,7 @@ export async function updateCommuneInfo(
 
   revalidatePath(ROUTES.backoffice.communes);
   revalidatePath(ROUTES.backoffice.communeDetail(communeId));
+  revalidatePath(ROUTES.backoffice.utilisateurs);
   revalidatePath(ROUTES.mairie.evenements);
   return { success: true };
 }

@@ -42,6 +42,7 @@ import {
 } from "@/lib/utils/backoffice-search-params";
 import { buildBackofficeContenusListQuery } from "@/lib/utils/backoffice-contenus-params";
 import { buildBackofficeInvitationsListQuery } from "@/lib/utils/backoffice-invitations-params";
+import { buildBackofficeUtilisateursListQuery } from "@/lib/utils/backoffice-utilisateurs-params";
 import type { AccessStatus } from "@/lib/types";
 import { cn } from "@/lib/utils/cn";
 
@@ -50,7 +51,7 @@ type FilterOption = {
   label: string;
 };
 
-type QueryVariant = "communes" | "members" | "audit" | "invitations" | "contenus";
+type QueryVariant = "communes" | "members" | "audit" | "invitations" | "contenus" | "utilisateurs";
 
 type BackofficeListParams = Record<
   string,
@@ -66,6 +67,7 @@ const BUILD_QUERY_BY_VARIANT: Record<
   audit: buildBackofficeAuditListQuery,
   invitations: buildBackofficeInvitationsListQuery,
   contenus: buildBackofficeContenusListQuery,
+  utilisateurs: buildBackofficeUtilisateursListQuery,
 };
 
 type BackofficeListQueryProps = {

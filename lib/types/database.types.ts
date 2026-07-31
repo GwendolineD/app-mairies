@@ -530,6 +530,7 @@ export type Database = {
           monthly_amount_cents: number
           name: string
           plan: Database["public"]["Enums"]["commune_plan"]
+          population: number | null
           postcode: string | null
           settings: Json
           siret: string | null
@@ -560,6 +561,7 @@ export type Database = {
           monthly_amount_cents?: number
           name: string
           plan?: Database["public"]["Enums"]["commune_plan"]
+          population?: number | null
           postcode?: string | null
           settings?: Json
           siret?: string | null
@@ -590,6 +592,7 @@ export type Database = {
           monthly_amount_cents?: number
           name?: string
           plan?: Database["public"]["Enums"]["commune_plan"]
+          population?: number | null
           postcode?: string | null
           settings?: Json
           siret?: string | null

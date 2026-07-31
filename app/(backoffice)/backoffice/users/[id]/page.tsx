@@ -36,7 +36,7 @@ export default async function BackofficeUserDetailPage(props: {
 
   return (
     <PageStack>
-      <HistoryBackLink fallbackHref={ROUTES.backoffice.communes} />
+      <HistoryBackLink fallbackHref={ROUTES.backoffice.utilisateurs} />
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <PageHeading

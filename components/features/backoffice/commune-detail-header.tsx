@@ -16,12 +16,17 @@ type Props = {
   createdAt: string;
   communeId: string;
   accessStatus: AccessStatus;
+  population: number | null;
   mairieAddressStreet: string | null;
   mairieAddressCity: string | null;
   mairieAddressPostcode: string | null;
   mairieAddressLat: number | null;
   mairieAddressLng: number | null;
 };
+
+function formatPopulation(value: number): string {
+  return new Intl.NumberFormat("fr-FR").format(value);
+}
 
 export function CommuneDetailHeader({
   name,
@@ -30,6 +35,7 @@ export function CommuneDetailHeader({
   createdAt,
   communeId,
   accessStatus,
+  population,
   mairieAddressStreet,
   mairieAddressCity,
   mairieAddressPostcode,
@@ -45,8 +51,21 @@ export function CommuneDetailHeader({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1 space-y-1">
             <PageHeading title={title} className="min-w-0 flex-1" />
-            {mairieAddressStreet ? (
-              <p className="text-sm font-medium text-muted">{mairieAddressStreet}</p>
+            {mairieAddressStreet || population != null ? (
+              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+                {mairieAddressStreet ? (
+                  <p className="text-sm font-medium text-muted">
+                    {mairieAddressStreet}
+                  </p>
+                ) : (
+                  <span />
+                )}
+                {population != null ? (
+                  <p className="text-sm font-medium text-muted">
+                    {formatPopulation(population)} habitants
+                  </p>
+                ) : null}
+              </div>
             ) : null}
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -80,6 +99,7 @@ export function CommuneDetailHeader({
         inseeCode={inseeCode}
         initialName={name}
         initialPostcode={postcode ?? ""}
+        initialPopulation={population}
         initialMairieAddressStreet={mairieAddressStreet ?? ""}
         initialMairieAddressCity={mairieAddressCity ?? name}
         initialMairieAddressPostcode={mairieAddressPostcode ?? postcode ?? ""}
