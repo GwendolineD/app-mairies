@@ -11,6 +11,7 @@ import {
   BACKOFFICE_CONTENT_TYPES,
   BACKOFFICE_CONTENT_TYPE_LABELS,
   type BackofficeContentType,
+  type BackofficeContenusTab,
 } from "@/lib/utils/backoffice-contenus-params";
 import type { ContentTypeCounts } from "@/lib/queries/backoffice-contenus";
 import { cn } from "@/lib/utils/cn";
@@ -60,7 +61,7 @@ export { CONTENT_TYPE_CONFIG };
 
 type ContenusStatsBarProps = {
   counts: ContentTypeCounts;
-  activeTab: BackofficeContentType;
+  activeTab: BackofficeContenusTab;
   onTabSelect: (tab: BackofficeContentType) => void;
 };
 

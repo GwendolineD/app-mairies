@@ -8,7 +8,7 @@ import {
   saveContenusFiltersToStorage,
   storedFiltersToPartialParams,
   type BackofficeContenusListParams,
-  type BackofficeContentType,
+  type BackofficeContenusTab,
 } from "@/lib/utils/backoffice-contenus-params";
 
 export function useContenusTabFilters(params: BackofficeContenusListParams) {
@@ -30,12 +30,15 @@ export function useContenusTabFilters(params: BackofficeContenusListParams) {
   );
 
   const switchTab = useCallback(
-    (newTab: BackofficeContentType) => {
+    (newTab: BackofficeContenusTab) => {
       if (newTab === params.tab) return;
 
-      saveContenusFiltersToStorage(params.tab, params);
+      if (params.tab !== "stats") {
+        saveContenusFiltersToStorage(params.tab, params);
+      }
 
-      const stored = loadContenusFiltersFromStorage(newTab);
+      const stored =
+        newTab === "stats" ? null : loadContenusFiltersFromStorage(newTab);
       const restored = storedFiltersToPartialParams(newTab, stored ?? {});
 
       startTransition(() => {
@@ -54,6 +57,7 @@ export function useContenusTabFilters(params: BackofficeContenusListParams) {
 
   // Sync current URL filters to localStorage when they change
   useEffect(() => {
+    if (params.tab === "stats") return;
     saveContenusFiltersToStorage(params.tab, params);
   }, [
     params.tab,

@@ -11,6 +11,8 @@ import { initCategories } from "@/lib/constants/announcement-categories";
 import { getInitiativeEventCategories } from "@/lib/queries/initiative-event-categories";
 import { initInitiativeEventCategories } from "@/lib/constants/initiative-categories";
 import { countAllPendingReports } from "@/lib/queries/reports";
+import { countOpenSupportRequests } from "@/lib/queries/support-requests";
+import { countOpenCommuneInterestLeads } from "@/lib/queries/commune-interest-leads";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function BackofficeLayout({
@@ -22,11 +24,13 @@ export default async function BackofficeLayout({
 
   const supabase = await createClient();
 
-  const [categoryRows, initiativeCategoryRows, pendingReportsCount] =
+  const [categoryRows, initiativeCategoryRows, pendingReportsCount, openSupportCount, openLeadsCount] =
     await Promise.all([
       getAnnouncementCategories(),
       getInitiativeEventCategories(),
       countAllPendingReports(supabase),
+      countOpenSupportRequests(supabase),
+      countOpenCommuneInterestLeads(supabase),
     ]);
   initCategories(categoryRows);
   initInitiativeEventCategories(initiativeCategoryRows);
@@ -39,6 +43,8 @@ export default async function BackofficeLayout({
       mobileNav="drawer"
       badges={{
         [ROUTES.backoffice.signalements]: pendingReportsCount,
+        [ROUTES.backoffice.assistance]: openSupportCount,
+        [ROUTES.backoffice.leads]: openLeadsCount,
       }}
     >
       {children}

@@ -3,6 +3,10 @@ import { PILOT_ACCESS_STATUSES } from "@/lib/constants/access-status";
 import { fetchMemberEmails } from "@/lib/queries/backoffice-memberships";
 import type { BackofficeUtilisateursListParams } from "@/lib/utils/backoffice-utilisateurs-params";
 import {
+  countByCommuneId,
+  resolvePopulationBracket,
+} from "@/lib/queries/population-brackets";
+import {
   POPULATION_BRACKETS,
   type GlobalUserStats,
   type PopulationBracket,
@@ -10,6 +14,8 @@ import {
   type PopulationStatsResult,
   type UserListRow,
 } from "@/lib/queries/backoffice-users-list.types";
+
+export { countByCommuneId, resolvePopulationBracket } from "@/lib/queries/population-brackets";
 
 export type {
   GlobalUserStats,
@@ -44,21 +50,6 @@ function formatFullName(
   return displayName?.trim() || "Utilisateur·rice";
 }
 
-function countByCommuneId(rows: { commune_id: string }[]): Map<string, number> {
-  const counts = new Map<string, number>();
-  for (const row of rows) {
-    counts.set(row.commune_id, (counts.get(row.commune_id) ?? 0) + 1);
-  }
-  return counts;
-}
-
-function resolvePopulationBracket(population: number): PopulationBracket {
-  if (population <= 500) return "0-500";
-  if (population <= 800) return "501-800";
-  if (population <= 1000) return "801-1000";
-  return ">1000";
-}
-
 function applyProfileDateRange<T extends { gte: Function; lte: Function }>(
   query: T,
   dateFrom?: string,
@@ -78,21 +69,28 @@ export async function countGlobalStats(
   supabase: SupabaseClient,
 ): Promise<GlobalUserStats> {
   const now = new Date().toISOString();
-  const [{ count: totalUsers }, { count: pendingInvitations }] =
-    await Promise.all([
-      supabase
-        .from("profiles")
-        .select("user_id", { count: "exact", head: true }),
-      supabase
-        .from("neighbor_invites")
-        .select("id", { count: "exact", head: true })
-        .is("accepted_at", null)
-        .or(`expires_at.is.null,expires_at.gte.${now}`),
-    ]);
+  const [
+    { count: totalUsers },
+    { count: pendingInvitations },
+    { count: totalInvitations },
+  ] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("user_id", { count: "exact", head: true }),
+    supabase
+      .from("neighbor_invites")
+      .select("id", { count: "exact", head: true })
+      .is("accepted_at", null)
+      .or(`expires_at.is.null,expires_at.gte.${now}`),
+    supabase
+      .from("neighbor_invites")
+      .select("id", { count: "exact", head: true }),
+  ]);
 
   return {
     totalUsers: totalUsers ?? 0,
     pendingInvitations: pendingInvitations ?? 0,
+    totalInvitations: totalInvitations ?? 0,
   };
 }
 
@@ -291,34 +289,42 @@ export async function getPopulationStats(
 ): Promise<PopulationStatsResult> {
   const now = new Date().toISOString();
 
-  const [communesResult, membershipsResult, invitesResult] = await Promise.all([
-    supabase
-      .from("communes")
-      .select("id, population")
-      .in("access_status", [...PILOT_ACCESS_STATUSES]),
-    supabase
-      .from("memberships")
-      .select("commune_id")
-      .eq("status", "active"),
-    supabase
-      .from("neighbor_invites")
-      .select("commune_id")
-      .is("accepted_at", null)
-      .or(`expires_at.is.null,expires_at.gte.${now}`),
-  ]);
+  const [communesResult, membershipsResult, invitesResult, totalInvitesResult] =
+    await Promise.all([
+      supabase
+        .from("communes")
+        .select("id, population")
+        .in("access_status", [...PILOT_ACCESS_STATUSES]),
+      supabase
+        .from("memberships")
+        .select("commune_id")
+        .eq("status", "active"),
+      supabase
+        .from("neighbor_invites")
+        .select("commune_id")
+        .is("accepted_at", null)
+        .or(`expires_at.is.null,expires_at.gte.${now}`),
+      supabase.from("neighbor_invites").select("commune_id"),
+    ]);
 
   const communes = communesResult.data ?? [];
   const memberCounts = countByCommuneId(membershipsResult.data ?? []);
   const inviteCounts = countByCommuneId(invitesResult.data ?? []);
+  const totalInviteCounts = countByCommuneId(totalInvitesResult.data ?? []);
 
   let communesWithoutPopulation = 0;
   const bracketTotals = new Map<
     PopulationBracket,
-    { communeCount: number; members: number; invites: number }
+    { communeCount: number; members: number; invites: number; totalInvites: number }
   >();
 
   for (const bracket of POPULATION_BRACKETS) {
-    bracketTotals.set(bracket, { communeCount: 0, members: 0, invites: 0 });
+    bracketTotals.set(bracket, {
+      communeCount: 0,
+      members: 0,
+      invites: 0,
+      totalInvites: 0,
+    });
   }
 
   for (const commune of communes) {
@@ -332,6 +338,7 @@ export async function getPopulationStats(
     totals.communeCount += 1;
     totals.members += memberCounts.get(commune.id) ?? 0;
     totals.invites += inviteCounts.get(commune.id) ?? 0;
+    totals.totalInvites += totalInviteCounts.get(commune.id) ?? 0;
   }
 
   const brackets: PopulationBracketStats[] = POPULATION_BRACKETS.map(
@@ -347,6 +354,10 @@ export async function getPopulationStats(
         avgPendingInvites:
           totals.communeCount > 0
             ? Math.round((totals.invites / totals.communeCount) * 10) / 10
+            : 0,
+        avgTotalInvites:
+          totals.communeCount > 0
+            ? Math.round((totals.totalInvites / totals.communeCount) * 10) / 10
             : 0,
       };
     },

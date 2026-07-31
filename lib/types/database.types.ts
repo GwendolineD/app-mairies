@@ -382,6 +382,7 @@ export type Database = {
       }
       commune_interest_leads: {
         Row: {
+          admin_comment: string | null
           commune_id: string | null
           created_at: string
           email: string
@@ -389,8 +390,12 @@ export type Database = {
           insee_code: string | null
           message: string | null
           metadata: Json
+          reviewed_at: string | null
+          reviewed_by_user_id: string | null
+          status: Database["public"]["Enums"]["support_request_status"]
         }
         Insert: {
+          admin_comment?: string | null
           commune_id?: string | null
           created_at?: string
           email: string
@@ -398,8 +403,12 @@ export type Database = {
           insee_code?: string | null
           message?: string | null
           metadata?: Json
+          reviewed_at?: string | null
+          reviewed_by_user_id?: string | null
+          status?: Database["public"]["Enums"]["support_request_status"]
         }
         Update: {
+          admin_comment?: string | null
           commune_id?: string | null
           created_at?: string
           email?: string
@@ -407,6 +416,9 @@ export type Database = {
           insee_code?: string | null
           message?: string | null
           metadata?: Json
+          reviewed_at?: string | null
+          reviewed_by_user_id?: string | null
+          status?: Database["public"]["Enums"]["support_request_status"]
         }
         Relationships: [
           {

@@ -28,13 +28,15 @@ import type {
   ContentTypeCounts,
 } from "@/lib/queries/backoffice-contenus";
 import {
+  BACKOFFICE_CONTENUS_TABS,
+  BACKOFFICE_CONTENUS_TAB_LABELS,
   BACKOFFICE_CONTENT_SORT,
-  BACKOFFICE_CONTENT_TYPE_LABELS,
+  BACKOFFICE_CONTENT_STATUS_LABELS,
   activeBackofficeContenusFilterCount,
   statusesForContentType,
-  BACKOFFICE_CONTENT_STATUS_LABELS,
   type BackofficeContenusListParams,
   type BackofficeContentStatus,
+  type BackofficeContentType,
 } from "@/lib/utils/backoffice-contenus-params";
 import { cn } from "@/lib/utils/cn";
 import { ContenusStatsBar, CONTENT_TYPE_CONFIG } from "./contenus-stats-bar";
@@ -59,13 +61,17 @@ export function ContenusToolbar({
   const [search, setSearch] = useState(params.q);
   const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(false);
 
-  const statusOptions = statusesForContentType(params.tab, []).map((status) => ({
+  const isStatsTab = params.tab === "stats";
+  const contentTab: BackofficeContentType =
+    params.tab === "stats" ? "announcement" : params.tab;
+
+  const statusOptions = statusesForContentType(contentTab, []).map((status) => ({
     value: status,
     label: BACKOFFICE_CONTENT_STATUS_LABELS[status],
   }));
 
-  const showSubtypeFilter = params.tab === "announcement";
-  const showOfficialFilter = params.tab === "event";
+  const showSubtypeFilter = !isStatsTab && params.tab === "announcement";
+  const showOfficialFilter = !isStatsTab && params.tab === "event";
 
   useEffect(() => {
     setSearch(params.q);
@@ -403,7 +409,7 @@ export function ContenusToolbar({
       />
 
       <nav className="flex gap-1 overflow-x-auto border-b border-border">
-        {(["announcement", "initiative", "event"] as const).map((tab) => (
+        {BACKOFFICE_CONTENUS_TABS.map((tab) => (
           <button
             key={tab}
             type="button"
@@ -413,16 +419,19 @@ export function ContenusToolbar({
             className={cn(
               "shrink-0 cursor-pointer px-3 py-2 text-sm font-semibold transition",
               params.tab === tab
-                ? CONTENT_TYPE_CONFIG[tab].tabActiveClass
+                ? tab === "stats"
+                  ? "border-b-2 border-purple text-purple"
+                  : CONTENT_TYPE_CONFIG[tab].tabActiveClass
                 : "text-muted hover:text-text",
             )}
           >
-            {BACKOFFICE_CONTENT_TYPE_LABELS[tab]}
+            {BACKOFFICE_CONTENUS_TAB_LABELS[tab]}
           </button>
         ))}
       </nav>
 
-      <div className="flex min-w-0 items-center gap-2">
+      {!isStatsTab ? (
+        <div className="flex min-w-0 items-center gap-2">
         <div className="relative min-w-0 flex-1 max-w-md">
           <Input
             value={search}
@@ -518,6 +527,7 @@ export function ContenusToolbar({
           </Popover>
         </div>
       </div>
+      ) : null}
     </div>
   );
 }

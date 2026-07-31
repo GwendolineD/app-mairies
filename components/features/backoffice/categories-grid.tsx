@@ -31,9 +31,14 @@ export function CategoriesGrid({ categories }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button variant="primary" onClick={() => setCreateOpen(true)}>
+        <Button
+          variant="primary"
+          onClick={() => setCreateOpen(true)}
+          aria-label="Ajouter une catégorie"
+          className="max-md:px-2.5 max-md:gap-0"
+        >
           <Plus className="size-4" aria-hidden />
-          <span>Ajouter une catégorie</span>
+          <span className="hidden md:inline">Ajouter une catégorie</span>
         </Button>
       </div>
 
@@ -87,7 +92,7 @@ function CategoryCard({
   const Icon = resolveIcon(category.icon_name);
 
   return (
-    <Card className="flex flex-col gap-4 p-4">
+    <Card className="flex flex-col gap-4 rounded-xl p-4">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-3">
           <span
@@ -121,40 +126,42 @@ function CategoryCard({
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 text-xs">
-        <span
-          className="inline-block size-4 rounded-full border border-border"
-          style={{ backgroundColor: category.color_hex }}
-          title={category.color_hex}
-        />
-        <span className="text-muted">Ordre : {category.sort_order}</span>
-      </div>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span
+            className="inline-block size-4 rounded-full border border-border"
+            style={{ backgroundColor: category.color_hex }}
+            title={category.color_hex}
+          />
+          <span className="text-muted">Ordre : {category.sort_order}</span>
+        </div>
 
-      <div className="flex gap-2">
-        {category.map_pin_url ? (
-          <img
-            src={buildOptimizedCloudinaryUrl(category.map_pin_url, { width: 160 })}
-            alt="Pin carte"
-            className="size-9 rounded border border-border object-contain"
-          />
-        ) : (
-          <span className="flex size-9 items-center justify-center rounded border border-dashed border-border text-[10px] text-muted">
-            Pin
-          </span>
-        )}
-        {category.default_image_url ? (
-          <img
-            src={buildOptimizedCloudinaryUrl(category.default_image_url, {
-              width: 160,
-            })}
-            alt="Image par défaut"
-            className="h-9 w-16 rounded border border-border object-cover"
-          />
-        ) : (
-          <span className="flex h-9 w-16 items-center justify-center rounded border border-dashed border-border text-[10px] text-muted">
-            Image
-          </span>
-        )}
+        <div className="flex shrink-0 items-center gap-2">
+          {category.map_pin_url ? (
+            <img
+              src={buildOptimizedCloudinaryUrl(category.map_pin_url, { width: 160 })}
+              alt="Pin carte"
+              className="size-9 rounded border border-border object-contain"
+            />
+          ) : (
+            <span className="flex size-9 items-center justify-center rounded border border-dashed border-border text-[10px] text-muted">
+              Pin
+            </span>
+          )}
+          {category.default_image_url ? (
+            <img
+              src={buildOptimizedCloudinaryUrl(category.default_image_url, {
+                width: 160,
+              })}
+              alt="Image par défaut"
+              className="h-9 w-16 rounded border border-border object-cover"
+            />
+          ) : (
+            <span className="flex h-9 w-16 items-center justify-center rounded border border-dashed border-border text-[10px] text-muted">
+              Image
+            </span>
+          )}
+        </div>
       </div>
     </Card>
   );

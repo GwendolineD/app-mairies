@@ -167,6 +167,7 @@ export async function suspendUserFromAllCommunesAction(
   revalidatePath(ROUTES.backoffice.userDetail(userId));
   revalidatePath(ROUTES.backoffice.communes);
   revalidatePath(ROUTES.backoffice.signalements);
+  revalidatePath("/backoffice", "layout");
   revalidatePath(ROUTES.mairie.signalements);
 
   for (const membership of memberships) {
@@ -292,6 +293,7 @@ export async function reactivateMembershipAction(
   revalidatePath(ROUTES.backoffice.communeDetail(membership.commune_id));
   revalidatePath(ROUTES.backoffice.communes);
   revalidatePath(ROUTES.backoffice.signalements);
+  revalidatePath("/backoffice", "layout");
   revalidatePath(ROUTES.mairie.signalements);
 
   return { success: true };
@@ -368,6 +370,7 @@ export async function restoreUserFromAllCommunesAction(
   revalidatePath(ROUTES.backoffice.userDetail(userId));
   revalidatePath(ROUTES.backoffice.communes);
   revalidatePath(ROUTES.backoffice.signalements);
+  revalidatePath("/backoffice", "layout");
   revalidatePath(ROUTES.mairie.signalements);
 
   for (const membership of memberships) {

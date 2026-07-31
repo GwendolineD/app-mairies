@@ -346,8 +346,39 @@ export function BackofficeDashboardSkeleton() {
   return (
     <PageStack>
       <BackofficePageHeadingSkeleton subtitle={false} />
-      <BackofficeStatsGridSkeleton count={2} cols={2} />
-      <Skeleton className="h-4 w-full max-w-2xl" />
+      <div className="space-y-6">
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-24" />
+          <BackofficeStatsGridSkeleton count={2} cols={2} />
+        </div>
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-24" />
+          <BackofficeStatsGridSkeleton count={3} cols={3} />
+        </div>
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-28" />
+          <BackofficeStatsGridSkeleton count={2} cols={2} />
+        </div>
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-36" />
+          <BackofficeStatsGridSkeleton count={3} cols={3} />
+        </div>
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-52" />
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card className="space-y-4 p-5">
+              <Skeleton className="h-6 w-56" />
+              <Skeleton className="h-4 w-full max-w-md" />
+              <Skeleton className="h-[320px] w-full rounded-sm" />
+            </Card>
+            <Card className="space-y-4 p-5">
+              <Skeleton className="h-6 w-56" />
+              <Skeleton className="h-4 w-full max-w-md" />
+              <Skeleton className="h-[320px] w-full rounded-sm" />
+            </Card>
+          </div>
+        </div>
+      </div>
     </PageStack>
   );
 }

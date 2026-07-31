@@ -18,10 +18,7 @@ export default async function BackofficeCommunicationPage() {
 
   return (
     <PageStack>
-      <PageHeading
-        title="Supports de communication"
-        subtitle="Gérez les flyers et visuels proposés aux équipes mairie pour promouvoir la plateforme."
-      />
+      <PageHeading title="Supports de communication" />
       <CommunicationAssetsGrid assets={assets} communes={communes} />
     </PageStack>
   );

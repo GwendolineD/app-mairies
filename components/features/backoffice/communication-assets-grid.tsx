@@ -40,9 +40,14 @@ export function CommunicationAssetsGrid({ assets, communes }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button variant="primary" onClick={() => setCreateOpen(true)}>
+        <Button
+          variant="primary"
+          onClick={() => setCreateOpen(true)}
+          aria-label="Ajouter un support"
+          className="max-md:px-2.5 max-md:gap-0"
+        >
           <Plus className="size-4" aria-hidden />
-          <span>Ajouter un support</span>
+          <span className="hidden md:inline">Ajouter un support</span>
         </Button>
       </div>
 

@@ -78,6 +78,7 @@ function revalidateContentPaths(type: ContentType, id: string, communeId: string
   }
   revalidatePath(ROUTES.mairie.signalements);
   revalidatePath(ROUTES.backoffice.signalements);
+  revalidatePath("/backoffice", "layout");
   revalidatePath(ROUTES.backoffice.communeDetail(communeId));
 }
 
@@ -392,6 +393,7 @@ export async function suspendMembershipByStaff(
   revalidatePath(ROUTES.mairie.habitants);
   revalidatePath(ROUTES.mairie.signalements);
   revalidatePath(ROUTES.backoffice.signalements);
+  revalidatePath("/backoffice", "layout");
   revalidatePath(ROUTES.backoffice.userDetail(membership.user_id));
   revalidatePath(ROUTES.backoffice.communeDetail(membership.commune_id));
 
@@ -484,6 +486,7 @@ export async function reactivateMembership(
   revalidatePath(ROUTES.mairie.habitants);
   revalidatePath(ROUTES.mairie.signalements);
   revalidatePath(ROUTES.backoffice.signalements);
+  revalidatePath("/backoffice", "layout");
   revalidatePath(ROUTES.backoffice.userDetail(membership.user_id));
   revalidatePath(ROUTES.backoffice.communeDetail(membership.commune_id));
 

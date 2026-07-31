@@ -16,40 +16,38 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import {
-  POPULATION_BRACKET_LABELS,
-  type PopulationStatsResult,
-} from "@/lib/queries/backoffice-users-list.types";
+import type { ContentPopulationStatsResult } from "@/lib/queries/backoffice-contenus";
+import { POPULATION_BRACKET_LABELS } from "@/lib/queries/backoffice-users-list.types";
 
 const chartConfig = {
-  avgMembers: {
-    label: "Adhérent·es (moy.)",
-    color: "var(--purple)",
-  },
-  avgPendingInvites: {
-    label: "Invitations en cours (moy.)",
-    color: "var(--orange)",
-  },
-  avgTotalInvites: {
-    label: "Total invitations (moy.)",
+  avgAnnouncements: {
+    label: "Annonces (moy.)",
     color: "var(--coral)",
+  },
+  avgInitiatives: {
+    label: "Initiatives (moy.)",
+    color: "var(--mint)",
+  },
+  avgEvents: {
+    label: "Événements (moy.)",
+    color: "var(--orange)",
   },
 } satisfies ChartConfig;
 
-type UtilisateursStatsChartProps = {
-  stats: PopulationStatsResult;
+type ContenusStatsChartProps = {
+  stats: ContentPopulationStatsResult;
 };
 
-export function UtilisateursStatsChart({ stats }: UtilisateursStatsChartProps) {
+export function ContenusStatsChart({ stats }: ContenusStatsChartProps) {
   const hasPopulationData = stats.brackets.some(
     (bracket) => bracket.communeCount > 0,
   );
 
   const chartData = stats.brackets.map((bracket) => ({
     bracket: POPULATION_BRACKET_LABELS[bracket.bracket],
-    avgMembers: bracket.avgMembers,
-    avgPendingInvites: bracket.avgPendingInvites,
-    avgTotalInvites: bracket.avgTotalInvites,
+    avgAnnouncements: bracket.avgAnnouncements,
+    avgInitiatives: bracket.avgInitiatives,
+    avgEvents: bracket.avgEvents,
     communeCount: bracket.communeCount,
   }));
 
@@ -70,8 +68,7 @@ export function UtilisateursStatsChart({ stats }: UtilisateursStatsChartProps) {
             Moyennes par taille de commune
           </h2>
           <p className="text-sm font-medium text-muted">
-            Nombre moyen d&apos;adhérent·es actif·ves, d&apos;invitations en
-            cours et total d&apos;invitations envoyées, par tranche de
+            Nombre moyen de contenus publiés par type, par tranche de
             population.
           </p>
         </div>
@@ -99,18 +96,18 @@ export function UtilisateursStatsChart({ stats }: UtilisateursStatsChartProps) {
             <ChartTooltip content={<ChartTooltipContent />} />
             <ChartLegend content={<ChartLegendContent />} />
             <Bar
-              dataKey="avgMembers"
-              fill="var(--color-avgMembers)"
+              dataKey="avgAnnouncements"
+              fill="var(--color-avgAnnouncements)"
               radius={[4, 4, 0, 0]}
             />
             <Bar
-              dataKey="avgPendingInvites"
-              fill="var(--color-avgPendingInvites)"
+              dataKey="avgInitiatives"
+              fill="var(--color-avgInitiatives)"
               radius={[4, 4, 0, 0]}
             />
             <Bar
-              dataKey="avgTotalInvites"
-              fill="var(--color-avgTotalInvites)"
+              dataKey="avgEvents"
+              fill="var(--color-avgEvents)"
               radius={[4, 4, 0, 0]}
             />
           </BarChart>

@@ -12,6 +12,13 @@ export const BACKOFFICE_CONTENT_TYPES = [
 export type BackofficeContentType =
   (typeof BACKOFFICE_CONTENT_TYPES)[number];
 
+export const BACKOFFICE_CONTENUS_TABS = [
+  ...BACKOFFICE_CONTENT_TYPES,
+  "stats",
+] as const;
+
+export type BackofficeContenusTab = (typeof BACKOFFICE_CONTENUS_TABS)[number];
+
 export const DEFAULT_BACKOFFICE_CONTENT_TAB: BackofficeContentType =
   "announcement";
 
@@ -22,6 +29,14 @@ export const BACKOFFICE_CONTENT_TYPE_LABELS: Record<
   announcement: "Annonce",
   initiative: "Initiative",
   event: "Événement",
+};
+
+export const BACKOFFICE_CONTENUS_TAB_LABELS: Record<
+  BackofficeContenusTab,
+  string
+> = {
+  ...BACKOFFICE_CONTENT_TYPE_LABELS,
+  stats: "Statistiques",
 };
 
 export const BACKOFFICE_CONTENT_STATUSES = [
@@ -112,13 +127,13 @@ function parseLimit(
 
 function parseContentTab(
   searchParams: Record<string, string | string[] | undefined>,
-): BackofficeContentType {
+): BackofficeContenusTab {
   const tabValue = raw(searchParams, "tab");
   if (
     tabValue &&
-    (BACKOFFICE_CONTENT_TYPES as readonly string[]).includes(tabValue)
+    (BACKOFFICE_CONTENUS_TABS as readonly string[]).includes(tabValue)
   ) {
-    return tabValue as BackofficeContentType;
+    return tabValue as BackofficeContenusTab;
   }
 
   // Legacy fallback: first `type` param when `tab` is absent
@@ -175,7 +190,7 @@ function parseSubtype(
 
 export type BackofficeContenusListParams = {
   q: string;
-  tab: BackofficeContentType;
+  tab: BackofficeContenusTab;
   commune?: string;
   statuses: BackofficeContentStatus[];
   suspended?: boolean;
@@ -204,9 +219,13 @@ export function parseBackofficeContenusListParams(
     commune,
     statuses: parseContentStatuses(searchParams),
     suspended: parseBooleanFlag(raw(searchParams, "suspended")),
-    subtype: tab === "announcement" ? parseSubtype(raw(searchParams, "subtype")) : undefined,
+    subtype:
+      tab === "announcement"
+        ? parseSubtype(raw(searchParams, "subtype"))
+        : undefined,
     category,
-    official: tab === "event" ? parseBooleanFlag(raw(searchParams, "official")) : undefined,
+    official:
+      tab === "event" ? parseBooleanFlag(raw(searchParams, "official")) : undefined,
     dateFrom,
     dateTo,
     sort: parseSort(raw(searchParams, "sort")),
@@ -241,9 +260,13 @@ export function extractStoredContenusFilters(
 }
 
 export function storedFiltersToPartialParams(
-  tab: BackofficeContentType,
+  tab: BackofficeContenusTab,
   stored: BackofficeContenusStoredFilters,
 ): Partial<BackofficeContenusListParams> {
+  if (tab === "stats") {
+    return { tab, page: 1 };
+  }
+
   return {
     tab,
     q: stored.q ?? "",
@@ -260,14 +283,15 @@ export function storedFiltersToPartialParams(
   };
 }
 
-export function contenusFiltersStorageKey(tab: BackofficeContentType): string {
+export function contenusFiltersStorageKey(tab: BackofficeContenusTab): string {
   return `${CONTENUS_FILTERS_STORAGE_PREFIX}${tab}`;
 }
 
 export function saveContenusFiltersToStorage(
-  tab: BackofficeContentType,
+  tab: BackofficeContenusTab,
   params: BackofficeContenusListParams,
 ): void {
+  if (tab === "stats") return;
   if (typeof window === "undefined") return;
   try {
     const stored = extractStoredContenusFilters(params);
@@ -281,8 +305,9 @@ export function saveContenusFiltersToStorage(
 }
 
 export function loadContenusFiltersFromStorage(
-  tab: BackofficeContentType,
+  tab: BackofficeContenusTab,
 ): BackofficeContenusStoredFilters | null {
+  if (tab === "stats") return null;
   if (typeof window === "undefined") return null;
   try {
     const rawValue = window.localStorage.getItem(contenusFiltersStorageKey(tab));
@@ -302,6 +327,10 @@ export function buildBackofficeContenusListQuery(
   if (params.q) sp.set("q", params.q);
   if (tab !== DEFAULT_BACKOFFICE_CONTENT_TAB) {
     sp.set("tab", tab);
+  }
+  if (tab === "stats") {
+    const qs = sp.toString();
+    return qs ? `?${qs}` : "";
   }
   if (params.commune) sp.set("commune", params.commune);
   for (const status of params.statuses ?? []) {

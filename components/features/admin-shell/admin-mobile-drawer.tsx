@@ -4,13 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Drawer } from "@base-ui/react/drawer";
-import { ArrowLeft, LogOut, Menu, type LucideIcon } from "lucide-react";
+import { ArrowLeft, Menu, type LucideIcon } from "lucide-react";
 
 import type { AdminNavBadges, AdminNavItem } from "@/lib/constants/routes";
 import { ROUTES } from "@/lib/constants/routes";
 import { cn } from "@/lib/utils/cn";
 import { resolveActiveNavHref } from "@/lib/utils/routes";
-import { signOut } from "@/lib/actions/auth";
 import {
   Building2,
   CalendarDays,
@@ -143,7 +142,7 @@ export function AdminMobileDrawer({
                 })}
               </nav>
 
-              <div className="shrink-0 space-y-1 border-t border-border px-4 py-3">
+              <div className="shrink-0 border-t border-border px-4 py-3">
                 <Link
                   href={backHref}
                   onClick={() => setOpen(false)}
@@ -152,15 +151,6 @@ export function AdminMobileDrawer({
                   <ArrowLeft className="size-5 shrink-0 text-coral/85" aria-hidden />
                   <span>Retour à l&apos;app</span>
                 </Link>
-                <form action={signOut}>
-                  <button
-                    type="submit"
-                    className="flex w-full cursor-pointer items-center gap-3 rounded-sm px-2 py-2.5 text-sm font-semibold text-coral transition hover:bg-coral/5"
-                  >
-                    <LogOut className="size-5 shrink-0" aria-hidden />
-                    <span>Se déconnecter</span>
-                  </button>
-                </form>
               </div>
             </Drawer.Content>
           </Drawer.Popup>

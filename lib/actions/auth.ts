@@ -631,6 +631,7 @@ export async function submitCommuneInterest(formData: FormData) {
   }
 
   revalidatePath(ROUTES.inscription.root);
+  revalidatePath("/backoffice", "layout");
   return { success: true };
 }
 

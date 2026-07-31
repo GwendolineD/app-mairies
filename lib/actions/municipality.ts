@@ -83,6 +83,7 @@ export async function setReportReviewed(reportId: string): Promise<void> {
   if (error) return;
   revalidatePath(ROUTES.mairie.signalements);
   revalidatePath(ROUTES.backoffice.signalements);
+  revalidatePath("/backoffice", "layout");
 }
 
 export async function resolveReportAction(
@@ -115,6 +116,7 @@ export async function resolveReportAction(
 
   revalidatePath(ROUTES.mairie.signalements);
   revalidatePath(ROUTES.backoffice.signalements);
+  revalidatePath("/backoffice", "layout");
 }
 
 export async function markReportHandledForm(formData: FormData): Promise<void> {

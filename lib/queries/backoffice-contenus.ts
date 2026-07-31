@@ -1,11 +1,20 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCategoryLabel } from "@/lib/constants/announcement-categories";
 import { getInitiativeCategoryLabel } from "@/lib/constants/initiative-categories";
+import { PILOT_ACCESS_STATUSES } from "@/lib/constants/access-status";
 import { ROUTES } from "@/lib/constants/routes";
 import {
   ANNOUNCEMENT_STATUS,
   INITIATIVE_STATUS,
 } from "@/lib/constants/statuses";
+import {
+  POPULATION_BRACKETS,
+  type PopulationBracket,
+} from "@/lib/queries/backoffice-users-list.types";
+import {
+  countByCommuneId,
+  resolvePopulationBracket,
+} from "@/lib/queries/population-brackets";
 import type {
   BackofficeContenusListParams,
   BackofficeContentStatus,
@@ -14,6 +23,19 @@ import type {
 import { statusesForContentType } from "@/lib/utils/backoffice-contenus-params";
 
 export type ContentTypeCounts = Record<BackofficeContentType, number>;
+
+export type ContentPopulationBracketStats = {
+  bracket: PopulationBracket;
+  communeCount: number;
+  avgAnnouncements: number;
+  avgInitiatives: number;
+  avgEvents: number;
+};
+
+export type ContentPopulationStatsResult = {
+  brackets: ContentPopulationBracketStats[];
+  communesWithoutPopulation: number;
+};
 
 export type ContentListRow = {
   id: string;
@@ -461,10 +483,104 @@ export async function countAllContentTypes(
   };
 }
 
+// TODO: switch to RPC/view if data grows > 1k rows per table
+export async function getContentPopulationStats(
+  supabase: SupabaseClient,
+): Promise<ContentPopulationStatsResult> {
+  const [communesResult, announcementsResult, initiativesResult, eventsResult] =
+    await Promise.all([
+      supabase
+        .from("communes")
+        .select("id, population")
+        .in("access_status", [...PILOT_ACCESS_STATUSES]),
+      supabase.from("announcements").select("commune_id"),
+      supabase.from("initiatives").select("commune_id"),
+      supabase.from("events").select("commune_id"),
+    ]);
+
+  const communes = communesResult.data ?? [];
+  const pilotCommuneIds = new Set(communes.map((commune) => commune.id));
+
+  const filterPilotRows = (rows: { commune_id: string }[]) =>
+    rows.filter((row) => pilotCommuneIds.has(row.commune_id));
+
+  const announcementCounts = countByCommuneId(
+    filterPilotRows(announcementsResult.data ?? []),
+  );
+  const initiativeCounts = countByCommuneId(
+    filterPilotRows(initiativesResult.data ?? []),
+  );
+  const eventCounts = countByCommuneId(filterPilotRows(eventsResult.data ?? []));
+
+  let communesWithoutPopulation = 0;
+  const bracketTotals = new Map<
+    PopulationBracket,
+    {
+      communeCount: number;
+      announcements: number;
+      initiatives: number;
+      events: number;
+    }
+  >();
+
+  for (const bracket of POPULATION_BRACKETS) {
+    bracketTotals.set(bracket, {
+      communeCount: 0,
+      announcements: 0,
+      initiatives: 0,
+      events: 0,
+    });
+  }
+
+  for (const commune of communes) {
+    if (commune.population == null) {
+      communesWithoutPopulation += 1;
+      continue;
+    }
+
+    const bracket = resolvePopulationBracket(commune.population);
+    const totals = bracketTotals.get(bracket)!;
+    totals.communeCount += 1;
+    totals.announcements += announcementCounts.get(commune.id) ?? 0;
+    totals.initiatives += initiativeCounts.get(commune.id) ?? 0;
+    totals.events += eventCounts.get(commune.id) ?? 0;
+  }
+
+  const brackets: ContentPopulationBracketStats[] = POPULATION_BRACKETS.map(
+    (bracket) => {
+      const totals = bracketTotals.get(bracket)!;
+      return {
+        bracket,
+        communeCount: totals.communeCount,
+        avgAnnouncements:
+          totals.communeCount > 0
+            ? Math.round((totals.announcements / totals.communeCount) * 10) / 10
+            : 0,
+        avgInitiatives:
+          totals.communeCount > 0
+            ? Math.round((totals.initiatives / totals.communeCount) * 10) / 10
+            : 0,
+        avgEvents:
+          totals.communeCount > 0
+            ? Math.round((totals.events / totals.communeCount) * 10) / 10
+            : 0,
+      };
+    },
+  );
+
+  return {
+    brackets,
+    communesWithoutPopulation,
+  };
+}
+
 export async function listContenusPage(
   supabase: SupabaseClient,
   params: BackofficeContenusListParams,
 ): Promise<{ items: ContentListRow[]; totalCount: number }> {
+  if (params.tab === "stats") {
+    return { items: [], totalCount: 0 };
+  }
   return listSingleTypePage(supabase, params, params.tab);
 }
 

@@ -27,7 +27,7 @@ export default async function BackofficeLegalPage() {
             href={ROUTES.backoffice.legalDetail(document.slug)}
             className="block"
           >
-            <Card className="cursor-pointer p-4 transition hover:shadow-md">
+            <Card className="cursor-pointer rounded-xl p-4 transition hover:shadow-md">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold text-text">

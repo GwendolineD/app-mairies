@@ -19,6 +19,7 @@ export type PopulationBracketStats = {
   communeCount: number;
   avgMembers: number;
   avgPendingInvites: number;
+  avgTotalInvites: number;
 };
 
 export type PopulationStatsResult = {
@@ -29,6 +30,7 @@ export type PopulationStatsResult = {
 export type GlobalUserStats = {
   totalUsers: number;
   pendingInvitations: number;
+  totalInvitations: number;
 };
 
 export type UserListRow = {

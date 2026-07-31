@@ -19,10 +19,12 @@ import { formatShortDate } from "@/lib/datetime";
 import { listPilotCommuneOptions } from "@/lib/queries/backoffice-communes";
 import {
   countAllContentTypes,
+  getContentPopulationStats,
   listContentCategoryOptions,
   listContenusPage,
 } from "@/lib/queries/backoffice-contenus";
 import { parseBackofficeContenusListParams } from "@/lib/utils/backoffice-contenus-params";
+import { ContenusStatsChart } from "./_components/contenus-stats-chart";
 import { ContenusToolbar } from "./_components/contenus-toolbar";
 
 export const dynamic = "force-dynamic";
@@ -34,13 +36,33 @@ export default async function BackofficeContenusPage(props: {
   const params = parseBackofficeContenusListParams(searchParams);
   const supabase = await createClient();
 
-  const [counts, { items, totalCount }, communes, categories] =
-    await Promise.all([
-      countAllContentTypes(supabase),
-      listContenusPage(supabase, params),
-      listPilotCommuneOptions(supabase),
-      listContentCategoryOptions(supabase, [params.tab]),
-    ]);
+  const [counts, communes] = await Promise.all([
+    countAllContentTypes(supabase),
+    listPilotCommuneOptions(supabase),
+  ]);
+
+  if (params.tab === "stats") {
+    const stats = await getContentPopulationStats(supabase);
+
+    return (
+      <PageStack>
+        <PageHeading title="Contenus" />
+        <ContenusToolbar
+          params={params}
+          communes={communes}
+          categories={[]}
+          totalCount={0}
+          counts={counts}
+        />
+        <ContenusStatsChart stats={stats} />
+      </PageStack>
+    );
+  }
+
+  const [{ items, totalCount }, categories] = await Promise.all([
+    listContenusPage(supabase, params),
+    listContentCategoryOptions(supabase, [params.tab]),
+  ]);
 
   const listQueryProps = {
     params,
