@@ -30,9 +30,14 @@ export function InitiativeEventCategoriesGrid({ categories }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button variant="primary" onClick={() => setCreateOpen(true)}>
+        <Button
+          variant="primary"
+          onClick={() => setCreateOpen(true)}
+          aria-label="Ajouter une catégorie"
+          className="max-md:px-2.5 max-md:gap-0"
+        >
           <Plus className="size-4" aria-hidden />
-          <span>Ajouter une catégorie</span>
+          <span className="hidden md:inline">Ajouter une catégorie</span>
         </Button>
       </div>
 
@@ -86,7 +91,7 @@ function CategoryCard({
   const Icon = resolveIcon(category.icon_name);
 
   return (
-    <Card className="flex flex-col gap-4 p-4">
+    <Card className="flex flex-col gap-4 rounded-xl p-4">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-3">
           <span

@@ -10,10 +10,7 @@ export default async function BackofficeCategoriesPage() {
 
   return (
     <PageStack>
-      <PageHeading
-        title="Catégories d'annonces"
-        subtitle="Gérez les catégories disponibles pour les annonces des résidents."
-      />
+      <PageHeading title="Catégories d'annonces" />
       <CategoriesGrid categories={categories} />
     </PageStack>
   );

@@ -1,3 +1,4 @@
+import { Toaster } from "sonner";
 import { AdminShell } from "@/components/features/admin-shell/admin-shell";
 import { MunicipalityShellClient } from "@/components/features/municipality-shell-client";
 import { requireCommuneStaff } from "@/lib/auth/session";
@@ -76,6 +77,7 @@ export default async function MunicipalityDashboardLayout({
       >
         {children}
       </MunicipalityShellClient>
+      <Toaster position="top-center" richColors closeButton />
     </AdminShell>
   );
 }

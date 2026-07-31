@@ -46,7 +46,7 @@ export function CategoryTag({
   return (
     <span
       className={cn(
-        "inline-flex box-border items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
+        "inline-flex box-border h-5 items-center rounded-full px-2.5 text-xs font-semibold leading-none",
         !colorHex && "bg-soft-pink text-text",
         className,
       )}

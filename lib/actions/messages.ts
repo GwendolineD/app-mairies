@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireActiveMembership } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
+import { DAY_MS } from "@/lib/datetime";
 import { sendTemplatedEmail } from "@/lib/email";
 import { createClient } from "@/lib/supabase/server";
 import { getAppUrl } from "@/lib/utils/app-url";
@@ -372,7 +373,7 @@ export async function createNeighborInvite(
     commune_id: communeId,
     email,
     token,
-    expires_at: null,
+    expires_at: new Date(Date.now() + 30 * DAY_MS).toISOString(),
   });
 
   if (error) {

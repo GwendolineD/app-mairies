@@ -6,7 +6,7 @@ import { requirePlatformAdmin } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
 import { sanitizeEmailHtml, sanitizeHtml } from "@/lib/utils/sanitize-html";
-import { createPilotCommuneSchema, updateCommuneInfoSchema } from "@/lib/validations/schemas";
+import { createPilotCommuneSchema, communeSiretSchema, updateCommuneInfoSchema } from "@/lib/validations/schemas";
 import type { AccessStatus } from "@/lib/types";
 
 export type PlatformActionResult =
@@ -22,12 +22,13 @@ type GeoCommune = {
   nom: string;
   codesPostaux: string[];
   codeDepartement: string;
+  population?: number;
   centre: { coordinates: [number, number] };
 };
 
 async function fetchGeoCommune(inseeCode: string): Promise<GeoCommune | null> {
   const res = await fetch(
-    `https://geo.api.gouv.fr/communes/${encodeURIComponent(inseeCode)}?fields=code,nom,codesPostaux,codeDepartement,centre&format=json&geometry=centre`,
+    `https://geo.api.gouv.fr/communes/${encodeURIComponent(inseeCode)}?fields=code,nom,codesPostaux,codeDepartement,centre,population&format=json&geometry=centre`,
     { next: { revalidate: 86400 } },
   );
   if (!res.ok) return null;
@@ -114,6 +115,7 @@ export async function createPilotCommuneAction(
       mairie_address_postcode: mairiePostcode,
       mairie_address_lat: mairieLat,
       mairie_address_lng: mairieLng,
+      population: geo?.population ?? null,
       settings: { address: mairieStreet },
     })
     .select("id")
@@ -224,6 +226,47 @@ export async function updateCommuneWelcomeMessageAsAdmin(
   return { success: true };
 }
 
+export async function updateCommuneSiret(
+  communeId: string,
+  siret: string,
+): Promise<PlatformActionResult> {
+  const { userId } = await requirePlatformAdmin();
+
+  if (!communeId) {
+    return { success: false, error: "Commune introuvable." };
+  }
+
+  const parsed = communeSiretSchema.safeParse({ siret });
+  if (!parsed.success) {
+    const firstIssue = parsed.error.issues[0]?.message ?? "Paramètres invalides.";
+    return { success: false, error: firstIssue };
+  }
+
+  const normalizedSiret = parsed.data.siret.trim();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("communes")
+    .update({ siret: normalizedSiret || null })
+    .eq("id", communeId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  void logAudit({
+    action: "admin.update_commune_siret",
+    category: "admin",
+    userId,
+    targetType: "commune",
+    targetId: communeId,
+    communeId,
+  });
+
+  revalidatePath(ROUTES.backoffice.communeDetail(communeId));
+  return { success: true };
+}
+
 export async function updateCommuneInfo(
   communeId: string,
   input: {
@@ -234,6 +277,7 @@ export async function updateCommuneInfo(
     mairieAddressPostcode?: string;
     mairieAddressLat?: number;
     mairieAddressLng?: number;
+    population?: number | null;
   },
 ): Promise<PlatformActionResult> {
   const { userId } = await requirePlatformAdmin();
@@ -281,6 +325,7 @@ export async function updateCommuneInfo(
       mairie_address_postcode: mairiePostcode,
       mairie_address_lat: data.mairieAddressLat ?? null,
       mairie_address_lng: data.mairieAddressLng ?? null,
+      population: data.population ?? null,
       settings: nextSettings,
     })
     .eq("id", communeId);
@@ -300,6 +345,7 @@ export async function updateCommuneInfo(
 
   revalidatePath(ROUTES.backoffice.communes);
   revalidatePath(ROUTES.backoffice.communeDetail(communeId));
+  revalidatePath(ROUTES.backoffice.utilisateurs);
   revalidatePath(ROUTES.mairie.evenements);
   return { success: true };
 }
@@ -395,6 +441,90 @@ export async function createCommuneSubscriptionPeriod(
   return { success: true };
 }
 
+export async function updateCommuneSubscriptionPeriod(
+  subscriptionId: string,
+  data: { startsAt: string; endsAt: string; amountCents: number },
+): Promise<PlatformActionResult> {
+  const { userId } = await requirePlatformAdmin();
+
+  if (!subscriptionId || !data.startsAt || !data.endsAt || data.amountCents < 0) {
+    return { success: false, error: "Paramètres invalides." };
+  }
+
+  if (data.endsAt < data.startsAt) {
+    return { success: false, error: "La date de fin doit être postérieure à la date de début." };
+  }
+
+  const supabase = await createClient();
+
+  const { data: subscription, error: fetchError } = await supabase
+    .from("commune_subscriptions")
+    .select("commune_id")
+    .eq("id", subscriptionId)
+    .single();
+
+  if (fetchError || !subscription) {
+    return { success: false, error: "Abonnement introuvable." };
+  }
+
+  const { data: overlap } = await supabase
+    .from("commune_subscriptions")
+    .select("id")
+    .eq("commune_id", subscription.commune_id)
+    .neq("id", subscriptionId)
+    .lte("starts_at", data.endsAt)
+    .gte("ends_at", data.startsAt)
+    .limit(1);
+
+  if (overlap?.length) {
+    return { success: false, error: "Les dates chevauchent une période existante." };
+  }
+
+  const { error } = await supabase
+    .from("commune_subscriptions")
+    .update({
+      starts_at: data.startsAt,
+      ends_at: data.endsAt,
+      amount_cents: data.amountCents,
+    })
+    .eq("id", subscriptionId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  const { data: commune } = await supabase
+    .from("communes")
+    .select("subscribed_since")
+    .eq("id", subscription.commune_id)
+    .single();
+
+  if (!commune?.subscribed_since || data.startsAt < commune.subscribed_since) {
+    await supabase
+      .from("communes")
+      .update({ subscribed_since: data.startsAt })
+      .eq("id", subscription.commune_id);
+  }
+
+  void logAudit({
+    action: "billing.update_subscription_period",
+    category: "billing",
+    severity: "critical",
+    userId,
+    targetType: "subscription",
+    targetId: subscriptionId,
+    communeId: subscription.commune_id,
+    metadata: {
+      starts_at: data.startsAt,
+      ends_at: data.endsAt,
+      amount_cents: data.amountCents,
+    },
+  });
+
+  revalidatePath(ROUTES.backoffice.communeDetail(subscription.commune_id));
+  return { success: true };
+}
+
 export async function markSubscriptionPaid(
   subscriptionId: string,
   paidAt: string,
@@ -439,6 +569,49 @@ export async function markSubscriptionPaid(
     targetId: subscriptionId,
     communeId: subscription.commune_id,
     metadata: { paid_at: paidAt, payment_method: paymentMethod.trim() },
+  });
+
+  revalidatePath(ROUTES.backoffice.communeDetail(subscription.commune_id));
+  return { success: true };
+}
+
+export async function markSubscriptionUnpaid(
+  subscriptionId: string,
+): Promise<PlatformActionResult> {
+  const { userId } = await requirePlatformAdmin();
+
+  const supabase = await createClient();
+  const { data: subscription, error: fetchError } = await supabase
+    .from("commune_subscriptions")
+    .select("commune_id")
+    .eq("id", subscriptionId)
+    .single();
+
+  if (fetchError || !subscription) {
+    return { success: false, error: "Abonnement introuvable." };
+  }
+
+  const { error } = await supabase
+    .from("commune_subscriptions")
+    .update({
+      payment_status: "unpaid",
+      paid_at: null,
+      payment_method: null,
+    })
+    .eq("id", subscriptionId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  void logAudit({
+    action: "billing.mark_unpaid",
+    category: "billing",
+    severity: "critical",
+    userId,
+    targetType: "subscription",
+    targetId: subscriptionId,
+    communeId: subscription.commune_id,
   });
 
   revalidatePath(ROUTES.backoffice.communeDetail(subscription.commune_id));

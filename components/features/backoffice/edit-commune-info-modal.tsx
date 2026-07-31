@@ -17,6 +17,7 @@ type Props = {
   inseeCode: string;
   initialName: string;
   initialPostcode: string;
+  initialPopulation: number | null;
   initialMairieAddressStreet: string;
   initialMairieAddressCity: string;
   initialMairieAddressPostcode: string;
@@ -31,6 +32,7 @@ export function EditCommuneInfoModal({
   inseeCode,
   initialName,
   initialPostcode,
+  initialPopulation,
   initialMairieAddressStreet,
   initialMairieAddressCity,
   initialMairieAddressPostcode,
@@ -41,6 +43,9 @@ export function EditCommuneInfoModal({
   const [isPending, startTransition] = useTransition();
   const [name, setName] = useState(initialName);
   const [postcode, setPostcode] = useState(initialPostcode);
+  const [population, setPopulation] = useState(
+    initialPopulation != null ? String(initialPopulation) : "",
+  );
   const [mairieAddressLabel, setMairieAddressLabel] = useState(
     initialMairieAddressStreet,
   );
@@ -65,6 +70,7 @@ export function EditCommuneInfoModal({
     if (!open) return;
     setName(initialName);
     setPostcode(initialPostcode);
+    setPopulation(initialPopulation != null ? String(initialPopulation) : "");
     setMairieAddressLabel(initialMairieAddressStreet);
     setMairieAddressStreet(initialMairieAddressStreet);
     setMairieAddressCity(initialMairieAddressCity);
@@ -76,6 +82,7 @@ export function EditCommuneInfoModal({
     open,
     initialName,
     initialPostcode,
+    initialPopulation,
     initialMairieAddressStreet,
     initialMairieAddressCity,
     initialMairieAddressPostcode,
@@ -92,6 +99,16 @@ export function EditCommuneInfoModal({
     event.preventDefault();
     setError(null);
 
+    const parsedPopulation =
+      population.trim().length > 0 ? Number.parseInt(population, 10) : null;
+    if (
+      population.trim().length > 0 &&
+      (parsedPopulation == null || Number.isNaN(parsedPopulation) || parsedPopulation < 1)
+    ) {
+      setError("Le nombre d'habitants doit être un entier positif.");
+      return;
+    }
+
     startTransition(async () => {
       const result = await updateCommuneInfo(communeId, {
         name,
@@ -101,6 +118,7 @@ export function EditCommuneInfoModal({
         mairieAddressPostcode: mairieAddressPostcode || postcode,
         mairieAddressLat: mairieAddressLat ?? undefined,
         mairieAddressLng: mairieAddressLng ?? undefined,
+        population: parsedPopulation,
       });
 
       if (!result.success) {
@@ -157,6 +175,17 @@ export function EditCommuneInfoModal({
           }}
           value={mairieAddressLabel}
         />
+
+        <FormField label="Nombre d'habitants">
+          <Input
+            type="number"
+            min={1}
+            inputMode="numeric"
+            value={population}
+            onChange={(event) => setPopulation(event.target.value)}
+            placeholder="Ex. 850"
+          />
+        </FormField>
 
         {error ? (
           <p className="text-sm font-medium text-coral" role="alert">

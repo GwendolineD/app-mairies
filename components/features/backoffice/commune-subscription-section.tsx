@@ -3,19 +3,27 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition, useEffect } from "react";
 import {
+  Euro,
+  Plus,
+  RefreshCw,
+  Scale,
+  Trash2,
+  type LucideIcon,
+} from "lucide-react";
+import {
   createCommuneSubscriptionPeriod,
+  updateCommuneSubscriptionPeriod,
   markSubscriptionPaid,
+  markSubscriptionUnpaid,
   deleteSubscriptionPeriod,
 } from "@/lib/actions/platform";
 import { cn } from "@/lib/utils/cn";
-import { clampEndDate, formatShortDate } from "@/lib/datetime";
+import { clampEndDate, formatCompactShortDate, formatShortDate } from "@/lib/datetime";
 import { formatEuros } from "@/lib/utils/format-currency";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { DatePickerField } from "@/components/ui/date-picker-field";
-import { FormField } from "@/components/ui/form-field";
+import { FormField, Input, Select } from "@/components/ui/form-field";
 import { Modal } from "@/components/ui/modal";
-import { Tooltip } from "@/components/ui/tooltip";
 import { CancellationBadge } from "@/components/features/subscription/cancellation-badge";
 import type { SubscriptionPeriod } from "@/lib/queries/commune-subscription";
 
@@ -23,6 +31,12 @@ type CancellationInfo = {
   createdAt: string;
   requesterName: string | null;
   comment: string;
+};
+
+type PaymentFormState = {
+  isUnpaid: boolean;
+  paidAt: string;
+  paymentMethod: string;
 };
 
 type Props = {
@@ -67,57 +81,171 @@ function periodsOverlap(
   newStart: string,
   newEnd: string,
   existingPeriods: SubscriptionPeriod[],
+  excludeId?: string,
 ): boolean {
   return existingPeriods.some(
-    (p) => newStart <= p.ends_at && newEnd >= p.starts_at,
+    (p) =>
+      p.id !== excludeId &&
+      newStart <= p.ends_at &&
+      newEnd >= p.starts_at,
   );
 }
 
 function PaymentStatusBadge({
   status,
-  paidAt,
-  paymentMethod,
+  onOpenPayment,
 }: {
   status: "paid" | "unpaid";
-  paidAt?: string | null;
-  paymentMethod?: string | null;
+  onOpenPayment?: () => void;
 }) {
   if (status === "unpaid") {
     return (
-      <span
+      <button
+        type="button"
+        onClick={onOpenPayment}
         className={cn(
-          "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold",
+          "inline-flex cursor-pointer items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold transition hover:opacity-90",
           "bg-orange/15 text-orange",
         )}
+        aria-label="Marquer comme payé"
       >
+        <Euro className="size-3.5 shrink-0" aria-hidden />
         En attente
-      </span>
+      </button>
     );
   }
 
   return (
-    <Tooltip
-      side="right"
-      content={
-        <>
-          <span className="block whitespace-nowrap">
-            Date : {paidAt ? formatShortDate(paidAt) : "—"}
-          </span>
-          <span className="block whitespace-nowrap">
-            Moyen : {paymentMethod ?? "—"}
-          </span>
-        </>
-      }
+    <button
+      type="button"
+      onClick={onOpenPayment}
+      className={cn(
+        "inline-flex cursor-pointer items-center rounded-full px-2.5 py-1 text-xs font-semibold transition hover:opacity-90",
+        "bg-mint/15 text-mint",
+      )}
+      aria-label="Modifier le paiement"
     >
-      <span
-        className={cn(
-          "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold",
-          "bg-mint/15 text-mint",
-        )}
-      >
-        Payé
-      </span>
-    </Tooltip>
+      Payé
+    </button>
+  );
+}
+
+function UnpaidCheckbox({
+  checked,
+  onToggle,
+  disabled,
+}: {
+  checked: boolean;
+  onToggle: (checked: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-text">
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={disabled}
+        onChange={(event) => onToggle(event.target.checked)}
+        className="size-4 shrink-0 cursor-pointer rounded-sm accent-purple disabled:cursor-not-allowed disabled:opacity-50"
+      />
+      Non payé
+    </label>
+  );
+}
+
+function SubscriptionInfoRow({
+  icon: Icon,
+  label,
+  children,
+}: {
+  icon: LucideIcon;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex min-w-0 items-start gap-2 text-sm">
+      <Icon className="mt-0.5 size-4 shrink-0 text-subtle" aria-hidden />
+      <div className="min-w-0">
+        <p className="text-xs font-semibold uppercase text-muted">{label}</p>
+        <div className="font-medium text-text">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function SubscriptionPeriodMobileCard({
+  period,
+  cancellation,
+  isPending,
+  onOpenPayment,
+  onEditPeriod,
+  onDelete,
+}: {
+  period: SubscriptionPeriod;
+  cancellation?: CancellationInfo;
+  isPending: boolean;
+  onOpenPayment: (period: SubscriptionPeriod) => void;
+  onEditPeriod: (period: SubscriptionPeriod) => void;
+  onDelete: (id: string) => void;
+}) {
+  return (
+    <div className="space-y-3 rounded-xl border border-border/60 bg-warm/30 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-semibold text-text">
+          {formatEuros(period.amount_cents)}
+        </p>
+        <PaymentStatusBadge
+          status={period.payment_status}
+          onOpenPayment={() => onOpenPayment(period)}
+        />
+      </div>
+
+      <p className="text-sm font-normal text-text">
+        Du{" "}
+        <span className="font-bold">{formatShortDate(period.starts_at)}</span> au{" "}
+        <span className="font-bold">{formatShortDate(period.ends_at)}</span>
+      </p>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <SubscriptionInfoRow icon={RefreshCw} label="Renouvellement auto">
+          {period.auto_renew ? "Oui" : "Non"}
+        </SubscriptionInfoRow>
+        <SubscriptionInfoRow icon={Scale} label="Résiliation">
+          {cancellation ? (
+            <CancellationBadge
+              createdAt={cancellation.createdAt}
+              requesterName={cancellation.requesterName}
+              comment={cancellation.comment}
+            />
+          ) : (
+            <span className="text-muted">—</span>
+          )}
+        </SubscriptionInfoRow>
+      </div>
+
+      <div className="flex flex-wrap justify-end gap-2 border-t border-border/60 pt-3">
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          disabled={isPending}
+          onClick={() => onEditPeriod(period)}
+        >
+          Modifier
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          disabled={isPending}
+          onClick={() => onDelete(period.id)}
+          className="gap-1.5 text-coral"
+        >
+          <Trash2 className="size-3.5" aria-hidden />
+          Supprimer
+        </Button>
+      </div>
+    </div>
   );
 }
 
@@ -130,105 +258,212 @@ export function CommuneSubscriptionSection({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  // Add period modal
-  const [addModalOpen, setAddModalOpen] = useState(false);
-  const [newPeriod, setNewPeriod] = useState({
+  const [periodModalOpen, setPeriodModalOpen] = useState(false);
+  const [periodEditTarget, setPeriodEditTarget] =
+    useState<SubscriptionPeriod | null>(null);
+  const [periodForm, setPeriodForm] = useState({
     startsAt: "",
     endsAt: "",
     amountCents: "",
   });
 
-  // Mark paid modal
-  const [markPaidModalOpen, setMarkPaidModalOpen] = useState(false);
-  const [markPaidTarget, setMarkPaidTarget] = useState<string | null>(null);
-  const [markPaidData, setMarkPaidData] = useState({
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [paymentTarget, setPaymentTarget] = useState<SubscriptionPeriod | null>(
+    null,
+  );
+  const [paymentForm, setPaymentForm] = useState<PaymentFormState>({
+    isUnpaid: false,
     paidAt: getTodayString(),
     paymentMethod: "",
   });
+  const [paymentInitialForm, setPaymentInitialForm] =
+    useState<PaymentFormState | null>(null);
 
-  // Delete confirmation modal
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const [error, setError] = useState<string | null>(null);
 
-  // Pre-fill dates when opening add modal
+  const periodAmountCents = Math.round(Number(periodForm.amountCents) * 100);
+  const hasValidPeriodFields =
+    Boolean(periodForm.startsAt) &&
+    Boolean(periodForm.endsAt) &&
+    periodForm.endsAt >= periodForm.startsAt &&
+    periodForm.amountCents.trim() !== "" &&
+    !isNaN(periodAmountCents) &&
+    periodAmountCents >= 0;
+
+  const hasPeriodChanges =
+    !periodEditTarget ||
+    periodForm.startsAt !== periodEditTarget.starts_at ||
+    periodForm.endsAt !== periodEditTarget.ends_at ||
+    periodAmountCents !== periodEditTarget.amount_cents;
+
+  const canSavePeriod =
+    hasValidPeriodFields &&
+    !periodsOverlap(
+      periodForm.startsAt,
+      periodForm.endsAt,
+      periods,
+      periodEditTarget?.id,
+    ) &&
+    hasPeriodChanges;
+
+  const isPeriodEditMode = periodEditTarget !== null;
+
+  const hasValidPaymentFields =
+    paymentForm.isUnpaid ||
+    (Boolean(paymentForm.paidAt) && paymentForm.paymentMethod.trim().length > 0);
+
+  const hasPaymentChanges =
+    !paymentInitialForm ||
+    paymentForm.isUnpaid !== paymentInitialForm.isUnpaid ||
+    paymentForm.paidAt !== paymentInitialForm.paidAt ||
+    paymentForm.paymentMethod !== paymentInitialForm.paymentMethod;
+
+  const canConfirmPayment = hasValidPaymentFields && hasPaymentChanges;
+
+  const isPaymentEditMode = paymentTarget?.payment_status === "paid";
+
   useEffect(() => {
-    if (addModalOpen && periods.length > 0) {
+    if (!periodModalOpen || periodEditTarget) return;
+
+    if (periods.length > 0) {
       const sortedPeriods = [...periods].sort(
         (a, b) => b.ends_at.localeCompare(a.ends_at),
       );
       const lastEndsAt = sortedPeriods[0].ends_at;
       const nextStartsAt = addOneDay(lastEndsAt);
       const nextEndsAt = addOneYearMinusOneDay(nextStartsAt);
-      setNewPeriod((prev) => ({
-        ...prev,
+      setPeriodForm({
         startsAt: nextStartsAt,
         endsAt: nextEndsAt,
-      }));
-    } else if (addModalOpen && periods.length === 0) {
-      setNewPeriod({ startsAt: "", endsAt: "", amountCents: "" });
+        amountCents: "",
+      });
+    } else {
+      setPeriodForm({ startsAt: "", endsAt: "", amountCents: "" });
     }
-  }, [addModalOpen, periods]);
+  }, [periodModalOpen, periodEditTarget, periods]);
 
-  function handleAddPeriod() {
+  function openCreatePeriodModal() {
+    setPeriodEditTarget(null);
     setError(null);
-    const amountCents = Math.round(Number(newPeriod.amountCents) * 100);
-    if (!newPeriod.startsAt || !newPeriod.endsAt || isNaN(amountCents)) {
+    setPeriodModalOpen(true);
+  }
+
+  function openEditPeriodModal(period: SubscriptionPeriod) {
+    setPeriodEditTarget(period);
+    setPeriodForm({
+      startsAt: period.starts_at,
+      endsAt: period.ends_at,
+      amountCents: String(period.amount_cents / 100),
+    });
+    setError(null);
+    setPeriodModalOpen(true);
+  }
+
+  function closePeriodModal() {
+    setPeriodModalOpen(false);
+    setPeriodEditTarget(null);
+    setPeriodForm({ startsAt: "", endsAt: "", amountCents: "" });
+    setError(null);
+  }
+
+  function handleSavePeriod() {
+    setError(null);
+    if (!canSavePeriod) {
       setError("Veuillez remplir tous les champs.");
       return;
     }
 
-    // Client-side overlap validation
-    if (periodsOverlap(newPeriod.startsAt, newPeriod.endsAt, periods)) {
-      setError("Les dates chevauchent une période existante.");
-      return;
-    }
-
     startTransition(async () => {
-      const result = await createCommuneSubscriptionPeriod(communeId, {
-        startsAt: newPeriod.startsAt,
-        endsAt: newPeriod.endsAt,
-        amountCents,
-      });
+      const payload = {
+        startsAt: periodForm.startsAt,
+        endsAt: periodForm.endsAt,
+        amountCents: periodAmountCents,
+      };
+
+      const result = periodEditTarget
+        ? await updateCommuneSubscriptionPeriod(periodEditTarget.id, payload)
+        : await createCommuneSubscriptionPeriod(communeId, payload);
+
       if (!result.success) {
         setError(result.error);
         return;
       }
-      setAddModalOpen(false);
-      setNewPeriod({ startsAt: "", endsAt: "", amountCents: "" });
+
+      closePeriodModal();
       router.refresh();
     });
   }
 
-  function openMarkPaidModal(subscriptionId: string) {
-    setMarkPaidTarget(subscriptionId);
-    setMarkPaidData({ paidAt: getTodayString(), paymentMethod: "" });
+  function openPaymentModal(period: SubscriptionPeriod) {
+    const initialForm: PaymentFormState =
+      period.payment_status === "paid"
+        ? {
+            isUnpaid: false,
+            paidAt: period.paid_at ?? getTodayString(),
+            paymentMethod: period.payment_method ?? "",
+          }
+        : {
+            isUnpaid: false,
+            paidAt: getTodayString(),
+            paymentMethod: "",
+          };
+
+    setPaymentTarget(period);
+    setPaymentForm(initialForm);
+    setPaymentInitialForm(initialForm);
     setError(null);
-    setMarkPaidModalOpen(true);
+    setPaymentModalOpen(true);
   }
 
-  function handleMarkPaid() {
-    if (!markPaidTarget) return;
+  function handleUnpaidToggle(checked: boolean) {
+    if (checked) {
+      setPaymentForm({ isUnpaid: true, paidAt: "", paymentMethod: "" });
+    } else {
+      setPaymentForm((prev) => ({
+        ...prev,
+        isUnpaid: false,
+        paidAt: prev.paidAt || getTodayString(),
+      }));
+    }
+  }
+
+  function handlePaidAtChange(paidAt: string) {
+    setPaymentForm((prev) => ({ ...prev, paidAt, isUnpaid: false }));
+  }
+
+  function handlePaymentMethodChange(paymentMethod: string) {
+    setPaymentForm((prev) => ({ ...prev, paymentMethod, isUnpaid: false }));
+  }
+
+  function closePaymentModal() {
+    setPaymentModalOpen(false);
+    setPaymentTarget(null);
+    setPaymentInitialForm(null);
+    setError(null);
+  }
+
+  function handlePaymentSubmit() {
+    if (!paymentTarget || !canConfirmPayment) return;
     setError(null);
 
-    if (!markPaidData.paidAt || !markPaidData.paymentMethod.trim()) {
-      setError("Veuillez remplir tous les champs.");
-      return;
-    }
-
     startTransition(async () => {
-      const result = await markSubscriptionPaid(
-        markPaidTarget,
-        markPaidData.paidAt,
-        markPaidData.paymentMethod,
-      );
+      const result = paymentForm.isUnpaid
+        ? await markSubscriptionUnpaid(paymentTarget.id)
+        : await markSubscriptionPaid(
+            paymentTarget.id,
+            paymentForm.paidAt,
+            paymentForm.paymentMethod,
+          );
+
       if (!result.success) {
         setError(result.error);
         return;
       }
-      setMarkPaidModalOpen(false);
-      setMarkPaidTarget(null);
+
+      closePaymentModal();
       router.refresh();
     });
   }
@@ -255,38 +490,45 @@ export function CommuneSubscriptionSection({
 
   return (
     <section className="space-y-4">
-      <div className="flex items-baseline justify-between gap-4">
-        <h2 className="text-lg font-semibold leading-7 text-text">
-          Abonnement
-        </h2>
-        {subscribedSince && (
+      <div className="flex items-center gap-4">
+        {subscribedSince ? (
           <span className="text-sm text-muted">
-            Abonné depuis le {formatShortDate(subscribedSince)}
+            Abonné depuis le {formatCompactShortDate(subscribedSince)}
           </span>
-        )}
+        ) : null}
+        <Button
+          type="button"
+          variant="primary"
+          size="sm"
+          onClick={openCreatePeriodModal}
+          className="ml-auto shrink-0 gap-1.5 font-semibold"
+        >
+          <Plus aria-hidden />
+          Ajouter
+        </Button>
       </div>
 
-      <Card className="space-y-6 p-6">
-        <div>
-          <div className="mb-3 flex items-center justify-between">
-            <p className="text-sm font-semibold text-text">
-              Périodes d&apos;abonnement
-            </p>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setAddModalOpen(true)}
-              className="text-xs"
-            >
-              + Ajouter
-            </Button>
-          </div>
+      <div className="space-y-6">
+        {periods.length === 0 ? (
+          <p className="text-sm text-muted">Aucune période enregistrée.</p>
+        ) : (
+          <>
+            <div className="space-y-3 md:hidden">
+              {periods.map((period) => (
+                <SubscriptionPeriodMobileCard
+                  key={period.id}
+                  period={period}
+                  cancellation={cancellationsBySubscription[period.id]}
+                  isPending={isPending}
+                  onOpenPayment={openPaymentModal}
+                  onEditPeriod={openEditPeriodModal}
+                  onDelete={openDeleteModal}
+                />
+              ))}
+            </div>
 
-          {periods.length === 0 ? (
-            <p className="text-sm text-muted">Aucune période enregistrée.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full min-w-max text-sm">
                 <thead>
                   <tr className="border-b border-border text-left text-xs font-semibold uppercase text-muted">
                     <th className="py-2 pr-3">Début</th>
@@ -315,8 +557,7 @@ export function CommuneSubscriptionSection({
                         <td className="py-2 pr-3">
                           <PaymentStatusBadge
                             status={period.payment_status}
-                            paidAt={period.paid_at}
-                            paymentMethod={period.payment_method}
+                            onOpenPayment={() => openPaymentModal(period)}
                           />
                         </td>
                         <td className="py-2 pr-3 text-muted">
@@ -335,17 +576,15 @@ export function CommuneSubscriptionSection({
                         </td>
                         <td className="py-2">
                           <div className="flex gap-2">
-                            {period.payment_status === "unpaid" ? (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                disabled={isPending}
-                                onClick={() => openMarkPaidModal(period.id)}
-                                className="text-xs text-mint"
-                              >
-                                Marquer payé
-                              </Button>
-                            ) : null}
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              disabled={isPending}
+                              onClick={() => openEditPeriodModal(period)}
+                              className="text-xs"
+                            >
+                              Modifier
+                            </Button>
                             <Button
                               type="button"
                               variant="ghost"
@@ -363,25 +602,21 @@ export function CommuneSubscriptionSection({
                 </tbody>
               </table>
             </div>
-          )}
-        </div>
-      </Card>
+          </>
+        )}
+      </div>
 
-      {/* Add period modal */}
       <Modal
-        open={addModalOpen}
-        onClose={() => {
-          setAddModalOpen(false);
-          setError(null);
-        }}
-        title="Ajouter une période"
+        open={periodModalOpen}
+        onClose={closePeriodModal}
+        title={isPeriodEditMode ? "Modifier la période" : "Ajouter une période"}
       >
         <div className="space-y-4">
           <FormField label="Date de début">
             <DatePickerField
-              value={newPeriod.startsAt}
+              value={periodForm.startsAt}
               onChange={(startsAt) => {
-                setNewPeriod((prev) => ({
+                setPeriodForm((prev) => ({
                   ...prev,
                   startsAt,
                   endsAt: startsAt ? addOneYearMinusOneDay(startsAt) : "",
@@ -393,40 +628,37 @@ export function CommuneSubscriptionSection({
           </FormField>
           <FormField label="Date de fin">
             <DatePickerField
-              value={newPeriod.endsAt}
+              value={periodForm.endsAt}
               onChange={(endsAt) =>
-                setNewPeriod((prev) => ({
+                setPeriodForm((prev) => ({
                   ...prev,
                   endsAt: clampEndDate(endsAt, prev.startsAt),
                 }))
               }
-              minDate={newPeriod.startsAt || undefined}
+              minDate={periodForm.startsAt || undefined}
               className="w-full"
               placeholder="Choisir une date"
             />
           </FormField>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-text">
-              Montant
-            </label>
+          <FormField label="Montant">
             <div className="flex items-center gap-2">
-              <input
+              <Input
                 type="number"
                 step="1"
                 min="0"
-                value={newPeriod.amountCents}
-                onChange={(e) =>
-                  setNewPeriod((prev) => ({
+                value={periodForm.amountCents}
+                onChange={(event) =>
+                  setPeriodForm((prev) => ({
                     ...prev,
-                    amountCents: e.target.value,
+                    amountCents: event.target.value,
                   }))
                 }
                 placeholder="500"
-                className="w-1/4 min-w-24 rounded-sm border border-border bg-surface px-3 py-2 text-sm"
+                className="w-1/4 min-w-24"
               />
               <span className="text-sm font-medium text-text">€</span>
             </div>
-          </div>
+          </FormField>
           {error ? (
             <p className="text-sm text-coral" role="alert">
               {error}
@@ -437,7 +669,7 @@ export function CommuneSubscriptionSection({
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => setAddModalOpen(false)}
+              onClick={closePeriodModal}
             >
               Annuler
             </Button>
@@ -445,59 +677,52 @@ export function CommuneSubscriptionSection({
               type="button"
               variant="primary"
               size="sm"
-              disabled={isPending}
-              onClick={handleAddPeriod}
+              disabled={isPending || !canSavePeriod}
+              onClick={handleSavePeriod}
             >
-              Ajouter
+              {isPeriodEditMode ? "Enregistrer" : "Ajouter"}
             </Button>
           </div>
         </div>
       </Modal>
 
-      {/* Mark paid modal */}
       <Modal
-        open={markPaidModalOpen}
-        onClose={() => {
-          setMarkPaidModalOpen(false);
-          setMarkPaidTarget(null);
-          setError(null);
-        }}
-        title="Marquer comme payé"
+        open={paymentModalOpen}
+        onClose={closePaymentModal}
+        title={isPaymentEditMode ? "Modifier le paiement" : "Marquer comme payé"}
       >
         <div className="space-y-4">
+          <UnpaidCheckbox
+            checked={paymentForm.isUnpaid}
+            onToggle={handleUnpaidToggle}
+            disabled={isPending}
+          />
+
           <FormField label="Date de paiement">
             <DatePickerField
-              value={markPaidData.paidAt}
-              onChange={(paidAt) =>
-                setMarkPaidData((prev) => ({ ...prev, paidAt }))
-              }
+              value={paymentForm.paidAt}
+              onChange={handlePaidAtChange}
               className="w-full"
               placeholder="Choisir une date"
             />
           </FormField>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-text">
-              Moyen de paiement
-            </label>
-            <input
-              type="text"
-              list="payment-methods"
-              value={markPaidData.paymentMethod}
-              onChange={(e) =>
-                setMarkPaidData((prev) => ({
-                  ...prev,
-                  paymentMethod: e.target.value,
-                }))
+
+          <FormField label="Moyen de paiement">
+            <Select
+              value={paymentForm.paymentMethod}
+              onChange={(event) =>
+                handlePaymentMethodChange(event.target.value)
               }
-              placeholder="Virement, Chèque, CB…"
-              className="w-full rounded-sm border border-border bg-surface px-3 py-2 text-sm"
-            />
-            <datalist id="payment-methods">
+            >
+              <option value="">Choisir un moyen</option>
               {PAYMENT_METHODS.map((method) => (
-                <option key={method} value={method} />
+                <option key={method} value={method}>
+                  {method}
+                </option>
               ))}
-            </datalist>
-          </div>
+            </Select>
+          </FormField>
+
           {error ? (
             <p className="text-sm text-coral" role="alert">
               {error}
@@ -508,7 +733,7 @@ export function CommuneSubscriptionSection({
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => setMarkPaidModalOpen(false)}
+              onClick={closePaymentModal}
             >
               Annuler
             </Button>
@@ -516,16 +741,15 @@ export function CommuneSubscriptionSection({
               type="button"
               variant="primary"
               size="sm"
-              disabled={isPending}
-              onClick={handleMarkPaid}
+              disabled={isPending || !canConfirmPayment}
+              onClick={handlePaymentSubmit}
             >
-              Confirmer
+              {isPaymentEditMode ? "Enregistrer" : "Confirmer"}
             </Button>
           </div>
         </div>
       </Modal>
 
-      {/* Delete confirmation modal */}
       <Modal
         open={deleteModalOpen}
         onClose={() => {

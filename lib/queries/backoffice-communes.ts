@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ALL_ACCESS_STATUSES, PILOT_ACCESS_STATUSES } from "@/lib/constants/access-status";
+import { todayParisYmd } from "@/lib/datetime";
 import type { BackofficeCommunesListParams } from "@/lib/utils/backoffice-search-params";
 import type { AccessStatus } from "@/lib/types";
 
@@ -13,6 +14,8 @@ export type CommuneListRow = {
   activeAnnouncementsCount: number;
   activeInitiativesCount: number;
   activeEventsCount: number;
+  hasActiveSubscription: boolean;
+  currentPaymentStatus: "paid" | "unpaid" | null;
 };
 
 function countByCommuneId(rows: { commune_id: string }[]): Map<string, number> {
@@ -77,6 +80,52 @@ async function fetchActiveCountsByCommuneIds(
   };
 }
 
+async function fetchActiveSubscriptionsByCommuneIds(
+  supabase: SupabaseClient,
+  communeIds: string[],
+): Promise<Map<string, "paid" | "unpaid">> {
+  if (communeIds.length === 0) return new Map();
+
+  const today = todayParisYmd();
+  const { data } = await supabase
+    .from("commune_subscriptions")
+    .select("commune_id, payment_status")
+    .in("commune_id", communeIds)
+    .lte("starts_at", today)
+    .gte("ends_at", today);
+
+  const map = new Map<string, "paid" | "unpaid">();
+  for (const row of data ?? []) {
+    if (!map.has(row.commune_id)) {
+      map.set(
+        row.commune_id,
+        row.payment_status as "paid" | "unpaid",
+      );
+    }
+  }
+  return map;
+}
+
+function matchesSubscriptionFilters(
+  communeId: string,
+  subscriptions: Map<string, "paid" | "unpaid">,
+  params: BackofficeCommunesListParams,
+): boolean {
+  const hasActive = subscriptions.has(communeId);
+  const paymentStatus = subscriptions.get(communeId) ?? null;
+
+  if (params.subscription === "with" && !hasActive) return false;
+  if (params.subscription === "without" && hasActive) return false;
+  if (params.subscription === "with" && params.payment === "paid" && paymentStatus !== "paid") {
+    return false;
+  }
+  if (params.subscription === "with" && params.payment === "unpaid" && paymentStatus !== "unpaid") {
+    return false;
+  }
+
+  return true;
+}
+
 export type PilotCommuneOption = {
   id: string;
   name: string;
@@ -100,52 +149,68 @@ export async function listPilotCommunesPage(
   supabase: SupabaseClient,
   params: BackofficeCommunesListParams,
 ): Promise<{ items: CommuneListRow[]; totalCount: number }> {
-  const offset = (params.page - 1) * params.limit;
   const statuses =
     params.statuses.length > 0 ? params.statuses : [...ALL_ACCESS_STATUSES];
 
-  let countQuery = supabase
-    .from("communes")
-    .select("id", { count: "exact", head: true })
-    .in("access_status", statuses);
+  const hasSubscriptionFilters =
+    params.subscription != null ||
+    (params.subscription === "with" && params.payment != null);
 
   let dataQuery = supabase
     .from("communes")
     .select("id, name, postcode, access_status, created_at")
     .in("access_status", statuses)
-    .order("name")
-    .range(offset, offset + params.limit - 1);
+    .order("name");
 
   if (params.q) {
     const pattern = `%${params.q}%`;
     const filter = `name.ilike.${pattern},postcode.ilike.${pattern}`;
-    countQuery = countQuery.or(filter);
     dataQuery = dataQuery.or(filter);
   }
 
-  const [{ count }, { data, error }] = await Promise.all([countQuery, dataQuery]);
+  const { data, error } = await dataQuery;
 
   if (error) {
     return { items: [], totalCount: 0 };
   }
 
-  const rows = data ?? [];
-  const communeIds = rows.map((row) => row.id);
+  const allRows = data ?? [];
+  const allCommuneIds = allRows.map((row) => row.id);
+  const subscriptions = await fetchActiveSubscriptionsByCommuneIds(
+    supabase,
+    allCommuneIds,
+  );
+
+  const filteredRows = hasSubscriptionFilters
+    ? allRows.filter((row) =>
+        matchesSubscriptionFilters(row.id, subscriptions, params),
+      )
+    : allRows;
+
+  const totalCount = filteredRows.length;
+  const offset = (params.page - 1) * params.limit;
+  const pageRows = filteredRows.slice(offset, offset + params.limit);
+  const communeIds = pageRows.map((row) => row.id);
   const counts = await fetchActiveCountsByCommuneIds(supabase, communeIds);
 
-  const items: CommuneListRow[] = rows.map((row) => ({
-    id: row.id,
-    name: row.name,
-    postcode: row.postcode,
-    access_status: row.access_status as AccessStatus,
-    created_at: row.created_at,
-    activeMembersCount: counts.members.get(row.id) ?? 0,
-    activeAnnouncementsCount: counts.announcements.get(row.id) ?? 0,
-    activeInitiativesCount: counts.initiatives.get(row.id) ?? 0,
-    activeEventsCount: counts.events.get(row.id) ?? 0,
-  }));
+  const items: CommuneListRow[] = pageRows.map((row) => {
+    const paymentStatus = subscriptions.get(row.id) ?? null;
+    return {
+      id: row.id,
+      name: row.name,
+      postcode: row.postcode,
+      access_status: row.access_status as AccessStatus,
+      created_at: row.created_at,
+      activeMembersCount: counts.members.get(row.id) ?? 0,
+      activeAnnouncementsCount: counts.announcements.get(row.id) ?? 0,
+      activeInitiativesCount: counts.initiatives.get(row.id) ?? 0,
+      activeEventsCount: counts.events.get(row.id) ?? 0,
+      hasActiveSubscription: paymentStatus != null,
+      currentPaymentStatus: paymentStatus,
+    };
+  });
 
-  return { items, totalCount: count ?? 0 };
+  return { items, totalCount };
 }
 
 export type CommuneDetailStats = {
@@ -164,6 +229,8 @@ export type CommuneDetailStats = {
     mairie_address_postcode: string | null;
     mairie_address_lat: number | null;
     mairie_address_lng: number | null;
+    siret: string | null;
+    population: number | null;
   };
   activeMembersCount: number;
   activeAnnouncementsCount: number;
@@ -181,7 +248,7 @@ export async function getCommuneDetailStats(
   const { data: commune, error } = await supabase
     .from("communes")
     .select(
-      "id, name, postcode, insee_code, access_status, trial_access_code, trial_max_members, created_at, settings, mairie_address_street, mairie_address_city, mairie_address_postcode, mairie_address_lat, mairie_address_lng",
+      "id, name, postcode, insee_code, access_status, trial_access_code, trial_max_members, created_at, settings, mairie_address_street, mairie_address_city, mairie_address_postcode, mairie_address_lat, mairie_address_lng, siret, population",
     )
     .eq("id", communeId)
     .maybeSingle();
@@ -251,6 +318,8 @@ export async function getCommuneDetailStats(
       mairie_address_postcode: commune.mairie_address_postcode as string | null,
       mairie_address_lat: commune.mairie_address_lat as number | null,
       mairie_address_lng: commune.mairie_address_lng as number | null,
+      siret: commune.siret as string | null,
+      population: commune.population as number | null,
     },
     activeMembersCount: activeMembersCount ?? 0,
     activeAnnouncementsCount: activeAnnouncementsCount ?? 0,

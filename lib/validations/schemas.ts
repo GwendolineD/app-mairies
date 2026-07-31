@@ -293,6 +293,26 @@ export const updateCommuneInfoSchema = z.object({
   mairieAddressPostcode: z.string().trim().optional(),
   mairieAddressLat: z.coerce.number().optional(),
   mairieAddressLng: z.coerce.number().optional(),
+  population: z
+    .union([
+      z.literal(""),
+      z.coerce.number().int().min(1, "La population doit être positive"),
+    ])
+    .optional()
+    .transform((value) => {
+      if (value === "" || value === undefined) return null;
+      return value;
+    }),
+});
+
+export const communeSiretSchema = z.object({
+  siret: z.union([
+    z.literal(""),
+    z
+      .string()
+      .trim()
+      .regex(/^\d{14}$/, "Le SIRET doit comporter exactement 14 chiffres"),
+  ]),
 });
 
 export const communicationAssetSchema = z.object({

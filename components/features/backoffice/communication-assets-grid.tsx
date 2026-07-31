@@ -40,9 +40,14 @@ export function CommunicationAssetsGrid({ assets, communes }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button variant="primary" onClick={() => setCreateOpen(true)}>
+        <Button
+          variant="primary"
+          onClick={() => setCreateOpen(true)}
+          aria-label="Ajouter un support"
+          className="max-md:px-2.5 max-md:gap-0"
+        >
           <Plus className="size-4" aria-hidden />
-          <span>Ajouter un support</span>
+          <span className="hidden md:inline">Ajouter un support</span>
         </Button>
       </div>
 
@@ -128,11 +133,11 @@ function AdminAssetCard({
               </p>
             ) : null}
           </div>
-          <div className="flex shrink-0 items-center gap-1">
+          <div className="flex shrink-0 items-center gap-2">
             <button
               type="button"
               onClick={onEdit}
-              className="inline-flex size-8 cursor-pointer items-center justify-center rounded-sm text-muted transition hover:bg-warm hover:text-text"
+              className="inline-flex size-11 md:size-8 cursor-pointer items-center justify-center rounded-sm text-muted transition hover:bg-warm hover:text-text"
               aria-label="Modifier"
             >
               <Pencil className="size-4" aria-hidden />
@@ -140,7 +145,7 @@ function AdminAssetCard({
             <button
               type="button"
               onClick={onDelete}
-              className="inline-flex size-8 cursor-pointer items-center justify-center rounded-sm text-muted transition hover:bg-coral/10 hover:text-coral"
+              className="inline-flex size-11 md:size-8 cursor-pointer items-center justify-center rounded-sm text-muted transition hover:bg-coral/10 hover:text-coral"
               aria-label="Supprimer"
             >
               <Trash2 className="size-4" aria-hidden />

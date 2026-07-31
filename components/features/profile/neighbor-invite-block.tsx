@@ -79,6 +79,9 @@ export function NeighborInviteBlock(props: Props) {
         <Send className="size-4" aria-hidden />
         {pending ? "Envoi en cours..." : "Envoyer l'invitation"}
       </Button>
+      <p className="text-xs font-medium text-muted">
+        L&apos;invitation est valable 30 jours.
+      </p>
     </form>
   );
 

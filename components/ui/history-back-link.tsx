@@ -3,7 +3,7 @@
 import { ArrowLeft } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { ROUTES } from "@/lib/constants/routes";
-import { resolveInAppBackTarget } from "@/lib/navigation/in-app-history";
+import { resolveInAppBackTarget, buildInAppHref } from "@/lib/navigation/in-app-history";
 import { cn } from "@/lib/utils/cn";
 
 type Props = {
@@ -22,7 +22,10 @@ export function HistoryBackLink({
   const pathname = usePathname();
 
   function handleBack() {
-    router.push(resolveInAppBackTarget(pathname, fallbackHref));
+    const search =
+      typeof window !== "undefined" ? window.location.search.slice(1) : "";
+    const currentHref = buildInAppHref(pathname, search || undefined);
+    router.push(resolveInAppBackTarget(currentHref, fallbackHref));
   }
 
   return (

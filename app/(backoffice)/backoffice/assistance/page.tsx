@@ -4,31 +4,10 @@ import { Card } from "@/components/ui/card";
 import { LinkifiedText } from "@/components/ui/linkified-text";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
+import { STAFF_REVIEW_STATUS_LABELS } from "@/lib/constants/staff-review-status";
 import type { SupportRequestStatus } from "@/lib/types";
 import { formatShortDate } from "@/lib/datetime";
 import { BackofficeSupportActions } from "./_components/backoffice-support-actions";
-
-const STATUS_LABELS: Record<
-  SupportRequestStatus,
-  { label: string; className: string }
-> = {
-  new: {
-    label: "Non lu",
-    className: "bg-coral/10 text-coral",
-  },
-  in_progress: {
-    label: "En cours",
-    className: "bg-purple/10 text-purple",
-  },
-  resolved: {
-    label: "Résolu",
-    className: "bg-mint/10 text-mint",
-  },
-  dismissed: {
-    label: "Ignoré",
-    className: "bg-warm text-muted",
-  },
-};
 
 function authorName(firstName: string | null, lastName: string | null): string {
   const parts = [firstName, lastName].filter(Boolean);
@@ -54,17 +33,17 @@ export default async function BackofficeAssistancePage() {
 
       <div className="space-y-3">
         {(requests ?? []).length === 0 ? (
-          <Card className="p-6 text-center text-sm text-muted">
+          <Card className="rounded-xl p-6 text-center text-sm text-muted">
             Aucune demande d&apos;assistance pour le moment.
           </Card>
         ) : (
           (requests ?? []).map((request) => {
-            const statusMeta = STATUS_LABELS[request.status as SupportRequestStatus];
+            const statusMeta = STAFF_REVIEW_STATUS_LABELS[request.status as SupportRequestStatus];
             const communeName = request.commune?.name ?? "–";
             const name = authorName(request.first_name, request.last_name);
 
             return (
-              <Card key={request.id} className="space-y-3 p-4">
+              <Card key={request.id} className="space-y-3 rounded-xl p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <span

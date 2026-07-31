@@ -15,7 +15,7 @@ export function LinkifiedText({
   const segments = splitTextWithUrls(text);
 
   return (
-    <p className={className}>
+    <p className={cn("break-words", className)}>
       {segments.map((segment, index) =>
         segment.kind === "url" ? (
           <a

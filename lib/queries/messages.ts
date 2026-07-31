@@ -15,9 +15,9 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   notify_initiative_support: true,
   notify_event_participation: true,
   notify_event_volunteer: true,
-  notify_new_announcement: false,
-  notify_new_initiative: false,
-  notify_new_event: false,
+  notify_new_announcement: true,
+  notify_new_initiative: true,
+  notify_new_event: true,
 };
 
 /**

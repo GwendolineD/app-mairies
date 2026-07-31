@@ -1,11 +1,20 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCategoryLabel } from "@/lib/constants/announcement-categories";
 import { getInitiativeCategoryLabel } from "@/lib/constants/initiative-categories";
+import { PILOT_ACCESS_STATUSES } from "@/lib/constants/access-status";
 import { ROUTES } from "@/lib/constants/routes";
 import {
   ANNOUNCEMENT_STATUS,
   INITIATIVE_STATUS,
 } from "@/lib/constants/statuses";
+import {
+  POPULATION_BRACKETS,
+  type PopulationBracket,
+} from "@/lib/queries/backoffice-users-list.types";
+import {
+  countByCommuneId,
+  resolvePopulationBracket,
+} from "@/lib/queries/population-brackets";
 import type {
   BackofficeContenusListParams,
   BackofficeContentStatus,
@@ -13,7 +22,20 @@ import type {
 } from "@/lib/utils/backoffice-contenus-params";
 import { statusesForContentType } from "@/lib/utils/backoffice-contenus-params";
 
-const MERGE_FETCH_CAP = 500;
+export type ContentTypeCounts = Record<BackofficeContentType, number>;
+
+export type ContentPopulationBracketStats = {
+  bracket: PopulationBracket;
+  communeCount: number;
+  avgAnnouncements: number;
+  avgInitiatives: number;
+  avgEvents: number;
+};
+
+export type ContentPopulationStatsResult = {
+  brackets: ContentPopulationBracketStats[];
+  communesWithoutPopulation: number;
+};
 
 export type ContentListRow = {
   id: string;
@@ -412,17 +434,6 @@ async function fetchEvents(
   return ((data ?? []) as EventRow[]).map((row) => mapContentRow("event", row));
 }
 
-function sortContentRows(
-  rows: ContentListRow[],
-  sort: BackofficeContenusListParams["sort"],
-): ContentListRow[] {
-  return [...rows].sort((a, b) => {
-    const aTime = new Date(a.createdAt).getTime();
-    const bTime = new Date(b.createdAt).getTime();
-    return sort === "oldest" ? aTime - bTime : bTime - aTime;
-  });
-}
-
 async function listSingleTypePage(
   supabase: SupabaseClient,
   params: BackofficeContenusListParams,
@@ -456,47 +467,110 @@ async function listSingleTypePage(
   return { items, totalCount };
 }
 
-async function listMergedTypesPage(
+export async function countAllContentTypes(
   supabase: SupabaseClient,
-  params: BackofficeContenusListParams,
-): Promise<{ items: ContentListRow[]; totalCount: number }> {
-  const offset = (params.page - 1) * params.limit;
-  const fetchLimit = Math.min(
-    MERGE_FETCH_CAP,
-    offset + params.limit,
-  );
-
-  const [announcementCount, initiativeCount, eventCount, ...batches] =
-    await Promise.all([
-      params.types.includes("announcement")
-        ? countAnnouncements(supabase, params)
-        : Promise.resolve(0),
-      params.types.includes("initiative")
-        ? countInitiatives(supabase, params)
-        : Promise.resolve(0),
-      params.types.includes("event")
-        ? countEvents(supabase, params)
-        : Promise.resolve(0),
-      params.types.includes("announcement")
-        ? fetchAnnouncements(supabase, params, { limit: fetchLimit })
-        : Promise.resolve([]),
-      params.types.includes("initiative")
-        ? fetchInitiatives(supabase, params, { limit: fetchLimit })
-        : Promise.resolve([]),
-      params.types.includes("event")
-        ? fetchEvents(supabase, params, { limit: fetchLimit })
-        : Promise.resolve([]),
-    ]);
-
-  const merged = sortContentRows(
-    batches.flat() as ContentListRow[],
-    params.sort,
-  );
-  const totalCount = announcementCount + initiativeCount + eventCount;
+): Promise<ContentTypeCounts> {
+  const [announcements, initiatives, events] = await Promise.all([
+    supabase.from("announcements").select("id", { count: "exact", head: true }),
+    supabase.from("initiatives").select("id", { count: "exact", head: true }),
+    supabase.from("events").select("id", { count: "exact", head: true }),
+  ]);
 
   return {
-    items: merged.slice(offset, offset + params.limit),
-    totalCount,
+    announcement: announcements.count ?? 0,
+    initiative: initiatives.count ?? 0,
+    event: events.count ?? 0,
+  };
+}
+
+// TODO: switch to RPC/view if data grows > 1k rows per table
+export async function getContentPopulationStats(
+  supabase: SupabaseClient,
+): Promise<ContentPopulationStatsResult> {
+  const [communesResult, announcementsResult, initiativesResult, eventsResult] =
+    await Promise.all([
+      supabase
+        .from("communes")
+        .select("id, population")
+        .in("access_status", [...PILOT_ACCESS_STATUSES]),
+      supabase.from("announcements").select("commune_id"),
+      supabase.from("initiatives").select("commune_id"),
+      supabase.from("events").select("commune_id"),
+    ]);
+
+  const communes = communesResult.data ?? [];
+  const pilotCommuneIds = new Set(communes.map((commune) => commune.id));
+
+  const filterPilotRows = (rows: { commune_id: string }[]) =>
+    rows.filter((row) => pilotCommuneIds.has(row.commune_id));
+
+  const announcementCounts = countByCommuneId(
+    filterPilotRows(announcementsResult.data ?? []),
+  );
+  const initiativeCounts = countByCommuneId(
+    filterPilotRows(initiativesResult.data ?? []),
+  );
+  const eventCounts = countByCommuneId(filterPilotRows(eventsResult.data ?? []));
+
+  let communesWithoutPopulation = 0;
+  const bracketTotals = new Map<
+    PopulationBracket,
+    {
+      communeCount: number;
+      announcements: number;
+      initiatives: number;
+      events: number;
+    }
+  >();
+
+  for (const bracket of POPULATION_BRACKETS) {
+    bracketTotals.set(bracket, {
+      communeCount: 0,
+      announcements: 0,
+      initiatives: 0,
+      events: 0,
+    });
+  }
+
+  for (const commune of communes) {
+    if (commune.population == null) {
+      communesWithoutPopulation += 1;
+      continue;
+    }
+
+    const bracket = resolvePopulationBracket(commune.population);
+    const totals = bracketTotals.get(bracket)!;
+    totals.communeCount += 1;
+    totals.announcements += announcementCounts.get(commune.id) ?? 0;
+    totals.initiatives += initiativeCounts.get(commune.id) ?? 0;
+    totals.events += eventCounts.get(commune.id) ?? 0;
+  }
+
+  const brackets: ContentPopulationBracketStats[] = POPULATION_BRACKETS.map(
+    (bracket) => {
+      const totals = bracketTotals.get(bracket)!;
+      return {
+        bracket,
+        communeCount: totals.communeCount,
+        avgAnnouncements:
+          totals.communeCount > 0
+            ? Math.round((totals.announcements / totals.communeCount) * 10) / 10
+            : 0,
+        avgInitiatives:
+          totals.communeCount > 0
+            ? Math.round((totals.initiatives / totals.communeCount) * 10) / 10
+            : 0,
+        avgEvents:
+          totals.communeCount > 0
+            ? Math.round((totals.events / totals.communeCount) * 10) / 10
+            : 0,
+      };
+    },
+  );
+
+  return {
+    brackets,
+    communesWithoutPopulation,
   };
 }
 
@@ -504,11 +578,10 @@ export async function listContenusPage(
   supabase: SupabaseClient,
   params: BackofficeContenusListParams,
 ): Promise<{ items: ContentListRow[]; totalCount: number }> {
-  if (params.types.length === 1) {
-    return listSingleTypePage(supabase, params, params.types[0]!);
+  if (params.tab === "stats") {
+    return { items: [], totalCount: 0 };
   }
-
-  return listMergedTypesPage(supabase, params);
+  return listSingleTypePage(supabase, params, params.tab);
 }
 
 export type ContentCategoryOption = {

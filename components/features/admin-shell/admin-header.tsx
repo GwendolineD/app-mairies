@@ -4,7 +4,11 @@ import { APP_NAME } from "@/lib/constants/app";
 import { ILLUSTRATIONS } from "@/lib/constants/illustrations";
 import { ROUTES } from "@/lib/constants/routes";
 
-export function AdminHeader() {
+type Props = {
+  hamburger?: React.ReactNode;
+};
+
+export function AdminHeader({ hamburger }: Props) {
   const logo = ILLUSTRATIONS.resident.header.logoHorizontal;
 
   return (
@@ -25,6 +29,7 @@ export function AdminHeader() {
             className="h-11 max-w-[11rem] object-contain object-left md:h-12 md:max-w-[13rem]"
           />
         </Link>
+        {hamburger}
       </div>
     </header>
   );

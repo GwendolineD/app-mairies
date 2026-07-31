@@ -36,6 +36,7 @@ export async function resolvePendingReportsForContent(
 
   revalidatePath(ROUTES.mairie.signalements);
   revalidatePath(ROUTES.backoffice.signalements);
+  revalidatePath("/backoffice", "layout");
 }
 
 export async function resolvePendingReportsForUser(
@@ -94,6 +95,7 @@ export async function resolvePendingReportsForUser(
 
   revalidatePath(ROUTES.mairie.signalements);
   revalidatePath(ROUTES.backoffice.signalements);
+  revalidatePath("/backoffice", "layout");
 }
 
 export async function markReportsRestoredForContent(

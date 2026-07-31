@@ -102,3 +102,15 @@ export function buildBackofficeAuditListQuery(
   const qs = sp.toString();
   return qs ? `?${qs}` : "";
 }
+
+export function activeBackofficeAuditFilterCount(
+  params: BackofficeAuditListParams,
+): number {
+  let count = 0;
+  if (params.category) count += 1;
+  if (params.severity) count += 1;
+  if (params.deviceType) count += 1;
+  if (params.dateFrom) count += 1;
+  if (params.dateTo) count += 1;
+  return count;
+}

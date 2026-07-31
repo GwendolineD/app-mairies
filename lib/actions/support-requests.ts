@@ -13,9 +13,12 @@ import {
 } from "@/lib/constants/support-request";
 import { ROUTES } from "@/lib/constants/routes";
 import { sendSupportRequestNotification } from "@/lib/email/support-request-notification";
+import { updateStaffReviewRecord } from "@/lib/actions/staff-review";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { SupportRequestStatus } from "@/lib/types";
 import { appealSchema, supportRequestSchema } from "@/lib/validations/schemas";
+
+const BACKOFFICE_LAYOUT_PATH = "/backoffice";
 
 export type SupportRequestActionState = {
   error?: string;
@@ -109,6 +112,7 @@ export async function submitSupportRequest(
   });
 
   revalidatePath(ROUTES.backoffice.assistance);
+  revalidatePath(BACKOFFICE_LAYOUT_PATH, "layout");
   return { success: true };
 }
 
@@ -206,6 +210,7 @@ export async function submitSuspensionRevisionRequest(
   });
 
   revalidatePath(ROUTES.backoffice.assistance);
+  revalidatePath(BACKOFFICE_LAYOUT_PATH, "layout");
   return { success: true };
 }
 
@@ -215,24 +220,15 @@ export async function updateSupportRequestStatus(
   adminComment?: string,
 ): Promise<{ success: boolean; error?: string }> {
   const ctx = await requirePlatformAdmin();
-  const supabase = await createClient();
 
-  const { error } = await supabase
-    .from("support_requests")
-    .update({
-      status,
-      admin_comment: adminComment?.trim() || null,
-      reviewed_at: new Date().toISOString(),
-      reviewed_by_user_id: ctx.userId,
-    })
-    .eq("id", requestId);
-
-  if (error) {
-    return { success: false, error: error.message };
-  }
-
-  revalidatePath(ROUTES.backoffice.assistance);
-  return { success: true };
+  return updateStaffReviewRecord({
+    table: "support_requests",
+    id: requestId,
+    status,
+    adminComment,
+    reviewerUserId: ctx.userId,
+    revalidatePaths: [ROUTES.backoffice.assistance],
+  });
 }
 
 export async function markSupportRequestInProgress(

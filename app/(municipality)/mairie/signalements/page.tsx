@@ -396,7 +396,7 @@ export default async function MairieSignalementsPage(props: {
                   ) : (
                     <span aria-hidden className="flex-1" />
                   )}
-                  <span className="ml-auto shrink-0 text-xs text-muted">
+                  <span className="text-right text-xs text-muted md:ml-auto md:shrink-0">
                     Signalé par {reporterName}, le{" "}
                     {formatCompactShortDate(report.created_at)}
                   </span>

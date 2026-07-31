@@ -73,15 +73,16 @@ export async function fanoutNewContentNotification(
       .select(`user_id, ${prefColumn}`)
       .in("user_id", userIds);
 
-    const optedIn = new Set(
+    // Users without a row default to opted-in (new-content defaults are true).
+    // Users with a row and pref === false are explicitly opted-out.
+    const optedOut = new Set(
       (prefs ?? [])
-        .filter((p) => (p as Record<string, unknown>)[prefColumn] === true)
+        .filter((p) => (p as Record<string, unknown>)[prefColumn] === false)
         .map((p) => (p as { user_id: string }).user_id),
     );
 
-    // Defaults are FALSE for "new content" preferences (per the migration),
-    // so absence of a row means the user has not opted in. Notify only opted-in users.
-    if (optedIn.size === 0) return;
+    const recipients = userIds.filter((id) => !optedOut.has(id));
+    if (recipients.length === 0) return;
 
     const title = `${KIND_LABEL[input.contextType]} dans votre commune`;
     const authorLabel = input.authorDisplayName ?? "un·e voisin·e";
@@ -89,7 +90,7 @@ export async function fanoutNewContentNotification(
     const url = ROUTE_BUILDER[input.contextType](input.contextId);
 
     await Promise.all(
-      Array.from(optedIn).map((userId) =>
+      recipients.map((userId) =>
         notifyUser(userId, {
           title,
           body,

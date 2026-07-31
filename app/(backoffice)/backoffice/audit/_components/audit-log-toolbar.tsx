@@ -22,9 +22,15 @@ import {
   type AuditCategoryValue,
   type AuditSeverityValue,
 } from "@/lib/constants/audit";
-import { buildBackofficeAuditListQuery } from "@/lib/utils/audit-search-params";
+import { buildBackofficeAuditListQuery, activeBackofficeAuditFilterCount } from "@/lib/utils/audit-search-params";
 import type { BackofficeAuditListParams } from "@/lib/utils/audit-search-params";
 import { AuditMetaBadge } from "./audit-meta-badge";
+import {
+  FilterDesktopInline,
+  FilterMobileSheetPanel,
+  FilterMobileTriggerButton,
+  useFilterSheetState,
+} from "@/components/ui/responsive-filter-bar";
 
 type AuditLogToolbarProps = {
   params: BackofficeAuditListParams;
@@ -68,29 +74,21 @@ export function AuditLogToolbar({ params }: AuditLogToolbarProps) {
     navigate({ q: undefined });
   }
 
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="relative max-w-md w-full">
-        <Input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Rechercher action, cible…"
-          className="rounded-sm pr-9"
-          aria-label="Rechercher dans les logs"
-        />
-        {search.length > 0 ? (
-          <button
-            type="button"
-            onClick={clearSearch}
-            className="absolute top-1/2 right-2 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-sm text-muted transition hover:text-text"
-            aria-label="Effacer la recherche"
-          >
-            <X className="size-4" aria-hidden />
-          </button>
-        ) : null}
-      </div>
+  const filterCount = activeBackofficeAuditFilterCount(params);
+  const { open, setOpen } = useFilterSheetState();
 
-      <div className="flex flex-wrap items-center gap-2">
+  function clearAllFilters() {
+    navigate({
+      category: undefined,
+      severity: undefined,
+      deviceType: undefined,
+      dateFrom: undefined,
+      dateTo: undefined,
+    });
+  }
+
+  const filterControls = (
+    <>
         <Select
           items={[
             { value: "all", label: "Toutes catégories" },
@@ -203,7 +201,7 @@ export function AuditLogToolbar({ params }: AuditLogToolbarProps) {
           }
           maxDate={params.dateTo}
           placeholder="Date de début"
-          className="w-40"
+          className="w-full md:w-40"
           aria-label="Date de début"
         />
 
@@ -212,14 +210,55 @@ export function AuditLogToolbar({ params }: AuditLogToolbarProps) {
           onChange={(value) => navigate({ dateTo: value || undefined })}
           minDate={params.dateFrom}
           placeholder="Date de fin"
-          className="w-40"
+          className="w-full md:w-40"
           aria-label="Date de fin"
         />
 
         {isPending ? (
           <span className="text-xs font-medium text-muted">Mise à jour…</span>
         ) : null}
+    </>
+  );
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex min-w-0 items-center gap-2">
+        <div className="relative min-w-0 flex-1 max-w-md">
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Rechercher action, cible…"
+            className="rounded-sm pr-9 placeholder:text-xs md:placeholder:text-sm"
+            aria-label="Rechercher dans les logs"
+          />
+          {search.length > 0 ? (
+            <button
+              type="button"
+              onClick={clearSearch}
+              className="absolute top-1/2 right-2 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-sm text-muted transition hover:text-text"
+              aria-label="Effacer la recherche"
+            >
+              <X className="size-4" aria-hidden />
+            </button>
+          ) : null}
+        </div>
+
+        <FilterMobileTriggerButton
+          filterCount={filterCount}
+          onClick={() => setOpen(true)}
+          className="shrink-0 md:hidden"
+        />
+        <FilterMobileSheetPanel
+          open={open}
+          onClose={() => setOpen(false)}
+          filterCount={filterCount}
+          onClearAll={clearAllFilters}
+        >
+          {filterControls}
+        </FilterMobileSheetPanel>
       </div>
+
+      <FilterDesktopInline>{filterControls}</FilterDesktopInline>
     </div>
   );
 }

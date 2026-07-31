@@ -1,6 +1,5 @@
 import {
   ANNOUNCEMENT_STATUS,
-  EVENT_STATUS,
   INITIATIVE_STATUS,
 } from "@/lib/constants/statuses";
 
@@ -13,6 +12,16 @@ export const BACKOFFICE_CONTENT_TYPES = [
 export type BackofficeContentType =
   (typeof BACKOFFICE_CONTENT_TYPES)[number];
 
+export const BACKOFFICE_CONTENUS_TABS = [
+  ...BACKOFFICE_CONTENT_TYPES,
+  "stats",
+] as const;
+
+export type BackofficeContenusTab = (typeof BACKOFFICE_CONTENUS_TABS)[number];
+
+export const DEFAULT_BACKOFFICE_CONTENT_TAB: BackofficeContentType =
+  "announcement";
+
 export const BACKOFFICE_CONTENT_TYPE_LABELS: Record<
   BackofficeContentType,
   string
@@ -20,6 +29,14 @@ export const BACKOFFICE_CONTENT_TYPE_LABELS: Record<
   announcement: "Annonce",
   initiative: "Initiative",
   event: "Événement",
+};
+
+export const BACKOFFICE_CONTENUS_TAB_LABELS: Record<
+  BackofficeContenusTab,
+  string
+> = {
+  ...BACKOFFICE_CONTENT_TYPE_LABELS,
+  stats: "Statistiques",
 };
 
 export const BACKOFFICE_CONTENT_STATUSES = [
@@ -62,7 +79,21 @@ export type BackofficeContentSubtype =
 export const BACKOFFICE_CONTENUS_PAGE_SIZES = [10, 25, 50] as const;
 export const DEFAULT_BACKOFFICE_CONTENUS_PAGE_SIZE = 25;
 
-const DEFAULT_CONTENT_TYPES: BackofficeContentType[] = ["announcement"];
+export const CONTENUS_FILTERS_STORAGE_PREFIX = "vl:contenus-filters:";
+
+/** Filters persisted per tab (excludes tab, page, limit). */
+export type BackofficeContenusStoredFilters = {
+  q?: string;
+  commune?: string;
+  statuses?: BackofficeContentStatus[];
+  suspended?: boolean;
+  subtype?: BackofficeContentSubtype;
+  category?: string;
+  official?: boolean;
+  dateFrom?: string;
+  dateTo?: string;
+  sort?: BackofficeContentSort;
+};
 
 function raw(
   searchParams: Record<string, string | string[] | undefined>,
@@ -94,23 +125,27 @@ function parseLimit(
   return allowed.includes(parsed) ? parsed : fallback;
 }
 
-function parseContentTypes(
+function parseContentTab(
   searchParams: Record<string, string | string[] | undefined>,
-): BackofficeContentType[] {
-  const seen = new Set<BackofficeContentType>();
-  const types: BackofficeContentType[] = [];
-
-  for (const rawValue of rawAll(searchParams, "type")) {
-    if (!(BACKOFFICE_CONTENT_TYPES as readonly string[]).includes(rawValue)) {
-      continue;
-    }
-    const type = rawValue as BackofficeContentType;
-    if (seen.has(type)) continue;
-    seen.add(type);
-    types.push(type);
+): BackofficeContenusTab {
+  const tabValue = raw(searchParams, "tab");
+  if (
+    tabValue &&
+    (BACKOFFICE_CONTENUS_TABS as readonly string[]).includes(tabValue)
+  ) {
+    return tabValue as BackofficeContenusTab;
   }
 
-  return types.length > 0 ? types : [...DEFAULT_CONTENT_TYPES];
+  // Legacy fallback: first `type` param when `tab` is absent
+  for (const legacyType of rawAll(searchParams, "type")) {
+    if (
+      (BACKOFFICE_CONTENT_TYPES as readonly string[]).includes(legacyType)
+    ) {
+      return legacyType as BackofficeContentType;
+    }
+  }
+
+  return DEFAULT_BACKOFFICE_CONTENT_TAB;
 }
 
 function parseContentStatuses(
@@ -155,7 +190,7 @@ function parseSubtype(
 
 export type BackofficeContenusListParams = {
   q: string;
-  types: BackofficeContentType[];
+  tab: BackofficeContenusTab;
   commune?: string;
   statuses: BackofficeContentStatus[];
   suspended?: boolean;
@@ -172,6 +207,7 @@ export type BackofficeContenusListParams = {
 export function parseBackofficeContenusListParams(
   searchParams: Record<string, string | string[] | undefined>,
 ): BackofficeContenusListParams {
+  const tab = parseContentTab(searchParams);
   const dateFrom = (raw(searchParams, "dateFrom") ?? "").trim() || undefined;
   const dateTo = (raw(searchParams, "dateTo") ?? "").trim() || undefined;
   const commune = (raw(searchParams, "commune") ?? "").trim() || undefined;
@@ -179,13 +215,17 @@ export function parseBackofficeContenusListParams(
 
   return {
     q: (raw(searchParams, "q") ?? "").trim(),
-    types: parseContentTypes(searchParams),
+    tab,
     commune,
     statuses: parseContentStatuses(searchParams),
     suspended: parseBooleanFlag(raw(searchParams, "suspended")),
-    subtype: parseSubtype(raw(searchParams, "subtype")),
+    subtype:
+      tab === "announcement"
+        ? parseSubtype(raw(searchParams, "subtype"))
+        : undefined,
     category,
-    official: parseBooleanFlag(raw(searchParams, "official")),
+    official:
+      tab === "event" ? parseBooleanFlag(raw(searchParams, "official")) : undefined,
     dateFrom,
     dateTo,
     sort: parseSort(raw(searchParams, "sort")),
@@ -198,13 +238,99 @@ export function parseBackofficeContenusListParams(
   };
 }
 
+export function extractStoredContenusFilters(
+  params: BackofficeContenusListParams,
+): BackofficeContenusStoredFilters {
+  const stored: BackofficeContenusStoredFilters = {};
+
+  if (params.q) stored.q = params.q;
+  if (params.commune) stored.commune = params.commune;
+  if (params.statuses.length > 0) stored.statuses = params.statuses;
+  if (params.suspended != null) stored.suspended = params.suspended;
+  if (params.subtype) stored.subtype = params.subtype;
+  if (params.category) stored.category = params.category;
+  if (params.official != null) stored.official = params.official;
+  if (params.dateFrom) stored.dateFrom = params.dateFrom;
+  if (params.dateTo) stored.dateTo = params.dateTo;
+  if (params.sort !== BACKOFFICE_CONTENT_SORT.newest) {
+    stored.sort = params.sort;
+  }
+
+  return stored;
+}
+
+export function storedFiltersToPartialParams(
+  tab: BackofficeContenusTab,
+  stored: BackofficeContenusStoredFilters,
+): Partial<BackofficeContenusListParams> {
+  if (tab === "stats") {
+    return { tab, page: 1 };
+  }
+
+  return {
+    tab,
+    q: stored.q ?? "",
+    commune: stored.commune,
+    statuses: stored.statuses ?? [],
+    suspended: stored.suspended,
+    subtype: tab === "announcement" ? stored.subtype : undefined,
+    category: stored.category,
+    official: tab === "event" ? stored.official : undefined,
+    dateFrom: stored.dateFrom,
+    dateTo: stored.dateTo,
+    sort: stored.sort ?? BACKOFFICE_CONTENT_SORT.newest,
+    page: 1,
+  };
+}
+
+export function contenusFiltersStorageKey(tab: BackofficeContenusTab): string {
+  return `${CONTENUS_FILTERS_STORAGE_PREFIX}${tab}`;
+}
+
+export function saveContenusFiltersToStorage(
+  tab: BackofficeContenusTab,
+  params: BackofficeContenusListParams,
+): void {
+  if (tab === "stats") return;
+  if (typeof window === "undefined") return;
+  try {
+    const stored = extractStoredContenusFilters(params);
+    window.localStorage.setItem(
+      contenusFiltersStorageKey(tab),
+      JSON.stringify(stored),
+    );
+  } catch {
+    // Ignore quota or privacy mode errors
+  }
+}
+
+export function loadContenusFiltersFromStorage(
+  tab: BackofficeContenusTab,
+): BackofficeContenusStoredFilters | null {
+  if (tab === "stats") return null;
+  if (typeof window === "undefined") return null;
+  try {
+    const rawValue = window.localStorage.getItem(contenusFiltersStorageKey(tab));
+    if (!rawValue) return null;
+    return JSON.parse(rawValue) as BackofficeContenusStoredFilters;
+  } catch {
+    return null;
+  }
+}
+
 export function buildBackofficeContenusListQuery(
   params: Partial<BackofficeContenusListParams>,
 ): string {
   const sp = new URLSearchParams();
+  const tab = params.tab ?? DEFAULT_BACKOFFICE_CONTENT_TAB;
+
   if (params.q) sp.set("q", params.q);
-  for (const type of params.types ?? []) {
-    sp.append("type", type);
+  if (tab !== DEFAULT_BACKOFFICE_CONTENT_TAB) {
+    sp.set("tab", tab);
+  }
+  if (tab === "stats") {
+    const qs = sp.toString();
+    return qs ? `?${qs}` : "";
   }
   if (params.commune) sp.set("commune", params.commune);
   for (const status of params.statuses ?? []) {
@@ -212,10 +338,12 @@ export function buildBackofficeContenusListQuery(
   }
   if (params.suspended === true) sp.set("suspended", "true");
   if (params.suspended === false) sp.set("suspended", "false");
-  if (params.subtype) sp.set("subtype", params.subtype);
+  if (tab === "announcement" && params.subtype) {
+    sp.set("subtype", params.subtype);
+  }
   if (params.category) sp.set("category", params.category);
-  if (params.official === true) sp.set("official", "true");
-  if (params.official === false) sp.set("official", "false");
+  if (tab === "event" && params.official === true) sp.set("official", "true");
+  if (tab === "event" && params.official === false) sp.set("official", "false");
   if (params.dateFrom) sp.set("dateFrom", params.dateFrom);
   if (params.dateTo) sp.set("dateTo", params.dateTo);
   if (params.sort && params.sort !== BACKOFFICE_CONTENT_SORT.newest) {
@@ -248,4 +376,20 @@ export function statusesForContentType(
 
   if (selected.length === 0) return valid;
   return valid.filter((status) => selected.includes(status));
+}
+
+export function activeBackofficeContenusFilterCount(
+  params: BackofficeContenusListParams,
+): number {
+  let count = 0;
+  if (params.commune) count += 1;
+  if (params.statuses.length > 0) count += 1;
+  if (params.suspended != null) count += 1;
+  if (params.subtype) count += 1;
+  if (params.category) count += 1;
+  if (params.official != null) count += 1;
+  if (params.dateFrom) count += 1;
+  if (params.dateTo) count += 1;
+  if (params.sort !== BACKOFFICE_CONTENT_SORT.newest) count += 1;
+  return count;
 }

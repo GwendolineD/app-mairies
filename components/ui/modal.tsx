@@ -36,6 +36,8 @@ type Props = {
   description?: React.ReactNode;
   /** Fixed footer below the scrollable body (eg. modal actions). */
   footer?: React.ReactNode;
+  /** Action aligned to the right of the header (eg. clear all filters). */
+  headerTrailing?: React.ReactNode;
   /** Override padding/spacing on the scrollable body (eg. `p-0` for full-bleed content). */
   contentClassName?: string;
   /** When false, body does not scroll — use for full-viewport media (lightbox). */
@@ -54,6 +56,7 @@ export function Modal({
   headerPrefix,
   description,
   footer,
+  headerTrailing,
   contentClassName,
   scrollable = true,
 }: Props) {
@@ -80,7 +83,9 @@ export function Modal({
             {headerPrefix}
             <DialogTitle className="text-lg font-bold leading-snug text-text">{title}</DialogTitle>
           </div>
-          {showCloseButton ? (
+          <div className="flex shrink-0 items-center gap-2">
+            {headerTrailing}
+            {showCloseButton ? (
             <DialogClose
               render={
                 <Button
@@ -95,7 +100,8 @@ export function Modal({
               <XIcon aria-hidden />
               <span className="sr-only">Fermer</span>
             </DialogClose>
-          ) : null}
+            ) : null}
+          </div>
         </DialogHeader>
         {description ? (
           <p className="flex shrink-0 items-center px-6 py-3 text-sm font-medium leading-5 text-muted">
