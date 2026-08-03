@@ -1,44 +1,105 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requirePlatformAdmin } from "@/lib/auth/session";
+import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
+import {
+  BackofficeListPagination,
+} from "@/components/features/backoffice/backoffice-list-toolbar";
 import { Card } from "@/components/ui/card";
 import { LinkifiedText } from "@/components/ui/linkified-text";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
+import { Button } from "@/components/ui/button";
 import { STAFF_REVIEW_STATUS_LABELS } from "@/lib/constants/staff-review-status";
 import type { SupportRequestStatus } from "@/lib/types";
 import { formatShortDate } from "@/lib/datetime";
+import { listAssistancePage } from "@/lib/queries/backoffice-assistance";
+import { listPilotCommuneOptions } from "@/lib/queries/backoffice-communes";
+import {
+  BACKOFFICE_ASSISTANCE_PAGE_SIZE,
+  buildBackofficeAssistanceListQuery,
+  buildClearAssistanceFiltersQuery,
+  hasActiveAssistanceFilters,
+  isBackofficeAssistanceUrlCanonical,
+  parseBackofficeAssistanceListParams,
+} from "@/lib/utils/backoffice-assistance-params";
+import { AssistanceToolbar } from "./_components/assistance-toolbar";
 import { BackofficeSupportActions } from "./_components/backoffice-support-actions";
+
+export const dynamic = "force-dynamic";
 
 function authorName(firstName: string | null, lastName: string | null): string {
   const parts = [firstName, lastName].filter(Boolean);
   return parts.length > 0 ? parts.join(" ") : "Non renseigné";
 }
 
-export default async function BackofficeAssistancePage() {
+export default async function BackofficeAssistancePage(props: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   await requirePlatformAdmin();
+  const rawSearchParams = await props.searchParams;
+
+  if (!isBackofficeAssistanceUrlCanonical(rawSearchParams)) {
+    const canonicalParams = parseBackofficeAssistanceListParams(rawSearchParams);
+    redirect(
+      `${ROUTES.backoffice.assistance}${buildBackofficeAssistanceListQuery(canonicalParams)}`,
+    );
+  }
+
+  const params = parseBackofficeAssistanceListParams(rawSearchParams);
   const supabase = await createClient();
 
-  const { data: requests } = await supabase
-    .from("support_requests")
-    .select("*, commune:communes!support_requests_commune_id_fkey(name)")
-    .order("created_at", { ascending: false })
-    .limit(100);
+  const [{ items, totalCount }, communes] = await Promise.all([
+    listAssistancePage(supabase, params),
+    listPilotCommuneOptions(supabase),
+  ]);
+
+  const listQueryProps = {
+    params,
+    queryVariant: "assistance" as const,
+    totalCount,
+    pageSize: BACKOFFICE_ASSISTANCE_PAGE_SIZE,
+  };
+
+  const hasFilters = hasActiveAssistanceFilters(params);
 
   return (
     <PageStack>
-      <PageHeading
-        title="Assistance"
-        subtitle="Demandes d'aide, retours et signalements de bugs des résident·es."
+      <PageHeading title="Assistance" />
+
+      <AssistanceToolbar
+        params={params}
+        communes={communes}
+        totalCount={totalCount}
       />
 
       <div className="space-y-3">
-        {(requests ?? []).length === 0 ? (
+        {items.length === 0 ? (
           <Card className="rounded-xl p-6 text-center text-sm text-muted">
-            Aucune demande d&apos;assistance pour le moment.
+            {hasFilters ? (
+              <div className="space-y-3">
+                <p>Aucun résultat pour ces filtres.</p>
+                <Button
+                  render={
+                    <Link
+                      href={`${ROUTES.backoffice.assistance}${buildClearAssistanceFiltersQuery()}`}
+                    />
+                  }
+                  variant="secondary"
+                  size="sm"
+                >
+                  Effacer les filtres
+                </Button>
+              </div>
+            ) : (
+              <p>Aucune demande d&apos;assistance pour le moment.</p>
+            )}
           </Card>
         ) : (
-          (requests ?? []).map((request) => {
-            const statusMeta = STAFF_REVIEW_STATUS_LABELS[request.status as SupportRequestStatus];
+          items.map((request) => {
+            const statusMeta =
+              STAFF_REVIEW_STATUS_LABELS[request.status as SupportRequestStatus];
             const communeName = request.commune?.name ?? "–";
             const name = authorName(request.first_name, request.last_name);
 
@@ -51,7 +112,9 @@ export default async function BackofficeAssistancePage() {
                     >
                       {statusMeta.label}
                     </span>
-                    <span className="text-xs font-medium text-muted">{communeName}</span>
+                    <span className="text-xs font-medium text-muted">
+                      {communeName}
+                    </span>
                   </div>
                   <span className="text-xs text-muted">
                     {formatShortDate(request.created_at)}
@@ -62,7 +125,7 @@ export default async function BackofficeAssistancePage() {
 
                 <LinkifiedText
                   text={request.message}
-                  className="whitespace-pre-wrap text-sm text-muted"
+                  className="wrap-break-word whitespace-pre-wrap text-sm text-muted"
                 />
 
                 <p className="text-xs text-subtle">
@@ -79,6 +142,13 @@ export default async function BackofficeAssistancePage() {
           })
         )}
       </div>
+
+      {totalCount > 0 ? (
+        <BackofficeListPagination
+          {...listQueryProps}
+          limitOptions={[BACKOFFICE_ASSISTANCE_PAGE_SIZE]}
+        />
+      ) : null}
     </PageStack>
   );
 }
