@@ -344,7 +344,7 @@ export function BanAutocomplete({
           autoComplete="off"
           autoFocus={autoFocus}
           role="combobox"
-          aria-expanded={showPanel}
+          aria-expanded={Boolean(showPanel)}
           aria-controls={listboxId}
           aria-autocomplete="list"
           aria-activedescendant={activeOptionId}
