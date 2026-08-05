@@ -5,6 +5,7 @@ import { startTransition, useActionState, useCallback, useState } from "react";
 import { BanAutocomplete } from "@/components/features/ban-autocomplete";
 import type { BanFeature } from "@/lib/ban/client";
 import { searchAddresses, searchMunicipalities } from "@/lib/ban/client";
+import { formatMunicipalityDisplay } from "@/lib/ban/display";
 import { signUp, submitCommuneInterest } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -92,6 +93,8 @@ export function InscriptionFlow() {
             placeholder="Ex : Les Authieux, Rouen..."
             fetchSuggestions={(q) => searchMunicipalities(q)}
             onSelect={(f) => void onPickCommune(f)}
+            formatSuggestion={formatMunicipalityDisplay}
+            singleLine
           />
           {inseeLoading ? (
             <p className="mt-4 text-center text-xs text-muted">

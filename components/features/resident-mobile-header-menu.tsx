@@ -10,10 +10,12 @@ import {
   LogOut,
   MapPin,
   Plus,
+  Trash2,
   User,
   type LucideIcon,
 } from "lucide-react";
 import { JoinCommuneModal } from "@/components/features/join-commune-modal";
+import { LeaveCommuneModal } from "@/components/features/leave-commune-modal";
 import { AssistanceModal } from "@/components/features/assistance/assistance-modal";
 import { AssistanceTrigger } from "@/components/features/assistance/assistance-trigger";
 import { switchCommune, signOut } from "@/lib/actions/auth";
@@ -69,12 +71,14 @@ export function ResidentMobileHeaderMenu({
 }: Props) {
   const [open, setOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
+  const [leaveTarget, setLeaveTarget] = useState<Membership | null>(null);
   const [assistanceOpen, setAssistanceOpen] = useState(false);
   const [busy, run] = useTransition();
 
   const selectable = memberships.filter(
     (m) => m.status === "active" || m.status === "suspended",
   );
+  const activeCount = selectable.filter((m) => m.status === "active").length;
 
   function selectCommune(communeId: string) {
     setOpen(false);
@@ -134,17 +138,26 @@ export function ResidentMobileHeaderMenu({
             ) : (
               selectable.map((m) => {
                 const isActive = m.commune_id === activeCommuneId;
-                const disabled = m.status !== "active" && m.status !== "suspended";
+                const isSuspended = m.status === "suspended";
+                const disabled = (m.status !== "active" && m.status !== "suspended") || busy;
+                const showTrash = !isSuspended && activeCount > 1;
                 return (
                   <li key={m.id} role="presentation">
-                    <button
-                      type="button"
+                    <div
                       role="option"
+                      tabIndex={disabled ? -1 : 0}
                       aria-selected={isActive}
-                      disabled={disabled || busy}
-                      onClick={() => selectCommune(m.commune_id)}
+                      aria-disabled={disabled}
+                      onClick={() => !disabled && selectCommune(m.commune_id)}
+                      onKeyDown={(e) => {
+                        if ((e.key === "Enter" || e.key === " ") && !disabled) {
+                          e.preventDefault();
+                          selectCommune(m.commune_id);
+                        }
+                      }}
                       className={cn(
-                        "flex h-12 w-full cursor-pointer items-center gap-3 px-3 text-left text-sm transition hover:bg-warm disabled:cursor-not-allowed disabled:opacity-50",
+                        "flex h-12 w-full cursor-pointer items-center gap-3 px-3 text-left text-sm transition hover:bg-warm",
+                        disabled && "cursor-not-allowed opacity-50",
                         isActive && "bg-soft-pink/70",
                       )}
                     >
@@ -161,7 +174,21 @@ export function ResidentMobileHeaderMenu({
                       {isActive ? (
                         <Check className="size-4 shrink-0 text-purple" aria-hidden />
                       ) : null}
-                    </button>
+                      {showTrash ? (
+                        <button
+                          type="button"
+                          aria-label={`Quitter ${m.commune?.name ?? "la commune"}`}
+                          className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-sm text-muted transition hover:bg-coral/10 hover:text-coral focus-visible:bg-coral/10 focus-visible:text-coral"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpen(false);
+                            setLeaveTarget(m);
+                          }}
+                        >
+                          <Trash2 className="size-4" aria-hidden />
+                        </button>
+                      ) : null}
+                    </div>
                   </li>
                 );
               })
@@ -239,6 +266,14 @@ export function ResidentMobileHeaderMenu({
         onClose={() => setAssistanceOpen(false)}
         supportEmail={supportEmail}
       />
+
+      {leaveTarget ? (
+        <LeaveCommuneModal
+          open
+          onClose={() => setLeaveTarget(null)}
+          membership={leaveTarget}
+        />
+      ) : null}
     </>
   );
 }

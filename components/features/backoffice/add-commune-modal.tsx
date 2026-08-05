@@ -166,6 +166,7 @@ export function AddCommuneModal({ open, onClose }: Props) {
             communeFeature ? formatMunicipalityDisplay(communeFeature) : undefined
           }
           formatSuggestion={formatMunicipalityDisplay}
+          singleLine
           leadingIcon={MapPin}
           showChevron
         />

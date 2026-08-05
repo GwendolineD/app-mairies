@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Calendar, Megaphone } from "lucide-react";
 import { requireActiveMembership } from "@/lib/auth/session";
-import { unwrapOrThrow } from "@/lib/queries/helpers";
 import { listSimilarAnnouncements } from "@/lib/queries/announcements";
 import type { AnnouncementWithAuthor } from "@/lib/queries/announcements";
 import { createClient } from "@/lib/supabase/server";
@@ -72,10 +71,13 @@ export default async function AnnonceDetailPage(props: {
     )
     .eq("id", id)
     .eq("commune_id", ctx.activeMembership!.commune_id)
-    .single();
+    .maybeSingle();
 
-  if (!result.data && !result.error) notFound();
-  const data = unwrapOrThrow(result, "announcement-detail");
+  if (result.error) {
+    throw new Error(`[announcement-detail] ${result.error.message}`);
+  }
+  if (!result.data) notFound();
+  const data = result.data;
 
   // If the content is suspended, show appropriate screen
   if (data.suspended_at) {

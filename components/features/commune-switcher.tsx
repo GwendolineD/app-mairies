@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check, ChevronDown, MapPin, Plus } from "lucide-react";
+import { Check, ChevronDown, MapPin, Plus, Trash2 } from "lucide-react";
 import { JoinCommuneModal } from "@/components/features/join-commune-modal";
+import { LeaveCommuneModal } from "@/components/features/leave-commune-modal";
 import { switchCommune } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +37,7 @@ export function CommuneSwitcher({
 }: Props) {
   const [open, setOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
+  const [leaveTarget, setLeaveTarget] = useState<Membership | null>(null);
   const [busy, run] = useTransition();
 
   const activeMembership =
@@ -49,6 +51,7 @@ export function CommuneSwitcher({
   const selectable = memberships.filter(
     (m) => m.status === "active" || m.status === "suspended",
   );
+  const activeCount = selectable.filter((m) => m.status === "active").length;
 
   function selectCommune(communeId: string) {
     setOpen(false);
@@ -100,19 +103,27 @@ export function CommuneSwitcher({
                 const isActive = m.commune_id === activeCommuneId;
                 const isSuspended = m.status === "suspended";
                 const disabled = isSuspended || (m.status !== "active" && m.status !== "suspended") || busy;
+                const showTrash = !isSuspended && activeCount > 1;
                 return (
                   <li key={m.id} role="presentation">
-                    <button
-                      type="button"
+                    <div
                       role="option"
+                      tabIndex={disabled ? -1 : 0}
                       aria-selected={isActive}
-                      disabled={disabled}
-                      onClick={() => !isSuspended && selectCommune(m.commune_id)}
+                      aria-disabled={disabled}
+                      onClick={() => !disabled && !isSuspended && selectCommune(m.commune_id)}
+                      onKeyDown={(e) => {
+                        if ((e.key === "Enter" || e.key === " ") && !disabled && !isSuspended) {
+                          e.preventDefault();
+                          selectCommune(m.commune_id);
+                        }
+                      }}
                       className={cn(
                         "flex h-[54px] w-full items-center gap-3 px-3 text-left text-sm transition",
                         isSuspended
                           ? "cursor-not-allowed opacity-60"
-                          : "cursor-pointer hover:bg-warm disabled:cursor-not-allowed disabled:opacity-50",
+                          : "cursor-pointer hover:bg-warm",
+                        disabled && !isSuspended && "cursor-not-allowed opacity-50",
                         isActive && !isSuspended && "bg-soft-pink/70",
                       )}
                     >
@@ -133,7 +144,21 @@ export function CommuneSwitcher({
                       ) : isActive ? (
                         <Check className="size-4 shrink-0 text-purple" aria-hidden />
                       ) : null}
-                    </button>
+                      {showTrash ? (
+                        <button
+                          type="button"
+                          aria-label={`Quitter ${m.commune?.name ?? "la commune"}`}
+                          className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-sm text-muted transition hover:bg-coral/10 hover:text-coral focus-visible:bg-coral/10 focus-visible:text-coral"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpen(false);
+                            setLeaveTarget(m);
+                          }}
+                        >
+                          <Trash2 className="size-4" aria-hidden />
+                        </button>
+                      ) : null}
+                    </div>
                   </li>
                 );
               })
@@ -162,6 +187,14 @@ export function CommuneSwitcher({
         onClose={() => setJoinOpen(false)}
         existingMemberships={memberships}
       />
+
+      {leaveTarget ? (
+        <LeaveCommuneModal
+          open
+          onClose={() => setLeaveTarget(null)}
+          membership={leaveTarget}
+        />
+      ) : null}
     </>
   );
 }

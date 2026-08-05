@@ -1,7 +1,6 @@
 import { ImageWithLightbox } from "@/components/features/image-with-lightbox";
 import { notFound } from "next/navigation";
 import { requireActiveMembership } from "@/lib/auth/session";
-import { unwrapOrThrow } from "@/lib/queries/helpers";
 import {
   getInitiativeCategoryLabel,
   getInitiativeCategoryDefaultImageUrl,
@@ -85,11 +84,14 @@ export default async function InitiativeDetailPage(props: {
     .select("*")
     .eq("commune_id", membership.commune_id)
     .eq("id", id)
-    .single();
-  if (!result.data && !result.error) notFound();
-  const data = unwrapOrThrow(result, "initiative-detail");
+    .maybeSingle();
 
-  const initiative = data as InitiativeRecord;
+  if (result.error) {
+    throw new Error(`[initiative-detail] ${result.error.message}`);
+  }
+  if (!result.data) notFound();
+
+  const initiative = result.data as InitiativeRecord;
 
   // If the content is suspended, show appropriate screen
   if (initiative.suspended_at) {

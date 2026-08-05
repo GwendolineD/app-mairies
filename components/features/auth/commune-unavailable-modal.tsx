@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/form-field";
+import { Input, Textarea } from "@/components/ui/form-field";
 import { submitCommuneInterest } from "@/lib/actions/auth";
 import { APP_NAME } from "@/lib/constants/app";
 import type { BanFeature } from "@/lib/ban/client";
@@ -66,11 +66,7 @@ export function CommuneUnavailableModal({
 
         <label className="text-sm font-medium text-text">
           Message (optionnel)
-          <textarea
-            name="message"
-            rows={2}
-            className="mt-1 w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm outline-none focus:border-purple"
-          />
+          <Textarea name="message" rows={2} className="mt-1" />
         </label>
 
         {state?.error ? (

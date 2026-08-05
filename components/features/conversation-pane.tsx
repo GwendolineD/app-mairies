@@ -269,11 +269,16 @@ export async function ConversationPane({
         readOnly={
           otherAccountDeleted ||
           !contextAvailable ||
-          otherMembershipStatus === "suspended"
+          otherMembershipStatus === "suspended" ||
+          otherMembershipStatus === "left"
         }
         readOnlyMessage={readOnlyMessage}
         departedBanner={
-          otherAccountDeleted ? "Ce voisin a quitté la plateforme" : undefined
+          otherAccountDeleted
+            ? "Ce voisin a quitté la plateforme"
+            : otherMembershipStatus === "left"
+              ? "Ce voisin a quitté la commune"
+              : undefined
         }
       />
     </div>

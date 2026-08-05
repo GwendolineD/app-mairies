@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { BanAutocomplete } from "@/components/features/ban-autocomplete";
 import type { BanFeature } from "@/lib/ban/client";
 import { searchMunicipalities } from "@/lib/ban/client";
+import { formatMunicipalityDisplay } from "@/lib/ban/display";
 import { submitCommuneInterest } from "@/lib/actions/auth";
 import { AssetPlaceholder } from "@/components/ui/asset-placeholder";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,8 @@ export function InteretCommuneClient() {
         placeholder="Commencez à taper votre commune..."
         fetchSuggestions={(q) => searchMunicipalities(q)}
         onSelect={setFeature}
+        formatSuggestion={formatMunicipalityDisplay}
+        singleLine
       />
       {feature ? (
         <form action={action} className="space-y-3">

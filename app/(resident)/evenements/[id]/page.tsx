@@ -1,7 +1,6 @@
 import { ImageWithLightbox } from "@/components/features/image-with-lightbox";
 import { notFound } from "next/navigation";
 import { requireActiveMembership } from "@/lib/auth/session";
-import { unwrapOrThrow } from "@/lib/queries/helpers";
 import {
   getInitiativeCategoryColorHex,
   getInitiativeCategoryDefaultImageUrl,
@@ -85,16 +84,18 @@ export default async function EvenementDetailPage(props: {
     )
     .eq("commune_id", ctx.activeMembership!.commune_id)
     .eq("id", id)
-    .single();
+    .maybeSingle();
 
-  if (!result.data && !result.error) notFound();
-  const data = unwrapOrThrow(result, "event-detail");
+  if (result.error) {
+    throw new Error(`[event-detail] ${result.error.message}`);
+  }
+  if (!result.data) notFound();
 
   type EnrichedEvent = AgendaEventRecord & {
     author_membership: { address_postcode: string | null } | null;
   };
 
-  const event = data as EnrichedEvent;
+  const event = result.data as EnrichedEvent;
 
   // If the content is suspended, show appropriate screen
   if (event.suspended_at) {

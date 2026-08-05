@@ -74,6 +74,7 @@ export const joinCommuneSchema = z.object({
     .string()
     .optional()
     .transform((v) => (v?.trim() ? v.trim() : undefined)),
+  addressStreet: z.string().trim().min(1, "Rue requise"),
   addressCity: z.string().min(1, "Ville requise"),
   addressCitycode: z.string().min(1),
   addressPostcode: z.string().min(4),

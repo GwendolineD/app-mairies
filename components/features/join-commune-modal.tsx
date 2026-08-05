@@ -5,6 +5,7 @@ import { BanAutocomplete } from "@/components/features/ban-autocomplete";
 import { CommuneUnavailableModal } from "@/components/features/auth/commune-unavailable-modal";
 import type { BanFeature } from "@/lib/ban/client";
 import { searchAddresses, searchMunicipalities } from "@/lib/ban/client";
+import { formatMunicipalityDisplay, formatStreetDisplay } from "@/lib/ban/display";
 import { joinCommune, switchCommune } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 import { FormField, Input } from "@/components/ui/form-field";
@@ -36,7 +37,7 @@ export function JoinCommuneModal({
   const [lookupLoading, setLookupLoading] = useState(false);
   const [interestOpen, setInterestOpen] = useState(false);
   const [addr, setAddr] = useState({
-    label: "",
+    street: "",
     city: "",
     postcode: "",
     lat: 0,
@@ -55,7 +56,7 @@ export function JoinCommuneModal({
     setLookupCommune(null);
     setCommuneIsTrial(false);
     setTrialAccessCode("");
-    setAddr({ label: "", city: "", postcode: "", lat: 0, lng: 0 });
+    setAddr({ street: "", city: "", postcode: "", lat: 0, lng: 0 });
     setInterestOpen(false);
   }, []);
 
@@ -98,7 +99,7 @@ export function JoinCommuneModal({
       setCommuneIsTrial(row.access_status === "trial");
 
       setAddr({
-        label: "",
+        street: "",
         city: row.name ?? feature.city ?? "",
         postcode: feature.postcode ?? row.postcode ?? "",
         lat: feature.lat,
@@ -131,10 +132,15 @@ export function JoinCommuneModal({
               de votre inscription.
             </p>
             <BanAutocomplete
+              key={`commune-${open}`}
               label="Commune"
               placeholder="Ex : Les Authieux, Rouen..."
               fetchSuggestions={(q) => searchMunicipalities(q)}
               onSelect={(f) => void onPickCommune(f)}
+              formatSuggestion={formatMunicipalityDisplay}
+              singleLine
+              autoFocus
+              emptyMessage="Aucune commune trouvée"
             />
             {lookupLoading ? (
               <p className="text-center text-xs text-muted">
@@ -150,20 +156,23 @@ export function JoinCommuneModal({
               {lookupCommune?.name ?? communeMeta.city}
             </p>
             <BanAutocomplete
+              key={`address-${open}`}
               label="Votre adresse dans cette commune"
               placeholder="Numéro, rue..."
               fetchSuggestions={(q) => searchAddresses(q, citycode)}
               onSelect={(feat) =>
                 setAddr((prev) => ({
                   ...prev,
-                  label: feat.label,
+                  street: formatStreetDisplay(feat.label),
                   postcode: feat.postcode,
                   lat: feat.lat,
                   lng: feat.lng,
                 }))
               }
-              value={addr.label}
+              value={addr.street}
               disabled={!citycode}
+              autoFocus
+              emptyMessage="Aucune adresse trouvée"
             />
 
             <form
@@ -178,6 +187,7 @@ export function JoinCommuneModal({
             >
               <input type="hidden" name="inseeCode" value={citycode} />
               <input type="hidden" name="trialAccessCode" value={trialAccessCode} />
+              <input type="hidden" name="addressStreet" value={addr.street} />
               <input type="hidden" name="addressCity" value={addr.city} />
               <input type="hidden" name="addressCitycode" value={citycode} />
               <input type="hidden" name="addressPostcode" value={addr.postcode} />
@@ -241,7 +251,9 @@ export function JoinCommuneModal({
                 </Button>
                 <Button
                   type="submit"
-                  disabled={joinPending || !addr.postcode || !addr.city}
+                  disabled={
+                    joinPending || addr.street.trim().length < 1 || !addr.postcode
+                  }
                   className="flex-1"
                 >
                   Adhérer à cette commune

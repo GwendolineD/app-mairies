@@ -675,6 +675,7 @@ export async function joinCommune(formData: FormData) {
     inseeCode: formData.get("inseeCode") as string,
     trialAccessCode:
       (formData.get("trialAccessCode") as string) || undefined,
+    addressStreet: formData.get("addressStreet") as string,
     addressCity: formData.get("addressCity") as string,
     addressCitycode: formData.get("addressCitycode") as string,
     addressPostcode: formData.get("addressPostcode") as string,
@@ -770,7 +771,7 @@ export async function joinCommune(formData: FormData) {
   }
 
   const membershipPayload = {
-    address_street: null,
+    address_street: parsed.data.addressStreet,
     address_city: parsed.data.addressCity,
     address_citycode: parsed.data.addressCitycode,
     address_postcode: parsed.data.addressPostcode,

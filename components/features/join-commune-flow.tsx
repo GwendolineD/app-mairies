@@ -5,6 +5,7 @@ import { BanAutocomplete } from "@/components/features/ban-autocomplete";
 import { CommuneUnavailableModal } from "@/components/features/auth/commune-unavailable-modal";
 import type { BanFeature } from "@/lib/ban/client";
 import { searchAddresses, searchMunicipalities } from "@/lib/ban/client";
+import { formatMunicipalityDisplay, formatStreetDisplay } from "@/lib/ban/display";
 import { joinCommune, signOut, switchCommune } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -31,7 +32,7 @@ export function JoinCommuneFlow({ existingMemberships }: Props) {
   const [lookupLoading, setLookupLoading] = useState(false);
   const [interestOpen, setInterestOpen] = useState(false);
   const [addr, setAddr] = useState({
-    label: "",
+    street: "",
     city: "",
     postcode: "",
     lat: 0,
@@ -50,7 +51,7 @@ export function JoinCommuneFlow({ existingMemberships }: Props) {
     setLookupCommune(null);
     setCommuneIsTrial(false);
     setTrialAccessCode("");
-    setAddr({ label: "", city: "", postcode: "", lat: 0, lng: 0 });
+    setAddr({ street: "", city: "", postcode: "", lat: 0, lng: 0 });
     setInterestOpen(false);
   }, []);
 
@@ -88,7 +89,7 @@ export function JoinCommuneFlow({ existingMemberships }: Props) {
 
       setCommuneIsTrial(row.access_status === "trial");
       setAddr({
-        label: "",
+        street: "",
         city: row.name ?? feature.city ?? "",
         postcode: feature.postcode ?? row.postcode ?? "",
         lat: feature.lat,
@@ -119,6 +120,8 @@ export function JoinCommuneFlow({ existingMemberships }: Props) {
                 placeholder="Ex : Les Authieux, Rouen..."
                 fetchSuggestions={(q) => searchMunicipalities(q)}
                 onSelect={(f) => void onPickCommune(f)}
+                formatSuggestion={formatMunicipalityDisplay}
+                singleLine
               />
               {lookupLoading ? (
                 <p className="text-center text-xs text-muted">
@@ -142,13 +145,13 @@ export function JoinCommuneFlow({ existingMemberships }: Props) {
                 onSelect={(feat) =>
                   setAddr((prev) => ({
                     ...prev,
-                    label: feat.label,
+                    street: formatStreetDisplay(feat.label),
                     postcode: feat.postcode,
                     lat: feat.lat,
                     lng: feat.lng,
                   }))
                 }
-                value={addr.label}
+                value={addr.street}
                 disabled={!citycode}
               />
 
@@ -168,6 +171,7 @@ export function JoinCommuneFlow({ existingMemberships }: Props) {
                   name="trialAccessCode"
                   value={trialAccessCode}
                 />
+                <input type="hidden" name="addressStreet" value={addr.street} />
                 <input type="hidden" name="addressCity" value={addr.city} />
                 <input
                   type="hidden"
@@ -247,7 +251,9 @@ export function JoinCommuneFlow({ existingMemberships }: Props) {
                   </Button>
                   <Button
                     type="submit"
-                    disabled={joinPending || !addr.postcode || !addr.city}
+                    disabled={
+                      joinPending || addr.street.trim().length < 1 || !addr.postcode
+                    }
                     className="flex-1"
                   >
                     Rejoindre cette commune

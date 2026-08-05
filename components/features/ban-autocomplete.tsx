@@ -1,7 +1,7 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Input } from "@/components/ui/form-field";
@@ -21,6 +21,11 @@ type Props = {
   leadingIcon?: LucideIcon;
   showChevron?: boolean;
   formatSuggestion?: (feature: BanFeature) => string;
+  /** When true, suggestions render on a single line (e.g. municipality name + postcode). */
+  singleLine?: boolean;
+  autoFocus?: boolean;
+  emptyMessage?: string;
+  minCharsHint?: string;
 };
 
 type DropdownPosition = {
@@ -49,11 +54,16 @@ export function BanAutocomplete({
   leadingIcon: LeadingIcon,
   showChevron,
   formatSuggestion,
+  singleLine,
+  autoFocus,
+  emptyMessage = "Aucun résultat trouvé",
+  minCharsHint = "Saisissez au moins 3 caractères pour rechercher",
 }: Props) {
   const listboxId = useId();
   const anchorRef = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState(value ?? "");
   const [suggestions, setSuggestions] = useState<BanFeature[]>([]);
+  const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [dropdownPosition, setDropdownPosition] = useState<DropdownPosition | null>(
@@ -106,12 +116,12 @@ export function BanAutocomplete({
       window.removeEventListener("scroll", updateDropdownPosition, true);
       window.removeEventListener("resize", updateDropdownPosition);
     };
-  }, [open, suggestions.length, updateDropdownPosition]);
+  }, [open, loading, suggestions.length, updateDropdownPosition]);
 
   useEffect(() => {
     if (activeIndex < 0 || !listRef.current) return;
     const item = listRef.current.children[activeIndex] as HTMLElement | undefined;
-    item?.querySelector("button")?.scrollIntoView({ block: "nearest" });
+    item?.scrollIntoView({ block: "nearest" });
   }, [activeIndex]);
 
   function closeList() {
@@ -130,26 +140,49 @@ export function BanAutocomplete({
     onInputChange?.(text);
     setActiveIndex(-1);
     clearTimeout(debounceRef.current);
+
+    const trimmed = text.trim();
+    if (trimmed.length < 3) {
+      setLoading(false);
+      setSuggestions([]);
+      setOpen(isFocusedRef.current);
+      return;
+    }
+
+    setLoading(true);
+    setOpen(true);
     debounceRef.current = setTimeout(async () => {
-      const results = await fetchSuggestions(text);
-      if (!mountedRef.current) return;
-      setSuggestions(results);
-      setOpen(results.length > 0);
-      setActiveIndex(-1);
+      try {
+        const results = await fetchSuggestions(text);
+        if (!mountedRef.current) return;
+        setSuggestions(results);
+        setOpen(true);
+        setActiveIndex(-1);
+      } finally {
+        if (mountedRef.current) setLoading(false);
+      }
     }, 300);
   }
 
   async function handleFocus() {
-    if (query.trim().length >= 3) {
-      const results = await fetchSuggestions(query);
-      if (!mountedRef.current) return;
-      setSuggestions(results);
-      setOpen(results.length > 0);
-      setActiveIndex(-1);
+    const trimmed = query.trim();
+    if (trimmed.length >= 3) {
+      setLoading(true);
+      setOpen(true);
+      try {
+        const results = await fetchSuggestions(query);
+        if (!mountedRef.current) return;
+        setSuggestions(results);
+        setOpen(true);
+        setActiveIndex(-1);
+      } finally {
+        if (mountedRef.current) setLoading(false);
+      }
       return;
     }
+
+    setOpen(true);
     if (suggestions.length > 0) {
-      setOpen(true);
       setActiveIndex(-1);
     }
   }
@@ -206,53 +239,90 @@ export function BanAutocomplete({
   const activeOptionId =
     activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined;
 
-  const dropdown =
-    open && dropdownPosition && suggestions.length > 0 ? (
-      <ul
-        ref={listRef}
-        id={listboxId}
-        role="listbox"
-        style={{
-          position: "fixed",
-          top: dropdownPosition.top,
-          left: dropdownPosition.left,
-          width: dropdownPosition.width,
-          zIndex: 1200,
-        }}
-        className="max-h-56 overflow-auto rounded-sm border border-border bg-surface shadow-elevated"
-      >
-        {suggestions.map((feature, index) => {
-          const streetLine = suggestionLabel(feature, formatSuggestion);
-          const locationLine = [feature.postcode?.trim(), feature.city?.trim()]
-            .filter(Boolean)
-            .join(" ");
-          const isActive = index === activeIndex;
-          return (
-            <li key={`${feature.citycode}-${feature.label}-${index}`} role="presentation">
-              <button
-                type="button"
-                id={`${listboxId}-option-${index}`}
-                role="option"
-                aria-selected={isActive}
-                className={cn(
-                  "w-full cursor-pointer px-4 py-2.5 text-left hover:bg-warm",
-                  isActive && "bg-warm",
-                )}
-                onPointerDown={() => selectSuggestion(feature)}
-                onMouseEnter={() => setActiveIndex(index)}
-              >
-                <span className="block text-sm font-medium text-text">{streetLine}</span>
-                {locationLine ? (
-                  <span className="mt-0.5 block text-xs font-medium text-muted">
-                    {locationLine}
-                  </span>
-                ) : null}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-    ) : null;
+  const trimmedQuery = query.trim();
+  const showMinCharsHint = trimmedQuery.length < 3;
+  const showEmpty =
+    !loading && trimmedQuery.length >= 3 && suggestions.length === 0;
+  const showResults = !loading && suggestions.length > 0;
+  const showPanel =
+    open &&
+    dropdownPosition &&
+    (loading || showMinCharsHint || showEmpty || showResults);
+
+  const dropdown = showPanel ? (
+    <div
+      style={{
+        position: "fixed",
+        top: dropdownPosition.top,
+        left: dropdownPosition.left,
+        width: dropdownPosition.width,
+        zIndex: 1200,
+      }}
+      className="max-h-56 overflow-auto rounded-sm border border-border bg-surface shadow-elevated"
+    >
+      {loading ? (
+        <div className="flex items-center justify-center gap-2 px-4 py-6 text-sm text-muted">
+          <Loader2 className="size-4 animate-spin" aria-hidden />
+          Recherche…
+        </div>
+      ) : null}
+
+      {!loading && showMinCharsHint ? (
+        <p className="px-4 py-6 text-center text-xs font-medium text-muted">
+          {minCharsHint}
+        </p>
+      ) : null}
+
+      {showEmpty ? (
+        <p className="px-4 py-6 text-center text-xs font-medium text-muted">
+          {emptyMessage}
+        </p>
+      ) : null}
+
+      {showResults ? (
+        <ul ref={listRef} id={listboxId} role="listbox" className="py-1">
+          {suggestions.map((feature, index) => {
+            const streetLine = suggestionLabel(feature, formatSuggestion);
+            const locationLine = [feature.postcode?.trim(), feature.city?.trim()]
+              .filter(Boolean)
+              .join(" ");
+            const isActive = index === activeIndex;
+            return (
+              <li key={`${feature.citycode}-${feature.label}-${index}`} role="presentation">
+                <button
+                  type="button"
+                  id={`${listboxId}-option-${index}`}
+                  role="option"
+                  aria-selected={isActive}
+                  className={cn(
+                    "w-full cursor-pointer px-4 py-2.5 text-left hover:bg-warm",
+                    isActive && "bg-warm",
+                  )}
+                  onPointerDown={() => selectSuggestion(feature)}
+                  onMouseEnter={() => setActiveIndex(index)}
+                >
+                  {singleLine ? (
+                    <span className="block truncate text-sm font-medium text-text">
+                      {streetLine}
+                    </span>
+                  ) : (
+                    <>
+                      <span className="block text-sm font-medium text-text">{streetLine}</span>
+                      {locationLine ? (
+                        <span className="mt-0.5 block text-xs font-medium text-muted">
+                          {locationLine}
+                        </span>
+                      ) : null}
+                    </>
+                  )}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+    </div>
+  ) : null;
 
   return (
     <div className="relative w-full">
@@ -272,11 +342,13 @@ export function BanAutocomplete({
           type="text"
           name="autocomplete"
           autoComplete="off"
+          autoFocus={autoFocus}
           role="combobox"
-          aria-expanded={open}
+          aria-expanded={showPanel}
           aria-controls={listboxId}
           aria-autocomplete="list"
           aria-activedescendant={activeOptionId}
+          aria-busy={loading}
           disabled={disabled}
           placeholder={placeholder}
           value={query}
