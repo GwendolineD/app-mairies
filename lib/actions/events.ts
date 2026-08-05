@@ -16,6 +16,10 @@ import { fanoutNewContentNotification } from "@/lib/services/notification-fanout
 import { notifyAuthorEngagement } from "@/lib/services/author-engagement-notifications";
 import { incrementMembershipPublishCounter } from "@/lib/services/membership-publish-counters";
 import { cancelPendingEmails } from "@/lib/cron/cancel-pending-emails";
+import {
+  getInitiativeSupporterUserIds,
+  notifyInitiativeSupporters,
+} from "@/lib/services/initiative-to-event-notification";
 import type { OutcomeReason } from "@/lib/constants/content-outcomes";
 import { isOutcomeReason } from "@/lib/constants/content-outcomes";
 import type { EventEditData, AgendaEventRecord } from "@/lib/types";
@@ -197,6 +201,7 @@ export type CreateEventFromModalInput = {
   addressLat?: number;
   addressLng?: number;
   sourceInitiativeId?: string;
+  sourceInitiativeTitle?: string;
   isOfficial?: boolean;
 };
 
@@ -283,6 +288,11 @@ export async function createEventFromModal(
     },
   );
 
+  // Collect supporter IDs synchronously (1 fast query) for deduplication
+  const supporterUserIds = parsed.data.sourceInitiativeId
+    ? await getInitiativeSupporterUserIds(parsed.data.sourceInitiativeId, ctx.userId)
+    : [];
+
   void fanoutNewContentNotification({
     contextType: "event",
     contextId: created.id,
@@ -290,7 +300,20 @@ export async function createEventFromModal(
     authorUserId: ctx.userId,
     title: parsed.data.title,
     authorDisplayName: ctx.profile.display_name,
+    excludeUserIds: supporterUserIds,
   });
+
+  if (supporterUserIds.length > 0) {
+    void notifyInitiativeSupporters({
+      supporterUserIds,
+      initiativeTitle: parsed.data.sourceInitiativeTitle ?? parsed.data.title,
+      eventId: created.id,
+      eventTitle: parsed.data.title,
+      eventStartsAt: parsed.data.startsAt,
+      communeId: membership.commune_id,
+      authorDisplayName: ctx.profile.display_name,
+    });
+  }
 
   void logAudit({
     action: "content.create_event",

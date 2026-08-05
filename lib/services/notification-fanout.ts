@@ -22,6 +22,7 @@ type FanoutInput = {
   authorUserId: string;
   title: string;
   authorDisplayName?: string | null;
+  excludeUserIds?: string[];
 };
 
 const PREF_COLUMN: Record<ConversationContextType, NotificationPreferenceKey> = {
@@ -84,13 +85,20 @@ export async function fanoutNewContentNotification(
     const recipients = userIds.filter((id) => !optedOut.has(id));
     if (recipients.length === 0) return;
 
+    // Exclude specific users (e.g. initiative supporters who get a targeted notification)
+    const excluded = new Set(input.excludeUserIds ?? []);
+    const finalRecipients = excluded.size > 0
+      ? recipients.filter((id) => !excluded.has(id))
+      : recipients;
+    if (finalRecipients.length === 0) return;
+
     const title = `${KIND_LABEL[input.contextType]} dans votre commune`;
     const authorLabel = input.authorDisplayName ?? "un·e voisin·e";
     const body = `${authorLabel} vient de publier « ${truncate(input.title, 80)} »`;
     const url = ROUTE_BUILDER[input.contextType](input.contextId);
 
     await Promise.all(
-      recipients.map((userId) =>
+      finalRecipients.map((userId) =>
         notifyUser(userId, {
           title,
           body,

@@ -176,6 +176,19 @@ export const EMAIL_TEMPLATE_VARIABLES: Record<string, string[]> = {
     "logo_url",
     "app_name",
   ],
+  "initiative-to-event": [
+    "user_name",
+    "initiative_title",
+    "event_title",
+    "event_date",
+    "event_url",
+    "author_name",
+    "commune_name",
+    "settings_url",
+    "unsubscribe_link",
+    "logo_url",
+    "app_name",
+  ],
 };
 
 export function getEmailTemplateVariables(slug: string): string[] {
@@ -221,6 +234,8 @@ export function getEmailTemplateMockValue(variable: string): string {
     initiative_url: "http://localhost:3000/initiatives/def456",
     event_title: "Fête des voisins 2026",
     event_url: "http://localhost:3000/evenements/ghi789",
+    event_date: "15 septembre 2026 à 14h00",
+    author_name: "Marie Dupont",
     support_email: "support@tous-voisins.fr",
     logo_url: ILLUSTRATIONS.auth.logoHorizontal,
     app_name: APP_NAME,

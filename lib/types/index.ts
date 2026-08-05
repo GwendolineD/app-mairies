@@ -168,6 +168,7 @@ export type EventEditData = {
   addressLat: number;
   addressLng: number;
   sourceInitiativeId?: string;
+  sourceInitiativeTitle?: string;
 };
 
 export type InitiativeRecord = {

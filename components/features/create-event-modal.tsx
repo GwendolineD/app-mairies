@@ -409,6 +409,7 @@ export function CreateEventModal({
         addressLat: addressData.lat ?? undefined,
         addressLng: addressData.lng ?? undefined,
         sourceInitiativeId: initialData?.sourceInitiativeId,
+        sourceInitiativeTitle: initialData?.sourceInitiativeTitle,
         isOfficial: isEditMode ? undefined : isOfficial,
       };
 

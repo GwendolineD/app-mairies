@@ -169,6 +169,7 @@ export const eventModalSchema = z.object({
   addressLat: z.coerce.number().optional(),
   addressLng: z.coerce.number().optional(),
   sourceInitiativeId: z.string().uuid().optional(),
+  sourceInitiativeTitle: z.string().max(200).optional(),
   isOfficial: z.boolean().optional(),
 });
 

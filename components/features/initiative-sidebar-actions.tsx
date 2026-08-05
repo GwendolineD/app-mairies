@@ -156,6 +156,7 @@ function AuthorActionsCard({
       addressLat: editData.addressLat,
       addressLng: editData.addressLng,
       sourceInitiativeId: initiativeId,
+      sourceInitiativeTitle: editData.title,
     };
     openEventModal({ initialData: eventData });
   }
