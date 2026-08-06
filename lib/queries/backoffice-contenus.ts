@@ -483,7 +483,7 @@ export async function countAllContentTypes(
   };
 }
 
-// TODO: switch to RPC/view if data grows > 1k rows per table
+// TODO: migrate to RPC with GROUP BY when communes > 200
 export async function getContentPopulationStats(
   supabase: SupabaseClient,
 ): Promise<ContentPopulationStatsResult> {

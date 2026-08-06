@@ -21,7 +21,9 @@ import { incrementMembershipPublishCounter } from "@/lib/services/membership-pub
 import { cancelPendingEmails } from "@/lib/cron/cancel-pending-emails";
 import {
   listInitiativesPage,
+  listInitiativeSupporters,
   INITIATIVES_PAGE_SIZE,
+  INITIATIVE_SUPPORTERS_PAGE_SIZE,
 } from "@/lib/queries/initiatives";
 
 export async function fetchInitiativesPage(
@@ -515,4 +517,18 @@ export async function deleteInitiative(
 
   revalidatePath(ROUTES.initiatives.list);
   return { success: true };
+}
+
+/** Load more initiative supporters in the detail modal. */
+export async function fetchMoreInitiativeSupporters(
+  initiativeId: string,
+  offset: number,
+) {
+  await requireActiveMembership();
+  const supabase = await createClient();
+
+  return listInitiativeSupporters(supabase, initiativeId, {
+    limit: INITIATIVE_SUPPORTERS_PAGE_SIZE,
+    offset,
+  });
 }

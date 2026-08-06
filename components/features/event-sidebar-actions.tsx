@@ -296,6 +296,7 @@ function VolunteersCard({
         {volunteers.length > 0 ? (
           <VolunteersAvatarRow
             volunteers={volunteers}
+            totalCount={volunteersRegistered}
             eventId={eventId}
             isAuthor={isAuthor}
           />
@@ -348,6 +349,7 @@ function EventParticipantsCard({
         {participants.length > 0 ? (
           <ParticipantsAvatarRow
             participants={participants}
+            totalCount={participantsCount}
             eventId={eventId}
             isAuthor={isAuthor}
           />

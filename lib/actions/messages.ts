@@ -6,6 +6,12 @@ import { ROUTES } from "@/lib/constants/routes";
 import { DAY_MS } from "@/lib/datetime";
 import { sendTemplatedEmail } from "@/lib/email";
 import { createClient } from "@/lib/supabase/server";
+import {
+  listConversationMessages,
+  listMyConversations,
+  CONVERSATIONS_LOAD_MORE_SIZE,
+  MESSAGES_OLDER_PAGE_SIZE,
+} from "@/lib/queries/messages";
 import { getAppUrl } from "@/lib/utils/app-url";
 import { messageSchema } from "@/lib/validations/schemas";
 import {
@@ -264,6 +270,37 @@ export async function sendContextMessage(formData: FormData) {
   }
 
   return { success: true as const, conversationId: ensured.conversationId };
+}
+
+/** Load older messages in a conversation (cursor on created_at + id). */
+export async function fetchOlderMessages(
+  conversationId: string,
+  before: { createdAt: string; id: string },
+): Promise<{ messages: Awaited<ReturnType<typeof listConversationMessages>> } | { error: string }> {
+  await requireActiveMembership();
+  const supabase = await createClient();
+
+  const messages = await listConversationMessages(supabase, conversationId, {
+    limit: MESSAGES_OLDER_PAGE_SIZE,
+    before,
+  });
+
+  return { messages };
+}
+
+/** Load more inbox conversations (active or archived). */
+export async function fetchMoreConversations(
+  communeId: string,
+  options: { offset: number; archived?: boolean },
+) {
+  await requireActiveMembership();
+  const supabase = await createClient();
+
+  return listMyConversations(supabase, communeId, {
+    archived: options.archived ?? false,
+    limit: CONVERSATIONS_LOAD_MORE_SIZE,
+    offset: options.offset,
+  });
 }
 
 /** Mark a conversation as read for the current user (touches last_read_at). */

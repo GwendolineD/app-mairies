@@ -81,6 +81,7 @@ function SupportersSection({
       {supporters.length > 0 ? (
         <SupportersAvatarRow
           supporters={supporters}
+          totalCount={initialSupportCount}
           initiativeId={initiativeId}
           isAuthor={isAuthor}
         />

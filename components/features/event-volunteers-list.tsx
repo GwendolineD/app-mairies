@@ -1,16 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { ChevronRight, MessageCircle, Users } from "lucide-react";
 import { ContactAnnouncementButton } from "@/components/features/contact-announcement-button";
+import { LoadMoreLink } from "@/components/ui/load-more-link";
 import { Modal } from "@/components/ui/modal";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import { fetchMoreEventVolunteers } from "@/lib/actions/events";
 import { formatDisplayName } from "@/lib/utils/display-name";
 import { cn } from "@/lib/utils/cn";
 import type { EventVolunteer } from "@/lib/queries/events";
 
 type Props = {
   volunteers: EventVolunteer[];
+  totalCount: number;
   eventId: string;
   isAuthor: boolean;
   maxVisible?: number;
@@ -32,6 +35,7 @@ function getVolunteerFullName(volunteer: EventVolunteer): string {
 
 export function VolunteersAvatarRow({
   volunteers,
+  totalCount,
   eventId,
   isAuthor,
   maxVisible = 5,
@@ -44,7 +48,7 @@ export function VolunteersAvatarRow({
   }
 
   const visibleVolunteers = volunteers.slice(0, maxVisible);
-  const overflowCount = volunteers.length - maxVisible;
+  const overflowCount = Math.max(0, totalCount - maxVisible);
 
   return (
     <>
@@ -88,6 +92,7 @@ export function VolunteersAvatarRow({
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         volunteers={volunteers}
+        totalCount={totalCount}
         eventId={eventId}
         isAuthor={isAuthor}
       />
@@ -98,16 +103,40 @@ export function VolunteersAvatarRow({
 function VolunteersModal({
   open,
   onClose,
-  volunteers,
+  volunteers: initialVolunteers,
+  totalCount,
   eventId,
   isAuthor,
 }: {
   open: boolean;
   onClose: () => void;
   volunteers: EventVolunteer[];
+  totalCount: number;
   eventId: string;
   isAuthor: boolean;
 }) {
+  const [items, setItems] = useState(initialVolunteers);
+  const [loadingMore, startLoadingMore] = useTransition();
+
+  useEffect(() => {
+    if (open) {
+      setItems(initialVolunteers);
+    }
+  }, [open, initialVolunteers]);
+
+  const remaining = Math.max(0, totalCount - items.length);
+
+  function handleLoadMore() {
+    startLoadingMore(async () => {
+      const next = await fetchMoreEventVolunteers(eventId, items.length);
+      setItems((prev) => {
+        const existingIds = new Set(prev.map((v) => v.membershipId));
+        const unique = next.filter((v) => !existingIds.has(v.membershipId));
+        return [...prev, ...unique];
+      });
+    });
+  }
+
   return (
     <Modal
       open={open}
@@ -115,14 +144,14 @@ function VolunteersModal({
       title={
         <span className="flex items-center gap-1.5">
           <Users className="size-4 shrink-0 text-orange" aria-hidden />
-          {volunteers.length} bénévole{volunteers.length !== 1 ? "s" : ""}
+          {totalCount} bénévole{totalCount !== 1 ? "s" : ""}
         </span>
       }
       showCloseButton
       size="sm"
     >
       <div className="max-h-[60vh] space-y-2 overflow-y-auto">
-        {volunteers.map((volunteer) => (
+        {items.map((volunteer) => (
           <VolunteerRow
             key={volunteer.membershipId}
             volunteer={volunteer}
@@ -130,6 +159,15 @@ function VolunteersModal({
             showContactButton={isAuthor}
           />
         ))}
+        {remaining > 0 ? (
+          <div className="pt-2 text-center">
+            <LoadMoreLink
+              label={`${remaining} autre${remaining !== 1 ? "s" : ""} bénévole${remaining !== 1 ? "s" : ""} · Voir plus`}
+              onClick={handleLoadMore}
+              pending={loadingMore}
+            />
+          </div>
+        ) : null}
       </div>
     </Modal>
   );

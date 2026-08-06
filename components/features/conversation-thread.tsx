@@ -5,14 +5,17 @@ import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import {
   archiveConversation,
+  fetchOlderMessages,
   restoreConversation,
   sendConversationMessage,
 } from "@/lib/actions/messages";
 import { Button } from "@/components/ui/button";
 import { FormField, Textarea } from "@/components/ui/form-field";
 import { LinkifiedText } from "@/components/ui/linkified-text";
+import { LoadMoreLink } from "@/components/ui/load-more-link";
 import { ArchiveConversationModal } from "@/components/features/archive-conversation-modal";
 import { ROUTES } from "@/lib/constants/routes";
+import { MESSAGES_OLDER_PAGE_SIZE } from "@/lib/queries/messages";
 import type { MessageRow } from "@/lib/types";
 import {
   formatChatDateKey,
@@ -47,6 +50,8 @@ type Props = {
   conversationId: string;
   messages: MessageRow[];
   currentUserId: string;
+  /** True when the initial server fetch returned a full page (more history may exist). */
+  hasMoreInitial?: boolean;
   isArchived?: boolean;
   /** If true, the current viewer wrote the original announcement / initiative / event. */
   readOnly?: boolean;
@@ -60,6 +65,7 @@ export function ConversationThread({
   conversationId,
   messages,
   currentUserId,
+  hasMoreInitial = false,
   isArchived,
   readOnly,
   readOnlyMessage = "Le contenu lié à cette conversation a été suspendu. Vous ne pouvez plus envoyer de messages.",
@@ -67,7 +73,11 @@ export function ConversationThread({
 }: Props) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
+  const scrollRef = useRef<HTMLUListElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [olderMessages, setOlderMessages] = useState<MessageRow[]>([]);
+  const [hasMoreOlder, setHasMoreOlder] = useState(hasMoreInitial);
+  const [loadingOlder, startLoadingOlder] = useTransition();
   const [optimistic, setOptimistic] = useState<MessageRow[]>([]);
   const [sending, startSending] = useTransition();
   const [archiving, startArchiving] = useTransition();
@@ -75,7 +85,12 @@ export function ConversationThread({
   const [error, setError] = useState<string | null>(null);
   const [bodyValue, setBodyValue] = useState("");
 
-  const all = [...messages, ...optimistic];
+  useEffect(() => {
+    setOlderMessages([]);
+    setHasMoreOlder(hasMoreInitial);
+  }, [conversationId, hasMoreInitial, messages]);
+
+  const all = [...olderMessages, ...messages, ...optimistic];
 
   const grouped = useMemo<GroupedMessages>(() => {
     const groups: GroupedMessages = [];
@@ -93,8 +108,43 @@ export function ConversationThread({
   }, [all]);
 
   useEffect(() => {
+    if (olderMessages.length > 0) return;
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [all.length]);
+  }, [all.length, olderMessages.length]);
+
+  function handleLoadOlder() {
+    const oldest = all[0];
+    if (!oldest) return;
+
+    const scrollEl = scrollRef.current;
+    const prevScrollHeight = scrollEl?.scrollHeight ?? 0;
+
+    startLoadingOlder(async () => {
+      const result = await fetchOlderMessages(conversationId, {
+        createdAt: oldest.created_at,
+        id: oldest.id,
+      });
+      if ("error" in result) return;
+
+      const batch = result.messages;
+      if (batch.length === 0) {
+        setHasMoreOlder(false);
+        return;
+      }
+
+      setOlderMessages((prev) => {
+        const existingIds = new Set([...prev, ...messages].map((m) => m.id));
+        const unique = batch.filter((m) => !existingIds.has(m.id));
+        return [...unique, ...prev];
+      });
+      setHasMoreOlder(batch.length >= MESSAGES_OLDER_PAGE_SIZE);
+
+      requestAnimationFrame(() => {
+        if (!scrollEl) return;
+        scrollEl.scrollTop += scrollEl.scrollHeight - prevScrollHeight;
+      });
+    });
+  }
 
   useEffect(() => {
     // ConversationPane marks read server-side; refresh layout so sidebar badge updates.
@@ -149,9 +199,19 @@ export function ConversationThread({
   return (
     <div className="flex h-full min-h-0 flex-col">
       <ul
+        ref={scrollRef}
         className="flex-1 space-y-2 overflow-y-auto px-3 py-3"
         aria-label="Messages"
       >
+        {hasMoreOlder ? (
+          <li className="flex justify-center py-2">
+            <LoadMoreLink
+              label="Charger les messages précédents"
+              onClick={handleLoadOlder}
+              pending={loadingOlder}
+            />
+          </li>
+        ) : null}
         {all.length === 0 ? (
           <li className="px-4 py-12 text-center text-sm text-muted">
             Aucun message — dites bonjour !

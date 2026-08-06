@@ -287,6 +287,7 @@ export async function listUsersPage(
 export async function getPopulationStats(
   supabase: SupabaseClient,
 ): Promise<PopulationStatsResult> {
+  // TODO: migrate to RPC with GROUP BY when communes > 200
   const now = new Date().toISOString();
 
   const [communesResult, membershipsResult, invitesResult, totalInvitesResult] =

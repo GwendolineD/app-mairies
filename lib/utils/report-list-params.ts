@@ -15,7 +15,12 @@ export type ReportListParams = {
   contentTypes: ReportContentFilter[];
   /** Title search (URL param `q`). */
   q: string;
+  page: number;
+  limit: number;
 };
+
+export const REPORTS_PAGE_SIZE = 20;
+export const REPORTS_PAGE_SIZES = [10, 20, 50] as const;
 
 export const REPORT_STATUS_FILTERS = [
   { key: "pending" as const, label: "En attente" },
@@ -94,11 +99,28 @@ export function parseReportListParams(
 
   const qRaw = Array.isArray(searchParams.q) ? searchParams.q[0] : searchParams.q;
 
+  const pageRaw = Array.isArray(searchParams.page)
+    ? searchParams.page[0]
+    : searchParams.page;
+  const page = Math.max(1, parseInt(pageRaw ?? "1", 10) || 1);
+
+  const limitRaw = Array.isArray(searchParams.limit)
+    ? searchParams.limit[0]
+    : searchParams.limit;
+  const parsedLimit = parseInt(limitRaw ?? String(REPORTS_PAGE_SIZE), 10);
+  const limit = REPORTS_PAGE_SIZES.includes(
+    parsedLimit as (typeof REPORTS_PAGE_SIZES)[number],
+  )
+    ? parsedLimit
+    : REPORTS_PAGE_SIZE;
+
   return {
     tri: isSortMode(triRaw) ? triRaw : "recent",
     statuses,
     contentTypes,
     q: (qRaw ?? "").trim(),
+    page,
+    limit,
   };
 }
 
@@ -110,6 +132,8 @@ export function buildReportListQuery(
   const statuses = params.statuses ?? [...DEFAULT_STATUSES];
   const contentTypes = params.contentTypes ?? [];
   const q = params.q?.trim() ?? "";
+  const page = params.page ?? 1;
+  const limit = params.limit ?? REPORTS_PAGE_SIZE;
 
   sp.set("tri", tri);
 
@@ -125,6 +149,14 @@ export function buildReportListQuery(
 
   if (q) {
     sp.set("q", q);
+  }
+
+  if (page > 1) {
+    sp.set("page", String(page));
+  }
+
+  if (limit !== REPORTS_PAGE_SIZE) {
+    sp.set("limit", String(limit));
   }
 
   return `?${sp.toString()}`;
@@ -146,6 +178,8 @@ export function buildRelatedReportsListQuery(
     statuses: [],
     contentTypes: [],
     q: title,
+    page: 1,
+    limit: REPORTS_PAGE_SIZE,
   });
 }
 

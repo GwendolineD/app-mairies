@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { ArchiveRestore, Megaphone, Sparkles, CalendarDays, MessageCircle, Inbox, Trash2, X } from "lucide-react";
 import {
   archiveConversation,
-  restoreConversation,
+  fetchMoreConversations,
   permanentlyDeleteConversation,
+  restoreConversation,
 } from "@/lib/actions/messages";
 import { ROUTES } from "@/lib/constants/routes";
 import { CONTEXT_TYPE_LABELS } from "@/lib/constants/context-types";
@@ -17,6 +18,7 @@ import type {
 } from "@/lib/types";
 import { cn } from "@/lib/utils/cn";
 import { RelativeTime } from "@/components/ui/relative-time";
+import { LoadMoreLink } from "@/components/ui/load-more-link";
 import { ArchiveConversationModal } from "@/components/features/archive-conversation-modal";
 import { DeleteConversationModal } from "@/components/features/delete-conversation-modal";
 import { getConversationStatusBadgeLabel } from "@/lib/utils/conversation-status-badge";
@@ -30,6 +32,8 @@ const CONTEXT_ICON: Record<ConversationContextType, typeof MessageCircle> = {
 
 type Props = {
   conversations: ConversationInboxItem[];
+  totalCount: number;
+  communeId: string;
   view: "active" | "archived";
   selectedId?: string;
   currentUserId: string;
@@ -37,16 +41,44 @@ type Props = {
 
 export function MessagesInboxList({
   conversations,
+  totalCount,
+  communeId,
   view,
   selectedId,
   currentUserId,
 }: Props) {
+  const [items, setItems] = useState(conversations);
+  const [total, setTotal] = useState(totalCount);
   const [pending, startTransition] = useTransition();
+  const [loadingMore, startLoadingMore] = useTransition();
   const [archiveModalId, setArchiveModalId] = useState<string | null>(null);
   const [deleteModalId, setDeleteModalId] = useState<string | null>(null);
 
-  // Tab links always return to the inbox root. Switching tabs from inside a thread
-  // leaves the thread (the right pane no longer relates to the tab being switched to).
+  useEffect(() => {
+    setItems(conversations);
+    setTotal(totalCount);
+  }, [conversations, totalCount, view]);
+
+  const remaining = Math.max(0, total - items.length);
+
+  function handleLoadMore() {
+    startLoadingMore(async () => {
+      const result = await fetchMoreConversations(communeId, {
+        offset: items.length,
+        archived: view === "archived",
+      });
+      setItems((prev) => {
+        const existingIds = new Set(prev.map((c) => c.conversation_id));
+        const unique = result.items.filter(
+          (c) => !existingIds.has(c.conversation_id),
+        );
+        return [...prev, ...unique];
+      });
+      setTotal(result.totalCount);
+    });
+  }
+
+  // Tab links always return to the inbox root.
   const activeTabHref = ROUTES.messages.list;
   const trashTabHref = `${ROUTES.messages.list}?vue=corbeille`;
 
@@ -90,14 +122,14 @@ export function MessagesInboxList({
       )}
 
       <ul className="flex-1 overflow-y-auto" aria-label="Conversations">
-        {conversations.length === 0 ? (
+        {items.length === 0 ? (
           <li className="px-4 py-8 text-center text-sm text-muted">
             {view === "active"
               ? "Aucune conversation pour l'instant."
               : "La corbeille est vide."}
           </li>
         ) : (
-          conversations.map((conv) => {
+          items.map((conv) => {
             const isSelected = conv.conversation_id === selectedId;
             const isMine = conv.last_message_sender_id === currentUserId;
             const unread = !isMine && conv.unread_count > 0;
@@ -257,6 +289,15 @@ export function MessagesInboxList({
             );
           })
         )}
+        {remaining > 0 ? (
+          <li className="flex justify-center px-4 py-4">
+            <LoadMoreLink
+              label={`${remaining} autre${remaining > 1 ? "s" : ""} conversation${remaining > 1 ? "s" : ""} · Voir plus`}
+              onClick={handleLoadMore}
+              pending={loadingMore}
+            />
+          </li>
+        ) : null}
       </ul>
 
       <ArchiveConversationModal

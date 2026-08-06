@@ -21,6 +21,7 @@ import { ReportRestoreStatus } from "@/components/features/reports/report-restor
 import { ReportContextPastille } from "@/components/features/reports/report-context-pastille";
 import { ReportListToolbar } from "@/components/features/reports/report-list-toolbar";
 import { ReportRelatedCountLink } from "@/components/features/reports/report-related-count-link";
+import { ReportListPagination } from "@/components/features/reports/report-list-pagination";
 import { MultilineText } from "@/components/ui/multiline-text";
 import { getReportResolutionMeta } from "@/lib/queries/report-resolution-meta";
 import { getReportRestoreContext } from "@/lib/queries/report-restore-context";
@@ -63,17 +64,18 @@ export default async function BackofficeSignalementsPage(props: {
   const supabase = await createClient();
   const {
     filteredReports,
+    totalCount,
     titleMap,
     authorMembershipIdMap,
     announcementTypeMap,
     contentSuspensionReasonById,
     authorUserIdMap,
     authorNameByMembershipId,
-    userReportMembershipIdMap,
     resolutionMetaMaps,
     restoreContextMaps,
     restoredByNameMap,
     reportCountByContext,
+    resolveUserReportMembershipId,
   } = await getSignalementsPageData(supabase, listParams);
 
   return (
@@ -83,10 +85,7 @@ export default async function BackofficeSignalementsPage(props: {
         subtitle="Tous les signalements de toutes les communes."
       />
 
-      <ReportListToolbar
-        params={listParams}
-        totalCount={filteredReports.length}
-      />
+      <ReportListToolbar params={listParams} totalCount={totalCount} />
 
       <div className="space-y-3">
         {filteredReports.length === 0 ? (
@@ -105,6 +104,8 @@ export default async function BackofficeSignalementsPage(props: {
                     statuses: ["pending"],
                     contentTypes: [],
                     q: "",
+                    page: 1,
+                    limit: listParams.limit,
                   })}`}
                   className="font-semibold text-purple hover:underline"
                 >
@@ -124,9 +125,7 @@ export default async function BackofficeSignalementsPage(props: {
 
             const authorMembershipId =
               report.context_type === "user"
-                ? userReportMembershipIdMap[
-                    `${report.commune_id}:${report.context_id}`
-                  ] ?? null
+                ? resolveUserReportMembershipId(report)
                 : authorMembershipIdMap[report.context_id] ?? null;
             const isAuthorSelf = authorMembershipId
               ? authorUserIdMap[authorMembershipId] === userId
@@ -262,6 +261,12 @@ export default async function BackofficeSignalementsPage(props: {
           })
         )}
       </div>
+
+      <ReportListPagination
+        params={listParams}
+        totalCount={totalCount}
+        basePath={ROUTES.backoffice.signalements}
+      />
     </PageStack>
   );
 }

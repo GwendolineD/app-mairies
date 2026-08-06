@@ -95,6 +95,7 @@ export async function listEventMarkers(
     .not("address_lng", "is", null);
 
   query = applyEventFilters(query, filters);
+  query = query.limit(500);
   const { data } = await query;
   return (data ?? []) as EventMarker[];
 }
@@ -137,18 +138,25 @@ export type EventVolunteer = {
   avatarUrl: string | null;
 };
 
+export const EVENT_MEMBER_LIST_PAGE_SIZE = 20;
+
 async function listEventMemberRows(
   supabase: SupabaseClient,
   table: "event_volunteers" | "event_participants",
   eventId: string,
+  options: { limit?: number; offset?: number } = {},
 ): Promise<EventVolunteer[]> {
+  const limit = options.limit ?? EVENT_MEMBER_LIST_PAGE_SIZE;
+  const offset = options.offset ?? 0;
+
   const { data, error } = await supabase
     .from(table as "event_volunteers")
     .select(
       "membership_id, memberships(id, profiles(first_name, last_name, display_name, avatar_url))",
     )
     .eq("event_id", eventId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
 
   if (error || !data) return [];
 
@@ -176,15 +184,28 @@ async function listEventMemberRows(
 export async function listEventVolunteers(
   supabase: SupabaseClient,
   eventId: string,
+  options: { limit?: number; offset?: number } = {},
 ): Promise<EventVolunteer[]> {
-  return listEventMemberRows(supabase, "event_volunteers", eventId);
+  return listEventMemberRows(supabase, "event_volunteers", eventId, options);
 }
 
 export async function listEventParticipants(
   supabase: SupabaseClient,
   eventId: string,
+  options: { limit?: number; offset?: number } = {},
 ): Promise<EventVolunteer[]> {
-  return listEventMemberRows(supabase, "event_participants", eventId);
+  return listEventMemberRows(supabase, "event_participants", eventId, options);
+}
+
+export async function countEventVolunteers(
+  supabase: SupabaseClient,
+  eventId: string,
+): Promise<number> {
+  const { count } = await supabase
+    .from("event_volunteers")
+    .select("id", { count: "exact", head: true })
+    .eq("event_id", eventId);
+  return count ?? 0;
 }
 
 export async function countEventParticipants(

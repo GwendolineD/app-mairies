@@ -1,4 +1,5 @@
 import { requirePlatformAdmin } from "@/lib/auth/session";
+import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
@@ -6,20 +7,21 @@ import { PageStack } from "@/components/ui/page-stack";
 import { LEAD_STAFF_REVIEW_STATUS_LABELS } from "@/lib/constants/staff-review-status";
 import type { SupportRequestStatus } from "@/lib/types";
 import { formatShortDate } from "@/lib/datetime";
+import { listLeadsPage } from "@/lib/queries/commune-interest-leads";
+import { parseLeadsListParams } from "@/lib/utils/backoffice-leads-params";
+import { LeadsListPagination } from "@/components/features/backoffice/leads-list-pagination";
 import { BackofficeLeadActions } from "./_components/backoffice-lead-actions";
 
 export const dynamic = "force-dynamic";
 
-export default async function BackofficeLeadsPage() {
+export default async function BackofficeLeadsPage(props: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   await requirePlatformAdmin();
+  const rawSearchParams = await props.searchParams;
+  const params = parseLeadsListParams(rawSearchParams);
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("commune_interest_leads")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(100);
-
-  const rows = data ?? [];
+  const { items: rows, totalCount } = await listLeadsPage(supabase, params);
 
   return (
     <PageStack>
@@ -29,7 +31,9 @@ export default async function BackofficeLeadsPage() {
       />
       <div className="space-y-2">
         {rows.length === 0 ? (
-          <Card className="rounded-xl p-6 text-sm font-medium text-muted">Aucune demande récente.</Card>
+          <Card className="rounded-xl p-6 text-sm font-medium text-muted">
+            Aucune demande récente.
+          </Card>
         ) : (
           rows.map((lead) => {
             const statusMeta =
@@ -44,7 +48,9 @@ export default async function BackofficeLeadsPage() {
                     >
                       {statusMeta.label}
                     </span>
-                    <p className="truncate font-semibold text-text">{lead.email}</p>
+                    <p className="truncate font-semibold text-text">
+                      {lead.email}
+                    </p>
                   </div>
                   <span className="text-xs text-muted">
                     {formatShortDate(lead.created_at)}
@@ -77,6 +83,12 @@ export default async function BackofficeLeadsPage() {
           })
         )}
       </div>
+
+      <LeadsListPagination
+        params={params}
+        totalCount={totalCount}
+        basePath={ROUTES.backoffice.leads}
+      />
     </PageStack>
   );
 }

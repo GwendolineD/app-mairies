@@ -1,17 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { ChevronRight, Heart, MessageCircle } from "lucide-react";
 import { ContactAnnouncementButton } from "@/components/features/contact-announcement-button";
-import { Button } from "@/components/ui/button";
+import { LoadMoreLink } from "@/components/ui/load-more-link";
 import { Modal } from "@/components/ui/modal";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import { fetchMoreInitiativeSupporters } from "@/lib/actions/initiatives";
 import { formatDisplayName } from "@/lib/utils/display-name";
 import { cn } from "@/lib/utils/cn";
 import type { InitiativeSupporter } from "@/lib/queries/initiatives";
 
 type Props = {
   supporters: InitiativeSupporter[];
+  totalCount: number;
   initiativeId: string;
   isAuthor: boolean;
   maxVisible?: number;
@@ -33,6 +35,7 @@ function getSupporterFullName(supporter: InitiativeSupporter): string {
 
 export function SupportersAvatarRow({
   supporters,
+  totalCount,
   initiativeId,
   isAuthor,
   maxVisible = 5,
@@ -45,7 +48,7 @@ export function SupportersAvatarRow({
   }
 
   const visibleSupporters = supporters.slice(0, maxVisible);
-  const overflowCount = supporters.length - maxVisible;
+  const overflowCount = Math.max(0, totalCount - maxVisible);
 
   return (
     <>
@@ -89,6 +92,7 @@ export function SupportersAvatarRow({
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         supporters={supporters}
+        totalCount={totalCount}
         initiativeId={initiativeId}
         isAuthor={isAuthor}
       />
@@ -99,16 +103,40 @@ export function SupportersAvatarRow({
 function SupportersModal({
   open,
   onClose,
-  supporters,
+  supporters: initialSupporters,
+  totalCount,
   initiativeId,
   isAuthor,
 }: {
   open: boolean;
   onClose: () => void;
   supporters: InitiativeSupporter[];
+  totalCount: number;
   initiativeId: string;
   isAuthor: boolean;
 }) {
+  const [items, setItems] = useState(initialSupporters);
+  const [loadingMore, startLoadingMore] = useTransition();
+
+  useEffect(() => {
+    if (open) {
+      setItems(initialSupporters);
+    }
+  }, [open, initialSupporters]);
+
+  const remaining = Math.max(0, totalCount - items.length);
+
+  function handleLoadMore() {
+    startLoadingMore(async () => {
+      const next = await fetchMoreInitiativeSupporters(initiativeId, items.length);
+      setItems((prev) => {
+        const existingIds = new Set(prev.map((s) => s.membershipId));
+        const unique = next.filter((s) => !existingIds.has(s.membershipId));
+        return [...prev, ...unique];
+      });
+    });
+  }
+
   return (
     <Modal
       open={open}
@@ -116,14 +144,14 @@ function SupportersModal({
       title={
         <span className="flex items-center gap-1.5">
           <Heart className="size-4 shrink-0 text-coral" aria-hidden />
-          {supporters.length} soutien{supporters.length !== 1 ? "s" : ""}
+          {totalCount} soutien{totalCount !== 1 ? "s" : ""}
         </span>
       }
       showCloseButton
       size="sm"
     >
       <div className="max-h-[60vh] space-y-2 overflow-y-auto">
-        {supporters.map((supporter) => (
+        {items.map((supporter) => (
           <SupporterRow
             key={supporter.membershipId}
             supporter={supporter}
@@ -131,6 +159,15 @@ function SupportersModal({
             showContactButton={isAuthor}
           />
         ))}
+        {remaining > 0 ? (
+          <div className="pt-2 text-center">
+            <LoadMoreLink
+              label={`${remaining} autre${remaining !== 1 ? "s" : ""} soutien${remaining !== 1 ? "s" : ""} · Voir plus`}
+              onClick={handleLoadMore}
+              pending={loadingMore}
+            />
+          </div>
+        ) : null}
       </div>
     </Modal>
   );

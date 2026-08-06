@@ -204,6 +204,7 @@ export async function listInitiativeMarkers(
     .not("address_lng", "is", null);
 
   query = applyFilters(query, filters);
+  query = query.limit(500);
   const { data } = await query;
   return (data ?? []) as InitiativeMarker[];
 }
@@ -216,10 +217,16 @@ export type InitiativeSupporter = {
   avatarUrl: string | null;
 };
 
+export const INITIATIVE_SUPPORTERS_PAGE_SIZE = 20;
+
 export async function listInitiativeSupporters(
   supabase: SupabaseClient,
   initiativeId: string,
+  options: { limit?: number; offset?: number } = {},
 ): Promise<InitiativeSupporter[]> {
+  const limit = options.limit ?? INITIATIVE_SUPPORTERS_PAGE_SIZE;
+  const offset = options.offset ?? 0;
+
   const { data, error } = await supabase
     .from("initiative_responses")
     .select(
@@ -227,7 +234,8 @@ export async function listInitiativeSupporters(
     )
     .eq("initiative_id", initiativeId)
     .eq("response_type", "support")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
 
   if (error || !data) return [];
 
@@ -250,4 +258,16 @@ export async function listInitiativeSupporters(
       avatarUrl: profile?.avatar_url ?? null,
     };
   });
+}
+
+export async function countInitiativeSupporters(
+  supabase: SupabaseClient,
+  initiativeId: string,
+): Promise<number> {
+  const { count } = await supabase
+    .from("initiative_responses")
+    .select("id", { count: "exact", head: true })
+    .eq("initiative_id", initiativeId)
+    .eq("response_type", "support");
+  return count ?? 0;
 }

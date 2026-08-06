@@ -6,7 +6,9 @@ import type {
 } from "@/lib/types";
 
 export const CONVERSATIONS_PAGE_SIZE = 30;
+export const CONVERSATIONS_LOAD_MORE_SIZE = 10;
 export const MESSAGES_PAGE_SIZE = 50;
+export const MESSAGES_OLDER_PAGE_SIZE = 20;
 
 export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   notify_message_announcement: true,
@@ -20,6 +22,13 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   notify_new_event: true,
 };
 
+export type PaginatedConversations = {
+  items: ConversationInboxItem[];
+  totalCount: number;
+};
+
+type ConversationInboxRow = ConversationInboxItem & { total_count: number };
+
 /**
  * Returns the inbox for the current authenticated user, scoped to a commune.
  * Single round-trip via the `list_my_conversations` RPC: joins conversations,
@@ -28,11 +37,17 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
 export async function listMyConversations(
   supabase: SupabaseClient,
   communeId: string,
-  options: { archived?: boolean } = {},
-): Promise<ConversationInboxItem[]> {
+  options: {
+    archived?: boolean;
+    limit?: number;
+    offset?: number;
+  } = {},
+): Promise<PaginatedConversations> {
   const { data, error } = await supabase.rpc("list_my_conversations", {
     p_commune_id: communeId,
     p_archived: options.archived ?? false,
+    p_limit: options.limit ?? CONVERSATIONS_PAGE_SIZE,
+    p_offset: options.offset ?? 0,
   });
   if (error) {
     console.error("[messages] list_my_conversations failed", {
@@ -40,23 +55,43 @@ export async function listMyConversations(
       message: error.message,
       details: error.details,
     });
-    return [];
+    return { items: [], totalCount: 0 };
   }
-  return (data ?? []) as ConversationInboxItem[];
+
+  const rows = (data ?? []) as ConversationInboxRow[];
+  const totalCount = Number(rows[0]?.total_count ?? rows.length);
+  const items = rows.map(({ total_count: _total, ...item }) => item);
+
+  return { items, totalCount };
 }
 
-/** Returns the latest messages for a conversation (RLS enforces participant). */
+/** Returns messages for a conversation (RLS enforces participant). */
 export async function listConversationMessages(
   supabase: SupabaseClient,
   conversationId: string,
-  limit: number = MESSAGES_PAGE_SIZE,
+  options?: {
+    limit?: number;
+    before?: { createdAt: string; id: string };
+  },
 ): Promise<MessageRow[]> {
-  const { data, error } = await supabase
+  const limit = options?.limit ?? MESSAGES_PAGE_SIZE;
+
+  let query = supabase
     .from("messages")
     .select("id, conversation_id, sender_id, body, created_at, edited_at")
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
     .limit(limit);
+
+  if (options?.before) {
+    const { createdAt, id } = options.before;
+    query = query.or(
+      `created_at.lt.${createdAt},and(created_at.eq.${createdAt},id.lt.${id})`,
+    );
+  }
+
+  const { data, error } = await query;
   if (error) return [];
   return ((data ?? []) as MessageRow[]).reverse();
 }

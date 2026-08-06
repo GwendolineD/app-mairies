@@ -23,6 +23,11 @@ import {
 import type { OutcomeReason } from "@/lib/constants/content-outcomes";
 import { isOutcomeReason } from "@/lib/constants/content-outcomes";
 import type { EventEditData, AgendaEventRecord } from "@/lib/types";
+import {
+  listEventVolunteers,
+  listEventParticipants,
+  EVENT_MEMBER_LIST_PAGE_SIZE,
+} from "@/lib/queries/events";
 
 export async function createEvent(formData: FormData): Promise<void> {
   const ctx = await requireActiveMembership();
@@ -604,4 +609,32 @@ export async function toggleEventParticipation(eventId: string) {
 
   revalidatePath(ROUTES.evenements.detail(eventId));
   return { success: true as const, participating: true };
+}
+
+/** Load more event volunteers in the detail modal. */
+export async function fetchMoreEventVolunteers(
+  eventId: string,
+  offset: number,
+) {
+  await requireActiveMembership();
+  const supabase = await createClient();
+
+  return listEventVolunteers(supabase, eventId, {
+    limit: EVENT_MEMBER_LIST_PAGE_SIZE,
+    offset,
+  });
+}
+
+/** Load more event participants in the detail modal. */
+export async function fetchMoreEventParticipants(
+  eventId: string,
+  offset: number,
+) {
+  await requireActiveMembership();
+  const supabase = await createClient();
+
+  return listEventParticipants(supabase, eventId, {
+    limit: EVENT_MEMBER_LIST_PAGE_SIZE,
+    offset,
+  });
 }

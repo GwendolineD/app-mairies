@@ -181,6 +181,7 @@ async function fetchContentMaps(
 async function fetchUserReportMembershipMaps(
   supabase: SupabaseClient,
   reports: ReportRow[],
+  options: { communeId?: string } = {},
 ): Promise<{
   userReportMembershipIdMap: Record<string, string>;
   membershipStatusById: Record<string, string>;
@@ -206,13 +207,22 @@ async function fetchUserReportMembershipMaps(
     };
   }
 
-  const { data: userReportMemberships } = await supabase
+  let query = supabase
     .from("memberships")
     .select("id, user_id, commune_id, status, suspended_at")
     .in("user_id", userReportUserIds);
 
+  if (options.communeId) {
+    query = query.eq("commune_id", options.communeId);
+  }
+
+  const { data: userReportMemberships } = await query;
+
   for (const row of userReportMemberships ?? []) {
-    userReportMembershipIdMap[`${row.commune_id}:${row.user_id}`] = row.id;
+    const mapKey = options.communeId
+      ? row.user_id
+      : `${row.commune_id}:${row.user_id}`;
+    userReportMembershipIdMap[mapKey] = row.id;
     membershipStatusById[row.id] = row.status;
     membershipSuspendedAtById[row.id] = row.suspended_at;
   }
@@ -269,9 +279,80 @@ async function fetchAuthorMembershipMaps(
   };
 }
 
+type ReportQueryBuilder = {
+  eq: Function;
+  or: Function;
+  in: Function;
+  order: Function;
+  range: Function;
+};
+
+function applyReportSqlFilters<T extends ReportQueryBuilder>(
+  query: T,
+  params: ReportListParams,
+): T {
+  let next = query;
+
+  if (params.statuses.length > 0) {
+    const parts = params.statuses.map((status) =>
+      status === "pending" ? "status.eq.pending" : `resolution.eq.${status}`,
+    );
+    next = next.or(parts.join(",")) as T;
+  }
+
+  const structuralTypes = params.contentTypes.filter(
+    (type) => type === "initiative" || type === "event",
+  );
+  if (structuralTypes.length === 1) {
+    next = next.eq("context_type", structuralTypes[0]) as T;
+  } else if (structuralTypes.length === 2) {
+    next = next.in("context_type", ["initiative", "event"]) as T;
+  }
+
+  return next;
+}
+
+async function fetchReportCountByContext(
+  supabase: SupabaseClient,
+  options: { communeId?: string },
+): Promise<Map<string, number>> {
+  let query = supabase
+    .from("reports")
+    .select("context_type, context_id")
+    .neq("context_type", "user");
+
+  if (options.communeId) {
+    query = query.eq("commune_id", options.communeId);
+  }
+
+  const { data } = await query;
+  const reportCountByContext = new Map<string, number>();
+  for (const row of data ?? []) {
+    const key = `${row.context_type}:${row.context_id}`;
+    reportCountByContext.set(key, (reportCountByContext.get(key) ?? 0) + 1);
+  }
+  return reportCountByContext;
+}
+
+function resolveUserReportMembershipId(
+  report: ReportRow,
+  userReportMembershipIdMap: Record<string, string>,
+  scopedCommuneId?: string,
+): string | null {
+  if (report.context_type !== "user") return null;
+  if (scopedCommuneId) {
+    return userReportMembershipIdMap[report.context_id] ?? null;
+  }
+  return (
+    userReportMembershipIdMap[`${report.commune_id}:${report.context_id}`] ??
+    null
+  );
+}
+
 export type SignalementsPageData = {
   reports: ReportRow[];
   filteredReports: ReportRow[];
+  totalCount: number;
   titleMap: Record<string, string>;
   authorMembershipIdMap: Record<string, string>;
   announcementTypeMap: Record<string, string>;
@@ -283,35 +364,63 @@ export type SignalementsPageData = {
   restoreContextMaps: ReportRestoreContextMaps;
   restoredByNameMap: Record<string, string>;
   reportCountByContext: Map<string, number>;
+  resolveUserReportMembershipId: (report: ReportRow) => string | null;
 };
 
-export async function getSignalementsPageData(
+async function getReportsPageData(
   supabase: SupabaseClient,
   listParams: ReportListParams,
+  options: { communeId?: string } = {},
 ): Promise<SignalementsPageData> {
-  const { data: reports, error } = await supabase
-    .from("reports")
-    .select(
-      `*, reporter_membership:memberships!reports_reporter_membership_id_fkey(
+  const offset = (listParams.page - 1) * listParams.limit;
+  const selectFields = options.communeId
+    ? `*, reporter_membership:memberships!reports_reporter_membership_id_fkey(
         profiles:profiles!memberships_profiles_user_id_fkey(display_name, first_name, last_name)
-      ), commune:communes!reports_commune_id_fkey(name)`,
-    )
+      )`
+    : `*, reporter_membership:memberships!reports_reporter_membership_id_fkey(
+        profiles:profiles!memberships_profiles_user_id_fkey(display_name, first_name, last_name)
+      ), commune:communes!reports_commune_id_fkey(name)`;
+
+  let dataQuery = supabase
+    .from("reports")
+    .select(selectFields, { count: "exact" })
     .order("created_at", { ascending: listParams.tri === "oldest" })
-    .limit(100);
+    .range(offset, offset + listParams.limit - 1);
+
+  let countQuery = supabase
+    .from("reports")
+    .select("id", { count: "exact", head: true });
+
+  if (options.communeId) {
+    dataQuery = dataQuery.eq("commune_id", options.communeId);
+    countQuery = countQuery.eq("commune_id", options.communeId);
+  }
+
+  dataQuery = applyReportSqlFilters(dataQuery, listParams);
+  countQuery = applyReportSqlFilters(countQuery, listParams);
+
+  const [{ data: reports, error }, { count }] = await Promise.all([
+    dataQuery,
+    countQuery,
+  ]);
 
   if (error) {
     throw error;
   }
 
-  const reportRows = (reports ?? []) as ReportRow[];
+  const reportRows = (reports ?? []) as unknown as ReportRow[];
   const contentIds = reportRows
     .filter((report) => report.context_type !== "user")
     .map((report) => ({ type: report.context_type, id: report.context_id }));
 
-  const [contentMaps, userMembershipMaps] = await Promise.all([
-    fetchContentMaps(supabase, contentIds),
-    fetchUserReportMembershipMaps(supabase, reportRows),
-  ]);
+  const [contentMaps, userMembershipMaps, reportCountByContext] =
+    await Promise.all([
+      fetchContentMaps(supabase, contentIds),
+      fetchUserReportMembershipMaps(supabase, reportRows, {
+        communeId: options.communeId,
+      }),
+      fetchReportCountByContext(supabase, options),
+    ]);
 
   const authorMembershipIds = [
     ...new Set(Object.values(contentMaps.authorMembershipIdMap)),
@@ -355,13 +464,6 @@ export async function getSignalementsPageData(
       buildRestoredByNameMap(supabase, reportRows),
     ]);
 
-  const reportCountByContext = new Map<string, number>();
-  for (const report of reportRows) {
-    if (report.context_type === "user") continue;
-    const key = `${report.context_type}:${report.context_id}`;
-    reportCountByContext.set(key, (reportCountByContext.get(key) ?? 0) + 1);
-  }
-
   const filteredReports = filterReports(
     reportRows,
     listParams,
@@ -372,6 +474,7 @@ export async function getSignalementsPageData(
   return {
     reports: reportRows,
     filteredReports,
+    totalCount: count ?? 0,
     titleMap: contentMaps.titleMap,
     authorMembershipIdMap: contentMaps.authorMembershipIdMap,
     announcementTypeMap: contentMaps.announcementTypeMap,
@@ -383,5 +486,26 @@ export async function getSignalementsPageData(
     restoreContextMaps,
     restoredByNameMap,
     reportCountByContext,
+    resolveUserReportMembershipId: (report) =>
+      resolveUserReportMembershipId(
+        report,
+        userMembershipMaps.userReportMembershipIdMap,
+        options.communeId,
+      ),
   };
+}
+
+export async function getSignalementsPageData(
+  supabase: SupabaseClient,
+  listParams: ReportListParams,
+): Promise<SignalementsPageData> {
+  return getReportsPageData(supabase, listParams);
+}
+
+export async function getMairieSignalementsPageData(
+  supabase: SupabaseClient,
+  communeId: string,
+  listParams: ReportListParams,
+): Promise<SignalementsPageData> {
+  return getReportsPageData(supabase, listParams, { communeId });
 }

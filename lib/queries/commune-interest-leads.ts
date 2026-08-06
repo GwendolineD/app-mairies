@@ -1,4 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { LeadsListParams } from "@/lib/utils/backoffice-leads-params";
+import type { Database } from "@/lib/types/database.types";
+
+type CommuneInterestLeadRow =
+  Database["public"]["Tables"]["commune_interest_leads"]["Row"];
 
 /** Count open commune interest leads (new + in progress) for backoffice nav badge. */
 export async function countOpenCommuneInterestLeads(
@@ -11,4 +16,26 @@ export async function countOpenCommuneInterestLeads(
 
   if (error || count === null) return 0;
   return count;
+}
+
+export async function listLeadsPage(
+  supabase: SupabaseClient,
+  params: LeadsListParams,
+): Promise<{ items: CommuneInterestLeadRow[]; totalCount: number }> {
+  const offset = (params.page - 1) * params.limit;
+
+  const { data, count, error } = await supabase
+    .from("commune_interest_leads")
+    .select("*", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(offset, offset + params.limit - 1);
+
+  if (error) {
+    return { items: [], totalCount: 0 };
+  }
+
+  return {
+    items: data ?? [],
+    totalCount: count ?? 0,
+  };
 }

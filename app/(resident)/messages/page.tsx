@@ -18,9 +18,13 @@ export default async function MessagesListePage(props: {
   const communeId = ctx.activeMembership!.commune_id;
 
   const supabase = await createClient();
-  const conversations = await listMyConversations(supabase, communeId, {
-    archived: view === "archived",
-  });
+  const { items: conversations, totalCount } = await listMyConversations(
+    supabase,
+    communeId,
+    {
+      archived: view === "archived",
+    },
+  );
 
   const firstConversationId = conversations[0]?.conversation_id ?? null;
 
@@ -41,6 +45,8 @@ export default async function MessagesListePage(props: {
         list={
           <MessagesInboxList
             conversations={conversations}
+            totalCount={totalCount}
+            communeId={communeId}
             view={view}
             currentUserId={ctx.userId}
           />

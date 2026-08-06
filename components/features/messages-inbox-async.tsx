@@ -19,13 +19,19 @@ export async function MessagesInboxAsync({
   selectedId?: string;
 }) {
   const supabase = await createClient();
-  const conversations = await listMyConversations(supabase, communeId, {
-    archived: view === "archived",
-  });
+  const { items: conversations, totalCount } = await listMyConversations(
+    supabase,
+    communeId,
+    {
+      archived: view === "archived",
+    },
+  );
 
   return (
     <MessagesInboxList
       conversations={conversations}
+      totalCount={totalCount}
+      communeId={communeId}
       view={view}
       selectedId={selectedId}
       currentUserId={userId}

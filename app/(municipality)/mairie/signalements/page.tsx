@@ -7,10 +7,9 @@ import { Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
 import { formatCompactShortDate } from "@/lib/datetime";
-import { formatDisplayName, resolveDisplayName } from "@/lib/utils/display-name";
+import { formatDisplayName } from "@/lib/utils/display-name";
 import {
   buildReportListQuery,
-  filterReports,
   getReportContextLabel,
   hasActiveReportFilters,
   isReportListUrlCanonical,
@@ -22,16 +21,11 @@ import { ReportRestoreStatus } from "@/components/features/reports/report-restor
 import { ReportContextPastille } from "@/components/features/reports/report-context-pastille";
 import { ReportListToolbar } from "@/components/features/reports/report-list-toolbar";
 import { ReportRelatedCountLink } from "@/components/features/reports/report-related-count-link";
+import { ReportListPagination } from "@/components/features/reports/report-list-pagination";
 import { MultilineText } from "@/components/ui/multiline-text";
-import {
-  buildReportResolutionMetaMaps,
-  getReportResolutionMeta,
-} from "@/lib/queries/report-resolution-meta";
-import {
-  buildReportRestoreContextMaps,
-  buildRestoredByNameMap,
-  getReportRestoreContext,
-} from "@/lib/queries/report-restore-context";
+import { getReportResolutionMeta } from "@/lib/queries/report-resolution-meta";
+import { getReportRestoreContext } from "@/lib/queries/report-restore-context";
+import { getMairieSignalementsPageData } from "@/lib/queries/backoffice-signalements";
 
 export const dynamic = "force-dynamic";
 
@@ -72,159 +66,21 @@ export default async function MairieSignalementsPage(props: {
   const listParams = parseReportListParams(rawSearchParams);
   const supabase = await createClient();
 
-  const { data: reports } = await supabase
-    .from("reports")
-    .select(
-      `*, reporter_membership:memberships!reports_reporter_membership_id_fkey(
-        profiles:profiles!memberships_profiles_user_id_fkey(display_name, first_name, last_name)
-      )`,
-    )
-    .eq("commune_id", communeId)
-    .order("created_at", { ascending: listParams.tri === "oldest" })
-    .limit(200);
-
-  const contentIds = (reports ?? [])
-    .filter((r) => r.context_type !== "user")
-    .map((r) => ({ type: r.context_type, id: r.context_id }));
-
-  const titleMap: Record<string, string> = {};
-  const authorMembershipIdMap: Record<string, string> = {};
-  const announcementTypeMap: Record<string, string> = {};
-  const contentSuspendedAtById: Record<string, string | null> = {};
-  const contentSuspendedByUserIdById: Record<string, string | null> = {};
-  const contentSuspensionReasonById: Record<string, string | null> = {};
-
-  const annIds = contentIds.filter((c) => c.type === "announcement").map((c) => c.id);
-  const iniIds = contentIds.filter((c) => c.type === "initiative").map((c) => c.id);
-  const evtIds = contentIds.filter((c) => c.type === "event").map((c) => c.id);
-
-  const [announcementsResult, initiativesResult, eventsResult] = await Promise.all([
-    annIds.length > 0
-      ? supabase
-          .from("announcements")
-          .select("id, title, author_membership_id, type, suspended_at, suspended_by, suspension_reason")
-          .in("id", annIds)
-      : Promise.resolve({ data: null }),
-    iniIds.length > 0
-      ? supabase
-          .from("initiatives")
-          .select("id, title, author_membership_id, suspended_at, suspended_by, suspension_reason")
-          .in("id", iniIds)
-      : Promise.resolve({ data: null }),
-    evtIds.length > 0
-      ? supabase
-          .from("events")
-          .select("id, title, author_membership_id, suspended_at, suspended_by, suspension_reason")
-          .in("id", evtIds)
-      : Promise.resolve({ data: null }),
-  ]);
-
-  for (const row of announcementsResult.data ?? []) {
-    titleMap[row.id] = row.title;
-    authorMembershipIdMap[row.id] = row.author_membership_id;
-    announcementTypeMap[row.id] = row.type;
-    contentSuspendedAtById[row.id] = row.suspended_at;
-    contentSuspendedByUserIdById[row.id] = row.suspended_by;
-    contentSuspensionReasonById[row.id] = row.suspension_reason;
-  }
-  for (const row of initiativesResult.data ?? []) {
-    titleMap[row.id] = row.title;
-    authorMembershipIdMap[row.id] = row.author_membership_id;
-    contentSuspendedAtById[row.id] = row.suspended_at;
-    contentSuspendedByUserIdById[row.id] = row.suspended_by;
-    contentSuspensionReasonById[row.id] = row.suspension_reason;
-  }
-  for (const row of eventsResult.data ?? []) {
-    titleMap[row.id] = row.title;
-    authorMembershipIdMap[row.id] = row.author_membership_id;
-    contentSuspendedAtById[row.id] = row.suspended_at;
-    contentSuspendedByUserIdById[row.id] = row.suspended_by;
-    contentSuspensionReasonById[row.id] = row.suspension_reason;
-  }
-
-  const authorUserIdMap: Record<string, string> = {};
-  const authorNameByMembershipId: Record<string, string> = {};
-  const membershipStatusById: Record<string, string> = {};
-  const membershipSuspendedAtById: Record<string, string | null> = {};
-  const authorMembershipIds = [
-    ...new Set(Object.values(authorMembershipIdMap)),
-  ];
-  if (authorMembershipIds.length > 0) {
-    const { data: authorMemberships } = await supabase
-      .from("memberships")
-      .select(
-        "id, user_id, status, suspended_at, profiles:profiles!memberships_profiles_user_id_fkey(display_name, first_name, last_name)",
-      )
-      .in("id", authorMembershipIds);
-    for (const row of authorMemberships ?? []) {
-      authorUserIdMap[row.id] = row.user_id;
-      authorNameByMembershipId[row.id] = resolveDisplayName(row.profiles ?? {});
-      membershipStatusById[row.id] = row.status;
-      membershipSuspendedAtById[row.id] = row.suspended_at;
-    }
-  }
-
-  const userReportUserIds = [
-    ...new Set(
-      (reports ?? [])
-        .filter((report) => report.context_type === "user")
-        .map((report) => report.context_id),
-    ),
-  ];
-  const userReportMembershipIdMap: Record<string, string> = {};
-  if (userReportUserIds.length > 0) {
-    const { data: userReportMemberships } = await supabase
-      .from("memberships")
-      .select("id, user_id, status, suspended_at")
-      .eq("commune_id", communeId)
-      .in("user_id", userReportUserIds);
-    for (const row of userReportMemberships ?? []) {
-      userReportMembershipIdMap[row.user_id] = row.id;
-      membershipStatusById[row.id] = row.status;
-      membershipSuspendedAtById[row.id] = row.suspended_at;
-    }
-  }
-
-  const resolutionMetaMaps = await buildReportResolutionMetaMaps(supabase, {
-    reports: reports ?? [],
-    contentIds: contentIds.map((entry) => entry.id),
-    membershipIds: [
-      ...authorMembershipIds,
-      ...Object.values(userReportMembershipIdMap),
-    ],
-    contentSuspendedAtById,
-    contentSuspendedByUserIdById,
-    membershipSuspendedAtById,
-  });
-
-  const restoreContextMaps = await buildReportRestoreContextMaps(supabase, {
-    contentIds: contentIds.map((entry) => entry.id),
-    membershipIds: [
-      ...authorMembershipIds,
-      ...Object.values(userReportMembershipIdMap),
-    ],
-    contentSuspendedAtById,
-    membershipStatusById,
-  });
-
-  const restoredByNameMap = await buildRestoredByNameMap(
-    supabase,
-    reports ?? [],
-  );
-
-  const reportCountByContext = new Map<string, number>();
-  for (const report of reports ?? []) {
-    if (report.context_type === "user") continue;
-    const key = `${report.context_type}:${report.context_id}`;
-    reportCountByContext.set(key, (reportCountByContext.get(key) ?? 0) + 1);
-  }
-
-  const filteredReports = filterReports(
-    reports ?? [],
-    listParams,
-    announcementTypeMap,
+  const {
+    filteredReports,
+    totalCount,
     titleMap,
-  );
+    authorMembershipIdMap,
+    announcementTypeMap,
+    contentSuspensionReasonById,
+    authorUserIdMap,
+    authorNameByMembershipId,
+    resolutionMetaMaps,
+    restoreContextMaps,
+    restoredByNameMap,
+    reportCountByContext,
+    resolveUserReportMembershipId,
+  } = await getMairieSignalementsPageData(supabase, communeId, listParams);
 
   return (
     <PageStack>
@@ -233,10 +89,7 @@ export default async function MairieSignalementsPage(props: {
         subtitle="Gérez les signalements de contenus et d'utilisateurs de votre commune."
       />
 
-      <ReportListToolbar
-        params={listParams}
-        totalCount={filteredReports.length}
-      />
+      <ReportListToolbar params={listParams} totalCount={totalCount} />
 
       <div className="space-y-3">
         {filteredReports.length === 0 ? (
@@ -255,6 +108,8 @@ export default async function MairieSignalementsPage(props: {
                     statuses: ["pending"],
                     contentTypes: [],
                     q: "",
+                    page: 1,
+                    limit: listParams.limit,
                   })}`}
                   className="font-semibold text-purple hover:underline"
                 >
@@ -273,7 +128,7 @@ export default async function MairieSignalementsPage(props: {
 
             const authorMembershipId =
               report.context_type === "user"
-                ? userReportMembershipIdMap[report.context_id] ?? null
+                ? resolveUserReportMembershipId(report)
                 : authorMembershipIdMap[report.context_id] ?? null;
             const isAuthorSelf = authorMembershipId
               ? authorUserIdMap[authorMembershipId] === userId
@@ -406,6 +261,12 @@ export default async function MairieSignalementsPage(props: {
           })
         )}
       </div>
+
+      <ReportListPagination
+        params={listParams}
+        totalCount={totalCount}
+        basePath={ROUTES.mairie.signalements}
+      />
     </PageStack>
   );
 }

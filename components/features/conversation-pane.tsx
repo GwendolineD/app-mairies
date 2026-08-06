@@ -5,7 +5,7 @@ import { ConversationThread } from "@/components/features/conversation-thread";
 import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
 import { buildOptimizedCloudinaryUrl } from "@/lib/services/cloudinary";
-import { listConversationMessages } from "@/lib/queries/messages";
+import { listConversationMessages, MESSAGES_PAGE_SIZE } from "@/lib/queries/messages";
 import type { ConversationContextStatus, ConversationContextType, MembershipStatus, MessageRow } from "@/lib/types";
 import {
   getConversationReadOnlyMessage,
@@ -265,6 +265,7 @@ export async function ConversationPane({
         conversationId={conversationId}
         messages={messages as MessageRow[]}
         currentUserId={currentUserId}
+        hasMoreInitial={messages.length >= MESSAGES_PAGE_SIZE}
         isArchived={isArchived}
         readOnly={
           otherAccountDeleted ||

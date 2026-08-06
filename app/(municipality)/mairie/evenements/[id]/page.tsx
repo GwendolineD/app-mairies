@@ -13,6 +13,7 @@ import {
   listEventVolunteers,
   listEventParticipants,
   countEventParticipants,
+  countEventVolunteers,
 } from "@/lib/queries/events";
 import { createClient } from "@/lib/supabase/server";
 import { formatDay } from "@/lib/datetime";
@@ -131,7 +132,7 @@ export default async function MairieEvenementDetailPage(props: {
   );
 
   const volunteers = await listEventVolunteers(supabase, event.id);
-  const volunteersRegistered = volunteers.length;
+  const volunteersRegistered = await countEventVolunteers(supabase, event.id);
 
   let initialVolunteering = false;
   if (ctx.activeMembership?.id) {

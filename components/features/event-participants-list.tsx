@@ -1,16 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { CalendarCheck, ChevronRight, MessageCircle } from "lucide-react";
 import { ContactAnnouncementButton } from "@/components/features/contact-announcement-button";
+import { LoadMoreLink } from "@/components/ui/load-more-link";
 import { Modal } from "@/components/ui/modal";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import { fetchMoreEventParticipants } from "@/lib/actions/events";
 import { formatDisplayName } from "@/lib/utils/display-name";
 import { cn } from "@/lib/utils/cn";
 import type { EventVolunteer } from "@/lib/queries/events";
 
 type Props = {
   participants: EventVolunteer[];
+  totalCount: number;
   eventId: string;
   isAuthor: boolean;
   maxVisible?: number;
@@ -32,6 +35,7 @@ function getFullName(p: EventVolunteer): string {
 
 export function ParticipantsAvatarRow({
   participants,
+  totalCount,
   eventId,
   isAuthor,
   maxVisible = 5,
@@ -42,7 +46,7 @@ export function ParticipantsAvatarRow({
   if (participants.length === 0) return null;
 
   const visible = participants.slice(0, maxVisible);
-  const overflowCount = participants.length - maxVisible;
+  const overflowCount = Math.max(0, totalCount - maxVisible);
 
   return (
     <>
@@ -86,6 +90,7 @@ export function ParticipantsAvatarRow({
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         participants={participants}
+        totalCount={totalCount}
         eventId={eventId}
         isAuthor={isAuthor}
       />
@@ -96,16 +101,40 @@ export function ParticipantsAvatarRow({
 function ParticipantsModal({
   open,
   onClose,
-  participants,
+  participants: initialParticipants,
+  totalCount,
   eventId,
   isAuthor,
 }: {
   open: boolean;
   onClose: () => void;
   participants: EventVolunteer[];
+  totalCount: number;
   eventId: string;
   isAuthor: boolean;
 }) {
+  const [items, setItems] = useState(initialParticipants);
+  const [loadingMore, startLoadingMore] = useTransition();
+
+  useEffect(() => {
+    if (open) {
+      setItems(initialParticipants);
+    }
+  }, [open, initialParticipants]);
+
+  const remaining = Math.max(0, totalCount - items.length);
+
+  function handleLoadMore() {
+    startLoadingMore(async () => {
+      const next = await fetchMoreEventParticipants(eventId, items.length);
+      setItems((prev) => {
+        const existingIds = new Set(prev.map((p) => p.membershipId));
+        const unique = next.filter((p) => !existingIds.has(p.membershipId));
+        return [...prev, ...unique];
+      });
+    });
+  }
+
   return (
     <Modal
       open={open}
@@ -113,14 +142,14 @@ function ParticipantsModal({
       title={
         <span className="flex items-center gap-1.5">
           <CalendarCheck className="size-4 shrink-0 text-orange" aria-hidden />
-          {participants.length} participant{participants.length !== 1 ? "s" : ""}
+          {totalCount} participant{totalCount !== 1 ? "s" : ""}
         </span>
       }
       showCloseButton
       size="sm"
     >
       <div className="max-h-[60vh] space-y-2 overflow-y-auto">
-        {participants.map((p) => (
+        {items.map((p) => (
           <ParticipantRow
             key={p.membershipId}
             participant={p}
@@ -128,6 +157,15 @@ function ParticipantsModal({
             showContactButton={isAuthor}
           />
         ))}
+        {remaining > 0 ? (
+          <div className="pt-2 text-center">
+            <LoadMoreLink
+              label={`${remaining} autre${remaining !== 1 ? "s" : ""} participant${remaining !== 1 ? "s" : ""} · Voir plus`}
+              onClick={handleLoadMore}
+              pending={loadingMore}
+            />
+          </div>
+        ) : null}
       </div>
     </Modal>
   );

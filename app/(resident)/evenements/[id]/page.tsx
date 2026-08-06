@@ -13,6 +13,7 @@ import {
   listEventVolunteers,
   listEventParticipants,
   countEventParticipants,
+  countEventVolunteers,
 } from "@/lib/queries/events";
 import { formatMemberSince } from "@/lib/datetime";
 import { EventDetailDateLabel } from "@/components/features/event-detail-date-label";
@@ -143,6 +144,7 @@ export default async function EvenementDetailPage(props: {
     { data: authorMembership },
     sourceInitiative,
     volunteers,
+    volunteersCount,
     { data: userVolunteer },
     participants,
     participantsCount,
@@ -164,6 +166,7 @@ export default async function EvenementDetailPage(props: {
           .then((r) => r.data)
       : Promise.resolve(null),
     listEventVolunteers(supabase, event.id),
+    countEventVolunteers(supabase, event.id),
     supabase
       .from("event_volunteers")
       .select("id")
@@ -228,7 +231,7 @@ export default async function EvenementDetailPage(props: {
     parsedAddress.city,
   );
 
-  const volunteersRegistered = volunteers.length;
+  const volunteersRegistered = volunteersCount;
   const initialVolunteering = !!userVolunteer;
   const initialParticipating = !!userParticipant;
 
