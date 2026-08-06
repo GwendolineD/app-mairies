@@ -6,8 +6,8 @@ import {
 } from "@/lib/queries/announcements";
 import { listInitiativesPage } from "@/lib/queries/initiatives";
 import {
+  enrichEventsWithCounts,
   listEventsPage,
-  listVolunteerCountsByEventId,
 } from "@/lib/queries/events";
 import { createClient } from "@/lib/supabase/server";
 import { PageStack } from "@/components/ui/page-stack";
@@ -77,15 +77,10 @@ export default async function ResidentAccueilPage() {
   const featuredInitiative = initiativesRes.items[0] ?? null;
   const featuredEvent = eventsRes.items[0] ?? null;
 
-  let featuredEventWithVolunteers: EventCardData | null = featuredEvent;
+  let featuredEventWithCounts: EventCardData | null = featuredEvent;
   if (featuredEvent) {
-    const volunteerCounts = await listVolunteerCountsByEventId(supabase, [
-      featuredEvent.id,
-    ]);
-    featuredEventWithVolunteers = {
-      ...featuredEvent,
-      volunteers_registered: volunteerCounts[featuredEvent.id] ?? 0,
-    };
+    const [enriched] = await enrichEventsWithCounts(supabase, [featuredEvent]);
+    featuredEventWithCounts = enriched;
   }
 
   const communeName = ctx.activeMembership!.commune?.name ?? "Votre commune";
@@ -116,7 +111,7 @@ export default async function ResidentAccueilPage() {
         />
         <AccueilEventsHub
           totalCount={eventsRes.totalCount}
-          featured={featuredEventWithVolunteers}
+          featured={featuredEventWithCounts}
           className={cn(
             "lg:col-start-2 lg:row-start-1 lg:h-full",
             mobileSectionDivider,

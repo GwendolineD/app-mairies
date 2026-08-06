@@ -6,10 +6,8 @@ import {
   ArrowUpRight,
   CalendarDays,
   CalendarPlus,
-  Heart,
   MessageCircle,
   Pencil,
-  Sparkles,
   Trash2,
 } from "lucide-react";
 import { useCreationModals } from "@/components/features/creation-modal-context";
@@ -18,6 +16,7 @@ import { DeleteInitiativeModal } from "@/components/features/delete-initiative-m
 import { SupportInitiativeButton } from "@/components/features/support-initiative-button";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { CONTENT_ICONS } from "@/lib/constants/content-icons";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { ROUTES } from "@/lib/constants/routes";
 import type { EventEditData, InitiativeEditData } from "@/lib/types";
@@ -56,10 +55,11 @@ function getAuthorSupportMessage(count: number) {
 }
 
 function SupportCountLabel({ count }: { count: number }) {
+  const SupportIcon = CONTENT_ICONS.initiativeSupport;
   return (
     <p className="flex items-center justify-center gap-1.5 text-base font-bold text-text">
       {count} soutien{count !== 1 ? "s" : ""}
-      <Heart className="size-4 shrink-0 fill-coral text-coral" aria-hidden />
+      <SupportIcon className="size-4 shrink-0 fill-coral text-coral" aria-hidden />
     </p>
   );
 }
@@ -101,7 +101,7 @@ function InitiativeLinkedEventCard({
     <Card className={cn("relative space-y-3 md:p-5", className)}>
       <div className="flex items-center justify-between gap-2">
         <h2 className="flex min-w-0 items-center gap-2 text-lg font-semibold text-text">
-          <CalendarDays className="size-5 shrink-0 text-coral/85" aria-hidden />
+          <CalendarDays className="size-5 shrink-0 text-orange" aria-hidden />
           Événement associé
         </h2>
         <Link
@@ -166,7 +166,7 @@ function AuthorActionsCard({
     <Card className={cn("gap-6 md:p-5", className)}>
       <div className="space-y-1">
         <h2 className="flex items-center gap-2 text-lg font-semibold text-text">
-          <Sparkles className="size-5 shrink-0 text-orange" aria-hidden />
+          <CONTENT_ICONS.initiativeManage className="size-5 shrink-0 text-orange" aria-hidden />
           Gérez votre initiative
         </h2>
         <p className="text-sm font-medium text-muted">
@@ -234,7 +234,7 @@ function SupportCard({
       <Card className={cn("gap-6 md:p-5", className)}>
         <div className="space-y-1">
           <h2 className="flex items-center gap-2 text-lg font-semibold text-text">
-            <Heart className="size-5 shrink-0 text-orange" aria-hidden />
+            <CONTENT_ICONS.initiativeSupport className="size-5 shrink-0 text-orange" aria-hidden />
             Soutiens
           </h2>
           <p className="text-sm font-medium text-muted">
@@ -255,7 +255,7 @@ function SupportCard({
     <Card className={cn("space-y-3 md:p-5", className)}>
       <div className="space-y-1">
         <h2 className="flex items-center gap-2 text-lg font-semibold text-text">
-          <Heart className="size-5 shrink-0 text-orange" aria-hidden />
+          <CONTENT_ICONS.initiativeSupport className="size-5 shrink-0 text-orange" aria-hidden />
           Soutien
         </h2>
         <p className="text-sm font-medium text-muted">

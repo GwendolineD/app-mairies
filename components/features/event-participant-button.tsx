@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CalendarCheck } from "lucide-react";
+import { CONTENT_ICONS } from "@/lib/constants/content-icons";
 import { toggleEventParticipation } from "@/lib/actions/events";
 import {
   ENGAGEMENT_ACTIVE_BUTTON_CLASS,
@@ -52,6 +52,8 @@ export function EventParticipantButton({
       ? "Je suis inscrit·e"
       : "Je veux participer";
 
+  const ParticipantIcon = CONTENT_ICONS.eventParticipants;
+
   return (
     <div className="relative">
       {participating ? (
@@ -66,7 +68,7 @@ export function EventParticipantButton({
           disabled={isPending}
           onClick={handleToggle}
         >
-          <CalendarCheck className={cn("size-4", ENGAGEMENT_ACTIVE_ICON_CLASS)} aria-hidden />
+          <ParticipantIcon className={cn("size-4", ENGAGEMENT_ACTIVE_ICON_CLASS)} aria-hidden />
           {label}
         </Button>
       ) : (
@@ -77,7 +79,7 @@ export function EventParticipantButton({
           disabled={isPending}
           onClick={handleToggle}
         >
-          <CalendarCheck className="size-4" aria-hidden />
+          <ParticipantIcon className="size-4" aria-hidden />
           {label}
         </GradientButton>
       )}

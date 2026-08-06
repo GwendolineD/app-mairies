@@ -44,21 +44,18 @@ export default async function MunicipalityDashboardLayout({
 
   let defaultEventAddress: MembershipAddress = EMPTY_ADDRESS;
 
-  const membershipCommune = ctx.activeMembership?.commune;
-  if (membershipCommune) {
-    defaultEventAddress = communeToDefaultAddress(membershipCommune as Commune);
-  } else {
-    const { data: commune } = await supabase
-      .from("communes")
-      .select(
-        "name, postcode, insee_code, centroid_lat, centroid_lng, settings, mairie_address_street, mairie_address_city, mairie_address_postcode, mairie_address_lat, mairie_address_lng",
-      )
-      .eq("id", communeId)
-      .single();
+  // Always fetch full commune address fields — membership.commune join is partial
+  // (no centroid / mairie_address_*), which would leave lat/lng null on event create.
+  const { data: commune } = await supabase
+    .from("communes")
+    .select(
+      "name, postcode, insee_code, centroid_lat, centroid_lng, settings, mairie_address_street, mairie_address_city, mairie_address_postcode, mairie_address_lat, mairie_address_lng",
+    )
+    .eq("id", communeId)
+    .single();
 
-    if (commune) {
-      defaultEventAddress = communeToDefaultAddress(commune as Commune);
-    }
+  if (commune) {
+    defaultEventAddress = communeToDefaultAddress(commune as Commune);
   }
 
   return (

@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { ChevronRight, MessageCircle, Users } from "lucide-react";
+import { ChevronRight, MessageCircle } from "lucide-react";
 import { ContactAnnouncementButton } from "@/components/features/contact-announcement-button";
 import { LoadMoreLink } from "@/components/ui/load-more-link";
 import { Modal } from "@/components/ui/modal";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import { CONTENT_ICONS } from "@/lib/constants/content-icons";
 import { fetchMoreEventVolunteers } from "@/lib/actions/events";
 import { formatDisplayName } from "@/lib/utils/display-name";
 import { cn } from "@/lib/utils/cn";
@@ -143,7 +144,7 @@ function VolunteersModal({
       onClose={onClose}
       title={
         <span className="flex items-center gap-1.5">
-          <Users className="size-4 shrink-0 text-orange" aria-hidden />
+          <CONTENT_ICONS.eventVolunteers className="size-4 shrink-0 text-orange" aria-hidden />
           {totalCount} bénévole{totalCount !== 1 ? "s" : ""}
         </span>
       }

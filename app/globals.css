@@ -238,6 +238,9 @@ body {
   margin: 0;
   width: auto !important;
 }
+.leaflet-popup.vl-map-popup img {
+  border-radius: 0;
+}
 .leaflet-popup.vl-map-popup .leaflet-popup-tip {
   box-shadow: 0 4px 12px rgba(37, 38, 48, 0.08);
 }

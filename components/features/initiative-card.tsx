@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ArrowRight, CalendarDays, Heart, MapPin } from "lucide-react";
+import { ArrowRight, CalendarDays, MapPin } from "lucide-react";
 import { CloudImage } from "@/components/ui/cloud-image";
+import { CONTENT_ICONS } from "@/lib/constants/content-icons";
 import { ROUTES } from "@/lib/constants/routes";
 import {
   getInitiativeCategoryColorHex,
@@ -111,6 +112,7 @@ function SupportBadge({
   className?: string;
 }) {
   if (count <= 0) return null;
+  const SupportIcon = CONTENT_ICONS.initiativeSupport;
   return (
     <span
       className={cn(
@@ -118,7 +120,7 @@ function SupportBadge({
         className,
       )}
     >
-      <Heart className="size-3.5 fill-purple" aria-hidden />
+      <SupportIcon className="size-3.5 fill-purple" aria-hidden />
       {count}
     </span>
   );

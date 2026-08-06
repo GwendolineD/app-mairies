@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ArrowRight, CalendarDays, MapPin, Users } from "lucide-react";
+import { ArrowRight, CalendarDays, MapPin } from "lucide-react";
 import { CloudImage } from "@/components/ui/cloud-image";
+import { CONTENT_ICONS } from "@/lib/constants/content-icons";
 import { ROUTES } from "@/lib/constants/routes";
 import {
   getInitiativeCategoryColorHex,
@@ -34,6 +35,7 @@ export type EventCardData = Pick<
   | "suspended_at"
 > & {
   volunteers_registered?: number;
+  participants_count?: number;
 };
 
 type Props = {
@@ -54,6 +56,19 @@ function resolveImageUrl(event: EventCardData): string | null {
   return null;
 }
 
+function ParticipantsCounter({ count }: { count: number }) {
+  if (count <= 0) return null;
+  const Icon = CONTENT_ICONS.eventParticipants;
+  return (
+    <div className="flex items-center gap-1.5">
+      <Icon className="size-3 shrink-0 text-purple" aria-hidden />
+      <span className="text-[10px] font-semibold text-muted">
+        {count} participant{count !== 1 ? "s" : ""}
+      </span>
+    </div>
+  );
+}
+
 function VolunteersGauge({
   registered,
   needed,
@@ -63,10 +78,11 @@ function VolunteersGauge({
 }) {
   if (!needed || needed <= 0) return null;
   const progress = Math.min(100, Math.round((registered / needed) * 100));
+  const Icon = CONTENT_ICONS.eventVolunteers;
 
   return (
     <div className="mt-1 flex items-center gap-2">
-      <Users className="size-3 shrink-0 text-orange" aria-hidden />
+      <Icon className="size-3 shrink-0 text-orange" aria-hidden />
       <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-border">
         <div
           className="h-full rounded-full bg-orange transition-all"
@@ -117,6 +133,7 @@ export function EventCard({
     : "";
   const imageUrl = resolveImageUrl(e);
   const volunteersRegistered = e.volunteers_registered ?? 0;
+  const participantsCount = e.participants_count ?? 0;
   const showActionRequired =
     Boolean(nudgeContent) &&
     !e.suspended_at &&
@@ -173,6 +190,7 @@ export function EventCard({
                 <span className="truncate">{e.address_label}</span>
               </p>
             ) : null}
+            <ParticipantsCounter count={participantsCount} />
             <VolunteersGauge registered={volunteersRegistered} needed={e.volunteers_needed} />
           </div>
         </Card>
@@ -227,6 +245,7 @@ export function EventCard({
               <span className="min-w-0 truncate">{e.address_label}</span>
             </div>
           ) : null}
+          <ParticipantsCounter count={participantsCount} />
           <VolunteersGauge registered={volunteersRegistered} needed={e.volunteers_needed} />
         </div>
       </Card>
@@ -236,6 +255,8 @@ export function EventCard({
 
 export function EventMapCard({ event: e }: { event: EventCardData }) {
   const imageUrl = resolveImageUrl(e);
+  const volunteersRegistered = e.volunteers_registered ?? 0;
+  const participantsCount = e.participants_count ?? 0;
 
   return (
     <div className="flex w-[260px] flex-col gap-2">
@@ -264,6 +285,8 @@ export function EventMapCard({ event: e }: { event: EventCardData }) {
       {e.address_label ? (
         <p className="text-[11px] font-medium text-subtle">{e.address_label}</p>
       ) : null}
+      <ParticipantsCounter count={participantsCount} />
+      <VolunteersGauge registered={volunteersRegistered} needed={e.volunteers_needed} />
       <Link
         href={ROUTES.evenements.detail(e.id)}
         className="mt-1 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-sm gradient-events px-3 py-2 text-xs font-bold text-white shadow-card transition hover:opacity-95"

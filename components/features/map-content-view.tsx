@@ -160,7 +160,7 @@ function EventClusterPopup({
   };
 
   return (
-    <div className="flex w-[200px] flex-col gap-2">
+    <div className="flex w-[200px] flex-col gap-2 pt-3">
       <div className="flex items-center justify-end gap-4 md:gap-2">
         <span className="text-xs font-semibold text-muted">
           {currentIndex + 1}/{items.length}

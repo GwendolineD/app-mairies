@@ -10,6 +10,7 @@ import { ROUTES } from "@/lib/constants/routes";
 import { EVENT_STATUS } from "@/lib/constants/statuses";
 import { createClient } from "@/lib/supabase/server";
 import { parseFormId } from "@/lib/utils/form-data";
+import { resolveAddressCoordinates } from "@/lib/ban/client";
 import { buildAddressLabel, parseAddressLabelParts } from "@/lib/utils/format-address";
 import { eventSchema, eventModalSchema } from "@/lib/validations/schemas";
 import { fanoutNewContentNotification } from "@/lib/services/notification-fanout";
@@ -252,6 +253,21 @@ export async function createEventFromModal(
     parsed.data.addressCity,
   );
 
+  let addressLat = parsed.data.addressLat ?? null;
+  let addressLng = parsed.data.addressLng ?? null;
+
+  if (addressLabel && (addressLat == null || addressLng == null)) {
+    const citycode = parsed.data.addressCitycode?.trim();
+    const street = parsed.data.addressStreet?.trim();
+    if (street && citycode) {
+      const resolved = await resolveAddressCoordinates(street, citycode);
+      if (resolved) {
+        addressLat = resolved.lat;
+        addressLng = resolved.lng;
+      }
+    }
+  }
+
   const { data: created, error } = await supabase
     .from("events")
     .insert({
@@ -265,8 +281,8 @@ export async function createEventFromModal(
       ends_at: parsed.data.endsAt,
       volunteers_needed: parsed.data.volunteersNeeded ?? null,
       address_label: addressLabel,
-      address_lat: parsed.data.addressLat ?? null,
-      address_lng: parsed.data.addressLng ?? null,
+      address_lat: addressLat,
+      address_lng: addressLng,
       source_initiative_id: parsed.data.sourceInitiativeId ?? null,
       is_official: parsed.data.isOfficial ?? false,
       status: EVENT_STATUS.active,
@@ -358,6 +374,21 @@ export async function updateEvent(
     parsed.data.addressCity,
   );
 
+  let addressLat = parsed.data.addressLat ?? null;
+  let addressLng = parsed.data.addressLng ?? null;
+
+  if (addressLabel && (addressLat == null || addressLng == null)) {
+    const citycode = parsed.data.addressCitycode?.trim();
+    const street = parsed.data.addressStreet?.trim();
+    if (street && citycode) {
+      const resolved = await resolveAddressCoordinates(street, citycode);
+      if (resolved) {
+        addressLat = resolved.lat;
+        addressLng = resolved.lng;
+      }
+    }
+  }
+
   const { error } = await supabase
     .from("events")
     .update({
@@ -369,8 +400,8 @@ export async function updateEvent(
       ends_at: parsed.data.endsAt,
       volunteers_needed: parsed.data.volunteersNeeded ?? null,
       address_label: addressLabel,
-      address_lat: parsed.data.addressLat ?? null,
-      address_lng: parsed.data.addressLng ?? null,
+      address_lat: addressLat,
+      address_lng: addressLng,
     })
     .eq("id", id);
 

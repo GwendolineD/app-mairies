@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Heart } from "lucide-react";
+import { CONTENT_ICONS } from "@/lib/constants/content-icons";
 import { toggleInitiativeSupport } from "@/lib/actions/initiatives";
 import {
   ENGAGEMENT_ACTIVE_BUTTON_CLASS,
@@ -59,6 +59,8 @@ export function SupportInitiativeButton({
       ? `Je soutiens${!hideCountInLabel && count > 0 ? ` (${count})` : ""}`
       : "Je veux soutenir";
 
+  const SupportIcon = CONTENT_ICONS.initiativeSupport;
+
   return (
     <div className="relative">
       {supported ? (
@@ -73,7 +75,7 @@ export function SupportInitiativeButton({
             className,
           )}
         >
-          <Heart className={cn("size-4", ENGAGEMENT_ACTIVE_ICON_CLASS)} aria-hidden />
+          <SupportIcon className={cn("size-4", ENGAGEMENT_ACTIVE_ICON_CLASS)} aria-hidden />
           {label}
         </Button>
       ) : (
@@ -84,7 +86,7 @@ export function SupportInitiativeButton({
           disabled={isPending}
           onClick={handleToggle}
         >
-          <Heart className="size-4 text-white" aria-hidden />
+          <SupportIcon className="size-4 text-white" aria-hidden />
           {label}
         </GradientButton>
       )}

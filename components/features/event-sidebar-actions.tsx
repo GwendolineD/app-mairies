@@ -4,14 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   ArrowUpRight,
-  CalendarCheck,
   CalendarDays,
   Copy,
   MessageCircle,
   Pencil,
   Sparkles,
   Trash2,
-  Users,
 } from "lucide-react";
 import { ContactAnnouncementButton } from "@/components/features/contact-announcement-button";
 import { useCreationModals } from "@/components/features/creation-modal-context";
@@ -23,6 +21,7 @@ import { DeleteEventModal } from "@/components/features/delete-event-modal";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import { CONTENT_ICONS } from "@/lib/constants/content-icons";
 import { ROUTES } from "@/lib/constants/routes";
 import type { EventVolunteer } from "@/lib/queries/events";
 import type { EventEditData } from "@/lib/types";
@@ -187,7 +186,7 @@ function AuthorActionsCard({
     <Card className={cn("gap-6 md:p-5", className)}>
       <div className="space-y-1">
         <h2 className="flex items-center gap-2 text-lg font-semibold text-text">
-          <CalendarDays className="size-5 shrink-0 text-orange" aria-hidden />
+          <CONTENT_ICONS.eventManage className="size-5 shrink-0 text-orange" aria-hidden />
           Gérez votre événement
         </h2>
         <p className="text-sm font-medium text-muted">
@@ -282,7 +281,7 @@ function VolunteersCard({
     <Card className={cn("gap-6 md:p-5", className)}>
       <div className="space-y-1">
         <h2 className="flex items-center gap-2 text-lg font-semibold text-text">
-          <Users className="size-5 shrink-0 text-orange" aria-hidden />
+          <CONTENT_ICONS.eventVolunteers className="size-5 shrink-0 text-orange" aria-hidden />
           Bénévoles
         </h2>
         <p className="text-sm font-medium text-muted">
@@ -329,7 +328,7 @@ function EventParticipantsCard({
     <Card className={cn("gap-6 md:p-5", className)}>
       <div className="space-y-1">
         <h2 className="flex items-center gap-2 text-lg font-semibold text-text">
-          <CalendarCheck className="size-5 shrink-0 text-orange" aria-hidden />
+          <CONTENT_ICONS.eventParticipants className="size-5 shrink-0 text-orange" aria-hidden />
           {isAuthor ? "Participants" : "Participer"}
         </h2>
         <p className="text-sm font-medium text-muted">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { HandHeart } from "lucide-react";
+import { CONTENT_ICONS } from "@/lib/constants/content-icons";
 import { toggleEventVolunteer } from "@/lib/actions/events";
 import {
   ENGAGEMENT_ACTIVE_BUTTON_CLASS,
@@ -52,6 +52,8 @@ export function EventVolunteerButton({
       ? "Je suis bénévole"
       : "Je deviens bénévole";
 
+  const VolunteerIcon = CONTENT_ICONS.eventVolunteers;
+
   return (
     <div className="relative">
       {volunteering ? (
@@ -66,7 +68,7 @@ export function EventVolunteerButton({
           disabled={isPending}
           onClick={handleToggle}
         >
-          <HandHeart className={cn("size-4", ENGAGEMENT_ACTIVE_ICON_CLASS)} aria-hidden />
+          <VolunteerIcon className={cn("size-4", ENGAGEMENT_ACTIVE_ICON_CLASS)} aria-hidden />
           {label}
         </Button>
       ) : (
@@ -77,7 +79,7 @@ export function EventVolunteerButton({
           disabled={isPending}
           onClick={handleToggle}
         >
-          <HandHeart className="size-4" aria-hidden />
+          <VolunteerIcon className="size-4" aria-hidden />
           {label}
         </GradientButton>
       )}

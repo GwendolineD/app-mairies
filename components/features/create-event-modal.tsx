@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { splitInstantToParisFields, todayParisYmd, toUtcFromParisLocal, clampEndDate, resolveEndDateAfterStartChange } from "@/lib/datetime";
-import { CalendarDays, Check, Loader2, MapPin, Sparkles, Users } from "lucide-react";
+import { CalendarDays, Check, Loader2, MapPin, Sparkles } from "lucide-react";
 import { createEventFromModal, updateEvent } from "@/lib/actions/events";
 import { searchAddresses, type BanFeature } from "@/lib/ban/client";
 import { formatStreetDisplay } from "@/lib/ban/display";
+import { CONTENT_ICONS } from "@/lib/constants/content-icons";
 import {
   INITIATIVE_CATEGORIES,
   getInitiativeCategoryBySlug,
@@ -378,6 +379,17 @@ export function CreateEventModal({
       return;
     }
 
+    const hasAddressText = addressData.street.trim().length > 0;
+    if (
+      hasAddressText &&
+      (addressData.lat == null || addressData.lng == null)
+    ) {
+      setAddressStreetError(
+        "Sélectionnez une adresse dans la liste pour valider la localisation.",
+      );
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -639,7 +651,7 @@ export function CreateEventModal({
           <SectionHeading number={4} title="Bénévoles (optionnel)" />
           <FormField label="Nombre de bénévoles souhaités">
             <div className="relative max-w-[200px]">
-              <Users className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
+              <CONTENT_ICONS.eventVolunteers className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
               <Input
                 type="number"
                 min={0}

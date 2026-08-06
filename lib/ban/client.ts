@@ -61,6 +61,15 @@ export async function searchMunicipalities(
   return data.features.map(mapFeature);
 }
 
+/** Resolve coordinates for a street within a municipality (server or client). */
+export async function resolveAddressCoordinates(
+  street: string,
+  citycode: string,
+): Promise<BanFeature | null> {
+  const features = await searchAddresses(street, citycode, 1);
+  return features[0] ?? null;
+}
+
 export async function searchAddresses(
   query: string,
   citycode?: string,

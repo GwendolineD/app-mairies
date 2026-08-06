@@ -118,17 +118,47 @@ export async function listVolunteerCountsByEventId(
   return counts;
 }
 
-export async function enrichEventsWithVolunteerCounts<
+export async function listParticipantCountsByEventId(
+  supabase: SupabaseClient,
+  eventIds: string[],
+): Promise<Record<string, number>> {
+  if (eventIds.length === 0) return {};
+
+  const { data } = await supabase
+    .from("event_participants")
+    .select("event_id")
+    .in("event_id", eventIds);
+
+  const counts: Record<string, number> = {};
+  for (const row of data ?? []) {
+    counts[row.event_id] = (counts[row.event_id] ?? 0) + 1;
+  }
+  return counts;
+}
+
+export async function enrichEventsWithCounts<
   T extends { id: string },
->(supabase: SupabaseClient, events: T[]): Promise<(T & { volunteers_registered: number })[]> {
+>(
+  supabase: SupabaseClient,
+  events: T[],
+): Promise<
+  (T & { volunteers_registered: number; participants_count: number })[]
+> {
   const eventIds = events.map((e) => e.id);
-  const counts = await listVolunteerCountsByEventId(supabase, eventIds);
+  const [volCounts, partCounts] = await Promise.all([
+    listVolunteerCountsByEventId(supabase, eventIds),
+    listParticipantCountsByEventId(supabase, eventIds),
+  ]);
 
   return events.map((event) => ({
     ...event,
-    volunteers_registered: counts[event.id] ?? 0,
+    volunteers_registered: volCounts[event.id] ?? 0,
+    participants_count: partCounts[event.id] ?? 0,
   }));
 }
+
+/** @deprecated Use enrichEventsWithCounts */
+export const enrichEventsWithVolunteerCounts = enrichEventsWithCounts;
 
 export type EventVolunteer = {
   membershipId: string;

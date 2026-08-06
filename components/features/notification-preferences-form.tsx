@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Bell, BellOff, CalendarDays, HandHeart, Heart, Mail, Megaphone, Sparkles, Users } from "lucide-react";
+import { Bell, BellOff, CalendarDays, Heart, Mail, Megaphone, Sparkles } from "lucide-react";
 import { updateNotificationPreferences, updateEmailLifecyclePreference } from "@/lib/actions/notifications";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { CONTENT_ICONS } from "@/lib/constants/content-icons";
 import { usePushSubscription } from "@/lib/hooks/use-push-subscription";
 import type { NotificationPreferences } from "@/lib/types";
 import { cn } from "@/lib/utils/cn";
@@ -66,8 +67,8 @@ const GROUP_ICONS: Record<keyof NotificationPreferences, typeof Megaphone> = {
   notify_message_initiative: Sparkles,
   notify_message_event: CalendarDays,
   notify_initiative_support: Heart,
-  notify_event_participation: Users,
-  notify_event_volunteer: HandHeart,
+  notify_event_participation: CONTENT_ICONS.eventParticipants,
+  notify_event_volunteer: CONTENT_ICONS.eventVolunteers,
   notify_new_announcement: Megaphone,
   notify_new_initiative: Sparkles,
   notify_new_event: CalendarDays,

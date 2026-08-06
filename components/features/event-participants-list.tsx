@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { CalendarCheck, ChevronRight, MessageCircle } from "lucide-react";
+import { ChevronRight, MessageCircle } from "lucide-react";
 import { ContactAnnouncementButton } from "@/components/features/contact-announcement-button";
 import { LoadMoreLink } from "@/components/ui/load-more-link";
 import { Modal } from "@/components/ui/modal";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import { CONTENT_ICONS } from "@/lib/constants/content-icons";
 import { fetchMoreEventParticipants } from "@/lib/actions/events";
 import { formatDisplayName } from "@/lib/utils/display-name";
 import { cn } from "@/lib/utils/cn";
@@ -141,7 +142,7 @@ function ParticipantsModal({
       onClose={onClose}
       title={
         <span className="flex items-center gap-1.5">
-          <CalendarCheck className="size-4 shrink-0 text-orange" aria-hidden />
+          <CONTENT_ICONS.eventParticipants className="size-4 shrink-0 text-orange" aria-hidden />
           {totalCount} participant{totalCount !== 1 ? "s" : ""}
         </span>
       }

@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { ChevronRight, Heart, MessageCircle } from "lucide-react";
+import { ChevronRight, MessageCircle } from "lucide-react";
 import { ContactAnnouncementButton } from "@/components/features/contact-announcement-button";
 import { LoadMoreLink } from "@/components/ui/load-more-link";
 import { Modal } from "@/components/ui/modal";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import { CONTENT_ICONS } from "@/lib/constants/content-icons";
 import { fetchMoreInitiativeSupporters } from "@/lib/actions/initiatives";
 import { formatDisplayName } from "@/lib/utils/display-name";
 import { cn } from "@/lib/utils/cn";
@@ -143,7 +144,7 @@ function SupportersModal({
       onClose={onClose}
       title={
         <span className="flex items-center gap-1.5">
-          <Heart className="size-4 shrink-0 text-coral" aria-hidden />
+          <CONTENT_ICONS.initiativeSupport className="size-4 shrink-0 text-coral" aria-hidden />
           {totalCount} soutien{totalCount !== 1 ? "s" : ""}
         </span>
       }
