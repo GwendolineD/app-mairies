@@ -12,6 +12,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "import-communes": "tsx scripts/import-communes.ts",
     "bootstrap-super-admin": "npx tsx --env-file=.env.local scripts/bootstrap-super-admin.ts"
   },
