@@ -131,6 +131,15 @@ export function LegalDocumentEditor({ document }: Props) {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [hasChanges]);
 
+  function handleCancel() {
+    if (!editor || !hasChanges || isPending) return;
+
+    setTitle(savedTitle);
+    editor.commands.setContent(savedContentHtml);
+    setError(null);
+    setContentRevision((revision) => revision + 1);
+  }
+
   function handleSave() {
     if (!editor || !hasChanges || isPending) return;
 
@@ -288,6 +297,15 @@ export function LegalDocumentEditor({ document }: Props) {
         ? createPortal(
             <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border/80 bg-surface/95 px-5 py-3 backdrop-blur md:px-6 lg:px-8">
               <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={isPending || !editor}
+                  onClick={handleCancel}
+                >
+                  Annuler
+                </Button>
                 <Button
                   type="button"
                   variant="primary"
