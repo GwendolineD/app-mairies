@@ -88,6 +88,7 @@ export function CommuneAccessStatusControl({
                 <button
                   type="button"
                   role="option"
+                  aria-selected={currentStatus === status}
                   className="flex w-full cursor-pointer items-center rounded-sm px-3 py-2 text-sm font-medium text-text transition hover:bg-warm"
                   onClick={() => handlePickStatus(status)}
                 >

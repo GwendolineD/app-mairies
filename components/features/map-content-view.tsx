@@ -22,7 +22,7 @@ import {
 import {
   InitiativeCard,
 } from "@/components/features/initiative-card";
-import { EventCard } from "@/components/features/event-card";
+import { EventCard, type EventCardData } from "@/components/features/event-card";
 import type { AnnouncementWithAuthor } from "@/lib/queries/announcements";
 import type { InitiativeWithAuthor } from "@/lib/queries/initiatives";
 import type { AgendaEventRecord } from "@/lib/types";
@@ -43,11 +43,10 @@ export type { MapMarker };
  */
 export const DEFAULT_INITIAL_RADIUS_METERS = 300;
 
-type MapGeoItem = {
-  id: string;
-  address_lat: number | null;
-  address_lng: number | null;
-};
+type MapRichItem =
+  | AnnouncementWithAuthor
+  | InitiativeWithAuthor
+  | AgendaEventRecord;
 
 type Props = {
   markers: MapMarker[];
@@ -419,10 +418,10 @@ export function MapContentView({
   const isInitiativeMode = !isEventMode && initiativeItems !== undefined;
 
   // Rich items take priority when provided; legacy `carouselItems` kept for back-compat.
-  const richItems = useMemo(
+  const richItems = useMemo<MapRichItem[]>(
     () => eventItems ?? initiativeItems ?? items ?? carouselItems ?? [],
     [eventItems, initiativeItems, items, carouselItems],
-  ) as MapGeoItem[];
+  );
   const itemMap = useMemo(
     () => new Map(richItems.map((it) => [it.id, it])),
     [richItems],
@@ -583,7 +582,7 @@ export function MapContentView({
 
             const groupItems = group.markers
               .map((m) => itemMap.get(m.id))
-              .filter((item): item is MapGeoItem => item != null);
+              .filter((item): item is MapRichItem => item != null);
 
             const groupAnnouncementItems =
               isEventMode || isInitiativeMode
@@ -728,7 +727,7 @@ export function MapContentView({
               >
                 {isEventMode ? (
                   <EventCard
-                    event={item as AgendaEventRecord}
+                    event={item as EventCardData}
                     layout="vertical"
                     highlighted={selectedId === item.id}
                   />

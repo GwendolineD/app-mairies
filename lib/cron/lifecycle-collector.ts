@@ -658,7 +658,6 @@ async function collectNotificationReminders(service: SupabaseClient): Promise<nu
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * DAY_MS).toISOString();
   const oneDayAgo = new Date(now.getTime() - DAY_MS).toISOString();
-  const appUrl = getAppUrl();
 
   const { data: profiles, error } = await service
     .from("profiles")

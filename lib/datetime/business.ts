@@ -66,7 +66,6 @@ export function buildParisWeekBuckets(since: Date): Date[] {
 /** Count rows per Paris week bucket (keyed by bucket timestamp). */
 export function countByParisWeek(
   dates: { created_at: string }[],
-  buckets: Date[],
 ): Map<number, number> {
   const map = new Map<number, number>();
   for (const { created_at } of dates) {

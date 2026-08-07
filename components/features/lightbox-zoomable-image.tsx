@@ -76,6 +76,7 @@ export function LightboxZoomableImage({ src, alt = "", active }: Props) {
             justifyContent: "center",
           }}
         >
+          {/* eslint-disable-next-line @next/next/no-img-element -- ref + zoom/pan require native img; Cloudinary URL already optimized */}
           <img
             ref={imgRef}
             src={optimizedSrc}

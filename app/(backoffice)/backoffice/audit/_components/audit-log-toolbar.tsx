@@ -67,6 +67,7 @@ export function AuditLogToolbar({ params }: AuditLogToolbarProps) {
     }, 300);
 
     return () => window.clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- navigate wraps router.push; adding it would reset debounce every render
   }, [search, params.q]);
 
   function clearSearch() {

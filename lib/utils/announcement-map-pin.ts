@@ -95,6 +95,7 @@ export function createAnnouncementPinIconBySlug(
   const {
     getCategoryColorHex,
     getCategoryMapPinUrl,
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- Legacy dynamic require in deprecated function
   } = require("@/lib/constants/announcement-categories");
 
   return createAnnouncementPinIcon(

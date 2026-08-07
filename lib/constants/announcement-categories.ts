@@ -1,9 +1,5 @@
 import type { AnnouncementCategoryRow } from "@/lib/types";
-import {
-  resolveIcon,
-  type LucideIcon,
-  MoreHorizontal,
-} from "@/lib/utils/lucide-icon-map";
+import { resolveIcon, type LucideIcon } from "@/lib/utils/lucide-icon-map";
 
 export type { LucideIcon };
 

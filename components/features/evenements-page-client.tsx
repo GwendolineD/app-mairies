@@ -1,10 +1,10 @@
-// @ts-nocheck
 "use client";
 
 import dynamic from "next/dynamic";
 import { getEventPinHex, getInitiativePinHex } from "@/lib/constants/map-pins";
 import { getInitiativeCategoryMapPinUrl } from "@/lib/constants/initiative-categories";
 import type { EventCardData } from "@/components/features/event-card";
+import type { AgendaEventRecord } from "@/lib/types";
 import type { EventListParams } from "@/lib/utils/search-params";
 import { Card } from "@/components/ui/card";
 import { ListGrid, PageStack } from "@/components/ui/page-stack";
@@ -45,7 +45,7 @@ type Props = {
   items: EventCardData[];
   totalCount: number;
   mapCenter: [number, number];
-  mapItems: EventCardData[];
+  mapItems: AgendaEventRecord[];
   mapMarkers: MapMarker[];
   hasUserAddress: boolean;
 };

@@ -200,7 +200,10 @@ function AssetFormModal({
   const handledSuccessRef = useRef(false);
   const onCloseRef = useRef(onClose);
   const routerRef = useRef(router);
+  // Sync ref to latest value to avoid stale closures in effects.
+  // eslint-disable-next-line react-hooks/refs -- intentional render-time ref sync
   onCloseRef.current = onClose;
+  // eslint-disable-next-line react-hooks/refs -- intentional render-time ref sync
   routerRef.current = router;
 
   useEffect(() => {
@@ -331,7 +334,10 @@ function DeleteAssetModal({
   const handledSuccessRef = useRef(false);
   const onCloseRef = useRef(onClose);
   const routerRef = useRef(router);
+  // Sync ref to latest value to avoid stale closures in effects.
+  // eslint-disable-next-line react-hooks/refs -- intentional render-time ref sync
   onCloseRef.current = onClose;
+  // eslint-disable-next-line react-hooks/refs -- intentional render-time ref sync
   routerRef.current = router;
 
   useEffect(() => {

@@ -242,9 +242,12 @@ export function BackofficeListFilters({
           ? 1
           : 0;
 
+  const statusesKey = urlStatuses.join(",");
+
   useEffect(() => {
     setLocalStatuses(urlStatuses);
-  }, [urlStatuses.join(",")]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- statusesKey serializes urlStatuses for stable comparison
+  }, [statusesKey]);
 
   useEffect(() => {
     setSearch(String(params.q ?? ""));
@@ -258,6 +261,7 @@ export function BackofficeListFilters({
     }, 300);
 
     return () => window.clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- navigate wraps router.push; adding it would reset debounce every render
   }, [search, params.q]);
 
   function clearSearch() {

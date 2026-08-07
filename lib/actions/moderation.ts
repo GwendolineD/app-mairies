@@ -32,12 +32,6 @@ export type ModerationActionResult =
   | { success: true; restoredAt?: string; actorName?: string }
   | { success: false; error: string };
 
-const CONTENT_TARGET_TYPES = new Set([
-  "announcement",
-  "initiative",
-  "event",
-]);
-
 async function resolveModerationActorName(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,

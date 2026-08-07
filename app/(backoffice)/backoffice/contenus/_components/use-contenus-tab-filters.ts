@@ -56,14 +56,16 @@ export function useContenusTabFilters(params: BackofficeContenusListParams) {
   );
 
   // Sync current URL filters to localStorage when they change
+  const statusesKey = params.statuses.join(",");
   useEffect(() => {
     if (params.tab === "stats") return;
     saveContenusFiltersToStorage(params.tab, params);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- individual param fields listed; full params object is unstable
   }, [
     params.tab,
     params.q,
     params.commune,
-    params.statuses.join(","),
+    statusesKey,
     params.suspended,
     params.subtype,
     params.category,

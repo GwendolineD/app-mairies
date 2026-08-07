@@ -117,15 +117,12 @@ export async function fetchWeeklyContentCreation(
   const buckets = buildParisWeekBuckets(since);
   const annMap = countByParisWeek(
     [...(annDates ?? []), ...archivedAnnouncements],
-    buckets,
   );
   const iniMap = countByParisWeek(
     [...(iniDates ?? []), ...archivedInitiatives],
-    buckets,
   );
   const evtMap = countByParisWeek(
     [...(evtDates ?? []), ...archivedEvents],
-    buckets,
   );
 
   return buckets.map((b) => ({
@@ -166,7 +163,7 @@ export async function fetchWeeklyMembershipGrowth(
   ];
 
   const buckets = buildParisWeekBuckets(since);
-  const weekMap = countByParisWeek(allDates, buckets);
+  const weekMap = countByParisWeek(allDates);
 
   let cumulative = 0;
   return buckets.map((b) => {

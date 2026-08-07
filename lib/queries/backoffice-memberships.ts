@@ -2,7 +2,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { BackofficeMembersListParams } from "@/lib/utils/backoffice-search-params";
 import type { HabitantsSort } from "@/lib/utils/habitants-list-params";
 import type { MembershipRole, MembershipStatus, NotificationPreferences } from "@/lib/types";
-import { DEFAULT_NOTIFICATION_PREFERENCES } from "@/lib/queries/messages";
 import { createServiceClient } from "@/lib/supabase/server";
 
 export type CommuneMemberRow = {

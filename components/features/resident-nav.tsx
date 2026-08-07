@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { createElement } from "react";
 import { usePathname } from "next/navigation";
 import {
   Popover,
@@ -78,7 +79,11 @@ function BadgePill({ count }: { count: number }) {
 }
 
 function ResidentNavLink({ href, label, active, variant, collapsed, badge }: NavLinkProps) {
-  const Icon = navIcon(label);
+  const icon = navIcon(label);
+  const iconClassName = cn(
+    "size-5 shrink-0",
+    active ? "text-coral" : "text-coral/85",
+  );
 
   if (variant === "sidebar") {
     const linkClass = SIDEBAR_LINK_CLASS(active, !!collapsed);
@@ -99,13 +104,7 @@ function ResidentNavLink({ href, label, active, variant, collapsed, badge }: Nav
               />
             }
           >
-            <Icon
-              className={cn(
-                "size-5 shrink-0",
-                active ? "text-coral" : "text-coral/85",
-              )}
-              aria-hidden
-            />
+            {createElement(icon, { className: iconClassName, "aria-hidden": true })}
             {badge && badge > 0 ? (
               <span className="absolute top-1 right-1 flex size-2.5 rounded-full bg-coral" />
             ) : null}
@@ -134,10 +133,7 @@ function ResidentNavLink({ href, label, active, variant, collapsed, badge }: Nav
 
     return (
       <Link href={href} className={linkClass}>
-        <Icon
-          className={cn("size-5 shrink-0", active ? "text-coral" : "text-coral/85")}
-          aria-hidden
-        />
+        {createElement(icon, { className: iconClassName, "aria-hidden": true })}
         <span className="flex-1">{label}</span>
         <BadgePill count={badge ?? 0} />
       </Link>
@@ -156,7 +152,7 @@ function ResidentNavLink({ href, label, active, variant, collapsed, badge }: Nav
       aria-current={active ? "page" : undefined}
     >
       <span className="relative">
-        <Icon className="size-6" aria-hidden />
+        {createElement(icon, { className: "size-6", "aria-hidden": true })}
         {badge && badge > 0 ? (
           <span className="absolute -top-1 -right-1.5 flex size-3.5 items-center justify-center rounded-full bg-coral text-[8px] font-bold leading-none text-white">
             {badge > 9 ? "9+" : badge}

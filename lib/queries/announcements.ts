@@ -1,4 +1,3 @@
-// @ts-nocheck
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AnnouncementType } from "@/lib/constants/announcement-types";
 import { ANNOUNCEMENT_STATUS } from "@/lib/constants/statuses";
@@ -74,7 +73,6 @@ function plusDaysIso(days: number): string {
  * filter builder. Loosely typed (`Function`) on purpose: Supabase's generic chain
  * type otherwise inflates to an "excessively deep" instantiation in TS.
  */
-// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 function applyAnnouncementFilters<T extends { eq: Function; in: Function; gte: Function; lte: Function; is: Function }>(
   query: T,
   filters: AnnouncementListFilters,

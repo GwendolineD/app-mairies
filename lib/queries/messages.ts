@@ -60,6 +60,7 @@ export async function listMyConversations(
 
   const rows = (data ?? []) as ConversationInboxRow[];
   const totalCount = Number(rows[0]?.total_count ?? rows.length);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Omit SQL window count from row payload.
   const items = rows.map(({ total_count: _total, ...item }) => item);
 
   return { items, totalCount };
