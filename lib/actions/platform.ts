@@ -5,7 +5,7 @@ import { logAudit } from "@/lib/audit/log";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
-import { sanitizeEmailHtml, sanitizeHtml } from "@/lib/utils/sanitize-html";
+import { sanitizeEmailHtml } from "@/lib/utils/sanitize-html";
 import { createPilotCommuneSchema, communeSiretSchema, updateCommuneInfoSchema } from "@/lib/validations/schemas";
 import type { AccessStatus } from "@/lib/types";
 

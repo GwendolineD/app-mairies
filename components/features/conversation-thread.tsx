@@ -90,7 +90,10 @@ export function ConversationThread({
     setHasMoreOlder(hasMoreInitial);
   }, [conversationId, hasMoreInitial, messages]);
 
-  const all = [...olderMessages, ...messages, ...optimistic];
+  const all = useMemo(
+    () => [...olderMessages, ...messages, ...optimistic],
+    [olderMessages, messages, optimistic],
+  );
 
   const grouped = useMemo<GroupedMessages>(() => {
     const groups: GroupedMessages = [];

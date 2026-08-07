@@ -44,8 +44,6 @@ function NudgeMessage({ reason }: { reason: NudgeReason }) {
 
 export function ContentNudgeBanner({
   content,
-  contentId,
-  contentTitle,
   onDelete,
   onSnooze,
   snoozeLoading,

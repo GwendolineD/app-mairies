@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { splitInstantToParisFields, todayParisYmd, toUtcFromParisLocal, clampEndDate, resolveEndDateAfterStartChange } from "@/lib/datetime";
-import { CalendarDays, Check, Loader2, MapPin, Sparkles } from "lucide-react";
+import { Check, Loader2, MapPin, Sparkles } from "lucide-react";
 import { createEventFromModal, updateEvent } from "@/lib/actions/events";
 import { searchAddresses, type BanFeature } from "@/lib/ban/client";
 import { formatStreetDisplay } from "@/lib/ban/display";
@@ -198,9 +198,6 @@ export function CreateEventModal({
   const [addressData, setAddressData] = useState<AddressFormState>(
     initialAddress.addressData,
   );
-  const [addressConfirmed, setAddressConfirmed] = useState(
-    initialAddress.addressConfirmed,
-  );
   const [addressStreetError, setAddressStreetError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitPhase, setSubmitPhase] = useState<SubmitPhase>("idle");
@@ -235,7 +232,6 @@ export function CreateEventModal({
       setExistingPhotoRemoved(false);
       const address = getInitialAddressFromEditData(initialData);
       setAddressData(address.addressData);
-      setAddressConfirmed(address.addressConfirmed);
     } else {
       const address = getInitialAddressState(membershipAddress);
       setCategorySlug(INITIATIVE_CATEGORIES[0]?.slug ?? "solidarite");
@@ -249,7 +245,6 @@ export function CreateEventModal({
       setPendingFile(null);
       setExistingPhotoRemoved(false);
       setAddressData(address.addressData);
-      setAddressConfirmed(address.addressConfirmed);
     }
     setAddressStreetError(null);
     setFormError(null);
@@ -324,7 +319,6 @@ export function CreateEventModal({
       lat: null,
       lng: null,
     }));
-    setAddressConfirmed(false);
     setAddressStreetError(null);
   }
 
@@ -350,7 +344,6 @@ export function CreateEventModal({
       lat: feature.lat,
       lng: feature.lng,
     }));
-    setAddressConfirmed(true);
     setAddressStreetError(null);
   }
 

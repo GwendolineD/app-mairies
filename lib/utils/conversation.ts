@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { ROUTES } from "@/lib/constants/routes";
 import { CONTEXT_TYPE_LABELS } from "@/lib/constants/context-types";
 import type { ConversationContextType } from "@/lib/types";

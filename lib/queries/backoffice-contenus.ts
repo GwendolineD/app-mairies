@@ -258,7 +258,7 @@ async function countInitiatives(
   params: BackofficeContenusListParams,
 ): Promise<number> {
   const statuses = statusesForContentType("initiative", params.statuses);
-  let query = supabase
+  const query = supabase
     .from("initiatives")
     .select("id", { count: "exact", head: true });
 

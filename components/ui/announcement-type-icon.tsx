@@ -1,3 +1,4 @@
+import { createElement } from "react";
 import { getAnnouncementTypeIcon } from "@/lib/constants/announcement-types";
 
 type Props = {
@@ -11,6 +12,9 @@ export function AnnouncementTypeIcon({
   className,
   strokeWidth = 2,
 }: Props) {
-  const Icon = getAnnouncementTypeIcon(type);
-  return <Icon className={className} strokeWidth={strokeWidth} aria-hidden />;
+  return createElement(getAnnouncementTypeIcon(type), {
+    className,
+    strokeWidth,
+    "aria-hidden": true,
+  });
 }

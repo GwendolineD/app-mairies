@@ -66,7 +66,7 @@ export function LeaveCommuneModal({ open, onClose, membership }: Props) {
             <p className="text-sm font-medium text-coral">
               Vous êtes {ROLE_LABELS[membership.role] ?? "administrateur"} de
               cette commune. En quittant, vous perdrez vos droits
-              d'administration.
+              d&apos;administration.
             </p>
           </div>
         ) : null}

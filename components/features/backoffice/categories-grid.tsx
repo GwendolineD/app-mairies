@@ -1,8 +1,8 @@
-// @ts-nocheck
 "use client";
 
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useState, createElement } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import {
   createAnnouncementCategory,
@@ -89,7 +89,7 @@ function CategoryCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const Icon = resolveIcon(category.icon_name);
+  const icon = resolveIcon(category.icon_name);
 
   return (
     <Card className="flex flex-col gap-4 rounded-xl p-4">
@@ -99,7 +99,11 @@ function CategoryCard({
             className="flex size-10 shrink-0 items-center justify-center rounded-lg"
             style={{ backgroundColor: `${category.color_hex}22`, color: category.color_hex }}
           >
-            <Icon className="size-5" strokeWidth={2} aria-hidden />
+            {createElement(icon, {
+              className: "size-5",
+              strokeWidth: 2,
+              "aria-hidden": true,
+            })}
           </span>
           <div className="min-w-0">
             <p className="font-semibold text-text">{category.label}</p>
@@ -138,9 +142,11 @@ function CategoryCard({
 
         <div className="flex shrink-0 items-center gap-2">
           {category.map_pin_url ? (
-            <img
+            <Image
               src={buildOptimizedCloudinaryUrl(category.map_pin_url, { width: 160 })}
               alt="Pin carte"
+              width={36}
+              height={36}
               className="size-9 rounded border border-border object-contain"
             />
           ) : (
@@ -149,11 +155,13 @@ function CategoryCard({
             </span>
           )}
           {category.default_image_url ? (
-            <img
+            <Image
               src={buildOptimizedCloudinaryUrl(category.default_image_url, {
                 width: 160,
               })}
               alt="Image par défaut"
+              width={64}
+              height={36}
               className="h-9 w-16 rounded border border-border object-cover"
             />
           ) : (

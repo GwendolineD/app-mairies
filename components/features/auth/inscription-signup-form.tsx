@@ -184,6 +184,7 @@ export function InscriptionSignupForm({
   }, []);
 
   const fetchStreetSuggestions = useCallback(
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization -- Narrow deps to citycode only; full communeFeature would retrigger address search too often.
     (query: string) => {
       if (!communeFeature?.citycode) return Promise.resolve([]);
       return searchAddresses(query, communeFeature.citycode);
@@ -223,8 +224,8 @@ export function InscriptionSignupForm({
           Vérifiez votre boîte mail
         </h2>
         <p className="mt-3 max-w-sm text-sm text-muted">
-          Un email de confirmation vous a été envoyé. Cliquez sur le lien qu'il
-          contient pour activer votre compte et accéder à l'application.
+          Un email de confirmation vous a été envoyé. Cliquez sur le lien qu&apos;il
+          contient pour activer votre compte et accéder à l&apos;application.
         </p>
         {signupState.emailSendWarning ? (
           <p

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { EVENT_STATUS, INITIATIVE_STATUS } from "@/lib/constants/statuses";
 import type { InitiativeRecord, Membership } from "@/lib/types";
