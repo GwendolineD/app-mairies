@@ -83,6 +83,7 @@ export function LegalDocumentEditor({ document }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [isMounted, setIsMounted] = useState(false);
+  const [, setContentRevision] = useState(0);
 
   useEffect(() => {
     setIsMounted(true);
@@ -110,6 +111,9 @@ export function LegalDocumentEditor({ document }: Props) {
           "min-h-[50dvh] max-h-[70dvh] overflow-y-auto rounded-sm border border-border bg-surface px-4 py-3 outline-none focus-visible:border-purple",
         ),
       },
+    },
+    onUpdate: () => {
+      setContentRevision((revision) => revision + 1);
     },
   });
 
