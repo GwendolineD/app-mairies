@@ -28,7 +28,7 @@ Le socle est sain — feeds paginés par curseurs, `commune_id` systématiquemen
 | Sujet | Titre | Gravité | Problèmes couverts |
 | --- | --- | --- | --- |
 | — | [Garde-fous](#sujet-0--garde-fous-fait) | Prérequis | **fait** |
-| [1](#sujet-1--index-sur-les-clés-étrangères) | Index sur les clés étrangères | P1 | 5 |
+| — | [Index FK](#sujet-1--index-sur-les-clés-étrangères-fait) | P1 | **fait** |
 | [2](#sujet-2--listusers-sans-pagination) | `listUsers()` sans pagination | P0 | 1 |
 | [3](#sujet-3--troncature-silencieuse-à-1000-lignes) | Troncature silencieuse à 1000 lignes | P0 | 2, 4 |
 | [4](#sujet-4--fan-out-notifications-non-borné) | Fan-out notifications non borné | P0 | 3 |
@@ -78,16 +78,19 @@ Les tests d'intégration utilisent l'extension `.itest.ts`, qui ne correspond pa
 
 ---
 
-## Sujet 1 — Index sur les clés étrangères
+## Sujet 1 — Index sur les clés étrangères (fait)
 
 **Gravité : P1 — mais à faire en premier.** Problème 5 de l'audit.
 
+Mesuré le 8 août 2026 : bloc 2 renvoyait 36 FK sans index. Après migration `20260808093324_foreign_key_indexes.sql`, il n'en reste que 3 (les FK de nomenclature volontairement exclues). 33 index créés.
+
 ### Le problème
 
-Postgres n'indexe pas automatiquement les clés étrangères. Le bloc 2 du snippet en dénombre **36 sans index** dans le schéma `public`. Deux conséquences :
+Postgres n'indexe pas automatiquement les clés étrangères. Le bloc 2 du snippet en dénombrait **36 sans index** dans le schéma `public`. Principale conséquence :
 
 - Une suppression de compte ou un départ de commune déclenche des `CASCADE` / `SET NULL` en *seq scan* sur des tables qui grossissent vite, avec des verrous à la clé.
-- La policy `conversations_select` filtre sur `participant_a` et `participant_b`, précisément deux colonnes non indexées.
+
+> **Note :** la policy `conversations_select` contient un `OR` avec `is_conversation_participant(id)` — une fonction qui dépend de la ligne en cours. Cela rend la policy **non indexable** quels que soient les index sur `participant_a` / `participant_b`. Ces deux index servent uniquement la cascade `ON DELETE SET NULL` depuis `auth.users`, pas les lectures. La restructuration de cette policy est un candidat pour le sujet 9 ou 10.
 
 Les FK les plus coûteuses à laisser sans index, parce qu'elles portent sur des tables à forte croissance :
 
@@ -116,9 +119,13 @@ C'est la correction la plus rentable du lot, et **la seule dont le coût augment
 
 Ne pas indexer les FK vers les tables de nomenclature (`announcement_categories`, `initiative_event_categories`, `content_categories`) : ces tables comptent une dizaine de lignes, l'index ne servirait jamais et alourdirait chaque écriture.
 
+### Note sur `analytics_events`
+
+`analytics_events.user_id` a été indexé malgré une table vide en production. L'explication : la route `app/api/analytics/route.ts` et le helper `lib/analytics/track.ts` existent, mais **`track()` n'est appelé depuis aucun composant**. Le pipeline analytics est un échafaudage jamais branché. L'index ne coûte rien sur une table vide et évite d'y revenir si le pipeline est un jour connecté. Voir le sujet 8 pour la décision à prendre sur cette table.
+
 ### Critère d'acceptation
 
-Le bloc 2 du snippet ne renvoie plus les lignes du tableau ci-dessus. Le bloc 3 montre les nouveaux index.
+Le bloc 2 du snippet ne renvoie plus que les 3 FK de nomenclature. Le bloc 3 montre les 33 nouveaux index.
 
 ---
 
@@ -297,7 +304,15 @@ Le bloc 7 du snippet montre une baisse du temps cumulé sur les requêtes de bad
 
 **a. Compteurs de participation** — `listVolunteerCountsByEventId` et `listParticipantCountsByEventId` (`lib/queries/events.ts:103-137`) rapatrient toutes les lignes de participation pour en faire un `.length`. Même schéma pour les soutiens d'initiative et `fetchReportCountByContext`. Double peine : coût réseau inutile, et **compteur faux** dès que le total dépasse 1000 lignes (sujet 3).
 
-**b. Stats backoffice** — `getContentPopulationStats` et `getPopulationStats` chargent `announcements`, `initiatives`, `events` et `memberships` **sans filtre de commune ni limite** pour agréger en JS. `listPilotCommunesPage` charge toutes les communes puis pagine avec `.slice()`. Les TODO sont déjà dans le code.
+**b. Stats backoffice** — `getContentPopulationStats` (`lib/queries/backoffice-contenus.ts`) et `getPopulationStats` (`lib/queries/backoffice-users-list.ts`) chargent des tables entières **sans filtre de commune ni limite** pour agréger en JS.
+
+Précisions qui aggravent le diagnostic :
+
+- `getPopulationStats` charge **4 jeux non bornés** : `communes`, `memberships`, et `neighbor_invites` **deux fois** (`.select("commune_id")` complet, puis à nouveau filtré sur `accepted_at`).
+- Les deux fonctions restreignent aux communes pilotes **en JS après la récupération** (`filterPilotRows`, `countByCommuneId`). La troncature à `max_rows` intervient donc **avant** le filtre — les statistiques deviennent silencieusement fausses dès que **la plateforme** dépasse le plafond, pas seulement dès qu'une commune le dépasse. C'est le même mécanisme que le sujet 3c, mais sur un écran de pilotage.
+- `getContentPopulationStats` est appelée sur **deux pages** en `force-dynamic` (`backoffice/admin` et `backoffice/contenus?tab=stats`), sans cache pour amortir.
+
+`listPilotCommunesPage` charge toutes les communes puis pagine avec `.slice()`. Les TODO sont déjà dans le code.
 
 ### La correction
 
@@ -319,7 +334,9 @@ Une ligne de résultat par événement au lieu d'une par participant. Le bloc 8 
 
 **`notifications` est une table en écriture seule** : aucun endroit du code ne la lit, il n'y a pas de centre de notifications dans l'UI. Avec le fan-out, 20 communes × 1000 membres × 10 contenus/jour produisent **200 000 lignes par jour que personne ne consulte**.
 
-Même constat, sans purge, pour `analytics_events`, `audit_logs`, et les lignes `sent` de `email_queue`.
+Même constat, sans purge, pour `audit_logs` et les lignes `sent` de `email_queue`.
+
+> **Cas particulier : `analytics_events`** — Cette table est **vide** en production (0 ligne, 0 octet au 8 août 2026). La route `app/api/analytics/route.ts` et le helper `lib/analytics/track.ts` existent, mais `track()` n'est **appelé depuis aucun composant**. Le pipeline analytics est un échafaudage jamais branché. La question à trancher ici est la même que pour `notifications` — connecter le pipeline ou supprimer le code mort (route, helper, table, index). Elle doit être tranchée **avant** d'écrire une politique de rétention.
 
 ### La correction
 
@@ -391,3 +408,18 @@ Les feeds et les vues carte (`limit(500)`) rapatrient la colonne `description` (
 ### d. Éventuellement : `getClaims()` dans le proxy
 
 Valider le JWT localement au lieu d'un aller-retour Auth. Gain fort sur la latence, mais nécessite une rotation vers des clés asymétriques et un traitement soigné du rafraîchissement de token. **À tester en staging, pas en direct.**
+
+### e. Table de préférences orpheline (P3)
+
+Deux tables de préférences de notification coexistent :
+
+| Table | Créée le | Clé vers | Colonnes | Lignes prod |
+| --- | --- | --- | --- | --- |
+| `profile_notification_preferences` | 5 juin (`20260605000010`) | `profiles(user_id)` | 3 | **0** |
+| `user_notification_preferences` | 14 juin (`20260614000000`) | `auth.users(id)` | 10 | 42 |
+
+La première n'est écrite que par `updateNotificationPreferences` dans `lib/actions/profile.ts:14` — un **doublon mort**. L'UI (`components/features/notification-preferences-form.tsx`) importe la fonction **homonyme** de `lib/actions/notifications.ts`, qui écrit dans `user_notification_preferences`. Deux server actions de même nom dans deux fichiers voisins, dont une jamais atteinte : piège pour la prochaine modification des préférences.
+
+`docs/database-erd.md` ne documente déjà que `user_notification_preferences`.
+
+*Correction :* supprimer l'action morte de `profile.ts`, puis migration `DROP TABLE public.profile_notification_preferences` (avec ses 4 policies et son trigger).
