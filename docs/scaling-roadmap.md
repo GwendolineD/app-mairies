@@ -29,7 +29,7 @@ Le socle est sain — feeds paginés par curseurs, `commune_id` systématiquemen
 | --- | --- | --- | --- |
 | — | [Garde-fous](#sujet-0--garde-fous-fait) | Prérequis | **fait** |
 | — | [Index FK](#sujet-1--index-sur-les-clés-étrangères-fait) | P1 | **fait** |
-| [2](#sujet-2--listusers-sans-pagination) | `listUsers()` sans pagination | P0 | 1 |
+| — | [`listUsers()` sans pagination](#sujet-2--listusers-sans-pagination-fait) | P0 | **fait** |
 | [3](#sujet-3--troncature-silencieuse-à-1000-lignes) | Troncature silencieuse à 1000 lignes | P0 | 2, 4 |
 | [4](#sujet-4--fan-out-notifications-non-borné) | Fan-out notifications non borné | P0 | 3 |
 | [5](#sujet-5--email_queue-sans-réservation) | `email_queue` sans réservation | P1 | 6 |
@@ -50,7 +50,7 @@ Posés avant toute correction, parce que les sujets 1 à 10 modifient des invari
 | Fichier | Ce qu'il verrouille | Sert au sujet |
 | --- | --- | --- |
 | `lib/services/notification-fanout.test.ts` | Liste exacte des destinataires : auteur exclu côté base, opt-out respecté, absence de préférences = inclus, `excludeUserIds` honoré, sortie immédiate si commune vide | 4 |
-| `lib/cron/email-sender.test.ts` | Machine à états de `email_queue` : `cancelled`, `sent`, `pending` + tentative incrémentée, `failed` au seuil. Plus un **test de caractérisation** du bug de `shouldSend` | 2, 5 |
+| `lib/cron/email-sender.test.ts` | Machine à états de `email_queue` : `cancelled`, `sent`, `pending` + tentative incrémentée, `failed` au seuil. Plus deux tests vérifiant le fix de `shouldSend` (opt-out honoré, invitations envoyées) | 2, 5 |
 | `tests/integration/tenant-isolation.itest.ts` | Isolation entre communes évaluée par les vraies policies RLS, sur 7 tables, en lecture **et** en écriture | 9 |
 | `tests/integration/fixtures.ts` | Deux communes jetables (INSEE 99001 / 99002) créées et détruites par la suite elle-même | 9 |
 | `supabase/snippets/scaling-baseline.sql` | 9 blocs de mesure en lecture seule : plafond de lignes, FK sans index, volumétrie, rétention, requêtes coûteuses, taille du fan-out | tous |
@@ -66,7 +66,7 @@ Les tests d'intégration utilisent l'extension `.itest.ts`, qui ne correspond pa
 
 ### Deux points d'attention sur ces garde-fous
 
-**Le test de caractérisation de `shouldSend` verrouille le bug, pas le comportement souhaité.** Il affirme qu'aujourd'hui l'e-mail part malgré l'opt-out quand le destinataire n'est pas sur la première page de `listUsers()`. C'est volontaire : quand le sujet 2 sera corrigé, **ce test doit échouer**. Il faudra alors l'inverser, pas le supprimer.
+**Le test de caractérisation de `shouldSend` a été remplacé par deux cas.** L'ancien test affirmait que l'e-mail partait malgré l'opt-out quand le destinataire n'était pas sur la première page de `listUsers()`. Avec le sujet 2 corrigé, ce comportement n'existe plus. Les deux nouveaux tests vérifient : (1) qu'un `recipient_user_id` renseigné avec opt-out annule l'envoi, et (2) qu'un `recipient_user_id` null (invitation) envoie toujours.
 
 **Les fixtures d'intégration purgent avant de créer.** Un run interrompu ne bloque donc pas le suivant. Elles n'utilisent jamais `supabase db reset` et ne touchent pas au seed de développement (Les Authieux, 27027).
 
@@ -129,36 +129,45 @@ Le bloc 2 du snippet ne renvoie plus que les 3 FK de nomenclature. Le bloc 3 mon
 
 ---
 
-## Sujet 2 — `listUsers()` sans pagination
+## Sujet 2 — `listUsers()` sans pagination (fait)
 
-**Gravité : P0 — le plus imminent (7 utilisateurs de marge).** Problème 1 de l'audit.
+**Gravité : P0 — corrigé le 8 août 2026.** Problème 1 de l'audit.
 
 ### Le problème
 
-`auth.admin.listUsers()` est appelé sans paramètre de pagination dans **10 emplacements**. Le client envoie un `per_page` vide, et le serveur Auth applique son défaut de **50**. La production est à 43 utilisateurs.
+`auth.admin.listUsers()` était appelé sans paramètre de pagination dans **11 emplacements** (et non 10 comme initialement compté). Le client envoyait un `per_page` vide, et le serveur Auth appliquait son défaut de **50**, triés par `created_at DESC` — ce sont donc les comptes **les plus anciens** (staff, maire, admins plateforme, membres fondateurs) qui disparaissaient en premier.
 
-Au-delà du 50ᵉ, chaque emplacement échoue silencieusement, de trois façons différentes :
+Au-delà du 50ᵉ, chaque emplacement échouait silencieusement, de trois façons différentes :
 
 | Fichier | Conséquence |
 | --- | --- |
-| `lib/cron/lifecycle-collector.ts` (6 occurrences) | `if (!email) continue` → la relance est simplement sautée |
-| `lib/actions/reports.ts:159,187` | Les mails staff / admin ne partent plus → **angle mort de modération** |
-| `lib/cron/email-sender.ts:36` | Utilisateur non trouvé → `shouldSend` renvoie `true` → l'e-mail part **malgré son opt-out** |
+| `lib/cron/lifecycle-collector.ts` (6 occurrences) | `if (!email) continue` → la relance était simplement sautée |
+| `lib/actions/reports.ts:159,187` | Les mails staff / admin ne partaient plus → **angle mort de modération** |
+| `lib/actions/cancellation.ts:137` | Staff non notifié de la résiliation |
+| `lib/services/initiative-to-event-notification.ts:95` | Supporters non notifiés de la transformation en événement |
+| `lib/cron/email-sender.ts:36` | Utilisateur non trouvé → `shouldSend` renvoyait `true` → l'e-mail partait **malgré son opt-out** |
+| `lib/email/send-verification-email.ts:84` | Boucle paginée jusqu'à 2000 comptes — même plafond déplacé, sur un chemin d'inscription |
 
 ### La correction
 
-Un helper unique `getEmailsByUserIds(ids)` qui résout les e-mails de façon ciblée, et le substituer aux 10 appels.
-
-L'intérêt du helper n'est pas seulement de corriger : il crée une **couture**. On pourra ensuite changer son implémentation (par exemple une table miroir `user_emails` alimentée par trigger) sans retoucher un seul appelant.
+1. **RPC `admin_user_emails(uuid[])`** — résolution `id → email` via un seul aller-retour SQL, sans plafond.
+2. **Helper `getEmailsByUserIds`** (`lib/services/user-emails.ts`) — interface unique, erreur levée, Map typée.
+3. **Substitution des 10 appels `id → email`** — lifecycle-collector ×6, reports ×2, cancellation, initiative-to-event.
+4. **Garde ESLint `no-restricted-syntax`** — interdit `listUsers()` dans `lib/**`, `app/**`, `components/**`.
+5. **Colonne `email_queue.recipient_user_id`** — `ON DELETE CASCADE`, index, backfill des `pending`.
+6. **Réécriture de `shouldSend`** — `recipient_user_id` null = invitation, on envoie ; sinon vérification des préférences.
+7. **RPC `admin_user_id_by_email(text)`** — résolution `email → id` pour `findAuthUserByEmail`, qui paginait jusqu'à 2000.
 
 ### À ne pas faire
 
 Ne pas se contenter de passer `perPage: 1000`. Ça déplace le plafond sans le supprimer, et rapatrie tout l'annuaire pour en extraire quelques adresses.
 
-### Critère d'acceptation
+### Critère d'acceptation (vérifié)
 
-- Aucun appel à `listUsers()` hors du helper (et hors des scripts d'administration).
-- Le test de caractérisation de `lib/cron/email-sender.test.ts` **échoue** — c'est le signal que le bug est corrigé. L'inverser alors : recipient introuvable devrait désormais annuler l'envoi, pas le déclencher.
+- `rg 'listUsers\('` ne renvoie plus que `tests/integration/fixtures.ts` et `scripts/bootstrap-super-admin.ts`.
+- La règle ESLint maintient l'interdiction.
+- `npm test` vert avec les deux cas opt-out / invitation.
+- `npm run lint` et `npm run build` sans nouvelle erreur.
 
 ---
 

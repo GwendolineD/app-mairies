@@ -27,22 +27,24 @@ function sleep(ms: number): Promise<void> {
 
 /**
  * Re-verify email preference before sending.
+ *
+ * - `recipient_user_id` null → no account (invitation), send.
+ * - `recipient_user_id` set → check opt-out, send if allowed.
  */
 async function shouldSend(
   service: SupabaseClient,
-  entry: { to_email: string; related_content_type: string | null; related_content_id: string | null },
+  recipientUserId: string | null,
 ): Promise<boolean> {
-  // Find user by email via auth.users
-  const { data: users } = await service.auth.admin.listUsers();
-  const user = (users?.users ?? []).find((u) => u.email === entry.to_email);
-  if (!user) return true; // User deleted — skip silently
+  // No account (invitation recipients) — send unconditionally
+  if (!recipientUserId) return true;
 
   const { data: pref } = await service
     .from("user_notification_preferences")
     .select("email_lifecycle_enabled")
-    .eq("user_id", user.id)
+    .eq("user_id", recipientUserId)
     .maybeSingle();
 
+  // Default to true if no preferences row
   return pref?.email_lifecycle_enabled ?? true;
 }
 
@@ -67,8 +69,8 @@ export async function runEmailSender(service: SupabaseClient): Promise<SenderRes
   let cancelled = 0;
 
   for (const entry of entries) {
-    // Re-verify opt-in before sending
-    const allowed = await shouldSend(service, entry);
+    // Re-verify opt-in before sending (recipient_user_id null = no account, always send)
+    const allowed = await shouldSend(service, entry.recipient_user_id);
     if (!allowed) {
       await service
         .from("email_queue")

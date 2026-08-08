@@ -895,6 +895,7 @@ export type Database = {
           id: string
           last_error: string | null
           max_attempts: number
+          recipient_user_id: string | null
           related_content_id: string | null
           related_content_type: string | null
           scheduled_at: string
@@ -910,6 +911,7 @@ export type Database = {
           id?: string
           last_error?: string | null
           max_attempts?: number
+          recipient_user_id?: string | null
           related_content_id?: string | null
           related_content_type?: string | null
           scheduled_at?: string
@@ -925,6 +927,7 @@ export type Database = {
           id?: string
           last_error?: string | null
           max_attempts?: number
+          recipient_user_id?: string | null
           related_content_id?: string | null
           related_content_type?: string | null
           scheduled_at?: string
@@ -2013,6 +2016,14 @@ export type Database = {
         }[]
       }
       admin_platform_stats: { Args: never; Returns: Json }
+      admin_user_emails: {
+        Args: { p_user_ids: string[] }
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
+      admin_user_id_by_email: { Args: { p_email: string }; Returns: string }
       can_access_commune_content: {
         Args: { p_commune_id: string }
         Returns: boolean
@@ -2092,7 +2103,12 @@ export type Database = {
       }
       is_platform_admin: { Args: never; Returns: boolean }
       list_my_conversations: {
-        Args: { p_archived?: boolean; p_commune_id: string }
+        Args: {
+          p_archived?: boolean
+          p_commune_id: string
+          p_limit?: number
+          p_offset?: number
+        }
         Returns: {
           archived_at: string
           context_available: boolean
@@ -2111,6 +2127,7 @@ export type Database = {
           other_membership_status: string
           other_user_id: string
           title: string
+          total_count: number
           unread_count: number
           updated_at: string
         }[]

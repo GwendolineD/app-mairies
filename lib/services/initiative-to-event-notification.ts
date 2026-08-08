@@ -9,6 +9,7 @@
 import { ROUTES } from "@/lib/constants/routes";
 import { generateUnsubscribeToken } from "@/lib/email/unsubscribe-token";
 import { notifyUser } from "@/lib/services/push-notifications";
+import { getEmailsByUserIds } from "@/lib/services/user-emails";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getAppUrl } from "@/lib/utils/app-url";
 import type { Database } from "@/lib/types/database.types";
@@ -92,10 +93,7 @@ export async function notifyInitiativeSupporters(
       (profiles ?? []).map((p) => [p.user_id, p.display_name as string | null]),
     );
 
-    const { data: users } = await supabase.auth.admin.listUsers();
-    const emailMap = new Map(
-      (users?.users ?? []).map((u) => [u.id, u.email]),
-    );
+    const emailMap = await getEmailsByUserIds(supabase, input.supporterUserIds);
 
     // Check push preferences in batch
     const { data: prefs } = await supabase
@@ -140,6 +138,7 @@ export async function notifyInitiativeSupporters(
           emailQueueRows.push({
             to_email: email,
             template_slug: "initiative-to-event",
+            recipient_user_id: userId,
             variables: {
               user_name: displayName,
               initiative_title: input.initiativeTitle,

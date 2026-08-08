@@ -11,6 +11,7 @@ import { formatShortDate } from "@/lib/datetime";
 import { CONTEXT_TYPE_LABELS } from "@/lib/constants/context-types";
 import type { ConversationContextType } from "@/lib/types";
 import { reportSchema, userReportSchema } from "@/lib/validations/schemas";
+import { getEmailsByUserIds } from "@/lib/services/user-emails";
 
 export type ContentReportActionState = {
   error?: string;
@@ -156,12 +157,9 @@ async function sendReportNotificationEmails(
 
   if (staffMemberships?.length) {
     const staffUserIds = staffMemberships.map((m) => m.user_id);
-    const { data: authData } = await serviceClient.auth.admin.listUsers();
-    const staffEmails = (authData?.users ?? [])
-      .filter((u) => staffUserIds.includes(u.id) && u.email)
-      .map((u) => u.email!);
+    const staffEmailMap = await getEmailsByUserIds(serviceClient, staffUserIds);
 
-    for (const email of staffEmails) {
+    for (const email of staffEmailMap.values()) {
       sendTemplatedEmail(email, "report-notification-staff", {
         commune_name: communeName,
         content_type: contentTypeLabel,
@@ -184,12 +182,9 @@ async function sendReportNotificationEmails(
 
   if (adminProfiles?.length) {
     const adminUserIds = adminProfiles.map((p) => p.user_id);
-    const { data: authData } = await serviceClient.auth.admin.listUsers();
-    const adminEmails = (authData?.users ?? [])
-      .filter((u) => adminUserIds.includes(u.id) && u.email)
-      .map((u) => u.email!);
+    const adminEmailMap = await getEmailsByUserIds(serviceClient, adminUserIds);
 
-    for (const email of adminEmails) {
+    for (const email of adminEmailMap.values()) {
       sendTemplatedEmail(email, "report-notification-admin", {
         commune_name: communeName,
         content_type: contentTypeLabel,

@@ -19,6 +19,21 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/no-unsafe-function-type": "off",
     },
   },
+  {
+    files: ["lib/**", "app/**", "components/**"],
+    rules: {
+      // listUsers() returns at most 50 accounts (created_at DESC), silently
+      // truncating older users. Use getEmailsByUserIds() from lib/services/user-emails.ts.
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "MemberExpression[property.name='listUsers']",
+          message:
+            "listUsers() caps at 50 accounts — use getEmailsByUserIds (lib/services/user-emails.ts).",
+        },
+      ],
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

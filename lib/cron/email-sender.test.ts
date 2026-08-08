@@ -25,6 +25,7 @@ type QueueEntry = {
   scheduled_at: string;
   related_content_type: string | null;
   related_content_id: string | null;
+  recipient_user_id: string | null;
 };
 
 function queueEntry(overrides: Partial<QueueEntry> = {}): QueueEntry {
@@ -38,6 +39,7 @@ function queueEntry(overrides: Partial<QueueEntry> = {}): QueueEntry {
     scheduled_at: "2026-08-01T06:00:00.000Z",
     related_content_type: null,
     related_content_id: null,
+    recipient_user_id: USER_ID, // default: has an account
     ...overrides,
   };
 }
@@ -66,7 +68,6 @@ type QueueUpdate = { payload: Record<string, unknown>; id: string };
 
 function createService(options: {
   entries: QueueEntry[];
-  authUsers?: Array<{ id: string; email: string }>;
   /** `undefined` means no preferences row exists for the user. */
   lifecycleEnabled?: boolean;
 }) {
@@ -84,6 +85,7 @@ function createService(options: {
         }),
       };
     }
+    // user_notification_preferences lookup
     return stubChain({
       data:
         options.lifecycleEnabled === undefined
@@ -92,18 +94,7 @@ function createService(options: {
     });
   });
 
-  const service = {
-    from,
-    auth: {
-      admin: {
-        listUsers: vi.fn(async () => ({
-          data: { users: options.authUsers ?? [] },
-        })),
-      },
-    },
-  };
-
-  return { service, updates };
+  return { service: { from }, updates };
 }
 
 async function run(service: unknown) {
@@ -133,8 +124,7 @@ describe("runEmailSender — queue state transitions", () => {
   it("cancels an entry when the recipient disabled lifecycle emails", async () => {
     const send = await mockSend({ success: true });
     const { service, updates } = createService({
-      entries: [queueEntry()],
-      authUsers: [{ id: USER_ID, email: RECIPIENT }],
+      entries: [queueEntry({ recipient_user_id: USER_ID })],
       lifecycleEnabled: false,
     });
 
@@ -150,8 +140,7 @@ describe("runEmailSender — queue state transitions", () => {
   it("marks an entry sent on success", async () => {
     const send = await mockSend({ success: true });
     const { service, updates } = createService({
-      entries: [queueEntry()],
-      authUsers: [{ id: USER_ID, email: RECIPIENT }],
+      entries: [queueEntry({ recipient_user_id: USER_ID })],
       lifecycleEnabled: true,
     });
 
@@ -170,8 +159,7 @@ describe("runEmailSender — queue state transitions", () => {
   it("keeps an entry pending and increments attempts below max_attempts", async () => {
     await mockSend({ success: false, error: "SMTP unreachable" });
     const { service, updates } = createService({
-      entries: [queueEntry({ attempts: 0, max_attempts: 3 })],
-      authUsers: [{ id: USER_ID, email: RECIPIENT }],
+      entries: [queueEntry({ attempts: 0, max_attempts: 3, recipient_user_id: USER_ID })],
       lifecycleEnabled: true,
     });
 
@@ -193,8 +181,7 @@ describe("runEmailSender — queue state transitions", () => {
   it("marks an entry failed once attempts reach max_attempts", async () => {
     await mockSend({ success: false, error: "SMTP unreachable" });
     const { service, updates } = createService({
-      entries: [queueEntry({ attempts: 2, max_attempts: 3 })],
-      authUsers: [{ id: USER_ID, email: RECIPIENT }],
+      entries: [queueEntry({ attempts: 2, max_attempts: 3, recipient_user_id: USER_ID })],
       lifecycleEnabled: true,
     });
 
@@ -208,8 +195,7 @@ describe("runEmailSender — queue state transitions", () => {
   it("sends when the recipient has no preferences row", async () => {
     const send = await mockSend({ success: true });
     const { service } = createService({
-      entries: [queueEntry()],
-      authUsers: [{ id: USER_ID, email: RECIPIENT }],
+      entries: [queueEntry({ recipient_user_id: USER_ID })],
       lifecycleEnabled: undefined,
     });
 
@@ -228,9 +214,26 @@ describe("runEmailSender — queue state transitions", () => {
     expect(updates).toEqual([]);
     expect(result).toEqual({ sent: 0, failed: 0, cancelled: 0 });
   });
+
+  it("sends invitations (recipient_user_id null) unconditionally", async () => {
+    // Invitation recipients have no account, so recipient_user_id is null.
+    // They should always receive the email, regardless of preferences.
+    const send = await mockSend({ success: true });
+    const { service, updates } = createService({
+      entries: [queueEntry({ recipient_user_id: null })],
+      lifecycleEnabled: false, // opt-out should be ignored for invitations
+    });
+
+    const result = await run(service);
+
+    expect(send).toHaveBeenCalledOnce();
+    expect(updates).toHaveLength(1);
+    expect(updates[0].payload.status).toBe("sent");
+    expect(result).toEqual({ sent: 1, failed: 0, cancelled: 0 });
+  });
 });
 
-describe("runEmailSender — known defect, characterisation", () => {
+describe("runEmailSender — opt-out fix (sujet 2)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv("CRON_EMAIL_DELAY_MS", "1");
@@ -240,24 +243,39 @@ describe("runEmailSender — known defect, characterisation", () => {
     vi.unstubAllEnvs();
   });
 
-  it("sends anyway when the recipient is absent from the first listUsers page", async () => {
-    // `shouldSend` resolves recipients through an unpaginated
-    // `auth.admin.listUsers()`, which returns only the first 50 users. Beyond
-    // that page the recipient is not found, `shouldSend` returns true, and the
-    // email goes out even though this account opted out.
-    //
-    // This asserts today's behaviour on purpose, so that fixing sujet 2 shows
-    // up as a deliberate change here instead of passing unnoticed.
+  it("cancels entry when recipient_user_id is set and opted out", async () => {
+    // This replaces the old characterization test. Before the fix, users beyond
+    // the first 50 accounts were not found by listUsers() and emails went out
+    // despite opt-out. Now we use recipient_user_id to check preferences directly.
     const send = await mockSend({ success: true });
-    const { service } = createService({
-      entries: [queueEntry()],
-      authUsers: [], // recipient not on the returned page
-      lifecycleEnabled: false, // opted out, yet ignored
+    const { service, updates } = createService({
+      entries: [queueEntry({ recipient_user_id: USER_ID })],
+      lifecycleEnabled: false,
+    });
+
+    const result = await run(service);
+
+    expect(send).not.toHaveBeenCalled();
+    expect(updates).toEqual([
+      { payload: { status: "cancelled" }, id: ENTRY_ID },
+    ]);
+    expect(result).toEqual({ sent: 0, failed: 0, cancelled: 1 });
+  });
+
+  it("sends invitation when recipient_user_id is null", async () => {
+    // Invitation reminders go to recipients without accounts. The email should
+    // be sent regardless of any preference lookup.
+    const send = await mockSend({ success: true });
+    const { service, updates } = createService({
+      entries: [queueEntry({ recipient_user_id: null })],
+      lifecycleEnabled: false, // irrelevant for invitations
     });
 
     const result = await run(service);
 
     expect(send).toHaveBeenCalledOnce();
+    expect(updates).toHaveLength(1);
+    expect(updates[0].payload.status).toBe("sent");
     expect(result).toEqual({ sent: 1, failed: 0, cancelled: 0 });
   });
 });

@@ -7,6 +7,7 @@ import { ROUTES } from "@/lib/constants/routes";
 import { sendTemplatedEmail } from "@/lib/email";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { formatShortDate, todayParisYmd } from "@/lib/datetime";
+import { getEmailsByUserIds } from "@/lib/services/user-emails";
 
 export type CancellationActionResult =
   | { success: true }
@@ -134,22 +135,17 @@ export async function cancelSubscription(
     const staffUserIds = staffMemberships.map((m) => m.user_id);
 
     const serviceClient = await createServiceClient();
-    const { data: authData } = await serviceClient.auth.admin.listUsers();
-    const staffEmails = (authData?.users ?? [])
-      .filter((u) => staffUserIds.includes(u.id) && u.email)
-      .map((u) => u.email!);
+    const staffEmailMap = await getEmailsByUserIds(serviceClient, staffUserIds);
 
-    if (staffEmails.length > 0) {
-      for (const staffEmail of staffEmails) {
-        sendTemplatedEmail(staffEmail, "cancellation-confirmation-staff", {
-          commune_name: commune.name,
-          user_name: userName,
-          subscription_end_date: subscriptionEndDate,
-          comment: trimmedComment,
-        }).catch((err) => {
-          console.error("[cancellation] Failed to send staff email:", err);
-        });
-      }
+    for (const staffEmail of staffEmailMap.values()) {
+      sendTemplatedEmail(staffEmail, "cancellation-confirmation-staff", {
+        commune_name: commune.name,
+        user_name: userName,
+        subscription_end_date: subscriptionEndDate,
+        comment: trimmedComment,
+      }).catch((err) => {
+        console.error("[cancellation] Failed to send staff email:", err);
+      });
     }
   }
 

@@ -4,7 +4,11 @@ import { ROUTES } from "@/lib/constants/routes";
 import { addDaysParisYmd, DAY_MS } from "@/lib/datetime";
 import { generateUnsubscribeToken } from "@/lib/email/unsubscribe-token";
 import { notifyUser } from "@/lib/services/push-notifications";
+import { getEmailsByUserIds } from "@/lib/services/user-emails";
 import { getAppUrl } from "@/lib/utils/app-url";
+import type { Database } from "@/lib/types/database.types";
+
+type EmailQueueInsert = Database["public"]["Tables"]["email_queue"]["Insert"];
 
 type CollectorResult = {
   purgedAnnouncements: number;
@@ -78,18 +82,33 @@ async function purgeArchivedConversations(service: SupabaseClient): Promise<numb
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Helper: check email opt-in preference
+// Helper: batch check email opt-in preferences
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function isEmailLifecycleEnabled(service: SupabaseClient, userId: string): Promise<boolean> {
+async function getEmailLifecyclePrefs(
+  service: SupabaseClient,
+  userIds: string[],
+): Promise<Map<string, boolean>> {
+  const map = new Map<string, boolean>();
+  if (userIds.length === 0) return map;
+
   const { data } = await service
     .from("user_notification_preferences")
-    .select("email_lifecycle_enabled")
-    .eq("user_id", userId)
-    .maybeSingle();
+    .select("user_id, email_lifecycle_enabled")
+    .in("user_id", userIds);
 
-  // Default true if no row exists
-  return data?.email_lifecycle_enabled ?? true;
+  for (const row of data ?? []) {
+    map.set(row.user_id, row.email_lifecycle_enabled ?? true);
+  }
+
+  // Default to true for users without a preferences row
+  for (const userId of userIds) {
+    if (!map.has(userId)) {
+      map.set(userId, true);
+    }
+  }
+
+  return map;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -224,11 +243,13 @@ async function collectEngagementReminders(service: SupabaseClient): Promise<numb
 
   if (eligible.length === 0) return 0;
 
-  // Get user emails
-  const { data: users } = await service.auth.admin.listUsers();
-  const emailMap = new Map(
-    (users?.users ?? []).map((u) => [u.id, u.email]),
-  );
+  const eligibleUserIds = eligible.map((p) => p.user_id);
+
+  // Batch: emails, preferences, communes
+  const [emailMap, emailPrefs] = await Promise.all([
+    getEmailsByUserIds(service, eligibleUserIds),
+    getEmailLifecyclePrefs(service, eligibleUserIds),
+  ]);
 
   const communeIds = [...new Set(eligible.map((p) => p.active_commune_id).filter(Boolean))];
   const { data: communes } = await service
@@ -237,20 +258,21 @@ async function collectEngagementReminders(service: SupabaseClient): Promise<numb
     .in("id", communeIds as string[]);
   const communeMap = new Map((communes ?? []).map((c) => [c.id, c.name]));
 
-  const queueRows: Array<Record<string, unknown>> = [];
+  const queueRows: EmailQueueInsert[] = [];
   const notifiedUserIds: string[] = [];
 
   for (const profile of eligible) {
     const email = emailMap.get(profile.user_id);
     if (!email) continue;
 
-    const emailEnabled = await isEmailLifecycleEnabled(service, profile.user_id);
+    const emailEnabled = emailPrefs.get(profile.user_id) ?? true;
     const communeName = communeMap.get(profile.active_commune_id ?? "") ?? "";
 
     if (emailEnabled) {
       queueRows.push({
         to_email: email,
         template_slug: "engagement-first-week",
+        recipient_user_id: profile.user_id,
         variables: {
           user_name: profile.display_name ?? "Voisin·e",
           commune_name: communeName,
@@ -270,7 +292,8 @@ async function collectEngagementReminders(service: SupabaseClient): Promise<numb
   }
 
   if (queueRows.length > 0) {
-    await service.from("email_queue").insert(queueRows);
+    const { error } = await service.from("email_queue").insert(queueRows);
+    if (error) throw new Error(`collectEngagementReminders(insert): ${error.message}`);
   }
 
   if (notifiedUserIds.length > 0) {
@@ -324,10 +347,13 @@ async function collectAnnouncementExpiredNudges(service: SupabaseClient): Promis
     .in("user_id", userIds);
   const profileMap = new Map((profiles ?? []).map((p) => [p.user_id, p.display_name]));
 
-  const { data: users } = await service.auth.admin.listUsers();
-  const emailMap = new Map((users?.users ?? []).map((u) => [u.id, u.email]));
+  // Batch: emails and preferences
+  const [emailMap, emailPrefs] = await Promise.all([
+    getEmailsByUserIds(service, userIds),
+    getEmailLifecyclePrefs(service, userIds),
+  ]);
 
-  const queueRows: Array<Record<string, unknown>> = [];
+  const queueRows: EmailQueueInsert[] = [];
   const processedIds: string[] = [];
 
   for (const ann of eligible) {
@@ -338,11 +364,12 @@ async function collectAnnouncementExpiredNudges(service: SupabaseClient): Promis
     const userName = profileMap.get(userId) ?? "Voisin·e";
     const announcementUrl = `${appUrl}${ROUTES.annonces.detail(ann.id)}`;
 
-    const emailEnabled = await isEmailLifecycleEnabled(service, userId);
+    const emailEnabled = emailPrefs.get(userId) ?? true;
     if (emailEnabled && email) {
       queueRows.push({
         to_email: email,
         template_slug: "announcement-expired-nudge",
+        recipient_user_id: userId,
         variables: {
           user_name: userName,
           announcement_title: ann.title,
@@ -364,7 +391,8 @@ async function collectAnnouncementExpiredNudges(service: SupabaseClient): Promis
   }
 
   if (queueRows.length > 0) {
-    await service.from("email_queue").insert(queueRows);
+    const { error } = await service.from("email_queue").insert(queueRows);
+    if (error) throw new Error(`collectAnnouncementExpiredNudges(insert): ${error.message}`);
   }
   if (processedIds.length > 0) {
     await service
@@ -416,10 +444,13 @@ async function collectAnnouncementStaleNudges(service: SupabaseClient): Promise<
     .in("user_id", userIds);
   const profileMap = new Map((profiles ?? []).map((p) => [p.user_id, p.display_name]));
 
-  const { data: users } = await service.auth.admin.listUsers();
-  const emailMap = new Map((users?.users ?? []).map((u) => [u.id, u.email]));
+  // Batch: emails and preferences
+  const [emailMap, emailPrefs] = await Promise.all([
+    getEmailsByUserIds(service, userIds),
+    getEmailLifecyclePrefs(service, userIds),
+  ]);
 
-  const queueRows: Array<Record<string, unknown>> = [];
+  const queueRows: EmailQueueInsert[] = [];
   const processedIds: string[] = [];
 
   for (const ann of eligible) {
@@ -430,11 +461,12 @@ async function collectAnnouncementStaleNudges(service: SupabaseClient): Promise<
     const userName = profileMap.get(userId) ?? "Voisin·e";
     const announcementUrl = `${appUrl}${ROUTES.annonces.detail(ann.id)}`;
 
-    const emailEnabled = await isEmailLifecycleEnabled(service, userId);
+    const emailEnabled = emailPrefs.get(userId) ?? true;
     if (emailEnabled && email) {
       queueRows.push({
         to_email: email,
         template_slug: "announcement-stale-60d",
+        recipient_user_id: userId,
         variables: {
           user_name: userName,
           announcement_title: ann.title,
@@ -456,7 +488,8 @@ async function collectAnnouncementStaleNudges(service: SupabaseClient): Promise<
   }
 
   if (queueRows.length > 0) {
-    await service.from("email_queue").insert(queueRows);
+    const { error } = await service.from("email_queue").insert(queueRows);
+    if (error) throw new Error(`collectAnnouncementStaleNudges(insert): ${error.message}`);
   }
   if (processedIds.length > 0) {
     await service
@@ -507,10 +540,13 @@ async function collectInitiativeStaleNudges(service: SupabaseClient): Promise<nu
     .in("user_id", userIds);
   const profileMap = new Map((profiles ?? []).map((p) => [p.user_id, p.display_name]));
 
-  const { data: users } = await service.auth.admin.listUsers();
-  const emailMap = new Map((users?.users ?? []).map((u) => [u.id, u.email]));
+  // Batch: emails and preferences
+  const [emailMap, emailPrefs] = await Promise.all([
+    getEmailsByUserIds(service, userIds),
+    getEmailLifecyclePrefs(service, userIds),
+  ]);
 
-  const queueRows: Array<Record<string, unknown>> = [];
+  const queueRows: EmailQueueInsert[] = [];
   const processedIds: string[] = [];
 
   for (const ini of eligible) {
@@ -521,11 +557,12 @@ async function collectInitiativeStaleNudges(service: SupabaseClient): Promise<nu
     const userName = profileMap.get(userId) ?? "Voisin·e";
     const initiativeUrl = `${appUrl}${ROUTES.initiatives.detail(ini.id)}`;
 
-    const emailEnabled = await isEmailLifecycleEnabled(service, userId);
+    const emailEnabled = emailPrefs.get(userId) ?? true;
     if (emailEnabled && email) {
       queueRows.push({
         to_email: email,
         template_slug: "initiative-stale-60d",
+        recipient_user_id: userId,
         variables: {
           user_name: userName,
           initiative_title: ini.title,
@@ -547,7 +584,8 @@ async function collectInitiativeStaleNudges(service: SupabaseClient): Promise<nu
   }
 
   if (queueRows.length > 0) {
-    await service.from("email_queue").insert(queueRows);
+    const { error } = await service.from("email_queue").insert(queueRows);
+    if (error) throw new Error(`collectInitiativeStaleNudges(insert): ${error.message}`);
   }
   if (processedIds.length > 0) {
     await service
@@ -598,10 +636,13 @@ async function collectEventPastNudges(service: SupabaseClient): Promise<number> 
     .in("user_id", userIds);
   const profileMap = new Map((profiles ?? []).map((p) => [p.user_id, p.display_name]));
 
-  const { data: users } = await service.auth.admin.listUsers();
-  const emailMap = new Map((users?.users ?? []).map((u) => [u.id, u.email]));
+  // Batch: emails and preferences
+  const [emailMap, emailPrefs] = await Promise.all([
+    getEmailsByUserIds(service, userIds),
+    getEmailLifecyclePrefs(service, userIds),
+  ]);
 
-  const queueRows: Array<Record<string, unknown>> = [];
+  const queueRows: EmailQueueInsert[] = [];
   const processedIds: string[] = [];
 
   for (const evt of eligible) {
@@ -612,11 +653,12 @@ async function collectEventPastNudges(service: SupabaseClient): Promise<number> 
     const userName = profileMap.get(userId) ?? "Voisin·e";
     const eventUrl = `${appUrl}${ROUTES.evenements.detail(evt.id)}`;
 
-    const emailEnabled = await isEmailLifecycleEnabled(service, userId);
+    const emailEnabled = emailPrefs.get(userId) ?? true;
     if (emailEnabled && email) {
       queueRows.push({
         to_email: email,
         template_slug: "event-past-nudge",
+        recipient_user_id: userId,
         variables: {
           user_name: userName,
           event_title: evt.title,
@@ -638,7 +680,8 @@ async function collectEventPastNudges(service: SupabaseClient): Promise<number> 
   }
 
   if (queueRows.length > 0) {
-    await service.from("email_queue").insert(queueRows);
+    const { error } = await service.from("email_queue").insert(queueRows);
+    if (error) throw new Error(`collectEventPastNudges(insert): ${error.message}`);
   }
   if (processedIds.length > 0) {
     await service
@@ -682,8 +725,13 @@ async function collectNotificationReminders(service: SupabaseClient): Promise<nu
   const eligible = profiles.filter((p) => !usersWithPush.has(p.user_id));
   if (eligible.length === 0) return 0;
 
-  const { data: users } = await service.auth.admin.listUsers();
-  const emailMap = new Map((users?.users ?? []).map((u) => [u.id, u.email]));
+  const eligibleUserIds = eligible.map((p) => p.user_id);
+
+  // Batch: emails and preferences
+  const [emailMap, emailPrefs] = await Promise.all([
+    getEmailsByUserIds(service, eligibleUserIds),
+    getEmailLifecyclePrefs(service, eligibleUserIds),
+  ]);
 
   const communeIds = [...new Set(eligible.map((p) => p.active_commune_id).filter(Boolean))];
   const { data: communes } = await service
@@ -692,7 +740,7 @@ async function collectNotificationReminders(service: SupabaseClient): Promise<nu
     .in("id", communeIds as string[]);
   const communeMap = new Map((communes ?? []).map((c) => [c.id, c.name]));
 
-  const queueRows: Array<Record<string, unknown>> = [];
+  const queueRows: EmailQueueInsert[] = [];
   const notifiedUserIds: string[] = [];
 
   for (const profile of eligible) {
@@ -700,12 +748,13 @@ async function collectNotificationReminders(service: SupabaseClient): Promise<nu
     if (!email) continue;
 
     const communeName = communeMap.get(profile.active_commune_id ?? "") ?? "";
-    const emailEnabled = await isEmailLifecycleEnabled(service, profile.user_id);
+    const emailEnabled = emailPrefs.get(profile.user_id) ?? true;
 
     if (emailEnabled) {
       queueRows.push({
         to_email: email,
         template_slug: "notification-activation-reminder",
+        recipient_user_id: profile.user_id,
         variables: {
           user_name: profile.display_name ?? "Voisin·e",
           commune_name: communeName,
@@ -724,7 +773,8 @@ async function collectNotificationReminders(service: SupabaseClient): Promise<nu
   }
 
   if (queueRows.length > 0) {
-    await service.from("email_queue").insert(queueRows);
+    const { error } = await service.from("email_queue").insert(queueRows);
+    if (error) throw new Error(`collectNotificationReminders(insert): ${error.message}`);
   }
   if (notifiedUserIds.length > 0) {
     await service

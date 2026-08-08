@@ -74,21 +74,11 @@ function applyMemberSort<T extends { order: Function }>(
 export async function fetchMemberEmails(
   userIds: string[],
 ): Promise<Map<string, string>> {
-  const map = new Map<string, string>();
-  if (userIds.length === 0) return map;
+  if (userIds.length === 0) return new Map();
 
   const serviceClient = await createServiceClient();
-  const results = await Promise.all(
-    userIds.map((id) => serviceClient.auth.admin.getUserById(id)),
-  );
-
-  for (const { data } of results) {
-    if (data?.user?.email) {
-      map.set(data.user.id, data.user.email);
-    }
-  }
-
-  return map;
+  const { getEmailsByUserIds } = await import("@/lib/services/user-emails");
+  return getEmailsByUserIds(serviceClient, userIds);
 }
 
 export async function fetchMembersNotificationInfo(

@@ -77,34 +77,20 @@ async function generateVerificationToken(
 
 async function findAuthUserByEmail(email: string) {
   const serviceClient = await createServiceClient();
-  const normalized = email.trim().toLowerCase();
-  let page = 1;
 
-  while (page <= 10) {
-    const { data, error } = await serviceClient.auth.admin.listUsers({
-      page,
-      perPage: 200,
-    });
+  // Resolve email → user ID via RPC (no 50/2000 account ceiling)
+  const { data: userId, error: rpcError } = await serviceClient.rpc(
+    "admin_user_id_by_email",
+    { p_email: email },
+  );
 
-    if (error || !data.users.length) {
-      return null;
-    }
-
-    const user = data.users.find(
-      (candidate) => candidate.email?.toLowerCase() === normalized,
-    );
-    if (user) {
-      return user;
-    }
-
-    if (data.users.length < 200) {
-      break;
-    }
-
-    page += 1;
+  if (rpcError || !userId) {
+    return null;
   }
 
-  return null;
+  // Fetch full user object (email_confirmed_at, user_metadata)
+  const { data } = await serviceClient.auth.admin.getUserById(userId as string);
+  return data?.user ?? null;
 }
 
 export async function sendVerificationEmail({
