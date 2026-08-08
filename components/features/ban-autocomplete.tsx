@@ -32,6 +32,8 @@ type DropdownPosition = {
   top: number;
   left: number;
   width: number;
+  placement: "top" | "bottom";
+  maxHeight: number;
 };
 
 function suggestionLabel(
@@ -80,10 +82,28 @@ export function BanAutocomplete({
     if (!anchor) return;
 
     const rect = anchor.getBoundingClientRect();
+    const gap = 4;
+    const preferredMaxHeight = 224;
+    const spaceBelow = window.innerHeight - rect.bottom - gap;
+    const spaceAbove = rect.top - gap;
+    const placement =
+      spaceBelow < preferredMaxHeight && spaceAbove > spaceBelow
+        ? "top"
+        : "bottom";
+    const maxHeight = Math.max(
+      80,
+      Math.min(
+        preferredMaxHeight,
+        placement === "top" ? spaceAbove : spaceBelow,
+      ),
+    );
+
     setDropdownPosition({
-      top: rect.bottom + 4,
+      top: placement === "bottom" ? rect.bottom + gap : rect.top - gap,
       left: rect.left,
       width: rect.width,
+      placement,
+      maxHeight,
     });
   }, []);
 
@@ -256,9 +276,12 @@ export function BanAutocomplete({
         top: dropdownPosition.top,
         left: dropdownPosition.left,
         width: dropdownPosition.width,
+        maxHeight: dropdownPosition.maxHeight,
         zIndex: 1200,
+        transform:
+          dropdownPosition.placement === "top" ? "translateY(-100%)" : undefined,
       }}
-      className="max-h-56 overflow-auto rounded-sm border border-border bg-surface shadow-elevated"
+      className="overflow-auto rounded-sm border border-border bg-surface shadow-elevated"
     >
       {loading ? (
         <div className="flex items-center justify-center gap-2 px-4 py-6 text-sm text-muted">

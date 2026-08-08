@@ -50,7 +50,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' https://res.cloudinary.com data: blob: https://*.tile.openstreetmap.org",
               "font-src 'self'",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api-adresse.data.gouv.fr https://*.tile.openstreetmap.org",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api-adresse.data.gouv.fr https://geo.api.gouv.fr https://*.tile.openstreetmap.org",
               "frame-ancestors 'none'",
             ].join("; "),
           },

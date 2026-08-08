@@ -598,45 +598,41 @@ export function CreateEventModal({
 
         <section className="space-y-4">
           <SectionHeading number={3} title="Quand a lieu l'événement ?" />
-          <div className="flex flex-nowrap items-end gap-6">
-            <div className="flex flex-nowrap items-end gap-4">
-              <FormField label="Date de début *" className="shrink-0">
-                <DatePickerField
-                  value={startDate}
-                  onChange={handleStartDateChange}
-                  minDate={isEditMode ? undefined : todayParisYmd()}
-                  placeholder="Choisir une date"
-                  className="w-[12rem]"
-                />
-              </FormField>
-              <FormField label="Heure de début *" className="shrink-0">
-                <TimePickerField
-                  value={startTime}
-                  onChange={setStartTime}
-                  placeholder="Début"
-                  className="w-[7.5rem]"
-                />
-              </FormField>
-            </div>
-            <div className="flex flex-nowrap items-end gap-4">
-              <FormField label="Date de fin *" className="shrink-0">
-                <DatePickerField
-                  value={endDate}
-                  onChange={handleEndDateChange}
-                  minDate={startDate || undefined}
-                  placeholder="Choisir une date"
-                  className="w-[12rem]"
-                />
-              </FormField>
-              <FormField label="Heure de fin *" className="shrink-0">
-                <TimePickerField
-                  value={endTime}
-                  onChange={setEndTime}
-                  placeholder="Fin"
-                  className="w-[7.5rem]"
-                />
-              </FormField>
-            </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <FormField label="Date de début *">
+              <DatePickerField
+                value={startDate}
+                onChange={handleStartDateChange}
+                minDate={isEditMode ? undefined : todayParisYmd()}
+                placeholder="Choisir une date"
+                className="w-full"
+              />
+            </FormField>
+            <FormField label="Heure de début *">
+              <TimePickerField
+                value={startTime}
+                onChange={setStartTime}
+                placeholder="Début"
+                className="w-full"
+              />
+            </FormField>
+            <FormField label="Date de fin *">
+              <DatePickerField
+                value={endDate}
+                onChange={handleEndDateChange}
+                minDate={startDate || undefined}
+                placeholder="Choisir une date"
+                className="w-full"
+              />
+            </FormField>
+            <FormField label="Heure de fin *">
+              <TimePickerField
+                value={endTime}
+                onChange={setEndTime}
+                placeholder="Fin"
+                className="w-full"
+              />
+            </FormField>
           </div>
         </section>
 
