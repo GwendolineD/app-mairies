@@ -2136,6 +2136,19 @@ export type Database = {
         Args: { p_membership_id: string }
         Returns: boolean
       }
+      select_content_notification_recipients: {
+        Args: {
+          p_after_user_id: string
+          p_author_user_id: string
+          p_commune_id: string
+          p_context_type: string
+          p_exclude_user_ids: string[]
+          p_limit: number
+        }
+        Returns: {
+          user_id: string
+        }[]
+      }
       select_engagement_candidates: {
         Args: {
           p_created_after: string

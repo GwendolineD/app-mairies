@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { logAudit } from "@/lib/audit/log";
 import { assertAuthorMembership } from "@/lib/auth/ownership";
 import { requireActiveMembership } from "@/lib/auth/session";
@@ -99,14 +100,16 @@ export async function createAnnouncement(formData: FormData): Promise<{ id: stri
     { logContext: "createAnnouncement" },
   );
 
-  void fanoutNewContentNotification({
-    contextType: "announcement",
-    contextId: created.id,
-    communeId: membership.commune_id,
-    authorUserId: ctx.userId,
-    title: parsed.data.title,
-    authorDisplayName: ctx.profile.display_name,
-  });
+  after(() =>
+    fanoutNewContentNotification({
+      contextType: "announcement",
+      contextId: created.id,
+      communeId: membership.commune_id,
+      authorUserId: ctx.userId,
+      title: parsed.data.title,
+      authorDisplayName: ctx.profile.display_name,
+    }),
+  );
 
   void logAudit({
     action: "content.create_announcement",

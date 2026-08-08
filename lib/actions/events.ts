@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { logAudit } from "@/lib/audit/log";
 import { assertAuthorMembership, assertCanManageEvent } from "@/lib/auth/ownership";
@@ -75,14 +76,16 @@ export async function createEvent(formData: FormData): Promise<void> {
     { logContext: "createEvent" },
   );
 
-  void fanoutNewContentNotification({
-    contextType: "event",
-    contextId: created.id,
-    communeId: membership.commune_id,
-    authorUserId: ctx.userId,
-    title: parsed.data.title,
-    authorDisplayName: ctx.profile.display_name,
-  });
+  after(() =>
+    fanoutNewContentNotification({
+      contextType: "event",
+      contextId: created.id,
+      communeId: membership.commune_id,
+      authorUserId: ctx.userId,
+      title: parsed.data.title,
+      authorDisplayName: ctx.profile.display_name,
+    }),
+  );
 
   void logAudit({
     action: "content.create_event",
@@ -314,15 +317,17 @@ export async function createEventFromModal(
     ? await getInitiativeSupporterUserIds(parsed.data.sourceInitiativeId, ctx.userId)
     : [];
 
-  void fanoutNewContentNotification({
-    contextType: "event",
-    contextId: created.id,
-    communeId: membership.commune_id,
-    authorUserId: ctx.userId,
-    title: parsed.data.title,
-    authorDisplayName: ctx.profile.display_name,
-    excludeUserIds: supporterUserIds,
-  });
+  after(() =>
+    fanoutNewContentNotification({
+      contextType: "event",
+      contextId: created.id,
+      communeId: membership.commune_id,
+      authorUserId: ctx.userId,
+      title: parsed.data.title,
+      authorDisplayName: ctx.profile.display_name,
+      excludeUserIds: supporterUserIds,
+    }),
+  );
 
   if (supporterUserIds.length > 0) {
     void notifyInitiativeSupporters({

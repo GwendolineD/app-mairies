@@ -3,18 +3,31 @@
  *
  * Two exported functions:
  * - getInitiativeSupporterUserIds: synchronous collection (await in the action)
- * - notifyInitiativeSupporters: fire-and-forget push + email queue
+ * - notifyInitiativeSupporters: push + email queue with bounded concurrency
+ *
+ * Sujet 4: Refactored to use bounded concurrency and batch queries to avoid
+ * 414 URI Too Long errors on large supporter lists.
  */
 
 import { ROUTES } from "@/lib/constants/routes";
 import { generateUnsubscribeToken } from "@/lib/email/unsubscribe-token";
-import { notifyUser } from "@/lib/services/push-notifications";
+import { notifyUser, type PushPayload } from "@/lib/services/push-notifications";
 import { getEmailsByUserIds } from "@/lib/services/user-emails";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getAppUrl } from "@/lib/utils/app-url";
 import type { Database } from "@/lib/types/database.types";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 type EmailQueueInsert = Database["public"]["Tables"]["email_queue"]["Insert"];
+type ServiceClient = SupabaseClient<Database>;
+
+const QUERY_BATCH_SIZE = 150;
+const PUSH_CONCURRENCY = 20;
+
+type PushTask = {
+  userId: string;
+  payload: PushPayload & { payloadJson?: Record<string, unknown> };
+};
 
 function buildUnsubscribeLink(userId: string): string {
   const token = generateUnsubscribeToken(userId);
@@ -61,13 +74,22 @@ type NotifySupportersInput = {
   authorDisplayName: string | null;
 };
 
+type NotifySupportersResult = {
+  pushSent: number;
+  pushFailed: number;
+  emailsQueued: number;
+};
+
 /**
  * Send push notifications and enqueue emails for each supporter.
- * Designed to be called with `void` (fire-and-forget) — never throws.
+ * Uses bounded concurrency for push notifications and batched queries
+ * to avoid 414 URI Too Long errors.
  */
 export async function notifyInitiativeSupporters(
   input: NotifySupportersInput,
-): Promise<void> {
+): Promise<NotifySupportersResult> {
+  const result: NotifySupportersResult = { pushSent: 0, pushFailed: 0, emailsQueued: 0 };
+
   try {
     const supabase = await createServiceClient();
     const appUrl = getAppUrl();
@@ -77,61 +99,47 @@ export async function notifyInitiativeSupporters(
     const authorLabel = input.authorDisplayName ?? "Un·e voisin·e";
 
     // Get commune name
-    const { data: commune } = await supabase
+    const { data: commune, error: communeError } = await supabase
       .from("communes")
       .select("name")
       .eq("id", input.communeId)
       .single();
+    if (communeError) {
+      console.warn("[initiative-to-event-notification] commune fetch failed", communeError.message);
+    }
     const communeName = commune?.name ?? "";
 
-    // Get user emails + display names
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("user_id, display_name")
-      .in("user_id", input.supporterUserIds);
-    const profileMap = new Map(
-      (profiles ?? []).map((p) => [p.user_id, p.display_name as string | null]),
-    );
-
+    // Batch queries to avoid 414 URI Too Long
+    const profileMap = await batchFetchProfiles(supabase, input.supporterUserIds);
     const emailMap = await getEmailsByUserIds(supabase, input.supporterUserIds);
-
-    // Check push preferences in batch
-    const { data: prefs } = await supabase
-      .from("user_notification_preferences")
-      .select("user_id, notify_new_event, email_lifecycle_enabled")
-      .in("user_id", input.supporterUserIds);
-    const prefMap = new Map(
-      (prefs ?? []).map((p) => [
-        p.user_id as string,
-        {
-          push: (p.notify_new_event as boolean | null) ?? true,
-          email: (p.email_lifecycle_enabled as boolean | null) ?? true,
-        },
-      ]),
-    );
+    const prefMap = await batchFetchPreferences(supabase, input.supporterUserIds);
 
     const emailQueueRows: EmailQueueInsert[] = [];
+    const pushTasks: PushTask[] = [];
 
     for (const userId of input.supporterUserIds) {
       const userPrefs = prefMap.get(userId) ?? { push: true, email: true };
       const displayName = profileMap.get(userId) ?? "Voisin·e";
 
-      // Push notification
+      // Collect push task
       if (userPrefs.push) {
-        await notifyUser(userId, {
-          title: "L'initiative que vous soutenez se concrétise !",
-          body: `« ${truncate(input.initiativeTitle, 60)} » → événement le ${eventDate}`,
-          url: ROUTES.evenements.detail(input.eventId),
-          tag: `initiative-to-event:${input.eventId}`,
-          payloadJson: {
-            kind: "initiative_to_event",
-            event_id: input.eventId,
-            initiative_title: input.initiativeTitle,
+        pushTasks.push({
+          userId,
+          payload: {
+            title: "L'initiative que vous soutenez se concrétise !",
+            body: `« ${truncate(input.initiativeTitle, 60)} » → événement le ${eventDate}`,
+            url: ROUTES.evenements.detail(input.eventId),
+            tag: `initiative-to-event:${input.eventId}`,
+            payloadJson: {
+              kind: "initiative_to_event",
+              event_id: input.eventId,
+              initiative_title: input.initiativeTitle,
+            },
           },
         });
       }
 
-      // Email queue
+      // Collect email queue entry
       if (userPrefs.email) {
         const email = emailMap.get(userId);
         if (email) {
@@ -156,12 +164,113 @@ export async function notifyInitiativeSupporters(
       }
     }
 
+    // Send push notifications with bounded concurrency
+    const pushResult = await sendPushWithConcurrency(pushTasks);
+    result.pushSent = pushResult.sent;
+    result.pushFailed = pushResult.failed;
+
+    // Insert email queue entries
     if (emailQueueRows.length > 0) {
-      await supabase.from("email_queue").insert(emailQueueRows);
+      const { error: insertError } = await supabase.from("email_queue").insert(emailQueueRows);
+      if (insertError) {
+        console.warn("[initiative-to-event-notification] email queue insert failed", insertError.message);
+      } else {
+        result.emailsQueued = emailQueueRows.length;
+      }
     }
+
+    console.log(
+      `[initiative-to-event-notification] event:${input.eventId} — ` +
+      `push_sent=${result.pushSent} push_failed=${result.pushFailed} ` +
+      `emails_queued=${result.emailsQueued}`,
+    );
   } catch (err) {
     console.warn("[initiative-to-event-notification] failed", err);
   }
+
+  return result;
+}
+
+async function batchFetchProfiles(
+  supabase: ServiceClient,
+  userIds: string[],
+): Promise<Map<string, string | null>> {
+  const result = new Map<string, string | null>();
+  if (userIds.length === 0) return result;
+
+  for (let i = 0; i < userIds.length; i += QUERY_BATCH_SIZE) {
+    const batch = userIds.slice(i, i + QUERY_BATCH_SIZE);
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("user_id, display_name")
+      .in("user_id", batch);
+
+    if (error) {
+      console.warn("[initiative-to-event-notification] profiles batch fetch failed", error.message);
+      continue;
+    }
+
+    for (const profile of data ?? []) {
+      result.set(profile.user_id, profile.display_name);
+    }
+  }
+
+  return result;
+}
+
+async function batchFetchPreferences(
+  supabase: ServiceClient,
+  userIds: string[],
+): Promise<Map<string, { push: boolean; email: boolean }>> {
+  const result = new Map<string, { push: boolean; email: boolean }>();
+  if (userIds.length === 0) return result;
+
+  for (let i = 0; i < userIds.length; i += QUERY_BATCH_SIZE) {
+    const batch = userIds.slice(i, i + QUERY_BATCH_SIZE);
+    const { data, error } = await supabase
+      .from("user_notification_preferences")
+      .select("user_id, notify_new_event, email_lifecycle_enabled")
+      .in("user_id", batch);
+
+    if (error) {
+      console.warn("[initiative-to-event-notification] preferences batch fetch failed", error.message);
+      continue;
+    }
+
+    for (const pref of data ?? []) {
+      result.set(pref.user_id as string, {
+        push: (pref.notify_new_event as boolean | null) ?? true,
+        email: (pref.email_lifecycle_enabled as boolean | null) ?? true,
+      });
+    }
+  }
+
+  return result;
+}
+
+async function sendPushWithConcurrency(
+  tasks: PushTask[],
+): Promise<{ sent: number; failed: number }> {
+  let sent = 0;
+  let failed = 0;
+
+  for (let i = 0; i < tasks.length; i += PUSH_CONCURRENCY) {
+    const batch = tasks.slice(i, i + PUSH_CONCURRENCY);
+    const results = await Promise.allSettled(
+      batch.map((task) => notifyUser(task.userId, task.payload)),
+    );
+
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        sent++;
+      } else {
+        failed++;
+        console.warn("[initiative-to-event-notification] push failed", result.reason);
+      }
+    }
+  }
+
+  return { sent, failed };
 }
 
 function formatEventDate(isoString: string): string {

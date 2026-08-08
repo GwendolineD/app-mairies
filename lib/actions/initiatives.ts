@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { logAudit } from "@/lib/audit/log";
 import { assertAuthorMembership } from "@/lib/auth/ownership";
 import { requireActiveMembership } from "@/lib/auth/session";
@@ -155,14 +156,16 @@ export async function createInitiative(formData: FormData): Promise<{ id: string
     { logContext: "createInitiative" },
   );
 
-  void fanoutNewContentNotification({
-    contextType: "initiative",
-    contextId: created.id,
-    communeId: membership.commune_id,
-    authorUserId: ctx.userId,
-    title: parsed.data.title,
-    authorDisplayName: ctx.profile.display_name,
-  });
+  after(() =>
+    fanoutNewContentNotification({
+      contextType: "initiative",
+      contextId: created.id,
+      communeId: membership.commune_id,
+      authorUserId: ctx.userId,
+      title: parsed.data.title,
+      authorDisplayName: ctx.profile.display_name,
+    }),
+  );
 
   void logAudit({
     action: "content.create_initiative",
@@ -350,14 +353,16 @@ export async function createEventFromInitiative(formData: FormData): Promise<str
     { logContext: "createEventFromInitiative" },
   );
 
-  void fanoutNewContentNotification({
-    contextType: "event",
-    contextId: created.id,
-    communeId: membership.commune_id,
-    authorUserId: ctx.userId,
-    title: initiative.title,
-    authorDisplayName: ctx.profile.display_name,
-  });
+  after(() =>
+    fanoutNewContentNotification({
+      contextType: "event",
+      contextId: created.id,
+      communeId: membership.commune_id,
+      authorUserId: ctx.userId,
+      title: initiative.title,
+      authorDisplayName: ctx.profile.display_name,
+    }),
+  );
 
   return created.id;
 }

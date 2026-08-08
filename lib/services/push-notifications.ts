@@ -19,6 +19,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/server";
 import type { ConversationContextType } from "@/lib/types";
+import type { Database } from "@/lib/types/database.types";
 
 export type PushPayload = {
   title: string;
@@ -33,6 +34,13 @@ type StoredSubscription = {
   p256dh: string;
   auth: string;
 };
+
+export type PushBatchResult = {
+  sent: number;
+  failed: number;
+};
+
+const PUSH_CONCURRENCY = 20;
 
 function getVapid() {
   const publicKey =
@@ -112,6 +120,103 @@ export async function sendPushToUser(
   if (stale.length > 0) {
     await supabase.from("push_subscriptions").delete().in("id", stale);
   }
+}
+
+/**
+ * Send push notifications to all subscriptions for a batch of users.
+ * Used by the fanout to avoid N separate queries and N separate client creations.
+ *
+ * - Bulk fetches subscriptions for all userIds in one query
+ * - Sends with bounded concurrency (PUSH_CONCURRENCY)
+ * - Bulk deletes stale subscriptions
+ * - Returns counts for observability
+ */
+export async function sendPushToSubscriptions(
+  supabase: SupabaseClient<Database>,
+  userIds: string[],
+  payload: PushPayload,
+): Promise<PushBatchResult> {
+  const result: PushBatchResult = { sent: 0, failed: 0 };
+
+  if (userIds.length === 0) return result;
+
+  const vapid = getVapid();
+  if (!vapid) return result;
+
+  let webpush: typeof import("web-push") | null = null;
+  try {
+    const mod = await import("web-push");
+    webpush = (mod.default ?? mod) as typeof import("web-push");
+  } catch {
+    webpush = null;
+  }
+  if (!webpush) return result;
+  const wp = webpush;
+
+  wp.setVapidDetails(vapid.subject, vapid.publicKey, vapid.privateKey);
+
+  // Bulk fetch all subscriptions for these users
+  const { data: subs, error } = await supabase
+    .from("push_subscriptions")
+    .select("id, endpoint, p256dh, auth")
+    .in("user_id", userIds);
+
+  if (error) {
+    console.warn("[push] subscriptions fetch error", error.message);
+    return result;
+  }
+
+  const subscriptions = (subs ?? []) as StoredSubscription[];
+  if (subscriptions.length === 0) return result;
+
+  const json = JSON.stringify(payload);
+  const stale: string[] = [];
+
+  // Send with bounded concurrency
+  const sendOne = async (s: StoredSubscription): Promise<boolean> => {
+    try {
+      await wp.sendNotification(
+        {
+          endpoint: s.endpoint,
+          keys: { p256dh: s.p256dh, auth: s.auth },
+        },
+        json,
+        { TTL: 60 * 60 * 24 },
+      );
+      return true;
+    } catch (err) {
+      const status = (err as { statusCode?: number } | undefined)?.statusCode;
+      if (status === 404 || status === 410) {
+        stale.push(s.id);
+      } else {
+        console.warn("[push] delivery failed", err);
+      }
+      return false;
+    }
+  };
+
+  // Process in batches of PUSH_CONCURRENCY
+  for (let i = 0; i < subscriptions.length; i += PUSH_CONCURRENCY) {
+    const batch = subscriptions.slice(i, i + PUSH_CONCURRENCY);
+    const results = await Promise.all(batch.map(sendOne));
+    for (const ok of results) {
+      if (ok) result.sent++;
+      else result.failed++;
+    }
+  }
+
+  // Bulk delete stale subscriptions
+  if (stale.length > 0) {
+    const { error: deleteError } = await supabase
+      .from("push_subscriptions")
+      .delete()
+      .in("id", stale);
+    if (deleteError) {
+      console.warn("[push] stale cleanup error", deleteError.message);
+    }
+  }
+
+  return result;
 }
 
 /**

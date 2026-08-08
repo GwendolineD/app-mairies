@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { ROUTES } from "@/lib/constants/routes";
 import { addDaysParisYmd, DAY_MS } from "@/lib/datetime";
 import { generateUnsubscribeToken } from "@/lib/email/unsubscribe-token";
-import { notifyUser } from "@/lib/services/push-notifications";
+import { notifyUser, type PushPayload } from "@/lib/services/push-notifications";
 import { getEmailsByUserIds } from "@/lib/services/user-emails";
 import { getAppUrl } from "@/lib/utils/app-url";
 import type { Database } from "@/lib/types/database.types";
@@ -15,6 +15,38 @@ type PhaseError = {
   phase: string;
   message: string;
 };
+
+type PushTask = {
+  userId: string;
+  payload: PushPayload;
+};
+
+const PUSH_CONCURRENCY = 20;
+
+async function sendPushNotificationsWithConcurrency(
+  tasks: PushTask[],
+): Promise<{ sent: number; failed: number }> {
+  let sent = 0;
+  let failed = 0;
+
+  for (let i = 0; i < tasks.length; i += PUSH_CONCURRENCY) {
+    const batch = tasks.slice(i, i + PUSH_CONCURRENCY);
+    const results = await Promise.allSettled(
+      batch.map((task) => notifyUser(task.userId, task.payload)),
+    );
+
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        sent++;
+      } else {
+        failed++;
+        console.warn("[lifecycle-collector] push notification failed", result.reason);
+      }
+    }
+  }
+
+  return { sent, failed };
+}
 
 type CollectorResult = {
   purgedAnnouncements: number;
@@ -28,7 +60,17 @@ type CollectorResult = {
     eventPast: number;
     notificationReminder: number;
   };
+  pushNotifications: {
+    sent: number;
+    failed: number;
+  };
   failedPhases: PhaseError[];
+};
+
+type PhaseResult = {
+  count: number;
+  pushSent: number;
+  pushFailed: number;
 };
 
 function buildUnsubscribeLink(userId: string): string {
@@ -206,7 +248,7 @@ async function collectInviteReminders(service: ServiceClient): Promise<number> {
 // Collect: engagement reminders (3-30 day old users with no content)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function collectEngagementReminders(service: ServiceClient): Promise<number> {
+export async function collectEngagementReminders(service: ServiceClient): Promise<PhaseResult> {
   const thirtyDaysAgo = new Date(Date.now() - 30 * DAY_MS).toISOString();
   const threeDaysAgo = new Date(Date.now() - 3 * DAY_MS).toISOString();
   const appUrl = getAppUrl();
@@ -221,7 +263,7 @@ export async function collectEngagementReminders(service: ServiceClient): Promis
   });
 
   if (error) throw new Error(`collectEngagementReminders(rpc): ${error.message}`);
-  if (!candidates || candidates.length === 0) return 0;
+  if (!candidates || candidates.length === 0) return { count: 0, pushSent: 0, pushFailed: 0 };
 
   const userIds = candidates.map((c) => c.user_id);
 
@@ -241,6 +283,7 @@ export async function collectEngagementReminders(service: ServiceClient): Promis
 
   const queueRows: EmailQueueInsert[] = [];
   const notifiedUserIds: string[] = [];
+  const pushTasks: PushTask[] = [];
 
   for (const candidate of candidates) {
     const email = emailMap.get(candidate.user_id);
@@ -264,12 +307,14 @@ export async function collectEngagementReminders(service: ServiceClient): Promis
     }
 
     notifiedUserIds.push(candidate.user_id);
-    // Fire-and-forget push notification (see sujet 4 for await-all fix)
-    void notifyUser(candidate.user_id, {
-      title: "Publiez votre première annonce !",
-      body: `Partagez un coup de main ou une offre avec vos voisins de ${communeName}`,
-      url: ROUTES.annonces.new(),
-      tag: "engagement-first-week",
+    pushTasks.push({
+      userId: candidate.user_id,
+      payload: {
+        title: "Publiez votre première annonce !",
+        body: `Partagez un coup de main ou une offre avec vos voisins de ${communeName}`,
+        url: ROUTES.annonces.new(),
+        tag: "engagement-first-week",
+      },
     });
   }
 
@@ -286,14 +331,20 @@ export async function collectEngagementReminders(service: ServiceClient): Promis
     if (updateError) throw new Error(`collectEngagementReminders(mark): ${updateError.message}`);
   }
 
-  return notifiedUserIds.length;
+  const pushResult = await sendPushNotificationsWithConcurrency(pushTasks);
+
+  return {
+    count: notifiedUserIds.length,
+    pushSent: pushResult.sent,
+    pushFailed: pushResult.failed,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Collect: announcement expired nudges (target_date + 2 days)
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function collectAnnouncementExpiredNudges(service: ServiceClient): Promise<number> {
+async function collectAnnouncementExpiredNudges(service: ServiceClient): Promise<PhaseResult> {
   const now = new Date();
   const twoDaysAgoYmd = addDaysParisYmd(-2, now);
   const appUrl = getAppUrl();
@@ -308,13 +359,13 @@ async function collectAnnouncementExpiredNudges(service: ServiceClient): Promise
     .limit(200);
 
   if (error) throw new Error(`collectAnnouncementExpiredNudges: ${error.message}`);
-  if (!announcements || announcements.length === 0) return 0;
+  if (!announcements || announcements.length === 0) return { count: 0, pushSent: 0, pushFailed: 0 };
 
   // Filter snoozed
   const eligible = announcements.filter(
     (a) => !a.nudge_snoozed_until || new Date(a.nudge_snoozed_until) <= now,
   );
-  if (eligible.length === 0) return 0;
+  if (eligible.length === 0) return { count: 0, pushSent: 0, pushFailed: 0 };
 
   const membershipIds = [...new Set(eligible.map((a) => a.author_membership_id))];
   const { data: memberships } = await service
@@ -338,6 +389,7 @@ async function collectAnnouncementExpiredNudges(service: ServiceClient): Promise
 
   const queueRows: EmailQueueInsert[] = [];
   const processedIds: string[] = [];
+  const pushTasks: PushTask[] = [];
 
   for (const ann of eligible) {
     const userId = membershipUserMap.get(ann.author_membership_id);
@@ -365,11 +417,14 @@ async function collectAnnouncementExpiredNudges(service: ServiceClient): Promise
     }
 
     processedIds.push(ann.id);
-    void notifyUser(userId, {
-      title: "Échéance dépassée",
-      body: `Votre annonce « ${ann.title} » a dépassé son échéance`,
-      url: ROUTES.annonces.detail(ann.id),
-      tag: `nudge:announcement:${ann.id}`,
+    pushTasks.push({
+      userId,
+      payload: {
+        title: "Échéance dépassée",
+        body: `Votre annonce « ${ann.title} » a dépassé son échéance`,
+        url: ROUTES.annonces.detail(ann.id),
+        tag: `nudge:announcement:${ann.id}`,
+      },
     });
   }
 
@@ -384,14 +439,20 @@ async function collectAnnouncementExpiredNudges(service: ServiceClient): Promise
       .in("id", processedIds);
   }
 
-  return processedIds.length;
+  const pushResult = await sendPushNotificationsWithConcurrency(pushTasks);
+
+  return {
+    count: processedIds.length,
+    pushSent: pushResult.sent,
+    pushFailed: pushResult.failed,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Collect: announcement stale 60d (no target_date, created > 60 days)
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function collectAnnouncementStaleNudges(service: ServiceClient): Promise<number> {
+async function collectAnnouncementStaleNudges(service: ServiceClient): Promise<PhaseResult> {
   const now = new Date();
   const sixtyDaysAgo = new Date(now.getTime() - 60 * DAY_MS).toISOString();
   const appUrl = getAppUrl();
@@ -406,12 +467,12 @@ async function collectAnnouncementStaleNudges(service: ServiceClient): Promise<n
     .limit(200);
 
   if (error) throw new Error(`collectAnnouncementStaleNudges: ${error.message}`);
-  if (!announcements || announcements.length === 0) return 0;
+  if (!announcements || announcements.length === 0) return { count: 0, pushSent: 0, pushFailed: 0 };
 
   const eligible = announcements.filter(
     (a) => !a.nudge_snoozed_until || new Date(a.nudge_snoozed_until) <= now,
   );
-  if (eligible.length === 0) return 0;
+  if (eligible.length === 0) return { count: 0, pushSent: 0, pushFailed: 0 };
 
   const membershipIds = [...new Set(eligible.map((a) => a.author_membership_id))];
   const { data: memberships } = await service
@@ -435,6 +496,7 @@ async function collectAnnouncementStaleNudges(service: ServiceClient): Promise<n
 
   const queueRows: EmailQueueInsert[] = [];
   const processedIds: string[] = [];
+  const pushTasks: PushTask[] = [];
 
   for (const ann of eligible) {
     const userId = membershipUserMap.get(ann.author_membership_id);
@@ -462,11 +524,14 @@ async function collectAnnouncementStaleNudges(service: ServiceClient): Promise<n
     }
 
     processedIds.push(ann.id);
-    void notifyUser(userId, {
-      title: "Annonce active depuis 2 mois",
-      body: `Votre annonce « ${ann.title} » est-elle toujours d'actualité ?`,
-      url: ROUTES.annonces.detail(ann.id),
-      tag: `nudge:announcement:${ann.id}`,
+    pushTasks.push({
+      userId,
+      payload: {
+        title: "Annonce active depuis 2 mois",
+        body: `Votre annonce « ${ann.title} » est-elle toujours d'actualité ?`,
+        url: ROUTES.annonces.detail(ann.id),
+        tag: `nudge:announcement:${ann.id}`,
+      },
     });
   }
 
@@ -481,14 +546,20 @@ async function collectAnnouncementStaleNudges(service: ServiceClient): Promise<n
       .in("id", processedIds);
   }
 
-  return processedIds.length;
+  const pushResult = await sendPushNotificationsWithConcurrency(pushTasks);
+
+  return {
+    count: processedIds.length,
+    pushSent: pushResult.sent,
+    pushFailed: pushResult.failed,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Collect: initiative stale 60d
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function collectInitiativeStaleNudges(service: ServiceClient): Promise<number> {
+async function collectInitiativeStaleNudges(service: ServiceClient): Promise<PhaseResult> {
   const now = new Date();
   const sixtyDaysAgo = new Date(now.getTime() - 60 * DAY_MS).toISOString();
   const appUrl = getAppUrl();
@@ -502,12 +573,12 @@ async function collectInitiativeStaleNudges(service: ServiceClient): Promise<num
     .limit(200);
 
   if (error) throw new Error(`collectInitiativeStaleNudges: ${error.message}`);
-  if (!initiatives || initiatives.length === 0) return 0;
+  if (!initiatives || initiatives.length === 0) return { count: 0, pushSent: 0, pushFailed: 0 };
 
   const eligible = initiatives.filter(
     (i) => !i.nudge_snoozed_until || new Date(i.nudge_snoozed_until) <= now,
   );
-  if (eligible.length === 0) return 0;
+  if (eligible.length === 0) return { count: 0, pushSent: 0, pushFailed: 0 };
 
   const membershipIds = [...new Set(eligible.map((i) => i.author_membership_id))];
   const { data: memberships } = await service
@@ -531,6 +602,7 @@ async function collectInitiativeStaleNudges(service: ServiceClient): Promise<num
 
   const queueRows: EmailQueueInsert[] = [];
   const processedIds: string[] = [];
+  const pushTasks: PushTask[] = [];
 
   for (const ini of eligible) {
     const userId = membershipUserMap.get(ini.author_membership_id);
@@ -558,11 +630,14 @@ async function collectInitiativeStaleNudges(service: ServiceClient): Promise<num
     }
 
     processedIds.push(ini.id);
-    void notifyUser(userId, {
-      title: "Initiative active depuis 2 mois",
-      body: `Votre initiative « ${ini.title} » est-elle toujours d'actualité ?`,
-      url: ROUTES.initiatives.detail(ini.id),
-      tag: `nudge:initiative:${ini.id}`,
+    pushTasks.push({
+      userId,
+      payload: {
+        title: "Initiative active depuis 2 mois",
+        body: `Votre initiative « ${ini.title} » est-elle toujours d'actualité ?`,
+        url: ROUTES.initiatives.detail(ini.id),
+        tag: `nudge:initiative:${ini.id}`,
+      },
     });
   }
 
@@ -577,14 +652,20 @@ async function collectInitiativeStaleNudges(service: ServiceClient): Promise<num
       .in("id", processedIds);
   }
 
-  return processedIds.length;
+  const pushResult = await sendPushNotificationsWithConcurrency(pushTasks);
+
+  return {
+    count: processedIds.length,
+    pushSent: pushResult.sent,
+    pushFailed: pushResult.failed,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Collect: event past nudges (ends_at + 2 days)
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function collectEventPastNudges(service: ServiceClient): Promise<number> {
+async function collectEventPastNudges(service: ServiceClient): Promise<PhaseResult> {
   const now = new Date();
   const twoDaysAgo = new Date(now.getTime() - 2 * DAY_MS).toISOString();
   const appUrl = getAppUrl();
@@ -598,12 +679,12 @@ async function collectEventPastNudges(service: ServiceClient): Promise<number> {
     .limit(200);
 
   if (error) throw new Error(`collectEventPastNudges: ${error.message}`);
-  if (!events || events.length === 0) return 0;
+  if (!events || events.length === 0) return { count: 0, pushSent: 0, pushFailed: 0 };
 
   const eligible = events.filter(
     (e) => !e.nudge_snoozed_until || new Date(e.nudge_snoozed_until) <= now,
   );
-  if (eligible.length === 0) return 0;
+  if (eligible.length === 0) return { count: 0, pushSent: 0, pushFailed: 0 };
 
   const membershipIds = [...new Set(eligible.map((e) => e.author_membership_id))];
   const { data: memberships } = await service
@@ -627,6 +708,7 @@ async function collectEventPastNudges(service: ServiceClient): Promise<number> {
 
   const queueRows: EmailQueueInsert[] = [];
   const processedIds: string[] = [];
+  const pushTasks: PushTask[] = [];
 
   for (const evt of eligible) {
     const userId = membershipUserMap.get(evt.author_membership_id);
@@ -654,11 +736,14 @@ async function collectEventPastNudges(service: ServiceClient): Promise<number> {
     }
 
     processedIds.push(evt.id);
-    void notifyUser(userId, {
-      title: "Événement terminé",
-      body: `Votre événement « ${evt.title} » est terminé. Souhaitez-vous le supprimer ?`,
-      url: ROUTES.evenements.detail(evt.id),
-      tag: `nudge:event:${evt.id}`,
+    pushTasks.push({
+      userId,
+      payload: {
+        title: "Événement terminé",
+        body: `Votre événement « ${evt.title} » est terminé. Souhaitez-vous le supprimer ?`,
+        url: ROUTES.evenements.detail(evt.id),
+        tag: `nudge:event:${evt.id}`,
+      },
     });
   }
 
@@ -673,14 +758,20 @@ async function collectEventPastNudges(service: ServiceClient): Promise<number> {
       .in("id", processedIds);
   }
 
-  return processedIds.length;
+  const pushResult = await sendPushNotificationsWithConcurrency(pushTasks);
+
+  return {
+    count: processedIds.length,
+    pushSent: pushResult.sent,
+    pushFailed: pushResult.failed,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Collect: notification activation reminders (1-7 day users without push)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function collectNotificationReminders(service: ServiceClient): Promise<number> {
+export async function collectNotificationReminders(service: ServiceClient): Promise<PhaseResult> {
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * DAY_MS).toISOString();
   const oneDayAgo = new Date(now.getTime() - DAY_MS).toISOString();
@@ -695,7 +786,7 @@ export async function collectNotificationReminders(service: ServiceClient): Prom
   });
 
   if (error) throw new Error(`collectNotificationReminders(rpc): ${error.message}`);
-  if (!candidates || candidates.length === 0) return 0;
+  if (!candidates || candidates.length === 0) return { count: 0, pushSent: 0, pushFailed: 0 };
 
   const userIds = candidates.map((c) => c.user_id);
 
@@ -715,6 +806,7 @@ export async function collectNotificationReminders(service: ServiceClient): Prom
 
   const queueRows: EmailQueueInsert[] = [];
   const notifiedUserIds: string[] = [];
+  const pushTasks: PushTask[] = [];
 
   for (const candidate of candidates) {
     const email = emailMap.get(candidate.user_id);
@@ -737,12 +829,14 @@ export async function collectNotificationReminders(service: ServiceClient): Prom
     }
 
     notifiedUserIds.push(candidate.user_id);
-    // Fire-and-forget push notification (see sujet 4 for await-all fix)
-    void notifyUser(candidate.user_id, {
-      title: "Activez les notifications",
-      body: "Ne manquez pas les annonces et événements de votre commune !",
-      url: `${ROUTES.profil}?tab=parametres`,
-      tag: "notification-activation-reminder",
+    pushTasks.push({
+      userId: candidate.user_id,
+      payload: {
+        title: "Activez les notifications",
+        body: "Ne manquez pas les annonces et événements de votre commune !",
+        url: `${ROUTES.profil}?tab=parametres`,
+        tag: "notification-activation-reminder",
+      },
     });
   }
 
@@ -758,7 +852,13 @@ export async function collectNotificationReminders(service: ServiceClient): Prom
     if (updateError) throw new Error(`collectNotificationReminders(mark): ${updateError.message}`);
   }
 
-  return notifiedUserIds.length;
+  const pushResult = await sendPushNotificationsWithConcurrency(pushTasks);
+
+  return {
+    count: notifiedUserIds.length,
+    pushSent: pushResult.sent,
+    pushFailed: pushResult.failed,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -767,6 +867,10 @@ export async function collectNotificationReminders(service: ServiceClient): Prom
 
 export async function runLifecycleCollector(service: ServiceClient): Promise<CollectorResult> {
   const failedPhases: PhaseError[] = [];
+  let totalPushSent = 0;
+  let totalPushFailed = 0;
+
+  const EMPTY_PHASE: PhaseResult = { count: 0, pushSent: 0, pushFailed: 0 };
 
   // Helper to run a phase with isolated error handling
   async function runPhase<T>(name: string, fn: () => Promise<T>, fallback: T): Promise<T> {
@@ -780,16 +884,33 @@ export async function runLifecycleCollector(service: ServiceClient): Promise<Col
     }
   }
 
+  // Helper for phases that return PhaseResult
+  async function runPhaseWithPush(
+    name: string,
+    fn: () => Promise<PhaseResult>,
+  ): Promise<number> {
+    const result = await runPhase(name, fn, EMPTY_PHASE);
+    totalPushSent += result.pushSent;
+    totalPushFailed += result.pushFailed;
+    if (result.pushFailed > 0) {
+      failedPhases.push({
+        phase: `${name}.push`,
+        message: `${result.pushFailed} push notification(s) failed`,
+      });
+    }
+    return result.count;
+  }
+
   const purgedAnnouncements = await runPhase("purgeArchivedAnnouncements", () => purgeArchivedAnnouncements(service), 0);
   const purgedConversations = await runPhase("purgeArchivedConversations", () => purgeArchivedConversations(service), 0);
 
   const invites = await runPhase("collectInviteReminders", () => collectInviteReminders(service), 0);
-  const engagement = await runPhase("collectEngagementReminders", () => collectEngagementReminders(service), 0);
-  const announcementExpired = await runPhase("collectAnnouncementExpiredNudges", () => collectAnnouncementExpiredNudges(service), 0);
-  const announcementStale = await runPhase("collectAnnouncementStaleNudges", () => collectAnnouncementStaleNudges(service), 0);
-  const initiativeStale = await runPhase("collectInitiativeStaleNudges", () => collectInitiativeStaleNudges(service), 0);
-  const eventPast = await runPhase("collectEventPastNudges", () => collectEventPastNudges(service), 0);
-  const notificationReminder = await runPhase("collectNotificationReminders", () => collectNotificationReminders(service), 0);
+  const engagement = await runPhaseWithPush("collectEngagementReminders", () => collectEngagementReminders(service));
+  const announcementExpired = await runPhaseWithPush("collectAnnouncementExpiredNudges", () => collectAnnouncementExpiredNudges(service));
+  const announcementStale = await runPhaseWithPush("collectAnnouncementStaleNudges", () => collectAnnouncementStaleNudges(service));
+  const initiativeStale = await runPhaseWithPush("collectInitiativeStaleNudges", () => collectInitiativeStaleNudges(service));
+  const eventPast = await runPhaseWithPush("collectEventPastNudges", () => collectEventPastNudges(service));
+  const notificationReminder = await runPhaseWithPush("collectNotificationReminders", () => collectNotificationReminders(service));
 
   return {
     purgedAnnouncements,
@@ -802,6 +923,10 @@ export async function runLifecycleCollector(service: ServiceClient): Promise<Col
       initiativeStale,
       eventPast,
       notificationReminder,
+    },
+    pushNotifications: {
+      sent: totalPushSent,
+      failed: totalPushFailed,
     },
     failedPhases,
   };

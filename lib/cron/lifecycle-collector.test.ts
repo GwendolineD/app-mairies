@@ -249,7 +249,7 @@ describe("collectEngagementReminders", () => {
 
     // User should still be marked (push was sent)
     expect(getCapturedUserIds()).toContain(USER_ID_1);
-    expect(result).toBe(1);
+    expect(result.count).toBe(1);
   });
 });
 

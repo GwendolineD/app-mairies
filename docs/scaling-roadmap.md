@@ -16,11 +16,12 @@ Le socle est sain — feeds paginés par curseurs, `commune_id` systématiquemen
 | --- | --- | --- |
 | 51ᵉ utilisateur | Relances lifecycle jamais envoyées, staff jamais alerté d'un signalement, opt-out e-mail ignoré | 2 — **fait** |
 | 1001ᵉ contenu plateforme | E-mails « Publiez votre première annonce » envoyés à des auteurs prolifiques | 3 — **fait** |
+| ~217ᵉ membre actif dans une commune | Le filtre `.in()` sur les préférences dépasse 8 Ko d'URL → 414 ignoré → **tout le monde notifié, y compris les opt-out** | 4 — **fait** |
 | 1001ᵉ membership plateforme | Utilisateurs absents des listes filtrées du backoffice, et du total affiché à côté | 7 |
-| 1001ᵉ membre actif dans une commune | Les membres au-delà du plafond ne reçoivent aucune notification de nouvelle annonce | 4 |
-| ~500 membres actifs + pic de publication | Saturation du pool PostgREST → lenteurs et 5xx **pour toute l'app**, pas seulement l'auteur | 4 |
+| 1001ᵉ membre actif dans une commune | Les membres au-delà du plafond ne reçoivent aucune notification de nouvelle annonce | 4 — **fait** |
+| ~500 membres actifs + pic de publication | Saturation du pool PostgREST → lenteurs et 5xx **pour toute l'app**, pas seulement l'auteur | 4 — **fait** |
 
-**Les sujets 8 (décision), 4 et 7 sont le strict nécessaire avant de démarcher**, dans cet ordre. Le sujet 3 est fait. Les sujets 5 et 6 devraient suivre dans le mois. Les sujets 9 et 10 sont de la dette à amortir tranquillement.
+**Le sujet 7 est le strict nécessaire avant de démarcher.** Les sujets 3 et 4 sont faits. Les sujets 5 et 6 devraient suivre dans le mois. Les sujets 8, 9 et 10 sont de la dette à amortir tranquillement.
 
 ---
 
@@ -36,6 +37,7 @@ Le périmètre exact du plafond conditionne les sujets 3, 4 et 7. Il est plus é
 | RPC `returns table` / `returns setof` | **Oui** — PostgREST traite une fonction table-valued comme une lecture |
 | RPC renvoyant un scalaire ou un agrégat | Non |
 | Lignes affectées par un `delete()` / `update()` | **Non** — c'est précisément pourquoi la préférence `Prefer: max-affected` existe côté protocole |
+| `.in()` avec ~217+ UUID (8 Ko d'URL) | **Oui** — le proxy renvoie 414 URI Too Long, que `supabase-js` traduit en `{ data: null }` sans erreur |
 
 Deux conséquences pratiques :
 
@@ -66,8 +68,8 @@ Les numéros sont des **identifiants stables** — ils sont cités dans le code,
 | — | [Index FK](#sujet-1--index-sur-les-clés-étrangères-fait) | P1 | **fait** |
 | — | [`listUsers()` sans pagination](#sujet-2--listusers-sans-pagination-fait) | P0 | **fait** |
 | — | [Collecteur lifecycle : détection d'auteur faussée](#sujet-3--collecteur-lifecycle--détection-dauteur-faussée-fait) | P1 | **fait** |
-| [8](#sujet-8--rétention-des-tables-append-only) | Rétention des tables append-only — **décision d'abord** | P2 | 10 |
-| [4](#sujet-4--fan-out-notifications--non-borné-et-non-paginé) | Fan-out notifications : non borné et non paginé | P0 | 2a, 3 |
+| — | [Fan-out notifications](#sujet-4--fan-out-notifications-fait) | P0 | **fait** |
+| [8](#sujet-8--rétention-des-tables-append-only) | Rétention des tables append-only | P2 | 10 |
 | [7](#sujet-7--agrégats-et-filtres-calculés-en-js) | Agrégats et filtres calculés en JS | P1 | 2b, 8, 9 |
 | [5](#sujet-5--email_queue-sans-réservation) | `email_queue` sans réservation | P1 | 6 |
 | [6](#sujet-6--latence-de-navigation) | Latence de navigation | P1 | 7 |
@@ -255,51 +257,45 @@ De plus, chaque phase du cron est désormais isolée dans son propre `try/catch`
 
 ---
 
-## Sujet 4 — Fan-out notifications : non borné et non paginé
+## Sujet 4 — Fan-out notifications (fait)
 
-**Gravité : P0 — le scénario de panne le plus crédible de l'audit.** Problèmes 2a et 3 de l'audit.
+**Gravité : P0 — corrigé le 8 août 2026.** Problèmes 2a et 3 de l'audit.
 
-### Le problème
+### Le problème d'origine
 
-Deux défauts sur la même requête et la même boucle, dans `lib/services/notification-fanout.ts`.
+Trois défauts cumulés dans `lib/services/notification-fanout.ts`.
 
-**a. La liste des destinataires est tronquée.** Ligne 59, la sélection des memberships actifs de la commune n'a ni `.limit()` ni `.range()`. PostgREST la coupe donc à `max_rows` sans erreur : au-delà de 1000 membres actifs dans une commune, les suivants ne sont **jamais notifiés**.
+**a. 414 URI Too Long dès ~217 membres actifs.** Le filtre `.in()` sur `user_notification_preferences` construisait une URL de requête. Avec ~217 UUID (8 Ko), PostgREST renvoyait 414, que `supabase-js` traduisait en `{ data: null }` sans erreur. La ligne 72 ne lisait que `data` → l'ensemble des opted-out était vide → **tout le monde était notifié, y compris qui avait refusé**. C'était le seuil le plus proche de l'audit, et le mode de panne le plus grave : une violation du consentement.
 
-**b. La livraison n'est pas bornée.** Ligne 100, un `notifyUser` par destinataire via `Promise.all`. Chaque `notifyUser` crée **son propre client service-role**, fait un `INSERT` dans `notifications`, puis un `SELECT` sur `push_subscriptions`. Pour une commune de 2000 membres, une seule publication d'annonce déclenche ~4000 requêtes PostgREST simultanées. PostgREST met en file d'attente au-delà de la taille de son pool : les requêtes des **autres utilisateurs** attendent ou échouent. La panne ne touche donc pas l'auteur de la publication, mais toute l'application.
+**b. Troncature à 1000 membres.** La sélection des memberships actifs n'avait ni `.limit()` ni `.range()`. Au-delà de `max_rows`, les suivants n'étaient jamais notifiés.
 
-Le seuil de **a** est le plus lointain de tout l'audit — 1000 membres actifs dans une **seule** commune, à comparer aux 43 utilisateurs répartis sur 2 communes aujourd'hui. Il est traité ici plutôt que dans un sujet séparé parce qu'il porte sur la requête que **b** réécrit de toute façon. Le bloc 9 du snippet donne le nombre réel de membres actifs par commune, à comparer au plafond.
+**c. Saturation du pool PostgREST.** Un `notifyUser` par destinataire via `Promise.all`, chacun créant son propre client service-role, avec un insert dans `notifications` et un select sur `push_subscriptions`. Pour 2000 membres, ~4000 requêtes simultanées.
 
 ### La correction
 
-1. Un seul client service-role réutilisé pour tout le fan-out.
-2. Une lecture des destinataires **paginée** : `.range()` par pages, boucle tant qu'une page revient pleine. Ou un fan-out entièrement déporté en SQL — voir l'avertissement ci-dessous.
-3. Un `insert()` en masse par lots de 500 au lieu de N inserts.
-4. Un chargement groupé des abonnements push via `.in('user_id', ids)`.
-5. Un envoi push à concurrence bornée (~20 en parallèle).
+1. **RPC SQL `select_content_notification_recipients`** — jointure `memberships LEFT JOIN user_notification_preferences`, avec case/coalesce sur le type de contenu et pagination par curseur. La limite d'URL disparaît car le filtrage se fait en base, pas en JS avec `.in()`. Migration `20260808173511_fanout_notification_recipients_rpc.sql`.
 
-La liste des destinataires s'élargit — c'est l'objet du point **a** — mais la règle qui la produit est inchangée. Le coût de livraison, lui, est divisé par ~1000.
+2. **Pagination par pages de 150** — bien en dessous de 8 Ko et de `max_rows`, donc tout `.in()` construit à partir d'une page est sûr par construction.
 
-### À ne pas faire
+3. **Client service-role avec `persistSession: false, autoRefreshToken: false`** — supprime le ticker de 30 s et la rétention de 11,2 Ko par client pour tous les appelants (`lib/supabase/server.ts`).
 
-**Ne pas remplacer la lecture des destinataires par un RPC `returns table`.** PostgREST traite une fonction table-valued comme une lecture et lui applique `max_rows` : un RPC qui renvoie la liste des destinataires serait tronqué à 1000 exactement comme la requête qu'il remplace, et le point **a** serait « corrigé » sans l'être. Les deux formes sûres sont la boucle de pagination explicite, ou un RPC qui fait le fan-out **entier** côté base — insert des notifications compris — et ne renvoie que les utilisateurs à joindre en push, volume borné par `push_subscriptions` et sans commune mesure avec le nombre de membres.
+4. **Livraison groupée par page** — insert groupé dans `notifications`, select groupé sur `push_subscriptions`, nouvelle fonction `sendPushToSubscriptions` avec concurrence bornée (~20 en parallèle), delete groupé des abonnements périmés.
 
-**Ne pas introduire une file d'attente et un worker.** C'est l'architecture correcte à terme, mais aujourd'hui c'est une nouvelle table, un nouveau cron, une nouvelle surface d'observabilité et de nouveaux modes de panne — pour un risque de régression élevé. L'insert en masse plus la concurrence bornée réduisent le coût de trois ordres de grandeur avec un diff confiné et une sémantique inchangée. La file devient pertinente si une commune dépasse ~5000 membres.
+5. **Observabilité** — le fan-out retourne et logue un compte rendu (destinataires, notifications insérées, push envoyés/échoués, durée).
 
-### Ordre
+6. **Fin du fire-and-forget** — les cinq appels `void fanoutNewContentNotification` dans les server actions utilisent désormais `after()` de `next/server` (garantit l'achèvement). Les six `void notifyUser` du cron lifecycle sont remplacés par des await à concurrence bornée, avec remontée des échecs dans `failedPhases`.
 
-**Après la décision du sujet 8, pas avant.** `notifications` n'est référencée qu'une seule fois dans tout le code, par un `insert` (`lib/services/push-notifications.ts:132`) : aucune lecture, nulle part. Les points 3 et 4 de la correction ci-dessus consistent donc à fiabiliser et optimiser l'alimentation d'une table que personne ne lit. Si la décision du sujet 8 est « pas de centre de notifications », l'insert en masse sort purement et simplement du périmètre et il ne reste que la pagination et la concurrence push.
+7. **Même traitement pour `initiative-to-event-notification.ts`** — batching des queries, concurrence bornée pour les push.
 
-Le sujet 3 touchait initialement le même fichier ; ce n'est plus le cas depuis son recentrage sur le collecteur lifecycle. Les deux sont désormais indépendants.
+### Tests
 
-**Note issue du sujet 3 :** `collectEngagementReminders` et `collectNotificationReminders` utilisent `void notifyUser(...)` — jusqu'à 200 appels lancés sans être attendus, chacun créant son propre client service-role, la fonction retournant avant leur fin. En serverless, le processus peut être gelé et les notifications perdues. Même pathologie que le fan-out, à traiter avec lui.
+- `lib/services/notification-fanout.test.ts` réécrit sur la nouvelle surface RPC : 10 cas couvrant les paramètres du RPC, la pagination multi-pages, les erreurs RPC.
+- `tests/integration/notification-fanout.itest.ts` : commune de 1200 memberships actifs dont 100 en opt-out, vérification du nombre exact de destinataires (1099).
+- `lib/cron/lifecycle-collector.test.ts` mis à jour pour le nouveau type de retour `PhaseResult`.
 
-### Critère d'acceptation
+### Note sur le sujet 8
 
-**`lib/services/notification-fanout.test.ts` ne passera pas sans modification** — contrairement à ce que ce document affirmait, et à ce qu'annonce la documentation du test lui-même. Le stub de requête n'expose que `select`, `eq`, `neq` et `in`, donc l'ajout d'un `.range()` le casse ; et les assertions lisent les appels à `notifyUser`, que la correction supprime. Voir les points d'attention du sujet 0.
-
-Le test doit donc être **réécrit en même temps que le fan-out**, en conservant les mêmes sept cas et la même intention — l'auteur exclu côté base, l'opt-out respecté, l'absence de préférences valant inclusion, `excludeUserIds` honoré, la sortie immédiate sur commune vide — mais en les assertant sur la **nouvelle** surface : les lignes passées à l'insert en masse plutôt que les appels à `notifyUser`. Deux cas à ajouter : une commune dont les membres tiennent sur plusieurs pages produit bien tous les destinataires, et l'insert est découpé en lots.
-
-Le bloc 9 du snippet donne la taille réelle du fan-out par commune.
+La roadmap mentionnait que la décision du sujet 8 (rétention de la table `notifications`) devait précéder le sujet 4. Cette dépendance a été retirée : remplacer une boucle d'inserts par un tableau d'inserts est trivial à défaire, et le retard de la décision produit ne justifiait pas de laisser le bug de consentement ouvert.
 
 ---
 
@@ -369,7 +365,7 @@ Le bloc 7 du snippet montre une baisse du temps cumulé sur les requêtes de bad
 
 ## Sujet 7 — Agrégats et filtres calculés en JS
 
-**Gravité : P1 — le point a est le plus proche de son seuil de tout ce qui reste.** Problèmes 2b, 8 et 9 de l'audit.
+**Gravité : P1.** Problèmes 2b, 8 et 9 de l'audit.
 
 ### Le problème
 
@@ -405,7 +401,7 @@ Pour **b** et **c** : une ligne de résultat par événement au lieu d'une par p
 
 ## Sujet 8 — Rétention des tables append-only
 
-**Gravité : P2 pour la purge — mais la décision qui l'ouvre est un prérequis du sujet 4, donc à prendre tôt.** Problème 10 de l'audit.
+**Gravité : P2.** Problème 10 de l'audit.
 
 ### Le problème
 
@@ -426,11 +422,9 @@ Dans les deux cas, ajouter une phase de purge au cron lifecycle existant plutôt
 
 ### Ordre
 
-Ce sujet se scinde en deux, et les deux moitiés ne se placent pas au même endroit dans la file.
+**Pas de dépendance avec le sujet 4** (désormais fait). La décision sur la table `notifications` — garder avec rétention, ou cesser d'alimenter — reste à prendre, mais elle ne bloque plus rien.
 
-**La décision passe avant le sujet 4.** Le sujet 4 consacre deux de ses cinq points à optimiser l'écriture dans `notifications`. Décider après l'avoir fait, c'est risquer d'avoir optimisé l'alimentation d'une table qu'on va cesser d'alimenter. La décision est gratuite — c'est un arbitrage produit, pas du code — et elle réduit potentiellement le périmètre du sujet 4.
-
-**La purge vient après le sujet 4**, et seulement si la décision est de garder la table : c'est le fan-out qui alimente sa croissance, autant dimensionner la rétention sur le volume réel.
+Si la décision est de garder la table, dimensionner la rétention sur le volume réel produit par le fan-out corrigé.
 
 La même logique s'applique à `analytics_events` : trancher « connecter ou supprimer » avant d'écrire quoi que ce soit.
 
