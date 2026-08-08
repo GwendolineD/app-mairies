@@ -8,7 +8,13 @@ import { getEmailsByUserIds } from "@/lib/services/user-emails";
 import { getAppUrl } from "@/lib/utils/app-url";
 import type { Database } from "@/lib/types/database.types";
 
+type ServiceClient = SupabaseClient<Database>;
 type EmailQueueInsert = Database["public"]["Tables"]["email_queue"]["Insert"];
+
+type PhaseError = {
+  phase: string;
+  message: string;
+};
 
 type CollectorResult = {
   purgedAnnouncements: number;
@@ -22,6 +28,7 @@ type CollectorResult = {
     eventPast: number;
     notificationReminder: number;
   };
+  failedPhases: PhaseError[];
 };
 
 function buildUnsubscribeLink(userId: string): string {
@@ -33,7 +40,7 @@ function buildUnsubscribeLink(userId: string): string {
 // Purge
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function purgeArchivedAnnouncements(service: SupabaseClient): Promise<number> {
+async function purgeArchivedAnnouncements(service: ServiceClient): Promise<number> {
   const thirtyDaysAgo = new Date(Date.now() - 30 * DAY_MS).toISOString();
   const { data, error } = await service
     .from("announcements")
@@ -48,15 +55,18 @@ async function purgeArchivedAnnouncements(service: SupabaseClient): Promise<numb
   return data?.length ?? 0;
 }
 
-async function purgeArchivedConversations(service: SupabaseClient): Promise<number> {
+export async function purgeArchivedConversations(service: ServiceClient): Promise<number> {
   const thirtyDaysAgo = new Date(Date.now() - 30 * DAY_MS).toISOString();
 
   // Remove participant rows archived > 30 days (same effect as "permanently delete")
+  // Bounded to 200: each conversation has up to 2 participants, so worst case is
+  // 100 conversations, keeping the subsequent grouped read well under max_rows.
   const { data: removed, error: rmErr } = await service
     .from("conversation_participants")
     .delete()
     .not("archived_at", "is", null)
     .lt("archived_at", thirtyDaysAgo)
+    .limit(200)
     .select("conversation_id");
 
   if (rmErr) throw new Error(`purgeArchivedConversations(participants): ${rmErr.message}`);
@@ -65,17 +75,28 @@ async function purgeArchivedConversations(service: SupabaseClient): Promise<numb
   if (purgedCount === 0) return 0;
 
   // Clean up orphan conversations (no participants left)
+  // Grouped read replaces N+1 COUNT loop: fetch all remaining participants for
+  // the affected conversations in one query, then delete those not in the result.
   const conversationIds = [...new Set(removed!.map((r) => r.conversation_id))];
-  for (const convId of conversationIds) {
-    const { count } = await service
-      .from("conversation_participants")
-      .select("*", { count: "exact", head: true })
-      .eq("conversation_id", convId);
 
-    if (count === 0) {
-      await service.from("messages").delete().eq("conversation_id", convId);
-      await service.from("conversations").delete().eq("id", convId);
-    }
+  const { data: remaining, error: readErr } = await service
+    .from("conversation_participants")
+    .select("conversation_id")
+    .in("conversation_id", conversationIds);
+
+  if (readErr) throw new Error(`purgeArchivedConversations(check): ${readErr.message}`);
+
+  const stillHasParticipants = new Set((remaining ?? []).map((r) => r.conversation_id));
+  const orphanIds = conversationIds.filter((id) => !stillHasParticipants.has(id));
+
+  if (orphanIds.length > 0) {
+    // ON DELETE CASCADE on messages.conversation_id handles message cleanup
+    const { error: delErr } = await service
+      .from("conversations")
+      .delete()
+      .in("id", orphanIds);
+
+    if (delErr) throw new Error(`purgeArchivedConversations(delete): ${delErr.message}`);
   }
 
   return purgedCount;
@@ -86,7 +107,7 @@ async function purgeArchivedConversations(service: SupabaseClient): Promise<numb
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function getEmailLifecyclePrefs(
-  service: SupabaseClient,
+  service: ServiceClient,
   userIds: string[],
 ): Promise<Map<string, boolean>> {
   const map = new Map<string, boolean>();
@@ -115,7 +136,7 @@ async function getEmailLifecyclePrefs(
 // Collect: invite reminders (3 days, no signup)
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function collectInviteReminders(service: SupabaseClient): Promise<number> {
+async function collectInviteReminders(service: ServiceClient): Promise<number> {
   const threeDaysAgo = new Date(Date.now() - 3 * DAY_MS).toISOString();
   const appUrl = getAppUrl();
 
@@ -185,105 +206,66 @@ async function collectInviteReminders(service: SupabaseClient): Promise<number> 
 // Collect: engagement reminders (3-30 day old users with no content)
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function collectEngagementReminders(service: SupabaseClient): Promise<number> {
+export async function collectEngagementReminders(service: ServiceClient): Promise<number> {
   const thirtyDaysAgo = new Date(Date.now() - 30 * DAY_MS).toISOString();
   const threeDaysAgo = new Date(Date.now() - 3 * DAY_MS).toISOString();
   const appUrl = getAppUrl();
 
-  const { data: profiles, error } = await service
-    .from("profiles")
-    .select("user_id, display_name, active_commune_id")
-    .is("engagement_reminder_sent_at", null)
-    .lt("created_at", threeDaysAgo)
-    .gt("created_at", thirtyDaysAgo)
-    .limit(200);
-
-  if (error) throw new Error(`collectEngagementReminders: ${error.message}`);
-  if (!profiles || profiles.length === 0) return 0;
-
-  const userIds = profiles.map((p) => p.user_id);
-
-  // Batch check: users who have created at least one content
-  const { data: announcementAuthors } = await service
-    .from("announcements")
-    .select("author_membership_id")
-    .limit(1000);
-  const { data: initiativeAuthors } = await service
-    .from("initiatives")
-    .select("author_membership_id")
-    .limit(1000);
-  const { data: eventAuthors } = await service
-    .from("events")
-    .select("author_membership_id")
-    .limit(1000);
-
-  // Get memberships for our user pool
-  const { data: memberships } = await service
-    .from("memberships")
-    .select("id, user_id")
-    .in("user_id", userIds);
-
-  const membershipIdsByUser = new Map<string, string[]>();
-  for (const m of memberships ?? []) {
-    const arr = membershipIdsByUser.get(m.user_id) ?? [];
-    arr.push(m.id);
-    membershipIdsByUser.set(m.user_id, arr);
-  }
-
-  const allContentMembershipIds = new Set([
-    ...(announcementAuthors ?? []).map((a) => a.author_membership_id),
-    ...(initiativeAuthors ?? []).map((a) => a.author_membership_id),
-    ...(eventAuthors ?? []).map((a) => a.author_membership_id),
-  ]);
-
-  const eligible = profiles.filter((p) => {
-    const mIds = membershipIdsByUser.get(p.user_id) ?? [];
-    return !mIds.some((mId) => allContentMembershipIds.has(mId));
+  // Single RPC call replaces five queries + in-memory filtering.
+  // The SQL function filters out users who have published content and those
+  // already queued, making the selection exact and idempotent.
+  const { data: candidates, error } = await service.rpc("select_engagement_candidates", {
+    p_created_after: thirtyDaysAgo,
+    p_created_before: threeDaysAgo,
+    p_limit: 200,
   });
 
-  if (eligible.length === 0) return 0;
+  if (error) throw new Error(`collectEngagementReminders(rpc): ${error.message}`);
+  if (!candidates || candidates.length === 0) return 0;
 
-  const eligibleUserIds = eligible.map((p) => p.user_id);
+  const userIds = candidates.map((c) => c.user_id);
 
   // Batch: emails, preferences, communes
   const [emailMap, emailPrefs] = await Promise.all([
-    getEmailsByUserIds(service, eligibleUserIds),
-    getEmailLifecyclePrefs(service, eligibleUserIds),
+    getEmailsByUserIds(service, userIds),
+    getEmailLifecyclePrefs(service, userIds),
   ]);
 
-  const communeIds = [...new Set(eligible.map((p) => p.active_commune_id).filter(Boolean))];
-  const { data: communes } = await service
+  const communeIds = [...new Set(candidates.map((c) => c.active_commune_id).filter(Boolean))];
+  const { data: communes, error: communeError } = await service
     .from("communes")
     .select("id, name")
     .in("id", communeIds as string[]);
+  if (communeError) throw new Error(`collectEngagementReminders(communes): ${communeError.message}`);
   const communeMap = new Map((communes ?? []).map((c) => [c.id, c.name]));
 
   const queueRows: EmailQueueInsert[] = [];
   const notifiedUserIds: string[] = [];
 
-  for (const profile of eligible) {
-    const email = emailMap.get(profile.user_id);
+  for (const candidate of candidates) {
+    const email = emailMap.get(candidate.user_id);
     if (!email) continue;
 
-    const emailEnabled = emailPrefs.get(profile.user_id) ?? true;
-    const communeName = communeMap.get(profile.active_commune_id ?? "") ?? "";
+    const emailEnabled = emailPrefs.get(candidate.user_id) ?? true;
+    const communeName = communeMap.get(candidate.active_commune_id ?? "") ?? "";
 
     if (emailEnabled) {
       queueRows.push({
         to_email: email,
         template_slug: "engagement-first-week",
-        recipient_user_id: profile.user_id,
+        recipient_user_id: candidate.user_id,
         variables: {
-          user_name: profile.display_name ?? "Voisin·e",
+          user_name: candidate.display_name ?? "Voisin·e",
           commune_name: communeName,
           app_url: `${appUrl}${ROUTES.annonces.new()}`,
-          unsubscribe_link: buildUnsubscribeLink(profile.user_id),
+          unsubscribe_link: buildUnsubscribeLink(candidate.user_id),
         },
       });
     }
 
-    notifiedUserIds.push(profile.user_id);
-    void notifyUser(profile.user_id, {
+    notifiedUserIds.push(candidate.user_id);
+    // Fire-and-forget push notification (see sujet 4 for await-all fix)
+    void notifyUser(candidate.user_id, {
       title: "Publiez votre première annonce !",
       body: `Partagez un coup de main ou une offre avec vos voisins de ${communeName}`,
       url: ROUTES.annonces.new(),
@@ -292,15 +274,16 @@ async function collectEngagementReminders(service: SupabaseClient): Promise<numb
   }
 
   if (queueRows.length > 0) {
-    const { error } = await service.from("email_queue").insert(queueRows);
-    if (error) throw new Error(`collectEngagementReminders(insert): ${error.message}`);
+    const { error: insertError } = await service.from("email_queue").insert(queueRows);
+    if (insertError) throw new Error(`collectEngagementReminders(insert): ${insertError.message}`);
   }
 
   if (notifiedUserIds.length > 0) {
-    await service
+    const { error: updateError } = await service
       .from("profiles")
       .update({ engagement_reminder_sent_at: new Date().toISOString() })
       .in("user_id", notifiedUserIds);
+    if (updateError) throw new Error(`collectEngagementReminders(mark): ${updateError.message}`);
   }
 
   return notifiedUserIds.length;
@@ -310,7 +293,7 @@ async function collectEngagementReminders(service: SupabaseClient): Promise<numb
 // Collect: announcement expired nudges (target_date + 2 days)
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function collectAnnouncementExpiredNudges(service: SupabaseClient): Promise<number> {
+async function collectAnnouncementExpiredNudges(service: ServiceClient): Promise<number> {
   const now = new Date();
   const twoDaysAgoYmd = addDaysParisYmd(-2, now);
   const appUrl = getAppUrl();
@@ -408,7 +391,7 @@ async function collectAnnouncementExpiredNudges(service: SupabaseClient): Promis
 // Collect: announcement stale 60d (no target_date, created > 60 days)
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function collectAnnouncementStaleNudges(service: SupabaseClient): Promise<number> {
+async function collectAnnouncementStaleNudges(service: ServiceClient): Promise<number> {
   const now = new Date();
   const sixtyDaysAgo = new Date(now.getTime() - 60 * DAY_MS).toISOString();
   const appUrl = getAppUrl();
@@ -505,7 +488,7 @@ async function collectAnnouncementStaleNudges(service: SupabaseClient): Promise<
 // Collect: initiative stale 60d
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function collectInitiativeStaleNudges(service: SupabaseClient): Promise<number> {
+async function collectInitiativeStaleNudges(service: ServiceClient): Promise<number> {
   const now = new Date();
   const sixtyDaysAgo = new Date(now.getTime() - 60 * DAY_MS).toISOString();
   const appUrl = getAppUrl();
@@ -601,7 +584,7 @@ async function collectInitiativeStaleNudges(service: SupabaseClient): Promise<nu
 // Collect: event past nudges (ends_at + 2 days)
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function collectEventPastNudges(service: SupabaseClient): Promise<number> {
+async function collectEventPastNudges(service: ServiceClient): Promise<number> {
   const now = new Date();
   const twoDaysAgo = new Date(now.getTime() - 2 * DAY_MS).toISOString();
   const appUrl = getAppUrl();
@@ -697,74 +680,65 @@ async function collectEventPastNudges(service: SupabaseClient): Promise<number> 
 // Collect: notification activation reminders (1-7 day users without push)
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function collectNotificationReminders(service: SupabaseClient): Promise<number> {
+export async function collectNotificationReminders(service: ServiceClient): Promise<number> {
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * DAY_MS).toISOString();
   const oneDayAgo = new Date(now.getTime() - DAY_MS).toISOString();
 
-  const { data: profiles, error } = await service
-    .from("profiles")
-    .select("user_id, display_name, active_commune_id")
-    .is("notification_prompt_email_sent_at", null)
-    .lt("created_at", oneDayAgo)
-    .gt("created_at", sevenDaysAgo)
-    .limit(200);
+  // Single RPC call replaces profiles query + push_subscriptions check + in-memory filtering.
+  // The SQL function filters out users who have push subscriptions and those
+  // already queued, making the selection exact and idempotent.
+  const { data: candidates, error } = await service.rpc("select_notification_activation_candidates", {
+    p_created_after: sevenDaysAgo,
+    p_created_before: oneDayAgo,
+    p_limit: 200,
+  });
 
-  if (error) throw new Error(`collectNotificationReminders: ${error.message}`);
-  if (!profiles || profiles.length === 0) return 0;
+  if (error) throw new Error(`collectNotificationReminders(rpc): ${error.message}`);
+  if (!candidates || candidates.length === 0) return 0;
 
-  const userIds = profiles.map((p) => p.user_id);
-
-  // Users who already have push subscriptions
-  const { data: pushSubs } = await service
-    .from("push_subscriptions")
-    .select("user_id")
-    .in("user_id", userIds);
-  const usersWithPush = new Set((pushSubs ?? []).map((s) => s.user_id));
-
-  const eligible = profiles.filter((p) => !usersWithPush.has(p.user_id));
-  if (eligible.length === 0) return 0;
-
-  const eligibleUserIds = eligible.map((p) => p.user_id);
+  const userIds = candidates.map((c) => c.user_id);
 
   // Batch: emails and preferences
   const [emailMap, emailPrefs] = await Promise.all([
-    getEmailsByUserIds(service, eligibleUserIds),
-    getEmailLifecyclePrefs(service, eligibleUserIds),
+    getEmailsByUserIds(service, userIds),
+    getEmailLifecyclePrefs(service, userIds),
   ]);
 
-  const communeIds = [...new Set(eligible.map((p) => p.active_commune_id).filter(Boolean))];
-  const { data: communes } = await service
+  const communeIds = [...new Set(candidates.map((c) => c.active_commune_id).filter(Boolean))];
+  const { data: communes, error: communeError } = await service
     .from("communes")
     .select("id, name")
     .in("id", communeIds as string[]);
+  if (communeError) throw new Error(`collectNotificationReminders(communes): ${communeError.message}`);
   const communeMap = new Map((communes ?? []).map((c) => [c.id, c.name]));
 
   const queueRows: EmailQueueInsert[] = [];
   const notifiedUserIds: string[] = [];
 
-  for (const profile of eligible) {
-    const email = emailMap.get(profile.user_id);
+  for (const candidate of candidates) {
+    const email = emailMap.get(candidate.user_id);
     if (!email) continue;
 
-    const communeName = communeMap.get(profile.active_commune_id ?? "") ?? "";
-    const emailEnabled = emailPrefs.get(profile.user_id) ?? true;
+    const communeName = communeMap.get(candidate.active_commune_id ?? "") ?? "";
+    const emailEnabled = emailPrefs.get(candidate.user_id) ?? true;
 
     if (emailEnabled) {
       queueRows.push({
         to_email: email,
         template_slug: "notification-activation-reminder",
-        recipient_user_id: profile.user_id,
+        recipient_user_id: candidate.user_id,
         variables: {
-          user_name: profile.display_name ?? "Voisin·e",
+          user_name: candidate.display_name ?? "Voisin·e",
           commune_name: communeName,
-          unsubscribe_link: buildUnsubscribeLink(profile.user_id),
+          unsubscribe_link: buildUnsubscribeLink(candidate.user_id),
         },
       });
     }
 
-    notifiedUserIds.push(profile.user_id);
-    void notifyUser(profile.user_id, {
+    notifiedUserIds.push(candidate.user_id);
+    // Fire-and-forget push notification (see sujet 4 for await-all fix)
+    void notifyUser(candidate.user_id, {
       title: "Activez les notifications",
       body: "Ne manquez pas les annonces et événements de votre commune !",
       url: `${ROUTES.profil}?tab=parametres`,
@@ -773,14 +747,15 @@ async function collectNotificationReminders(service: SupabaseClient): Promise<nu
   }
 
   if (queueRows.length > 0) {
-    const { error } = await service.from("email_queue").insert(queueRows);
-    if (error) throw new Error(`collectNotificationReminders(insert): ${error.message}`);
+    const { error: insertError } = await service.from("email_queue").insert(queueRows);
+    if (insertError) throw new Error(`collectNotificationReminders(insert): ${insertError.message}`);
   }
   if (notifiedUserIds.length > 0) {
-    await service
+    const { error: updateError } = await service
       .from("profiles")
       .update({ notification_prompt_email_sent_at: now.toISOString() })
       .in("user_id", notifiedUserIds);
+    if (updateError) throw new Error(`collectNotificationReminders(mark): ${updateError.message}`);
   }
 
   return notifiedUserIds.length;
@@ -790,17 +765,31 @@ async function collectNotificationReminders(service: SupabaseClient): Promise<nu
 // Main orchestrator
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function runLifecycleCollector(service: SupabaseClient): Promise<CollectorResult> {
-  const purgedAnnouncements = await purgeArchivedAnnouncements(service);
-  const purgedConversations = await purgeArchivedConversations(service);
+export async function runLifecycleCollector(service: ServiceClient): Promise<CollectorResult> {
+  const failedPhases: PhaseError[] = [];
 
-  const invites = await collectInviteReminders(service);
-  const engagement = await collectEngagementReminders(service);
-  const announcementExpired = await collectAnnouncementExpiredNudges(service);
-  const announcementStale = await collectAnnouncementStaleNudges(service);
-  const initiativeStale = await collectInitiativeStaleNudges(service);
-  const eventPast = await collectEventPastNudges(service);
-  const notificationReminder = await collectNotificationReminders(service);
+  // Helper to run a phase with isolated error handling
+  async function runPhase<T>(name: string, fn: () => Promise<T>, fallback: T): Promise<T> {
+    try {
+      return await fn();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      failedPhases.push({ phase: name, message });
+      console.error(`[lifecycle-collector] ${name} failed:`, message);
+      return fallback;
+    }
+  }
+
+  const purgedAnnouncements = await runPhase("purgeArchivedAnnouncements", () => purgeArchivedAnnouncements(service), 0);
+  const purgedConversations = await runPhase("purgeArchivedConversations", () => purgeArchivedConversations(service), 0);
+
+  const invites = await runPhase("collectInviteReminders", () => collectInviteReminders(service), 0);
+  const engagement = await runPhase("collectEngagementReminders", () => collectEngagementReminders(service), 0);
+  const announcementExpired = await runPhase("collectAnnouncementExpiredNudges", () => collectAnnouncementExpiredNudges(service), 0);
+  const announcementStale = await runPhase("collectAnnouncementStaleNudges", () => collectAnnouncementStaleNudges(service), 0);
+  const initiativeStale = await runPhase("collectInitiativeStaleNudges", () => collectInitiativeStaleNudges(service), 0);
+  const eventPast = await runPhase("collectEventPastNudges", () => collectEventPastNudges(service), 0);
+  const notificationReminder = await runPhase("collectNotificationReminders", () => collectNotificationReminders(service), 0);
 
   return {
     purgedAnnouncements,
@@ -814,5 +803,6 @@ export async function runLifecycleCollector(service: SupabaseClient): Promise<Co
       eventPast,
       notificationReminder,
     },
+    failedPhases,
   };
 }

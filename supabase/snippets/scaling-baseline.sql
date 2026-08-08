@@ -11,11 +11,13 @@
 
 
 -- -----------------------------------------------------------------------------
--- 1. Plafond de lignes PostgREST  (sujet 3)
+-- 1. Plafond de lignes PostgREST  (sujets 4a et 7a)
 --
 -- C'est la contrainte la plus importante de ce fichier : toute requête
 -- applicative sans .limit() ni .range() est silencieusement tronquée à cette
--- valeur — pas d'erreur, juste des lignes manquantes.
+-- valeur — pas d'erreur, juste des lignes manquantes. Attention : le plafond
+-- s'applique aussi aux RPC `returns table`, mais PAS aux lignes affectées par
+-- un delete() ou un update(). Voir docs/scaling-roadmap.md, section max_rows.
 --
 -- Cette valeur n'est PAS lisible en SQL : PostgREST la reçoit par son
 -- environnement (PGRST_DB_MAX_ROWS), pas par la base. Elle se lit :
@@ -206,10 +208,14 @@ LIMIT 25;
 
 
 -- -----------------------------------------------------------------------------
--- 8. Requêtes qui rapatrient beaucoup de lignes  (sujets 3, 8, 9)
+-- 8. Requêtes qui rapatrient beaucoup de lignes  (sujets 4, 7, 8, 9)
 --
 -- Un `lignes_par_appel` proche du plafond du bloc 1 est le signe d'une requête
 -- tronquée : elle renvoie exactement max_rows alors qu'il en existe davantage.
+--
+-- Ce bloc ne détecte la troncature qu'APRÈS qu'elle s'est produite en
+-- production, et ne montre rien tant qu'aucune table n'approche le plafond.
+-- Il ne peut donc pas servir de critère d'acceptation à lui seul.
 -- -----------------------------------------------------------------------------
 
 SELECT
@@ -226,7 +232,7 @@ LIMIT 25;
 
 
 -- -----------------------------------------------------------------------------
--- 9. Taille du fan-out par commune  (sujets 3 et 4)
+-- 9. Taille du fan-out par commune  (sujet 4)
 --
 -- Nombre de membres actifs par commune = nombre de notifications générées par
 -- publication. Au-delà du plafond du bloc 1, les membres excédentaires ne sont

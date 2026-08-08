@@ -18,7 +18,18 @@ export async function GET(request: NextRequest) {
     const service = await createServiceClient();
     const result = await runLifecycleCollector(service);
 
-    return NextResponse.json({ ok: true, ...result, at: new Date().toISOString() });
+    // If any phases failed, include an error summary for cron-job.org alerting
+    const hasFailures = result.failedPhases.length > 0;
+    const response: Record<string, unknown> = {
+      ok: !hasFailures,
+      ...result,
+      at: new Date().toISOString(),
+    };
+    if (hasFailures) {
+      response.error = `${result.failedPhases.length} phase(s) failed: ${result.failedPhases.map((p) => p.phase).join(", ")}`;
+    }
+
+    return NextResponse.json(response);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error("[cron/lifecycle] Error:", message);

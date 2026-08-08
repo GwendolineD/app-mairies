@@ -2,7 +2,7 @@
 
 Audit réalisé alors que la production comptait **2 communes, 43 utilisateurs, 23 annonces, 4 initiatives, 2 événements**, en anticipation de l'arrivée simultanée de plusieurs communes.
 
-Ce document est une file de travail : **un sujet = un lot de travail autonome**, à prendre dans l'ordre indiqué. Chaque section se lit seule et contient le problème, la correction retenue, ce qu'il faut éviter, le critère d'acceptation et les garde-fous disponibles.
+Ce document est une file de travail : **un sujet = un lot de travail autonome**. Chaque section se lit seule et contient le problème, la correction retenue, ce qu'il faut éviter, le critère d'acceptation et les garde-fous disponibles. L'ordre de travail est celui du [récapitulatif](#récapitulatif), qui ne suit plus la numérotation : les numéros sont des identifiants stables, cités dans le code et les tests.
 
 > **Avant de commencer un sujet**, relever les mesures du bloc correspondant dans [`supabase/snippets/scaling-baseline.sql`](../supabase/snippets/scaling-baseline.sql). Après la correction, relancer le même bloc et comparer. Mesurer plutôt que deviner.
 
@@ -10,34 +10,71 @@ Ce document est une file de travail : **un sujet = un lot de travail autonome**,
 
 ## Le risque en une phrase
 
-Le socle est sain — feeds paginés par curseurs, `commune_id` systématiquement contraint, RPC pour la messagerie, compteurs dénormalisés. Mais **quatre plafonds invisibles** sont câblés dans le code, et aucun ne provoque d'erreur : ils produisent des **résultats silencieusement faux**, bien plus difficiles à diagnostiquer qu'un crash.
+Le socle est sain — feeds paginés par curseurs, `commune_id` systématiquement contraint, RPC pour la messagerie, compteurs dénormalisés. Mais **cinq plafonds invisibles** sont câblés dans le code, et aucun ne provoque d'erreur : ils produisent des **résultats silencieusement faux**, bien plus difficiles à diagnostiquer qu'un crash.
 
-| Seuil atteint | Ce qui casse, sans message d'erreur |
+| Seuil atteint | Ce qui casse, sans message d'erreur | Sujet |
+| --- | --- | --- |
+| 51ᵉ utilisateur | Relances lifecycle jamais envoyées, staff jamais alerté d'un signalement, opt-out e-mail ignoré | 2 — **fait** |
+| 1001ᵉ contenu plateforme | E-mails « Publiez votre première annonce » envoyés à des auteurs prolifiques | 3 — **fait** |
+| 1001ᵉ membership plateforme | Utilisateurs absents des listes filtrées du backoffice, et du total affiché à côté | 7 |
+| 1001ᵉ membre actif dans une commune | Les membres au-delà du plafond ne reçoivent aucune notification de nouvelle annonce | 4 |
+| ~500 membres actifs + pic de publication | Saturation du pool PostgREST → lenteurs et 5xx **pour toute l'app**, pas seulement l'auteur | 4 |
+
+**Les sujets 8 (décision), 4 et 7 sont le strict nécessaire avant de démarcher**, dans cet ordre. Le sujet 3 est fait. Les sujets 5 et 6 devraient suivre dans le mois. Les sujets 9 et 10 sont de la dette à amortir tranquillement.
+
+---
+
+## Ce que `max_rows` tronque — et ce qu'il ne tronque pas
+
+`supabase/config.toml:18` fixe `max_rows = 1000`, et le défaut Supabase hébergé est également 1000. Cette valeur n'est pas lisible en SQL : PostgREST la reçoit par son environnement. Le bloc 1 du snippet explique où la lire et comment observer la troncature via l'en-tête `Content-Range`.
+
+Le périmètre exact du plafond conditionne les sujets 3, 4 et 7. Il est plus étroit qu'il n'y paraît :
+
+| Type de requête | Plafonné ? |
 | --- | --- |
-| 51ᵉ utilisateur (imminent) | Relances lifecycle jamais envoyées, staff jamais alerté d'un signalement, opt-out e-mail ignoré |
-| 1001ᵉ contenu plateforme | E-mails « Publiez votre première annonce » envoyés à des auteurs prolifiques |
-| 1001ᵉ membre dans une commune | Les membres au-delà du plafond ne reçoivent aucune notification de nouvelle annonce |
-| ~500 membres actifs + pic de publication | Saturation du pool PostgREST → lenteurs et 5xx **pour toute l'app**, pas seulement l'auteur |
+| `select()` sur une table ou une vue | **Oui**, silencieusement |
+| RPC `returns table` / `returns setof` | **Oui** — PostgREST traite une fonction table-valued comme une lecture |
+| RPC renvoyant un scalaire ou un agrégat | Non |
+| Lignes affectées par un `delete()` / `update()` | **Non** — c'est précisément pourquoi la préférence `Prefer: max-affected` existe côté protocole |
 
-**Les sujets 1 à 4 sont le strict nécessaire avant de démarcher.** Les sujets 5 à 8 devraient suivre dans le mois. Les sujets 9 et 10 sont de la dette à amortir tranquillement.
+Deux conséquences pratiques :
+
+- **Un RPC n'est pas un remède en soi.** Remplacer une lecture non bornée par un RPC `returns table` reproduit le plafond à l'identique. C'est le cas de `admin_user_emails` (sujet 2) : il est plafonné à `max_rows`, sans conséquence aujourd'hui puisque tous ses appelants passent des lots de 200 au maximum. Le seul RPC qui supprime réellement le plafond est celui qui **fait le travail entier côté base** et ne renvoie qu'un agrégat.
+- **Les suppressions ne sont jamais partielles à cause de `max_rows`.** Un `delete()` sans limite supprime tout ce qui correspond au filtre. Un chemin de suppression qui paraît tronqué l'est pour une autre raison, à chercher ailleurs.
+
+**Ne pas relever `max_rows`.** Ça paraît régler le problème d'un coup, mais ça ne fait que déplacer la troncature silencieuse vers l'épuisement mémoire et les timeouts, tout en supprimant un garde-fou utile contre les requêtes accidentelles. Le plafond n'est pas le bug : le code appelant qui suppose l'exhaustivité l'est.
+
+### Écarté après vérification : la suppression de compte
+
+L'audit initial classait `performAccountDeletion` et `archiveCommuneConversations` parmi les chemins tronqués, avec « suppression incomplète, donc exposition RGPD » à la clé. **C'est faux, pour trois raisons indépendantes** — chacune suffirait. La note est conservée ici pour éviter que l'hypothèse soit rouverte.
+
+1. `max_rows` ne borne pas les lignes affectées par un `delete()`. Les `DELETE ... in("author_membership_id", …)` suppriment tout, quel que soit le volume.
+2. Les lectures concernées filtrent sur les memberships d'**un seul** utilisateur. Il faudrait qu'une personne ait publié plus de 1000 annonces, initiatives ou événements à elle seule pour les tronquer — et la seule conséquence serait un sous-comptage dans `deleted_content_creation_archive`, une statistique, pas une donnée personnelle conservée. Même raisonnement pour `archiveCommuneConversations`, qui supposerait plus de 1000 conversations pour un utilisateur dans une seule commune.
+3. `author_membership_id` est déclaré `ON DELETE RESTRICT` (`20260522000000_initial_schema.sql:172,197,229`). Si la suppression du contenu était malgré tout incomplète, le `DELETE` sur `memberships` qui suit échouerait sur une violation de clé étrangère et la fonction retournerait une erreur. Le mode de panne serait **bruyant**, à l'exact opposé de la prémisse.
+
+Ne pas engager de correction sur ce chemin : c'est une suppression irréversible sur un chemin critique, le risque de régression y est réel et le bénéfice nul.
 
 ---
 
 ## Récapitulatif
+
+Les numéros sont des **identifiants stables** — ils sont cités dans le code, les migrations et les tests. La table est triée par **ordre d'exécution recommandé**, pas par numéro.
 
 | Sujet | Titre | Gravité | Problèmes couverts |
 | --- | --- | --- | --- |
 | — | [Garde-fous](#sujet-0--garde-fous-fait) | Prérequis | **fait** |
 | — | [Index FK](#sujet-1--index-sur-les-clés-étrangères-fait) | P1 | **fait** |
 | — | [`listUsers()` sans pagination](#sujet-2--listusers-sans-pagination-fait) | P0 | **fait** |
-| [3](#sujet-3--troncature-silencieuse-à-1000-lignes) | Troncature silencieuse à 1000 lignes | P0 | 2, 4 |
-| [4](#sujet-4--fan-out-notifications-non-borné) | Fan-out notifications non borné | P0 | 3 |
+| — | [Collecteur lifecycle : détection d'auteur faussée](#sujet-3--collecteur-lifecycle--détection-dauteur-faussée-fait) | P1 | **fait** |
+| [8](#sujet-8--rétention-des-tables-append-only) | Rétention des tables append-only — **décision d'abord** | P2 | 10 |
+| [4](#sujet-4--fan-out-notifications--non-borné-et-non-paginé) | Fan-out notifications : non borné et non paginé | P0 | 2a, 3 |
+| [7](#sujet-7--agrégats-et-filtres-calculés-en-js) | Agrégats et filtres calculés en JS | P1 | 2b, 8, 9 |
 | [5](#sujet-5--email_queue-sans-réservation) | `email_queue` sans réservation | P1 | 6 |
 | [6](#sujet-6--latence-de-navigation) | Latence de navigation | P1 | 7 |
-| [7](#sujet-7--agrégats-calculés-en-js) | Agrégats calculés en JS | P1 | 8, 9 |
-| [8](#sujet-8--rétention-des-tables-append-only) | Rétention des tables append-only | P2 | 10 |
 | [9](#sujet-9--rls--authuid-non-encapsulé) | RLS : `auth.uid()` non encapsulé | P2 | 11 |
 | [10](#sujet-10--le-reste) | Le reste | P2/P3 | 12, 13, 14 |
+
+Le problème 2 de l'audit — « troncature silencieuse à 1000 lignes » — ne constitue plus un sujet à lui seul. Il s'est révélé être une **famille de causes** plutôt qu'un lot de travail : ses occurrences ont été rattachées aux sujets qui touchent déjà les fichiers concernés (4a pour le fan-out, 7a pour les filtres du backoffice), et son troisième chemin supposé — la suppression de compte — n'existait pas. Voir la section sur `max_rows` ci-dessus.
 
 ---
 
@@ -49,7 +86,7 @@ Posés avant toute correction, parce que les sujets 1 à 10 modifient des invari
 
 | Fichier | Ce qu'il verrouille | Sert au sujet |
 | --- | --- | --- |
-| `lib/services/notification-fanout.test.ts` | Liste exacte des destinataires : auteur exclu côté base, opt-out respecté, absence de préférences = inclus, `excludeUserIds` honoré, sortie immédiate si commune vide | 4 |
+| `lib/services/notification-fanout.test.ts` | Liste exacte des destinataires : auteur exclu côté base, opt-out respecté, absence de préférences = inclus, `excludeUserIds` honoré, sortie immédiate si commune vide. **Mais aussi la mécanique de livraison — voir le point d'attention ci-dessous** | 4 |
 | `lib/cron/email-sender.test.ts` | Machine à états de `email_queue` : `cancelled`, `sent`, `pending` + tentative incrémentée, `failed` au seuil. Plus deux tests vérifiant le fix de `shouldSend` (opt-out honoré, invitations envoyées) | 2, 5 |
 | `tests/integration/tenant-isolation.itest.ts` | Isolation entre communes évaluée par les vraies policies RLS, sur 7 tables, en lecture **et** en écriture | 9 |
 | `tests/integration/fixtures.ts` | Deux communes jetables (INSEE 99001 / 99002) créées et détruites par la suite elle-même | 9 |
@@ -64,7 +101,9 @@ npm run test:integration  # nécessite `npx supabase start` + .env.local
 
 Les tests d'intégration utilisent l'extension `.itest.ts`, qui ne correspond pas au motif de `vitest.config.ts` : la suite unitaire reste donc rapide et sans Docker.
 
-### Deux points d'attention sur ces garde-fous
+### Trois points d'attention sur ces garde-fous
+
+**`notification-fanout.test.ts` verrouille la mécanique, pas seulement les destinataires.** Sa documentation affirme le contraire, et le sujet 4 s'appuyait sur cette affirmation pour poser « le test passe sans modification » en critère d'acceptation. C'est faux, pour deux raisons : le stub de requête n'expose que `select`, `eq`, `neq` et `in` — ajouter un `.range()` pour paginer fait échouer le stub, l'erreur est avalée par le `try/catch` du fan-out et cinq cas sur sept tombent ; et les assertions lisent les appels à `notifyUser`, or le sujet 4 consiste précisément à remplacer ce `notifyUser` par destinataire par un insert en masse. Le test devra donc être **réécrit en même temps que le fan-out**, pas simplement relancé. Voir le critère d'acceptation révisé du sujet 4.
 
 **Le test de caractérisation de `shouldSend` a été remplacé par deux cas.** L'ancien test affirmait que l'e-mail partait malgré l'opt-out quand le destinataire n'était pas sur la première page de `listUsers()`. Avec le sujet 2 corrigé, ce comportement n'existe plus. Les deux nouveaux tests vérifient : (1) qu'un `recipient_user_id` renseigné avec opt-out annule l'envoi, et (2) qu'un `recipient_user_id` null (invitation) envoie toujours.
 
@@ -74,7 +113,7 @@ Les tests d'intégration utilisent l'extension `.itest.ts`, qui ne correspond pa
 
 - **Advisors** Supabase : lints RLS et index manquants (Dashboard > Advisors).
 - **`pg_stat_statements`** : `CREATE EXTENSION IF NOT EXISTS pg_stat_statements;` — nécessaire aux blocs 7 et 8 du snippet.
-- **Relever la valeur de « Max rows »** (Dashboard > Settings > API). Elle conditionne l'ampleur du sujet 3. Si elle vaut 1000 comme en local, la troncature est déjà active.
+- **Relever la valeur de « Max rows »** (Dashboard > Settings > API). Elle conditionne l'ampleur des sujets 4a et 7a. Si elle vaut 1000 comme en local, la troncature est déjà active.
 
 ---
 
@@ -150,7 +189,7 @@ Au-delà du 50ᵉ, chaque emplacement échouait silencieusement, de trois façon
 
 ### La correction
 
-1. **RPC `admin_user_emails(uuid[])`** — résolution `id → email` via un seul aller-retour SQL, sans plafond.
+1. **RPC `admin_user_emails(uuid[])`** — résolution `id → email` via un seul aller-retour SQL, sans le plafond de 50 de `listUsers()`.
 2. **Helper `getEmailsByUserIds`** (`lib/services/user-emails.ts`) — interface unique, erreur levée, Map typée.
 3. **Substitution des 10 appels `id → email`** — lifecycle-collector ×6, reports ×2, cancellation, initiative-to-event.
 4. **Garde ESLint `no-restricted-syntax`** — interdit `listUsers()` dans `lib/**`, `app/**`, `components/**`.
@@ -169,75 +208,98 @@ Ne pas se contenter de passer `perPage: 1000`. Ça déplace le plafond sans le s
 - `npm test` vert avec les deux cas opt-out / invitation.
 - `npm run lint` et `npm run build` sans nouvelle erreur.
 
----
+### Réserve : `admin_user_emails` reste plafonné à `max_rows`
 
-## Sujet 3 — Troncature silencieuse à 1000 lignes
-
-**Gravité : P0.** Problèmes 2 et 4 de l'audit.
-
-### Le problème
-
-`supabase/config.toml:18` fixe `max_rows = 1000`, et le défaut Supabase hébergé est également 1000. Toute requête sans `.limit()` ni `.range()` est donc **coupée à 1000 lignes sans erreur**.
-
-Cette valeur n'est pas lisible en SQL — PostgREST la reçoit par son environnement. Le bloc 1 du snippet explique où la lire et comment observer la troncature via l'en-tête `Content-Range`.
-
-Trois chemins où la troncature produit un bug réel :
-
-**a. Destinataires du fan-out** — `lib/services/notification-fanout.ts:59` sélectionne les memberships actifs sans limite. Au-delà de 1000 membres actifs dans une commune, les suivants ne sont **jamais notifiés**.
-
-**b. Suppression de compte** — `deleteAuthoredContent` et `performAccountDeletion` : suppression incomplète, donc **exposition RGPD**. Même remarque pour `archiveCommuneConversations`.
-
-**c. Détection d'auteur faussée** (problème 4) — `lib/cron/lifecycle-collector.ts:188-199` charge 1000 `author_membership_id` **de toute la plateforme** au lieu de filtrer sur les 200 utilisateurs du lot. Dès que la plateforme dépasse 1000 contenus, des auteurs actifs sont classés « sans contenu » et reçoivent une relance absurde. Très visible pour l'utilisateur.
-
-### La correction
-
-- Pour **a** et **b** : une boucle explicite en `.range()` par pages de 1000, ou un RPC qui fait le travail en SQL côté base.
-- Pour **c** : inverser le sens de la requête — récupérer les memberships des 200 profils du lot, puis interroger `.in('author_membership_id', mIds)`. Le volume devient borné par le lot.
-
-### À ne pas faire
-
-**Ne pas relever `max_rows`.** Ça paraît régler le problème d'un coup, mais ça ne fait que déplacer la troncature silencieuse vers l'épuisement mémoire et les timeouts, tout en supprimant un garde-fou utile contre les requêtes accidentelles. Le plafond n'est pas le bug : le code appelant qui suppose l'exhaustivité l'est.
-
-### Critère d'acceptation
-
-Aucune requête sur ces chemins ne renvoie exactement `max_rows` lignes. Le bloc 8 du snippet ne fait plus apparaître de requête dont `lignes_par_appel` frôle le plafond.
+Le RPC est déclaré `returns table`, donc PostgREST le traite comme une lecture et lui applique `max_rows`. Le plafond de 50 de `listUsers()` a été supprimé, mais un plafond de 1000 subsiste. Sans conséquence aujourd'hui — tous les appelants passent des lots de 200 au maximum, bornés en amont par les `.limit(200)` du collecteur — mais **le motif ne doit pas être réutilisé tel quel** pour une résolution de volume non borné. Voir la section sur `max_rows`.
 
 ---
 
-## Sujet 4 — Fan-out notifications non borné
+## Sujet 3 — Collecteur lifecycle : détection d'auteur faussée (fait)
 
-**Gravité : P0 — le scénario de panne le plus crédible de l'audit.** Problème 3 de l'audit.
+**Gravité : P1 — corrigé le 8 août 2026.** Problème 4 de l'audit.
 
-### Le problème
+### Le problème d'origine
 
-`lib/services/notification-fanout.ts:100` lance un `notifyUser` par destinataire via `Promise.all`. Chaque `notifyUser` crée **son propre client service-role**, fait un `INSERT` dans `notifications`, puis un `SELECT` sur `push_subscriptions`.
+`lib/cron/lifecycle-collector.ts` décidait qui reçoit la relance « Publiez votre première annonce » en chargeant les `author_membership_id` des trois tables de contenu **de toute la plateforme**, puis en vérifiant si les memberships du lot de 200 profils s'y trouvent. Trois défauts se cumulaient.
 
-Pour une commune de 2000 membres, **une seule publication d'annonce déclenche ~4000 requêtes PostgREST simultanées**. PostgREST met en file d'attente au-delà de la taille de son pool : les requêtes des **autres utilisateurs** attendent ou échouent. La panne ne touche donc pas l'auteur de la publication, mais toute l'application.
+**Un plafond écrit en dur.** Les trois requêtes portaient un `.limit(1000)` explicite. Ce n'était donc pas la troncature PostgREST — relever `max_rows` n'y aurait strictement rien changé. Dès que la plateforme dépasse 1000 contenus, une partie des auteurs devenait invisible à la détection.
+
+**Aucun `ORDER BY`.** Le sous-ensemble de 1000 lignes renvoyé était arbitraire et **changeait d'un run à l'autre**. Le bug n'était pas « au-delà de 1000 contenus, certains auteurs sont mal classés une fois pour toutes » : c'était un tirage au sort quotidien.
+
+**Le tirage était répété jusqu'à 27 fois par utilisateur.** Un profil n'était marqué (`engagement_reminder_sent_at`) que s'il était jugé *éligible*. Un auteur correctement détecté restait donc non marqué et repassait dans la moulinette à chaque run.
+
+### Problèmes découverts en cours de correction
+
+**La famine du lot de 200.** Les profils inéligibles (ayant déjà publié) occupaient des places dans le lot, repoussant les candidats réels. Sans `ORDER BY`, les plus anciens — ceux dont la fenêtre de 30 jours expire en premier — n'étaient jamais atteints.
+
+**Le silence sur les erreurs de lecture.** Les requêtes de contenu ignoraient `error` : si l'une échouait (réseau, timeout), l'ensemble des auteurs était vide et **tout le lot de 200** était classé « sans contenu », déclenchant des relances absurdes. Ce mode de panne était plus coûteux que la troncature d'origine.
 
 ### La correction
 
-Quatre changements, dans deux fichiers :
+Réécriture complète de la sélection : deux fonctions SQL (`select_engagement_candidates`, `select_notification_activation_candidates`) remplacent le croisement en mémoire. La jointure SQL supprime d'un coup la troncature, la famine, et le silence sur les erreurs. Les fonctions sont `security definer` et restreintes à `service_role` uniquement, car elles révèlent qui n'a rien publié.
+
+Migration `20260808164016_lifecycle_candidate_rpcs.sql`.
+
+Bonus collatéral : un `NOT EXISTS` sur `email_queue` rend l'envoi idempotent par construction — plus de double-relance possible.
+
+De plus, chaque phase du cron est désormais isolée dans son propre `try/catch`, de sorte qu'un échec d'une phase ne bloque plus les suivantes. Les phases en échec sont remontées dans la réponse JSON et déclenchent l'alerte cron-job.org.
+
+### Critère d'acceptation (vérifié)
+
+- `lib/cron/lifecycle-collector.test.ts` couvre les cas : appel RPC avec bonnes bornes, pas de lecture directe des tables de contenu, erreur RPC remontée, erreur d'insertion remontée, opt-out e-mail respecté mais push envoyé, isolation des phases.
+- `npm test`, `npm run lint` et `npm run build` passent sans nouvelle erreur.
+
+### Reste à faire (second commit)
+
+`purgeArchivedConversations` boucle sur chaque `conversation_id` distinct avec un `COUNT` séparé pour détecter les orphelines. C'est un N+1 non borné sur un chemin cron. À corriger dans un commit séparé (partie destructive). Voir la todo `purge-conversations` du plan.
+
+---
+
+## Sujet 4 — Fan-out notifications : non borné et non paginé
+
+**Gravité : P0 — le scénario de panne le plus crédible de l'audit.** Problèmes 2a et 3 de l'audit.
+
+### Le problème
+
+Deux défauts sur la même requête et la même boucle, dans `lib/services/notification-fanout.ts`.
+
+**a. La liste des destinataires est tronquée.** Ligne 59, la sélection des memberships actifs de la commune n'a ni `.limit()` ni `.range()`. PostgREST la coupe donc à `max_rows` sans erreur : au-delà de 1000 membres actifs dans une commune, les suivants ne sont **jamais notifiés**.
+
+**b. La livraison n'est pas bornée.** Ligne 100, un `notifyUser` par destinataire via `Promise.all`. Chaque `notifyUser` crée **son propre client service-role**, fait un `INSERT` dans `notifications`, puis un `SELECT` sur `push_subscriptions`. Pour une commune de 2000 membres, une seule publication d'annonce déclenche ~4000 requêtes PostgREST simultanées. PostgREST met en file d'attente au-delà de la taille de son pool : les requêtes des **autres utilisateurs** attendent ou échouent. La panne ne touche donc pas l'auteur de la publication, mais toute l'application.
+
+Le seuil de **a** est le plus lointain de tout l'audit — 1000 membres actifs dans une **seule** commune, à comparer aux 43 utilisateurs répartis sur 2 communes aujourd'hui. Il est traité ici plutôt que dans un sujet séparé parce qu'il porte sur la requête que **b** réécrit de toute façon. Le bloc 9 du snippet donne le nombre réel de membres actifs par commune, à comparer au plafond.
+
+### La correction
 
 1. Un seul client service-role réutilisé pour tout le fan-out.
-2. Un `insert()` en masse par lots de 500 au lieu de N inserts.
-3. Un chargement groupé des abonnements push via `.in('user_id', ids)`.
-4. Un envoi push à concurrence bornée (~20 en parallèle).
+2. Une lecture des destinataires **paginée** : `.range()` par pages, boucle tant qu'une page revient pleine. Ou un fan-out entièrement déporté en SQL — voir l'avertissement ci-dessous.
+3. Un `insert()` en masse par lots de 500 au lieu de N inserts.
+4. Un chargement groupé des abonnements push via `.in('user_id', ids)`.
+5. Un envoi push à concurrence bornée (~20 en parallèle).
 
-Sémantique identique, coût divisé par ~1000.
+La liste des destinataires s'élargit — c'est l'objet du point **a** — mais la règle qui la produit est inchangée. Le coût de livraison, lui, est divisé par ~1000.
 
 ### À ne pas faire
+
+**Ne pas remplacer la lecture des destinataires par un RPC `returns table`.** PostgREST traite une fonction table-valued comme une lecture et lui applique `max_rows` : un RPC qui renvoie la liste des destinataires serait tronqué à 1000 exactement comme la requête qu'il remplace, et le point **a** serait « corrigé » sans l'être. Les deux formes sûres sont la boucle de pagination explicite, ou un RPC qui fait le fan-out **entier** côté base — insert des notifications compris — et ne renvoie que les utilisateurs à joindre en push, volume borné par `push_subscriptions` et sans commune mesure avec le nombre de membres.
 
 **Ne pas introduire une file d'attente et un worker.** C'est l'architecture correcte à terme, mais aujourd'hui c'est une nouvelle table, un nouveau cron, une nouvelle surface d'observabilité et de nouveaux modes de panne — pour un risque de régression élevé. L'insert en masse plus la concurrence bornée réduisent le coût de trois ordres de grandeur avec un diff confiné et une sémantique inchangée. La file devient pertinente si une commune dépasse ~5000 membres.
 
 ### Ordre
 
-À traiter **après le sujet 3** : les deux touchent le même fichier, autant les enchaîner, et corriger la justesse avant la performance.
+**Après la décision du sujet 8, pas avant.** `notifications` n'est référencée qu'une seule fois dans tout le code, par un `insert` (`lib/services/push-notifications.ts:132`) : aucune lecture, nulle part. Les points 3 et 4 de la correction ci-dessus consistent donc à fiabiliser et optimiser l'alimentation d'une table que personne ne lit. Si la décision du sujet 8 est « pas de centre de notifications », l'insert en masse sort purement et simplement du périmètre et il ne reste que la pagination et la concurrence push.
+
+Le sujet 3 touchait initialement le même fichier ; ce n'est plus le cas depuis son recentrage sur le collecteur lifecycle. Les deux sont désormais indépendants.
+
+**Note issue du sujet 3 :** `collectEngagementReminders` et `collectNotificationReminders` utilisent `void notifyUser(...)` — jusqu'à 200 appels lancés sans être attendus, chacun créant son propre client service-role, la fonction retournant avant leur fin. En serverless, le processus peut être gelé et les notifications perdues. Même pathologie que le fan-out, à traiter avec lui.
 
 ### Critère d'acceptation
 
-`lib/services/notification-fanout.test.ts` passe **sans modification**. C'est tout l'intérêt de ce garde-fou : la liste des destinataires est un invariant, seule la mécanique de livraison change.
+**`lib/services/notification-fanout.test.ts` ne passera pas sans modification** — contrairement à ce que ce document affirmait, et à ce qu'annonce la documentation du test lui-même. Le stub de requête n'expose que `select`, `eq`, `neq` et `in`, donc l'ajout d'un `.range()` le casse ; et les assertions lisent les appels à `notifyUser`, que la correction supprime. Voir les points d'attention du sujet 0.
 
-Le bloc 9 du snippet donne la taille réelle du fan-out par commune, à comparer au plafond du sujet 3.
+Le test doit donc être **réécrit en même temps que le fan-out**, en conservant les mêmes sept cas et la même intention — l'auteur exclu côté base, l'opt-out respecté, l'absence de préférences valant inclusion, `excludeUserIds` honoré, la sortie immédiate sur commune vide — mais en les assertant sur la **nouvelle** surface : les lignes passées à l'insert en masse plutôt que les appels à `notifyUser`. Deux cas à ajouter : une commune dont les membres tiennent sur plusieurs pages produit bien tous les destinataires, et l'insert est découpé en lots.
+
+Le bloc 9 du snippet donne la taille réelle du fan-out par commune.
 
 ---
 
@@ -305,43 +367,49 @@ Le bloc 7 du snippet montre une baisse du temps cumulé sur les requêtes de bad
 
 ---
 
-## Sujet 7 — Agrégats calculés en JS
+## Sujet 7 — Agrégats et filtres calculés en JS
 
-**Gravité : P1.** Problèmes 8 et 9 de l'audit.
+**Gravité : P1 — le point a est le plus proche de son seuil de tout ce qui reste.** Problèmes 2b, 8 et 9 de l'audit.
 
 ### Le problème
 
-**a. Compteurs de participation** — `listVolunteerCountsByEventId` et `listParticipantCountsByEventId` (`lib/queries/events.ts:103-137`) rapatrient toutes les lignes de participation pour en faire un `.length`. Même schéma pour les soutiens d'initiative et `fetchReportCountByContext`. Double peine : coût réseau inutile, et **compteur faux** dès que le total dépasse 1000 lignes (sujet 3).
+**a. Filtres de la liste utilisateurs** — `listUsersPage` (`lib/queries/backoffice-users-list.ts:119-164`) construit ses filtres commune, rôle et statut en chargeant **toutes** les lignes `memberships` correspondantes sans limite, puis en les intersectant en JS. Chacune de ces trois lectures est tronquée à `max_rows` : au-delà, des utilisateurs disparaissent silencieusement de la liste **et** du `totalCount` affiché à côté.
 
-**b. Stats backoffice** — `getContentPopulationStats` (`lib/queries/backoffice-contenus.ts`) et `getPopulationStats` (`lib/queries/backoffice-users-list.ts`) chargent des tables entières **sans filtre de commune ni limite** pour agréger en JS.
+C'est le seuil le plus proche de la liste. Le filtre par statut (ligne 151) n'a même pas de scope commune : il se déclenche à 1000 memberships **au niveau plateforme**, soit bien avant les 1000 membres actifs d'une seule commune du sujet 4. Et contrairement aux points b et c ci-dessous, il ne s'agit pas d'un chiffre indicatif sur un tableau de bord mais d'une liste sur laquelle des opérateurs agissent : suspendre, bannir, changer un rôle.
+
+**b. Compteurs de participation** — `listVolunteerCountsByEventId` et `listParticipantCountsByEventId` (`lib/queries/events.ts:103-137`) rapatrient toutes les lignes de participation pour en faire un `.length`. Même schéma pour les soutiens d'initiative et `fetchReportCountByContext`. Double peine : coût réseau inutile, et **compteur faux** dès que le total dépasse `max_rows`.
+
+**c. Stats backoffice** — `getContentPopulationStats` (`lib/queries/backoffice-contenus.ts`) et `getPopulationStats` (`lib/queries/backoffice-users-list.ts`) chargent des tables entières **sans filtre de commune ni limite** pour agréger en JS.
 
 Précisions qui aggravent le diagnostic :
 
 - `getPopulationStats` charge **4 jeux non bornés** : `communes`, `memberships`, et `neighbor_invites` **deux fois** (`.select("commune_id")` complet, puis à nouveau filtré sur `accepted_at`).
-- Les deux fonctions restreignent aux communes pilotes **en JS après la récupération** (`filterPilotRows`, `countByCommuneId`). La troncature à `max_rows` intervient donc **avant** le filtre — les statistiques deviennent silencieusement fausses dès que **la plateforme** dépasse le plafond, pas seulement dès qu'une commune le dépasse. C'est le même mécanisme que le sujet 3c, mais sur un écran de pilotage.
+- Les deux fonctions restreignent aux communes pilotes **en JS après la récupération** (`filterPilotRows`, `countByCommuneId`). La troncature intervient donc **avant** le filtre — les statistiques deviennent silencieusement fausses dès que **la plateforme** dépasse le plafond, pas seulement dès qu'une commune le dépasse. Même mécanisme qu'en **a**, sur un écran de pilotage.
 - `getContentPopulationStats` est appelée sur **deux pages** en `force-dynamic` (`backoffice/admin` et `backoffice/contenus?tab=stats`), sans cache pour amortir.
 
 `listPilotCommunesPage` charge toutes les communes puis pagine avec `.slice()`. Les TODO sont déjà dans le code.
 
 ### La correction
 
-Des RPC d'agrégation : `COUNT(*) ... GROUP BY event_id` pour **a**, `GROUP BY commune_id` pour **b**, et une pagination SQL réelle pour la liste des communes.
+Pour **a**, pousser le filtre en SQL au lieu de l'intersecter en JS : une jointure ou un `.in()` sur une sous-requête, de sorte que la pagination de `profiles` porte sur l'ensemble filtré et non sur une intersection tronquée. C'est le seul des trois points qui corrige une **liste d'action**, pas un affichage.
 
-Ce sont des RPC **nouveaux**, donc aucun risque sur l'existant tant que le remplacement est fait requête par requête.
+Pour **b** et **c**, des RPC d'agrégation : `COUNT(*) ... GROUP BY event_id` d'un côté, `GROUP BY commune_id` de l'autre, et une pagination SQL réelle pour la liste des communes. Ce sont des RPC **nouveaux**, donc aucun risque sur l'existant tant que le remplacement est fait requête par requête. Attention à la forme du retour : un RPC `returns table` reste soumis à `max_rows`, ce qui est sans conséquence pour un agrégat groupé par commune, mais le redeviendrait pour un groupement par événement sur un gros volume.
 
 ### Critère d'acceptation
 
-Une ligne de résultat par événement au lieu d'une par participant. Le bloc 8 du snippet ne fait plus apparaître ces requêtes.
+Pour **a** : un test qui applique un filtre statut sur un jeu dépassant le plafond et vérifie que le `totalCount` correspond au nombre réel. La troncature étant silencieuse, aucun garde-fou existant ne l'attrapera.
+
+Pour **b** et **c** : une ligne de résultat par événement au lieu d'une par participant, et le bloc 8 du snippet ne fait plus apparaître ces requêtes.
 
 ---
 
 ## Sujet 8 — Rétention des tables append-only
 
-**Gravité : P2.** Problème 10 de l'audit.
+**Gravité : P2 pour la purge — mais la décision qui l'ouvre est un prérequis du sujet 4, donc à prendre tôt.** Problème 10 de l'audit.
 
 ### Le problème
 
-**`notifications` est une table en écriture seule** : aucun endroit du code ne la lit, il n'y a pas de centre de notifications dans l'UI. Avec le fan-out, 20 communes × 1000 membres × 10 contenus/jour produisent **200 000 lignes par jour que personne ne consulte**.
+**`notifications` est une table en écriture seule** : elle n'est référencée qu'une seule fois dans tout le code, par un `insert` (`lib/services/push-notifications.ts:132`). Aucune lecture, nulle part, et pas de centre de notifications dans l'UI. Avec le fan-out, 20 communes × 1000 membres × 10 contenus/jour produisent **200 000 lignes par jour que personne ne consulte**.
 
 Même constat, sans purge, pour `audit_logs` et les lignes `sent` de `email_queue`.
 
@@ -358,11 +426,19 @@ Dans les deux cas, ajouter une phase de purge au cron lifecycle existant plutôt
 
 ### Ordre
 
-À enchaîner après le sujet 4 : c'est le fan-out qui alimente la croissance de `notifications`.
+Ce sujet se scinde en deux, et les deux moitiés ne se placent pas au même endroit dans la file.
+
+**La décision passe avant le sujet 4.** Le sujet 4 consacre deux de ses cinq points à optimiser l'écriture dans `notifications`. Décider après l'avoir fait, c'est risquer d'avoir optimisé l'alimentation d'une table qu'on va cesser d'alimenter. La décision est gratuite — c'est un arbitrage produit, pas du code — et elle réduit potentiellement le périmètre du sujet 4.
+
+**La purge vient après le sujet 4**, et seulement si la décision est de garder la table : c'est le fan-out qui alimente sa croissance, autant dimensionner la rétention sur le volume réel.
+
+La même logique s'applique à `analytics_events` : trancher « connecter ou supprimer » avant d'écrire quoi que ce soit.
 
 ### Critère d'acceptation
 
-Les blocs 5 et 6 du snippet donnent la volumétrie et le volume purgeable avant / après.
+Pour la décision : une ligne dans ce document qui tranche, datée. C'est une décision produit, elle n'a pas de critère technique.
+
+Pour la purge : les blocs 5 et 6 du snippet donnent la volumétrie et le volume purgeable avant / après.
 
 ---
 

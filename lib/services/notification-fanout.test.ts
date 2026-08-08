@@ -1,9 +1,11 @@
 /**
  * Recipient-selection guard for the commune fan-out.
  *
- * These cases lock the *who gets notified* contract, which must survive the
- * planned rewrite of the delivery mechanism (bulk insert + bounded push
- * concurrency). See docs/scaling-roadmap.md, sujet 4.
+ * These cases lock the *who gets notified* contract. They do NOT survive the
+ * rewrite planned in docs/scaling-roadmap.md, sujet 4, as-is: the query stub
+ * below exposes no `range()`, and the assertions read `notifyUser` calls that
+ * the bulk-insert rewrite removes. Port the seven cases to the new surface
+ * rather than assuming they still pass.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
