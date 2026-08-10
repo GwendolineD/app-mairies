@@ -6,6 +6,7 @@ type SenderResult = {
   sent: number;
   failed: number;
   cancelled: number;
+  skipped?: boolean;
 };
 
 const DEFAULT_BATCH_SIZE = 10;
@@ -18,7 +19,9 @@ function getBatchSize(): number {
 
 function getDelayMs(): number {
   const val = process.env.CRON_EMAIL_DELAY_MS;
-  return val ? Math.max(0, parseInt(val, 10) || DEFAULT_DELAY_MS) : DEFAULT_DELAY_MS;
+  if (!val) return DEFAULT_DELAY_MS;
+  const parsed = parseInt(val, 10);
+  return !isNaN(parsed) ? Math.max(0, parsed) : DEFAULT_DELAY_MS;
 }
 
 function sleep(ms: number): Promise<void> {
@@ -49,65 +52,82 @@ async function shouldSend(
 }
 
 export async function runEmailSender(service: SupabaseClient): Promise<SenderResult> {
-  const batchSize = getBatchSize();
-  const delayMs = getDelayMs();
-  const now = new Date().toISOString();
+  // Acquire single-writer lock to prevent concurrent runs from processing the same emails
+  const { data: lockId } = await service.rpc("try_acquire_cron_lock", {
+    p_name: "email_sender",
+  });
 
-  const { data: entries, error } = await service
-    .from("email_queue")
-    .select("*")
-    .eq("status", "pending")
-    .lte("scheduled_at", now)
-    .order("scheduled_at", { ascending: true })
-    .limit(batchSize);
-
-  if (error) throw new Error(`runEmailSender(fetch): ${error.message}`);
-  if (!entries || entries.length === 0) return { sent: 0, failed: 0, cancelled: 0 };
-
-  let sent = 0;
-  let failed = 0;
-  let cancelled = 0;
-
-  for (const entry of entries) {
-    // Re-verify opt-in before sending (recipient_user_id null = no account, always send)
-    const allowed = await shouldSend(service, entry.recipient_user_id);
-    if (!allowed) {
-      await service
-        .from("email_queue")
-        .update({ status: "cancelled" })
-        .eq("id", entry.id);
-      cancelled++;
-      continue;
-    }
-
-    const result = await sendTemplatedEmail(
-      entry.to_email,
-      entry.template_slug,
-      entry.variables as Record<string, string>,
-    );
-
-    if (result.success) {
-      await service
-        .from("email_queue")
-        .update({ status: "sent", sent_at: new Date().toISOString() })
-        .eq("id", entry.id);
-      sent++;
-    } else {
-      const newAttempts = (entry.attempts ?? 0) + 1;
-      const newStatus = newAttempts >= (entry.max_attempts ?? 3) ? "failed" : "pending";
-      await service
-        .from("email_queue")
-        .update({
-          attempts: newAttempts,
-          last_error: result.error ?? "Unknown",
-          status: newStatus,
-        })
-        .eq("id", entry.id);
-      if (newStatus === "failed") failed++;
-    }
-
-    if (delayMs > 0) await sleep(delayMs);
+  if (!lockId) {
+    return { sent: 0, failed: 0, cancelled: 0, skipped: true };
   }
 
-  return { sent, failed, cancelled };
+  try {
+    const batchSize = getBatchSize();
+    const delayMs = getDelayMs();
+    const now = new Date().toISOString();
+
+    const { data: entries, error } = await service
+      .from("email_queue")
+      .select("*")
+      .eq("status", "pending")
+      .lte("scheduled_at", now)
+      .order("scheduled_at", { ascending: true })
+      .limit(batchSize);
+
+    if (error) throw new Error(`runEmailSender(fetch): ${error.message}`);
+    if (!entries || entries.length === 0) return { sent: 0, failed: 0, cancelled: 0 };
+
+    let sent = 0;
+    let failed = 0;
+    let cancelled = 0;
+
+    for (const entry of entries) {
+      // Re-verify opt-in before sending (recipient_user_id null = no account, always send)
+      const allowed = await shouldSend(service, entry.recipient_user_id);
+      if (!allowed) {
+        await service
+          .from("email_queue")
+          .update({ status: "cancelled" })
+          .eq("id", entry.id);
+        cancelled++;
+        continue;
+      }
+
+      const result = await sendTemplatedEmail(
+        entry.to_email,
+        entry.template_slug,
+        entry.variables as Record<string, string>,
+      );
+
+      if (result.success) {
+        await service
+          .from("email_queue")
+          .update({ status: "sent", sent_at: new Date().toISOString() })
+          .eq("id", entry.id);
+        sent++;
+      } else {
+        const newAttempts = (entry.attempts ?? 0) + 1;
+        const newStatus = newAttempts >= (entry.max_attempts ?? 3) ? "failed" : "pending";
+        await service
+          .from("email_queue")
+          .update({
+            attempts: newAttempts,
+            last_error: result.error ?? "Unknown",
+            status: newStatus,
+          })
+          .eq("id", entry.id);
+        if (newStatus === "failed") failed++;
+      }
+
+      if (delayMs > 0) await sleep(delayMs);
+    }
+
+    return { sent, failed, cancelled };
+  } finally {
+    // Release the lock, passing our lock_id to prevent releasing a lock stolen by TTL
+    await service.rpc("release_cron_lock", {
+      p_name: "email_sender",
+      p_lock_id: lockId,
+    });
+  }
 }

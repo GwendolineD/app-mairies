@@ -21,7 +21,7 @@ Le socle est sain — feeds paginés par curseurs, `commune_id` systématiquemen
 | 1001ᵉ membre actif dans une commune | Les membres au-delà du plafond ne reçoivent aucune notification de nouvelle annonce | 4 — **fait** |
 | ~500 membres actifs + pic de publication | Saturation du pool PostgREST → lenteurs et 5xx **pour toute l'app**, pas seulement l'auteur | 4 — **fait** |
 
-**Le sujet 7 est le strict nécessaire avant de démarcher.** Les sujets 3 et 4 sont faits. Les sujets 5 et 6 devraient suivre dans le mois. Les sujets 8, 9 et 10 sont de la dette à amortir tranquillement.
+**Le sujet 7 est le strict nécessaire avant de démarcher.** Les sujets 3 et 4 sont faits. Le sujet 6 devrait suivre dans le mois. Le sujet 5 a été rétrogradé en P2 après réévaluation (le risque de chevauchement est devenu négligeable après le sujet 2). Les sujets 5, 8, 9 et 10 sont de la dette à amortir tranquillement.
 
 ---
 
@@ -71,7 +71,7 @@ Les numéros sont des **identifiants stables** — ils sont cités dans le code,
 | — | [Fan-out notifications](#sujet-4--fan-out-notifications-fait) | P0 | **fait** |
 | [8](#sujet-8--rétention-des-tables-append-only) | Rétention des tables append-only | P2 | 10 |
 | [7](#sujet-7--agrégats-et-filtres-calculés-en-js) | Agrégats et filtres calculés en JS | P1 | 2b, 8, 9 |
-| [5](#sujet-5--email_queue-sans-réservation) | `email_queue` sans réservation | P1 | 6 |
+| [5](#sujet-5--email_queue-sans-réservation) | `email_queue` sans réservation | P2 | 6 |
 | [6](#sujet-6--latence-de-navigation) | Latence de navigation | P1 | 7 |
 | [9](#sujet-9--rls--authuid-non-encapsulé) | RLS : `auth.uid()` non encapsulé | P2 | 11 |
 | [10](#sujet-10--le-reste) | Le reste | P2/P3 | 12, 13, 14 |
@@ -301,15 +301,49 @@ La roadmap mentionnait que la décision du sujet 8 (rétention de la table `noti
 
 ## Sujet 5 — `email_queue` sans réservation
 
-**Gravité : P1.** Problème 6 de l'audit.
+**Gravité : P2** (rétrogradé depuis P1 le 8 août 2026 — voir réévaluation ci-dessous). Problème 6 de l'audit.
 
 ### Le problème
 
-`lib/cron/email-sender.ts:54` lit les lignes `pending` et les traite **sans les marquer**. Le cron tourne toutes les 2 minutes ; un run qui dépasse ce délai — probable quand le backlog monte — chevauche le suivant, et **les deux envoient les mêmes e-mails**. Réputation SMTP et plaintes à la clé.
+`lib/cron/email-sender.ts:54` lit les lignes `pending` et les traite **sans les marquer**. Le cron tourne toutes les 2 minutes ; un run qui dépasse ce délai chevauche le suivant, et **les deux envoient les mêmes e-mails**. Réputation SMTP et plaintes à la clé.
 
-### La correction
+Le diagnostic reste juste : le code est incorrect par construction. Il repose sur l'hypothèse implicite que chaque run se termine avant le suivant, sans le vérifier.
 
-Un RPC `claim_email_batch(p_limit)` :
+### Réévaluation post-sujet 2 (8 août 2026)
+
+Le classement P1 initial supposait que `shouldSend` appelait `listUsers()` (potentiellement des dizaines de secondes). Ce n'est plus le cas : depuis le sujet 2, `shouldSend` est une requête `.maybeSingle()` qui prend quelques millisecondes.
+
+**Estimation d'un run après correction :** batch de 10 × (500 ms délai + ~50 ms DB + temps SMTP) ≈ **8–12 secondes**. Intervalle cron : **120 secondes**. Facteur de sécurité : **10× à 15×**.
+
+**Volume d'alimentation :** le collecteur lifecycle insère au maximum ~1400 lignes/jour (7 phases × 200 max). À 10/batch et 30 runs/heure, le backlog se vide en ~5 heures. Aucun run ne chevauche le suivant à ce rythme.
+
+Le chevauchement devient réaliste dans trois cas :
+- **SMTP lent ou bloqué** : un relay en timeout sur un e-mail peut retenir le run au-delà de 2 minutes.
+- **Augmentation du batch** : un opérateur qui passe `CRON_EMAIL_BATCH_SIZE=50` pour vider un backlog n'a aucun signal que ça active le double-envoi.
+- **Timeout serverless** : sur Vercel (60 s en plan Pro), un run qui dépasse le timeout est tué. Les e-mails déjà envoyés mais pas encore marqués `sent` restent `pending` → renvoyés au prochain run.
+
+### Angle mort : crash mid-send
+
+Ni un advisory lock ni `FOR UPDATE SKIP LOCKED` ne protègent contre le scénario le plus probable après le sujet 2 : un e-mail est envoyé au relay SMTP, le run est interrompu avant d'écrire `status = 'sent'`, et l'e-mail est renvoyé au cycle suivant. C'est le problème d'**at-least-once delivery** inhérent à tout système qui découple l'envoi de la confirmation.
+
+Ce risque est acceptable au volume actuel. Sa résolution complète nécessiterait une clé d'idempotence côté SMTP (header `Message-ID` ou idempotency key selon le relay), ce qui est un chantier distinct et disproportionné pour l'instant.
+
+### La correction — en deux phases
+
+**Phase 1 (faite le 8 août 2026) — lock-row avec TTL.**
+
+> **Pourquoi pas un advisory lock ?** Les advisory locks session-level (`pg_try_advisory_lock`) sont liés à la **connexion Postgres**, pas au client HTTP appelant. Via PostgREST, chaque requête `supabase-js` peut obtenir une connexion différente du pool — le lock acquis dans un premier `.rpc()` est perdu dès que la connexion retourne au pool. Pire : si un autre run récupère la même connexion, le lock est réentrant et les deux runs pensent l'avoir. Advisory locks sont donc inutilisables dans cette architecture.
+
+La solution implémentée utilise une table `cron_locks` avec deux RPCs :
+
+- `try_acquire_cron_lock(p_name, p_ttl_minutes)` : renvoie un `lock_id` si le lock est disponible (ou expiré depuis `p_ttl_minutes`), `NULL` sinon.
+- `release_cron_lock(p_name, p_lock_id)` : libère le lock **seulement si** le `lock_id` correspond (protège contre une release tardive qui écraserait un lock volé par TTL).
+
+Le TTL de 5 minutes garantit qu'un crash ne bloque pas les runs suivants indéfiniment. Après un crash, 2-3 runs sont sautés (acceptable pour des emails lifecycle non urgents).
+
+Migration : `20260808161820_cron_locks.sql`. Fichiers modifiés : `lib/cron/email-sender.ts`, `lib/cron/email-sender.test.ts`.
+
+**Phase 2 (différée) — `claim_email_batch`.** Le RPC `FOR UPDATE SKIP LOCKED` devient pertinent quand la durée mesurée d'un run dépasse 30 % de l'intervalle cron, ou quand le batch size doit monter au-delà de 20.
 
 ```sql
 UPDATE public.email_queue
@@ -324,21 +358,17 @@ WHERE id IN (
 RETURNING *;
 ```
 
-**Prévoir la reprise des `processing` bloqués depuis plus de 10 minutes**, sinon un crash en plein vol gèle des lignes définitivement.
-
-### Ordre
-
-Dépend du sujet 2 : retirer `listUsers()` de `shouldSend` raccourcit déjà fortement chaque run, donc réduit la probabilité de chevauchement. **Mesurer la durée d'un run après le sujet 2 avant de dimensionner le batch.**
+La phase 2 implique : nouveau status `processing` dans le CHECK constraint, migration, et **reprise des `processing` bloqués depuis plus de 10 minutes** (sinon un crash gèle des lignes définitivement). `FOR UPDATE SKIP LOCKED` ne peut pas être testé via PostgREST (chaque requête `supabase-js` est une transaction distincte) — vérifier par test d'intégration psql ou test unitaire de la logique de réservation.
 
 ### Critère d'acceptation
 
-`lib/cron/email-sender.test.ts` continue de décrire les mêmes transitions, complété par le nouvel état `processing`.
+**Phase 1 (vérifié) :** le run sort immédiatement avec un résultat `{ sent: 0, skipped: true }` quand un autre run est en cours. 4 nouveaux tests dans `lib/cron/email-sender.test.ts` couvrent le mécanisme de lock (skip, acquire/release, release on error, release on empty queue). Les 9 tests existants de la machine à états passent sans modification des assertions.
 
-`FOR UPDATE SKIP LOCKED` ne peut pas être testé via PostgREST : chaque requête `supabase-js` est une transaction distincte. Vérifier soit par un test unitaire de la logique de réservation, soit manuellement avec deux sessions psql concurrentes.
+**Phase 2 :** `lib/cron/email-sender.test.ts` complété par le nouvel état `processing`. Les transitions existantes (cancelled, sent, pending→retry, failed) restent identiques.
 
 ### Note annexe
 
-`getDelayMs()` évalue `parseInt(val) || DEFAULT_DELAY_MS` : une valeur `CRON_EMAIL_DELAY_MS=0` est donc silencieusement ramenée à 500 ms. Sans gravité, mais à corriger en passant, puisque ce fichier est déjà ouvert. `lib/cron/email-sender.test.ts` contourne le comportement avec la valeur `1`.
+~~`getDelayMs()` évalue `parseInt(val) || DEFAULT_DELAY_MS` : `parseInt("0")` renvoie `0` (falsy), donc `0 || 500` donne 500 ms — une valeur `CRON_EMAIL_DELAY_MS=0` est silencieusement ignorée.~~ **Corrigé le 8 août 2026** : le test utilise désormais `!isNaN(parsed)` au lieu du `||`. `CRON_EMAIL_DELAY_MS=0` fonctionne et les tests utilisent cette valeur.
 
 ---
 

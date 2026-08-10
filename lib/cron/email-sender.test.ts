@@ -65,13 +65,19 @@ function stubChain(result: unknown): Record<string, unknown> & Thenable {
 }
 
 type QueueUpdate = { payload: Record<string, unknown>; id: string };
+type RpcCall = { name: string; params: Record<string, unknown> };
+
+const DEFAULT_LOCK_ID = "test-lock-id-12345";
 
 function createService(options: {
   entries: QueueEntry[];
   /** `undefined` means no preferences row exists for the user. */
   lifecycleEnabled?: boolean;
+  /** If false, try_acquire_cron_lock returns null (lock not acquired). Default: true. */
+  lockAcquired?: boolean;
 }) {
   const updates: QueueUpdate[] = [];
+  const rpcCalls: RpcCall[] = [];
 
   const from = vi.fn((table: string) => {
     if (table === "email_queue") {
@@ -94,7 +100,19 @@ function createService(options: {
     });
   });
 
-  return { service: { from }, updates };
+  const rpc = vi.fn((name: string, params: Record<string, unknown>) => {
+    rpcCalls.push({ name, params });
+    if (name === "try_acquire_cron_lock") {
+      const acquired = options.lockAcquired ?? true;
+      return Promise.resolve({ data: acquired ? DEFAULT_LOCK_ID : null, error: null });
+    }
+    if (name === "release_cron_lock") {
+      return Promise.resolve({ data: null, error: null });
+    }
+    return Promise.resolve({ data: null, error: null });
+  });
+
+  return { service: { from, rpc }, updates, rpcCalls };
 }
 
 async function run(service: unknown) {
@@ -112,9 +130,7 @@ describe("runEmailSender — queue state transitions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Keep the suite fast: the production default is a 500ms inter-send delay.
-    // "1" rather than "0" because `getDelayMs` runs `parseInt(val) || 500`,
-    // which coerces a configured zero back to the 500ms default.
-    vi.stubEnv("CRON_EMAIL_DELAY_MS", "1");
+    vi.stubEnv("CRON_EMAIL_DELAY_MS", "0");
   });
 
   afterEach(() => {
@@ -236,7 +252,7 @@ describe("runEmailSender — queue state transitions", () => {
 describe("runEmailSender — opt-out fix (sujet 2)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubEnv("CRON_EMAIL_DELAY_MS", "1");
+    vi.stubEnv("CRON_EMAIL_DELAY_MS", "0");
   });
 
   afterEach(() => {
@@ -277,5 +293,128 @@ describe("runEmailSender — opt-out fix (sujet 2)", () => {
     expect(updates).toHaveLength(1);
     expect(updates[0].payload.status).toBe("sent");
     expect(result).toEqual({ sent: 1, failed: 0, cancelled: 0 });
+  });
+});
+
+describe("runEmailSender — cron lock (sujet 5)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.stubEnv("CRON_EMAIL_DELAY_MS", "0");
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("skips when lock is already held by another run", async () => {
+    const send = await mockSend({ success: true });
+    const { service, updates, rpcCalls } = createService({
+      entries: [queueEntry()],
+      lockAcquired: false,
+    });
+
+    const result = await run(service);
+
+    expect(send).not.toHaveBeenCalled();
+    expect(updates).toEqual([]);
+    expect(result).toEqual({ sent: 0, failed: 0, cancelled: 0, skipped: true });
+    expect(rpcCalls).toEqual([
+      { name: "try_acquire_cron_lock", params: { p_name: "email_sender" } },
+    ]);
+  });
+
+  it("acquires and releases lock on successful run", async () => {
+    await mockSend({ success: true });
+    const { service, rpcCalls } = createService({
+      entries: [queueEntry()],
+      lifecycleEnabled: true,
+    });
+
+    await run(service);
+
+    expect(rpcCalls).toHaveLength(2);
+    expect(rpcCalls[0]).toEqual({
+      name: "try_acquire_cron_lock",
+      params: { p_name: "email_sender" },
+    });
+    expect(rpcCalls[1]).toEqual({
+      name: "release_cron_lock",
+      params: { p_name: "email_sender", p_lock_id: DEFAULT_LOCK_ID },
+    });
+  });
+
+  it("releases lock even when processing throws an error", async () => {
+    const { service, rpcCalls } = createService({
+      entries: [queueEntry()],
+      lifecycleEnabled: true,
+    });
+
+    // Make the from() call for email_queue throw after lock is acquired
+    const originalFrom = service.from;
+    let callCount = 0;
+    service.from = vi.fn((table: string) => {
+      callCount++;
+      // First call is for email_queue in the main body (after lock acquired)
+      if (table === "email_queue" && callCount === 1) {
+        return {
+          select: () => ({
+            eq: () => ({
+              lte: () => ({
+                order: () => ({
+                  limit: () => Promise.resolve({ data: null, error: { message: "DB error" } }),
+                }),
+              }),
+            }),
+          }),
+        };
+      }
+      return originalFrom(table);
+    });
+
+    await expect(run(service)).rejects.toThrow("runEmailSender(fetch): DB error");
+
+    // Lock should still be released in finally block
+    expect(rpcCalls).toHaveLength(2);
+    expect(rpcCalls[1]).toEqual({
+      name: "release_cron_lock",
+      params: { p_name: "email_sender", p_lock_id: DEFAULT_LOCK_ID },
+    });
+  });
+
+  it("releases lock when queue is empty", async () => {
+    const { service, rpcCalls } = createService({
+      entries: [],
+    });
+
+    const result = await run(service);
+
+    expect(result).toEqual({ sent: 0, failed: 0, cancelled: 0 });
+    expect(rpcCalls).toHaveLength(2);
+    expect(rpcCalls[1].name).toBe("release_cron_lock");
+  });
+});
+
+describe("runEmailSender — getDelayMs fix (sujet 5)", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("respects CRON_EMAIL_DELAY_MS=0 without fallback to default", async () => {
+    vi.clearAllMocks();
+    vi.stubEnv("CRON_EMAIL_DELAY_MS", "0");
+
+    await mockSend({ success: true });
+    const { service } = createService({
+      entries: [queueEntry(), queueEntry({ id: "second-id" })],
+      lifecycleEnabled: true,
+    });
+
+    const start = Date.now();
+    await run(service);
+    const elapsed = Date.now() - start;
+
+    // With delay=0, processing two entries should take <100ms (no artificial delay).
+    // The old buggy behavior would add 500ms per entry after the first.
+    expect(elapsed).toBeLessThan(100);
   });
 });

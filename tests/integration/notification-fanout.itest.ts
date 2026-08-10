@@ -235,25 +235,25 @@ describe("notification fanout RPC — large commune", () => {
     const expectedCount = TOTAL_MEMBERS - 1 - OPTED_OUT_COUNT;
 
     // Paginate through all results
-    let afterUserId: string | null = null;
+    let afterUserId = "00000000-0000-0000-0000-000000000000";
     let totalRecipients = 0;
     const PAGE_SIZE = 150;
     let pageCount = 0;
 
     while (true) {
-      const { data, error } = await service.rpc("select_content_notification_recipients", {
+      const result = await service.rpc("select_content_notification_recipients", {
         p_commune_id: communeId,
         p_context_type: "announcement",
         p_author_user_id: authorUserId,
-        p_exclude_user_ids: [],
-        p_after_user_id: afterUserId ?? "00000000-0000-0000-0000-000000000000",
+        p_exclude_user_ids: [] as string[],
+        p_after_user_id: afterUserId,
         p_limit: PAGE_SIZE,
       });
 
-      expect(error).toBeNull();
-      expect(data).not.toBeNull();
+      expect(result.error).toBeNull();
+      expect(result.data).not.toBeNull();
 
-      const pageUsers = data ?? [];
+      const pageUsers = result.data ?? [];
       totalRecipients += pageUsers.length;
       pageCount++;
 
@@ -275,22 +275,22 @@ describe("notification fanout RPC — large commune", () => {
     // Initiatives use notify_new_initiative, which is true for all test users
     const expectedCount = TOTAL_MEMBERS - 1; // all except author
 
-    let afterUserId: string | null = null;
+    let afterUserId = "00000000-0000-0000-0000-000000000000";
     let totalRecipients = 0;
     const PAGE_SIZE = 150;
 
     while (true) {
-      const { data, error } = await service.rpc("select_content_notification_recipients", {
+      const result = await service.rpc("select_content_notification_recipients", {
         p_commune_id: communeId,
         p_context_type: "initiative",
         p_author_user_id: authorUserId,
-        p_exclude_user_ids: [],
-        p_after_user_id: afterUserId ?? "00000000-0000-0000-0000-000000000000",
+        p_exclude_user_ids: [] as string[],
+        p_after_user_id: afterUserId,
         p_limit: PAGE_SIZE,
       });
 
-      expect(error).toBeNull();
-      const pageUsers = data ?? [];
+      expect(result.error).toBeNull();
+      const pageUsers = result.data ?? [];
       totalRecipients += pageUsers.length;
 
       if (pageUsers.length < PAGE_SIZE) break;
@@ -304,22 +304,22 @@ describe("notification fanout RPC — large commune", () => {
     // Exclude some specific users
     const excludeIds = allUserIds.slice(200, 210); // 10 users
 
-    let afterUserId: string | null = null;
+    let afterUserId = "00000000-0000-0000-0000-000000000000";
     let totalRecipients = 0;
     const PAGE_SIZE = 150;
 
     while (true) {
-      const { data, error } = await service.rpc("select_content_notification_recipients", {
+      const result = await service.rpc("select_content_notification_recipients", {
         p_commune_id: communeId,
         p_context_type: "initiative",
         p_author_user_id: authorUserId,
         p_exclude_user_ids: excludeIds,
-        p_after_user_id: afterUserId ?? "00000000-0000-0000-0000-000000000000",
+        p_after_user_id: afterUserId,
         p_limit: PAGE_SIZE,
       });
 
-      expect(error).toBeNull();
-      const pageUsers = data ?? [];
+      expect(result.error).toBeNull();
+      const pageUsers = result.data ?? [];
       totalRecipients += pageUsers.length;
 
       if (pageUsers.length < PAGE_SIZE) break;

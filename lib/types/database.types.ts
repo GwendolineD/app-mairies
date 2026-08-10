@@ -830,6 +830,24 @@ export type Database = {
           },
         ]
       }
+      cron_locks: {
+        Row: {
+          locked_at: string | null
+          locked_by: string | null
+          name: string
+        }
+        Insert: {
+          locked_at?: string | null
+          locked_by?: string | null
+          name: string
+        }
+        Update: {
+          locked_at?: string | null
+          locked_by?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
       deleted_content_creation_archive: {
         Row: {
           announcement_type: string | null
@@ -2136,6 +2154,10 @@ export type Database = {
         Args: { p_membership_id: string }
         Returns: boolean
       }
+      release_cron_lock: {
+        Args: { p_lock_id: string; p_name: string }
+        Returns: undefined
+      }
       select_content_notification_recipients: {
         Args: {
           p_after_user_id: string
@@ -2176,6 +2198,10 @@ export type Database = {
       share_active_commune_with: {
         Args: { p_other_user_id: string }
         Returns: boolean
+      }
+      try_acquire_cron_lock: {
+        Args: { p_name: string; p_ttl_minutes?: number }
+        Returns: string
       }
       uuid_generate_v4: { Args: never; Returns: string }
       validate_trial_access_code: {
