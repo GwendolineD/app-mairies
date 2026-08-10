@@ -75,15 +75,15 @@ export default async function BackofficeUserDetailPage(props: {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <Card className="space-y-1 p-4">
+        <Card className="space-y-1 rounded-xl p-4">
           <p className="text-[10px] font-semibold uppercase text-muted">Annonces créées</p>
           <p className="text-3xl font-bold text-coral">{user.totalAnnouncementsCount}</p>
         </Card>
-        <Card className="space-y-1 p-4">
+        <Card className="space-y-1 rounded-xl p-4">
           <p className="text-[10px] font-semibold uppercase text-muted">Initiatives créées</p>
           <p className="text-3xl font-bold text-mint">{user.totalInitiativesCount}</p>
         </Card>
-        <Card className="space-y-1 p-4">
+        <Card className="space-y-1 rounded-xl p-4">
           <p className="text-[10px] font-semibold uppercase text-muted">Événements créés</p>
           <p className="text-3xl font-bold text-orange">{user.totalEventsCount}</p>
         </Card>
@@ -93,12 +93,12 @@ export default async function BackofficeUserDetailPage(props: {
         <h2 className="text-lg font-semibold leading-7 text-text">Communes</h2>
 
         {user.memberships.length === 0 ? (
-          <Card className="p-6 text-sm font-medium text-muted">
+          <Card className="rounded-xl p-6 text-sm font-medium text-muted">
             Aucune adhésion active ou suspendue.
           </Card>
         ) : (
           user.memberships.map((membership) => (
-            <Card key={membership.membershipId} className="space-y-4 p-5">
+            <Card key={membership.membershipId} className="space-y-4 rounded-xl p-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="space-y-2">
                   <Link

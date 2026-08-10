@@ -1,7 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCategoryLabel } from "@/lib/constants/announcement-categories";
 import { getInitiativeCategoryLabel } from "@/lib/constants/initiative-categories";
-import { PILOT_ACCESS_STATUSES } from "@/lib/constants/access-status";
 import { ROUTES } from "@/lib/constants/routes";
 import {
   ANNOUNCEMENT_STATUS,
@@ -11,10 +10,8 @@ import {
   POPULATION_BRACKETS,
   type PopulationBracket,
 } from "@/lib/queries/backoffice-users-list.types";
-import {
-  countByCommuneId,
-  resolvePopulationBracket,
-} from "@/lib/queries/population-brackets";
+import { resolvePopulationBracket } from "@/lib/queries/population-brackets";
+import { createServiceClient } from "@/lib/supabase/server";
 import type {
   BackofficeContenusListParams,
   BackofficeContentStatus,
@@ -483,34 +480,33 @@ export async function countAllContentTypes(
   };
 }
 
-// TODO: migrate to RPC with GROUP BY when communes > 200
 export async function getContentPopulationStats(
   supabase: SupabaseClient,
 ): Promise<ContentPopulationStatsResult> {
-  const [communesResult, announcementsResult, initiativesResult, eventsResult] =
-    await Promise.all([
-      supabase
-        .from("communes")
-        .select("id, population")
-        .in("access_status", [...PILOT_ACCESS_STATUSES]),
-      supabase.from("announcements").select("commune_id"),
-      supabase.from("initiatives").select("commune_id"),
-      supabase.from("events").select("commune_id"),
-    ]);
+  void supabase;
+  const serviceClient = await createServiceClient();
+  const [populationResult, contentResult] = await Promise.all([
+    serviceClient.rpc("count_population_by_commune"),
+    serviceClient.rpc("count_content_by_commune"),
+  ]);
 
-  const communes = communesResult.data ?? [];
-  const pilotCommuneIds = new Set(communes.map((commune) => commune.id));
+  if (populationResult.error || contentResult.error) {
+    return {
+      brackets: POPULATION_BRACKETS.map((bracket) => ({
+        bracket,
+        communeCount: 0,
+        avgAnnouncements: 0,
+        avgInitiatives: 0,
+        avgEvents: 0,
+      })),
+      communesWithoutPopulation: 0,
+    };
+  }
 
-  const filterPilotRows = (rows: { commune_id: string }[]) =>
-    rows.filter((row) => pilotCommuneIds.has(row.commune_id));
-
-  const announcementCounts = countByCommuneId(
-    filterPilotRows(announcementsResult.data ?? []),
+  const communes = populationResult.data ?? [];
+  const contentByCommune = new Map(
+    (contentResult.data ?? []).map((row) => [row.commune_id, row]),
   );
-  const initiativeCounts = countByCommuneId(
-    filterPilotRows(initiativesResult.data ?? []),
-  );
-  const eventCounts = countByCommuneId(filterPilotRows(eventsResult.data ?? []));
 
   let communesWithoutPopulation = 0;
   const bracketTotals = new Map<
@@ -540,10 +536,11 @@ export async function getContentPopulationStats(
 
     const bracket = resolvePopulationBracket(commune.population);
     const totals = bracketTotals.get(bracket)!;
+    const content = contentByCommune.get(commune.commune_id);
     totals.communeCount += 1;
-    totals.announcements += announcementCounts.get(commune.id) ?? 0;
-    totals.initiatives += initiativeCounts.get(commune.id) ?? 0;
-    totals.events += eventCounts.get(commune.id) ?? 0;
+    totals.announcements += Number(content?.announcements ?? 0);
+    totals.initiatives += Number(content?.initiatives ?? 0);
+    totals.events += Number(content?.events ?? 0);
   }
 
   const brackets: ContentPopulationBracketStats[] = POPULATION_BRACKETS.map(

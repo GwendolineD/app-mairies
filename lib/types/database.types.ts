@@ -2072,6 +2072,58 @@ export type Database = {
           offers_week: number
         }[]
       }
+      count_active_content_by_communes: {
+        Args: { p_commune_ids: string[] }
+        Returns: {
+          announcements: number
+          commune_id: string
+          events: number
+          initiatives: number
+          members: number
+        }[]
+      }
+      count_content_by_commune: {
+        Args: never
+        Returns: {
+          announcements: number
+          commune_id: string
+          events: number
+          initiatives: number
+        }[]
+      }
+      count_event_participation: {
+        Args: { p_event_ids: string[] }
+        Returns: {
+          event_id: string
+          participants_count: number
+          volunteers_count: number
+        }[]
+      }
+      count_initiative_support: {
+        Args: { p_initiative_ids: string[] }
+        Returns: {
+          initiative_id: string
+          support_count: number
+        }[]
+      }
+      count_population_by_commune: {
+        Args: never
+        Returns: {
+          active_members: number
+          commune_id: string
+          pending_invites: number
+          population: number
+          total_invites: number
+        }[]
+      }
+      count_reports_by_context: {
+        Args: { p_commune_id?: string }
+        Returns: {
+          context_id: string
+          context_type: string
+          report_count: number
+        }[]
+      }
       count_total_unread: { Args: { p_commune_id: string }; Returns: number }
       get_conversation_inbox: {
         Args: { p_commune_id: string }
@@ -2120,6 +2172,30 @@ export type Database = {
         Returns: boolean
       }
       is_platform_admin: { Args: never; Returns: boolean }
+      list_filtered_users_page: {
+        Args: {
+          p_admin?: boolean
+          p_banned?: boolean
+          p_commune_id?: string
+          p_date_from?: string
+          p_date_to?: string
+          p_limit?: number
+          p_membership_status?: string
+          p_offset?: number
+          p_q?: string
+          p_role?: string
+        }
+        Returns: {
+          banned_at: string
+          created_at: string
+          display_name: string
+          first_name: string
+          is_platform_admin: boolean
+          last_name: string
+          total_count: number
+          user_id: string
+        }[]
+      }
       list_my_conversations: {
         Args: {
           p_archived?: boolean

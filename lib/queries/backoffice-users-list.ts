@@ -1,9 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { PILOT_ACCESS_STATUSES } from "@/lib/constants/access-status";
 import { fetchMemberEmails } from "@/lib/queries/backoffice-memberships";
+import { createServiceClient } from "@/lib/supabase/server";
 import type { BackofficeUtilisateursListParams } from "@/lib/utils/backoffice-utilisateurs-params";
 import {
-  countByCommuneId,
   resolvePopulationBracket,
 } from "@/lib/queries/population-brackets";
 import {
@@ -30,16 +29,6 @@ export {
   POPULATION_BRACKET_LABELS,
 } from "@/lib/queries/backoffice-users-list.types";
 
-function intersectUserIds(
-  current: string[] | null,
-  next: string[],
-): string[] | null {
-  if (next.length === 0) return [];
-  if (!current) return next;
-  const nextSet = new Set(next);
-  return current.filter((id) => nextSet.has(id));
-}
-
 function formatFullName(
   firstName: string | null | undefined,
   lastName: string | null | undefined,
@@ -50,19 +39,12 @@ function formatFullName(
   return displayName?.trim() || "Utilisateur·rice";
 }
 
-function applyProfileDateRange<T extends { gte: Function; lte: Function }>(
-  query: T,
-  dateFrom?: string,
-  dateTo?: string,
-): T {
-  let next = query;
-  if (dateFrom) {
-    next = next.gte("created_at", `${dateFrom}T00:00:00.000Z`) as T;
-  }
-  if (dateTo) {
-    next = next.lte("created_at", `${dateTo}T23:59:59.999Z`) as T;
-  }
-  return next;
+function toProfileDateBound(
+  date: string | undefined,
+  endOfDay: boolean,
+): string | null {
+  if (!date) return null;
+  return endOfDay ? `${date}T23:59:59.999Z` : `${date}T00:00:00.000Z`;
 }
 
 export async function countGlobalStats(
@@ -99,123 +81,31 @@ export async function listUsersPage(
   params: BackofficeUtilisateursListParams,
 ): Promise<{ items: UserListRow[]; totalCount: number }> {
   const offset = (params.page - 1) * params.limit;
-  let userIdsFilter: string[] | null = null;
+  const serviceClient = await createServiceClient();
 
-  if (params.q) {
-    const pattern = `%${params.q}%`;
-    const { data: matchingProfiles } = await supabase
-      .from("profiles")
-      .select("user_id")
-      .or(
-        `first_name.ilike.${pattern},last_name.ilike.${pattern},display_name.ilike.${pattern}`,
-      );
-
-    userIdsFilter = (matchingProfiles ?? []).map((profile) => profile.user_id);
-    if (userIdsFilter.length === 0) {
-      return { items: [], totalCount: 0 };
-    }
-  }
-
-  if (params.commune) {
-    const { data } = await supabase
-      .from("memberships")
-      .select("user_id")
-      .eq("commune_id", params.commune)
-      .neq("status", "left");
-
-    userIdsFilter = intersectUserIds(
-      userIdsFilter,
-      (data ?? []).map((row) => row.user_id),
-    );
-    if (userIdsFilter !== null && userIdsFilter.length === 0) {
-      return { items: [], totalCount: 0 };
-    }
-  }
-
-  if (params.role) {
-    const { data } = await supabase
-      .from("memberships")
-      .select("user_id")
-      .eq("role", params.role)
-      .neq("status", "left");
-
-    userIdsFilter = intersectUserIds(
-      userIdsFilter,
-      (data ?? []).map((row) => row.user_id),
-    );
-    if (userIdsFilter !== null && userIdsFilter.length === 0) {
-      return { items: [], totalCount: 0 };
-    }
-  }
-
-  if (params.membershipStatus) {
-    const { data } = await supabase
-      .from("memberships")
-      .select("user_id")
-      .eq("status", params.membershipStatus);
-
-    userIdsFilter = intersectUserIds(
-      userIdsFilter,
-      (data ?? []).map((row) => row.user_id),
-    );
-    if (userIdsFilter !== null && userIdsFilter.length === 0) {
-      return { items: [], totalCount: 0 };
-    }
-  }
-
-  let countQuery = supabase
-    .from("profiles")
-    .select("user_id", { count: "exact", head: true });
-
-  let dataQuery = supabase
-    .from("profiles")
-    .select(
-      "user_id, first_name, last_name, display_name, created_at, is_platform_admin, banned_at",
-    );
-
-  if (userIdsFilter) {
-    countQuery = countQuery.in("user_id", userIdsFilter);
-    dataQuery = dataQuery.in("user_id", userIdsFilter);
-  }
-
-  if (params.banned === true) {
-    countQuery = countQuery.not("banned_at", "is", null);
-    dataQuery = dataQuery.not("banned_at", "is", null);
-  } else if (params.banned === false) {
-    countQuery = countQuery.is("banned_at", null);
-    dataQuery = dataQuery.is("banned_at", null);
-  }
-
-  if (params.admin === true) {
-    countQuery = countQuery.eq("is_platform_admin", true);
-    dataQuery = dataQuery.eq("is_platform_admin", true);
-  } else if (params.admin === false) {
-    countQuery = countQuery.eq("is_platform_admin", false);
-    dataQuery = dataQuery.eq("is_platform_admin", false);
-  }
-
-  countQuery = applyProfileDateRange(
-    countQuery,
-    params.dateFrom,
-    params.dateTo,
-  );
-  dataQuery = applyProfileDateRange(dataQuery, params.dateFrom, params.dateTo);
-
-  dataQuery = dataQuery
-    .order("created_at", { ascending: false })
-    .range(offset, offset + params.limit - 1);
-
-  const [{ count }, { data, error }] = await Promise.all([countQuery, dataQuery]);
+  const { data: rows, error } = await serviceClient.rpc("list_filtered_users_page", {
+    p_q: params.q.trim() || undefined,
+    p_banned: params.banned,
+    p_admin: params.admin,
+    p_date_from: toProfileDateBound(params.dateFrom, false) ?? undefined,
+    p_date_to: toProfileDateBound(params.dateTo, true) ?? undefined,
+    p_commune_id: params.commune,
+    p_role: params.role,
+    p_membership_status: params.membershipStatus,
+    p_limit: params.limit,
+    p_offset: offset,
+  });
 
   if (error) {
     return { items: [], totalCount: 0 };
   }
 
-  const rows = data ?? [];
-  const pageUserIds = rows.map((row) => row.user_id);
+  const pageRows = rows ?? [];
+  const totalCount = pageRows[0]?.total_count ?? 0;
+  const pageUserIds = pageRows.map((row) => row.user_id);
 
   if (pageUserIds.length === 0) {
-    return { items: [], totalCount: count ?? 0 };
+    return { items: [], totalCount: Number(totalCount) };
   }
 
   const [emailMap, membershipsResult] = await Promise.all([
@@ -246,7 +136,7 @@ export async function listUsersPage(
     membershipsByUser.set(membership.user_id, existing);
   }
 
-  const items: UserListRow[] = rows.map((row) => {
+  const items: UserListRow[] = pageRows.map((row) => {
     const memberships = membershipsByUser.get(row.user_id) ?? [];
     const activeCommuneIds = new Set(
       memberships
@@ -280,38 +170,33 @@ export async function listUsersPage(
 
   return {
     items,
-    totalCount: count ?? 0,
+    totalCount: Number(totalCount),
   };
 }
 
 export async function getPopulationStats(
   supabase: SupabaseClient,
 ): Promise<PopulationStatsResult> {
-  // TODO: migrate to RPC with GROUP BY when communes > 200
-  const now = new Date().toISOString();
+  void supabase;
+  const serviceClient = await createServiceClient();
+  const { data: communeRows, error } = await serviceClient.rpc(
+    "count_population_by_commune",
+  );
 
-  const [communesResult, membershipsResult, invitesResult, totalInvitesResult] =
-    await Promise.all([
-      supabase
-        .from("communes")
-        .select("id, population")
-        .in("access_status", [...PILOT_ACCESS_STATUSES]),
-      supabase
-        .from("memberships")
-        .select("commune_id")
-        .eq("status", "active"),
-      supabase
-        .from("neighbor_invites")
-        .select("commune_id")
-        .is("accepted_at", null)
-        .or(`expires_at.is.null,expires_at.gte.${now}`),
-      supabase.from("neighbor_invites").select("commune_id"),
-    ]);
+  if (error) {
+    return {
+      brackets: POPULATION_BRACKETS.map((bracket) => ({
+        bracket,
+        communeCount: 0,
+        avgMembers: 0,
+        avgPendingInvites: 0,
+        avgTotalInvites: 0,
+      })),
+      communesWithoutPopulation: 0,
+    };
+  }
 
-  const communes = communesResult.data ?? [];
-  const memberCounts = countByCommuneId(membershipsResult.data ?? []);
-  const inviteCounts = countByCommuneId(invitesResult.data ?? []);
-  const totalInviteCounts = countByCommuneId(totalInvitesResult.data ?? []);
+  const communes = communeRows ?? [];
 
   let communesWithoutPopulation = 0;
   const bracketTotals = new Map<
@@ -337,9 +222,9 @@ export async function getPopulationStats(
     const bracket = resolvePopulationBracket(commune.population);
     const totals = bracketTotals.get(bracket)!;
     totals.communeCount += 1;
-    totals.members += memberCounts.get(commune.id) ?? 0;
-    totals.invites += inviteCounts.get(commune.id) ?? 0;
-    totals.totalInvites += totalInviteCounts.get(commune.id) ?? 0;
+    totals.members += Number(commune.active_members ?? 0);
+    totals.invites += Number(commune.pending_invites ?? 0);
+    totals.totalInvites += Number(commune.total_invites ?? 0);
   }
 
   const brackets: PopulationBracketStats[] = POPULATION_BRACKETS.map(

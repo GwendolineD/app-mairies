@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createServiceClient } from "@/lib/supabase/server";
 import { resolveDisplayName } from "@/lib/utils/display-name";
 import {
   filterReports,
@@ -313,23 +314,19 @@ function applyReportSqlFilters<T extends ReportQueryBuilder>(
 }
 
 async function fetchReportCountByContext(
-  supabase: SupabaseClient,
   options: { communeId?: string },
 ): Promise<Map<string, number>> {
-  let query = supabase
-    .from("reports")
-    .select("context_type, context_id")
-    .neq("context_type", "user");
+  const serviceClient = await createServiceClient();
+  const { data, error } = await serviceClient.rpc("count_reports_by_context", {
+    p_commune_id: options.communeId,
+  });
 
-  if (options.communeId) {
-    query = query.eq("commune_id", options.communeId);
-  }
-
-  const { data } = await query;
   const reportCountByContext = new Map<string, number>();
-  for (const row of data ?? []) {
+  if (error || !data) return reportCountByContext;
+
+  for (const row of data) {
     const key = `${row.context_type}:${row.context_id}`;
-    reportCountByContext.set(key, (reportCountByContext.get(key) ?? 0) + 1);
+    reportCountByContext.set(key, Number(row.report_count ?? 0));
   }
   return reportCountByContext;
 }
@@ -419,7 +416,7 @@ async function getReportsPageData(
       fetchUserReportMembershipMaps(supabase, reportRows, {
         communeId: options.communeId,
       }),
-      fetchReportCountByContext(supabase, options),
+      fetchReportCountByContext(options),
     ]);
 
   const authorMembershipIds = [

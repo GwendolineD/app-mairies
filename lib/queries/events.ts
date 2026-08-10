@@ -106,14 +106,15 @@ export async function listVolunteerCountsByEventId(
 ): Promise<Record<string, number>> {
   if (eventIds.length === 0) return {};
 
-  const { data } = await supabase
-    .from("event_volunteers")
-    .select("event_id")
-    .in("event_id", eventIds);
+  const { data, error } = await supabase.rpc("count_event_participation", {
+    p_event_ids: eventIds,
+  });
+
+  if (error || !data) return {};
 
   const counts: Record<string, number> = {};
-  for (const row of data ?? []) {
-    counts[row.event_id] = (counts[row.event_id] ?? 0) + 1;
+  for (const row of data) {
+    counts[row.event_id] = Number(row.volunteers_count ?? 0);
   }
   return counts;
 }
@@ -124,14 +125,15 @@ export async function listParticipantCountsByEventId(
 ): Promise<Record<string, number>> {
   if (eventIds.length === 0) return {};
 
-  const { data } = await supabase
-    .from("event_participants")
-    .select("event_id")
-    .in("event_id", eventIds);
+  const { data, error } = await supabase.rpc("count_event_participation", {
+    p_event_ids: eventIds,
+  });
+
+  if (error || !data) return {};
 
   const counts: Record<string, number> = {};
-  for (const row of data ?? []) {
-    counts[row.event_id] = (counts[row.event_id] ?? 0) + 1;
+  for (const row of data) {
+    counts[row.event_id] = Number(row.participants_count ?? 0);
   }
   return counts;
 }
@@ -145,10 +147,26 @@ export async function enrichEventsWithCounts<
   (T & { volunteers_registered: number; participants_count: number })[]
 > {
   const eventIds = events.map((e) => e.id);
-  const [volCounts, partCounts] = await Promise.all([
-    listVolunteerCountsByEventId(supabase, eventIds),
-    listParticipantCountsByEventId(supabase, eventIds),
-  ]);
+  if (eventIds.length === 0) {
+    return events.map((event) => ({
+      ...event,
+      volunteers_registered: 0,
+      participants_count: 0,
+    }));
+  }
+
+  const { data, error } = await supabase.rpc("count_event_participation", {
+    p_event_ids: eventIds,
+  });
+
+  const volCounts: Record<string, number> = {};
+  const partCounts: Record<string, number> = {};
+  if (!error && data) {
+    for (const row of data) {
+      volCounts[row.event_id] = Number(row.volunteers_count ?? 0);
+      partCounts[row.event_id] = Number(row.participants_count ?? 0);
+    }
+  }
 
   return events.map((event) => ({
     ...event,

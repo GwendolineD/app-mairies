@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ALL_ACCESS_STATUSES, PILOT_ACCESS_STATUSES } from "@/lib/constants/access-status";
 import { todayParisYmd } from "@/lib/datetime";
+import { createServiceClient } from "@/lib/supabase/server";
 import type { BackofficeCommunesListParams } from "@/lib/utils/backoffice-search-params";
 import type { AccessStatus } from "@/lib/types";
 
@@ -18,16 +19,7 @@ export type CommuneListRow = {
   currentPaymentStatus: "paid" | "unpaid" | null;
 };
 
-function countByCommuneId(rows: { commune_id: string }[]): Map<string, number> {
-  const counts = new Map<string, number>();
-  for (const row of rows) {
-    counts.set(row.commune_id, (counts.get(row.commune_id) ?? 0) + 1);
-  }
-  return counts;
-}
-
 async function fetchActiveCountsByCommuneIds(
-  supabase: SupabaseClient,
   communeIds: string[],
 ): Promise<{
   members: Map<string, number>;
@@ -44,40 +36,29 @@ async function fetchActiveCountsByCommuneIds(
     };
   }
 
-  const [
-    { data: memberships },
-    { data: announcements },
-    { data: initiatives },
-    { data: events },
-  ] = await Promise.all([
-    supabase
-      .from("memberships")
-      .select("commune_id")
-      .in("commune_id", communeIds)
-      .eq("status", "active"),
-    supabase
-      .from("announcements")
-      .select("commune_id")
-      .in("commune_id", communeIds)
-      .eq("status", "ouverte"),
-    supabase
-      .from("initiatives")
-      .select("commune_id")
-      .in("commune_id", communeIds)
-      .eq("status", "active"),
-    supabase
-      .from("events")
-      .select("commune_id")
-      .in("commune_id", communeIds)
-      .eq("status", "active"),
-  ]);
+  const serviceClient = await createServiceClient();
+  const { data, error } = await serviceClient.rpc(
+    "count_active_content_by_communes",
+    { p_commune_ids: communeIds },
+  );
 
-  return {
-    members: countByCommuneId(memberships ?? []),
-    announcements: countByCommuneId(announcements ?? []),
-    initiatives: countByCommuneId(initiatives ?? []),
-    events: countByCommuneId(events ?? []),
-  };
+  const members = new Map<string, number>();
+  const announcements = new Map<string, number>();
+  const initiatives = new Map<string, number>();
+  const events = new Map<string, number>();
+
+  if (error || !data) {
+    return { members, announcements, initiatives, events };
+  }
+
+  for (const row of data) {
+    members.set(row.commune_id, Number(row.members ?? 0));
+    announcements.set(row.commune_id, Number(row.announcements ?? 0));
+    initiatives.set(row.commune_id, Number(row.initiatives ?? 0));
+    events.set(row.commune_id, Number(row.events ?? 0));
+  }
+
+  return { members, announcements, initiatives, events };
 }
 
 async function fetchActiveSubscriptionsByCommuneIds(
@@ -191,7 +172,7 @@ export async function listPilotCommunesPage(
   const offset = (params.page - 1) * params.limit;
   const pageRows = filteredRows.slice(offset, offset + params.limit);
   const communeIds = pageRows.map((row) => row.id);
-  const counts = await fetchActiveCountsByCommuneIds(supabase, communeIds);
+  const counts = await fetchActiveCountsByCommuneIds(communeIds);
 
   const items: CommuneListRow[] = pageRows.map((row) => {
     const paymentStatus = subscriptions.get(row.id) ?? null;

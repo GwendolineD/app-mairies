@@ -133,23 +133,20 @@ export async function enrichInitiativesWithMeta(
   if (items.length === 0) return;
 
   const ids = items.map((i) => i.id);
-  const [{ data: counts }, { data: events }] = await Promise.all([
-    supabase
-      .from("initiative_responses")
-      .select("initiative_id")
-      .in("initiative_id", ids)
-      .eq("response_type", "support"),
-    supabase
-      .from("events")
-      .select("id, source_initiative_id, starts_at, ends_at")
-      .in("source_initiative_id", ids)
-      .eq("status", EVENT_STATUS.active),
-  ]);
+  const [{ data: supportCounts, error: supportError }, { data: events }] =
+    await Promise.all([
+      supabase.rpc("count_initiative_support", { p_initiative_ids: ids }),
+      supabase
+        .from("events")
+        .select("id, source_initiative_id, starts_at, ends_at")
+        .in("source_initiative_id", ids)
+        .eq("status", EVENT_STATUS.active),
+    ]);
 
-  if (counts) {
+  if (!supportError && supportCounts) {
     const countMap = new Map<string, number>();
-    for (const row of counts) {
-      countMap.set(row.initiative_id, (countMap.get(row.initiative_id) ?? 0) + 1);
+    for (const row of supportCounts) {
+      countMap.set(row.initiative_id, Number(row.support_count ?? 0));
     }
     for (const item of items) {
       item.support_count = countMap.get(item.id) ?? 0;
