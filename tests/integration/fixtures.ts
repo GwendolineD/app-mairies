@@ -35,6 +35,7 @@ export type TenantFixture = {
   eventId: string;
   reportId: string;
   conversationId: string;
+  messageId: string;
 };
 
 export type Fixtures = {
@@ -341,6 +342,19 @@ async function createTenant(
     throw new Error(`createTenant(participants): ${participantsError.message}`);
   }
 
+  const { data: message, error: messageError } = await service
+    .from("messages")
+    .insert({
+      conversation_id: conversation.id,
+      sender_id: author.userId,
+      body: `Message ${options.inseeCode}`,
+    })
+    .select("id")
+    .single();
+  if (messageError || !message) {
+    throw new Error(`createTenant(message): ${messageError?.message ?? "no row"}`);
+  }
+
   return {
     inseeCode: options.inseeCode,
     communeId,
@@ -350,6 +364,7 @@ async function createTenant(
     eventId: event.id,
     reportId: report.id,
     conversationId: conversation.id,
+    messageId: message.id,
   };
 }
 

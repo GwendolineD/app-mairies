@@ -2125,36 +2125,6 @@ export type Database = {
         }[]
       }
       count_total_unread: { Args: { p_commune_id: string }; Returns: number }
-      get_conversation_inbox: {
-        Args: { p_commune_id: string }
-        Returns: {
-          context_id: string
-          context_type: Database["public"]["Enums"]["context_type"]
-          conversation_id: string
-          last_message_body: string
-          last_message_created_at: string
-          last_message_sender_id: string
-          other_avatar_url: string
-          other_display_name: string
-          other_first_name: string
-          other_last_name: string
-          other_user_id: string
-          title: string
-          unread_count: number
-          updated_at: string
-        }[]
-      }
-      get_or_create_context_conversation: {
-        Args: {
-          p_context_id: string
-          p_context_type: Database["public"]["Enums"]["context_type"]
-        }
-        Returns: string
-      }
-      get_unread_message_count: {
-        Args: { p_commune_id: string }
-        Returns: number
-      }
       has_active_membership: {
         Args: { p_commune_id: string }
         Returns: boolean
