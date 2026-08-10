@@ -10,10 +10,12 @@ import { getAnnouncementCategories } from "@/lib/queries/announcement-categories
 import { initCategories } from "@/lib/constants/announcement-categories";
 import { getInitiativeEventCategories } from "@/lib/queries/initiative-event-categories";
 import { initInitiativeEventCategories } from "@/lib/constants/initiative-categories";
-import { countAllPendingReports } from "@/lib/queries/reports";
-import { countOpenSupportRequests } from "@/lib/queries/support-requests";
-import { countOpenCommuneInterestLeads } from "@/lib/queries/commune-interest-leads";
-import { createClient } from "@/lib/supabase/server";
+import {
+  mergeAdminNavBadgeSlots,
+  openLeadsBadgeSlots,
+  openSupportBadgeSlots,
+  pendingReportsBadgeSlots,
+} from "@/components/features/badges/admin-nav-badge-slots";
 
 export default async function BackofficeLayout({
   children,
@@ -22,15 +24,16 @@ export default async function BackofficeLayout({
 }) {
   await requirePlatformAdmin();
 
-  const supabase = await createClient();
+  const badgeSlots = mergeAdminNavBadgeSlots(
+    pendingReportsBadgeSlots(ROUTES.backoffice.signalements),
+    openSupportBadgeSlots(ROUTES.backoffice.assistance),
+    openLeadsBadgeSlots(ROUTES.backoffice.leads),
+  );
 
-  const [categoryRows, initiativeCategoryRows, pendingReportsCount, openSupportCount, openLeadsCount] =
+  const [categoryRows, initiativeCategoryRows] =
     await Promise.all([
       getAnnouncementCategories(),
       getInitiativeEventCategories(),
-      countAllPendingReports(supabase),
-      countOpenSupportRequests(supabase),
-      countOpenCommuneInterestLeads(supabase),
     ]);
   initCategories(categoryRows);
   initInitiativeEventCategories(initiativeCategoryRows);
@@ -41,11 +44,7 @@ export default async function BackofficeLayout({
       storageKey={BACKOFFICE_SIDEBAR_STORAGE_KEY}
       sidebarTitle="Backoffice"
       mobileNav="drawer"
-      badges={{
-        [ROUTES.backoffice.signalements]: pendingReportsCount,
-        [ROUTES.backoffice.assistance]: openSupportCount,
-        [ROUTES.backoffice.leads]: openLeadsCount,
-      }}
+      badgeSlots={badgeSlots}
     >
       {children}
       <Toaster position="top-center" richColors closeButton />

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import {
   Popover,
@@ -8,6 +9,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import type { AdminNavBadges, AdminNavItem } from "@/lib/constants/routes";
+import type { AdminNavBadgeSlots } from "@/components/features/badges/admin-nav-badge-slots";
 import { ROUTES } from "@/lib/constants/routes";
 import { cn } from "@/lib/utils/cn";
 import { resolveActiveNavHref } from "@/lib/utils/routes";
@@ -58,7 +60,7 @@ type NavLinkProps = {
   active: boolean;
   variant: "pill" | "sidebar";
   collapsed?: boolean;
-  badge?: number;
+  badgeSlot?: ReactNode;
 };
 
 const SIDEBAR_LINK_CLASS = (active: boolean, collapsed: boolean) =>
@@ -70,18 +72,6 @@ const SIDEBAR_LINK_CLASS = (active: boolean, collapsed: boolean) =>
     active ? "bg-soft-pink text-coral" : "text-text hover:bg-soft-pink/70",
   );
 
-function BadgePill({ count }: { count: number }) {
-  if (count <= 0) return null;
-  return (
-    <span
-      aria-label={`${count} en attente`}
-      className="flex size-5 items-center justify-center rounded-full bg-coral text-[10px] font-bold text-white"
-    >
-      {count > 99 ? "99+" : count}
-    </span>
-  );
-}
-
 function AdminNavLink({
   href,
   label,
@@ -89,7 +79,7 @@ function AdminNavLink({
   active,
   variant,
   collapsed,
-  badge,
+  badgeSlot,
 }: NavLinkProps) {
   if (variant === "sidebar") {
     const linkClass = SIDEBAR_LINK_CLASS(active, !!collapsed);
@@ -117,9 +107,7 @@ function AdminNavLink({
               )}
               aria-hidden
             />
-            {badge && badge > 0 ? (
-              <span className="absolute top-1 right-1 flex size-2.5 rounded-full bg-coral" />
-            ) : null}
+            {badgeSlot}
           </PopoverTrigger>
           <PopoverContent
             side="right"
@@ -150,7 +138,7 @@ function AdminNavLink({
           aria-hidden
         />
         <span className="flex-1">{label}</span>
-        <BadgePill count={badge ?? 0} />
+        {badgeSlot}
       </Link>
     );
   }
@@ -241,13 +229,13 @@ function AdminMobileTabLink({
   label,
   icon: Icon,
   active,
-  badge,
+  badgeSlot,
 }: {
   href: string;
   label: string;
   icon: LucideIcon;
   active: boolean;
-  badge?: number;
+  badgeSlot?: ReactNode;
 }) {
   return (
     <Link
@@ -262,11 +250,7 @@ function AdminMobileTabLink({
     >
       <span className="relative">
         <Icon className="size-5 shrink-0" aria-hidden />
-        {badge && badge > 0 ? (
-          <span className="absolute -top-1 -right-1.5 flex size-3.5 items-center justify-center rounded-full bg-coral text-[8px] font-bold leading-none text-white">
-            {badge > 9 ? "9+" : badge}
-          </span>
-        ) : null}
+        {badgeSlot}
       </span>
       <span className="line-clamp-2 w-full max-w-[4.75rem] text-center">{label}</span>
     </Link>
@@ -279,7 +263,7 @@ type AdminSidebarNavProps = {
   backHref?: string;
   sectionLabel?: string;
   title?: string;
-  badges?: AdminNavBadges;
+  badgeSlots?: AdminNavBadgeSlots;
 };
 
 /** Desktop only — vertical sidebar (≥ md). */
@@ -289,7 +273,7 @@ export function AdminSidebarNav({
   backHref = ROUTES.accueil,
   sectionLabel,
   title,
-  badges,
+  badgeSlots,
 }: AdminSidebarNavProps) {
   const pathname = usePathname();
   const visibleNavItems = navItems.filter((item) => !item.hidden);
@@ -297,6 +281,7 @@ export function AdminSidebarNav({
     pathname,
     visibleNavItems.map((item) => item.href),
   );
+  const badges = collapsed ? badgeSlots?.sidebarCollapsed : badgeSlots?.sidebar;
 
   return (
     <nav
@@ -327,7 +312,7 @@ export function AdminSidebarNav({
               active={href === activeHref}
               variant="sidebar"
               collapsed={collapsed}
-              badge={badges?.[href]}
+              badgeSlot={badges?.[href]}
             />
           );
         })}
@@ -353,7 +338,7 @@ export function AdminSidebarNav({
 type AdminMobileNavProps = {
   navItems: readonly AdminNavItem[];
   backHref?: string;
-  badges?: AdminNavBadges;
+  badgeSlots?: AdminNavBadgeSlots;
 };
 
 /** Mobile only — back link below header (< md). */
@@ -370,14 +355,15 @@ export function AdminMobileBackBar({
 /** Mobile only — fixed bottom tab bar (< md). */
 export function AdminMobileBottomNav({
   navItems,
-  badges,
-}: Pick<AdminMobileNavProps, "navItems" | "badges">) {
+  badgeSlots,
+}: Pick<AdminMobileNavProps, "navItems" | "badgeSlots">) {
   const pathname = usePathname();
   const visibleNavItems = navItems.filter((item) => !item.hidden);
   const activeHref = resolveActiveNavHref(
     pathname,
     visibleNavItems.map((item) => item.href),
   );
+  const badges = badgeSlots?.mobile;
 
   return (
     <nav
@@ -397,7 +383,7 @@ export function AdminMobileBottomNav({
             label={label}
             icon={Icon}
             active={href === activeHref}
-            badge={badges?.[href]}
+            badgeSlot={badges?.[href]}
           />
         );
       })}

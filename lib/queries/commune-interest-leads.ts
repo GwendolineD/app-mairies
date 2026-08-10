@@ -1,4 +1,6 @@
+import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/server";
 import type { LeadsListParams } from "@/lib/utils/backoffice-leads-params";
 import type { Database } from "@/lib/types/database.types";
 
@@ -17,6 +19,12 @@ export async function countOpenCommuneInterestLeads(
   if (error || count === null) return 0;
   return count;
 }
+
+/** Deduped within a single RSC render (layout + page share one call). */
+export const getCachedOpenLeadsCount = cache(async () => {
+  const supabase = await createClient();
+  return countOpenCommuneInterestLeads(supabase);
+});
 
 export async function listLeadsPage(
   supabase: SupabaseClient,

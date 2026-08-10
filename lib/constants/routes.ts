@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { AnnouncementType } from "@/lib/constants/announcement-types";
 
 export const ROUTES = {
@@ -128,8 +129,8 @@ export type AdminNavItem = {
   hidden?: boolean;
 };
 
-/** Dynamic badge counts keyed by nav item href. */
-export type AdminNavBadges = Record<string, number>;
+/** Dynamic badge nodes keyed by nav item href (streamed via Suspense in layouts). */
+export type AdminNavBadges = Record<string, ReactNode>;
 
 export const MUNICIPALITY_SIDEBAR_STORAGE_KEY = "vl:municipality-sidebar-collapsed";
 export const BACKOFFICE_SIDEBAR_STORAGE_KEY = "vl:backoffice-sidebar-collapsed";

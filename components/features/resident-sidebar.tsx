@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { AssistanceModal } from "@/components/features/assistance/assistance-modal";
 import { AssistanceTrigger } from "@/components/features/assistance/assistance-trigger";
-import { ResidentSidebarNav } from "@/components/features/resident-nav";
+import {
+  ResidentSidebarNav,
+  type ResidentMessagesBadgeSlots,
+} from "@/components/features/resident-nav";
 import { cn } from "@/lib/utils/cn";
 
 const STORAGE_KEY = "vl:resident-sidebar-collapsed";
@@ -29,10 +32,10 @@ function writeCollapsedPreference(collapsed: boolean): void {
 
 /** Desktop only — collapsible vertical sidebar (≥ md). */
 export function ResidentSidebar({
-  unreadMessages = 0,
+  messagesBadgeSlots,
   supportEmail,
 }: {
-  unreadMessages?: number;
+  messagesBadgeSlots?: ResidentMessagesBadgeSlots;
   supportEmail: string;
 }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -83,7 +86,7 @@ export function ResidentSidebar({
           <div className="min-w-0 flex-1 overflow-hidden">
             <ResidentSidebarNav
               collapsed={collapsed}
-              unreadMessages={unreadMessages}
+              messagesBadgeSlots={messagesBadgeSlots}
             />
           </div>
 

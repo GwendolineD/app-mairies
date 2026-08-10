@@ -1,4 +1,6 @@
+import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/server";
 
 /** Count open support requests (new + in progress) for backoffice nav badge. */
 export async function countOpenSupportRequests(
@@ -12,3 +14,9 @@ export async function countOpenSupportRequests(
   if (error || count === null) return 0;
   return count;
 }
+
+/** Deduped within a single RSC render (layout + page share one call). */
+export const getCachedOpenSupportRequestsCount = cache(async () => {
+  const supabase = await createClient();
+  return countOpenSupportRequests(supabase);
+});

@@ -6,7 +6,8 @@ import {
 } from "@/components/features/admin-shell/admin-nav";
 import { AdminSidebar } from "@/components/features/admin-shell/admin-sidebar";
 import { InAppHistoryTracker } from "@/components/features/in-app-history-tracker";
-import type { AdminNavBadges, AdminNavItem } from "@/lib/constants/routes";
+import type { AdminNavItem } from "@/lib/constants/routes";
+import type { AdminNavBadgeSlots } from "@/components/features/badges/admin-nav-badge-slots";
 import { ROUTES } from "@/lib/constants/routes";
 import { cn } from "@/lib/utils/cn";
 
@@ -17,7 +18,7 @@ type Props = {
   sidebarTitle: string;
   sidebarSectionLabel?: string;
   backHref?: string;
-  badges?: AdminNavBadges;
+  badgeSlots?: AdminNavBadgeSlots;
   /** "bottom" = classic bottom tab bar (mairie); "drawer" = hamburger left drawer (backoffice) */
   mobileNav?: "bottom" | "drawer";
 };
@@ -29,7 +30,7 @@ export function AdminShell({
   sidebarTitle,
   sidebarSectionLabel,
   backHref = ROUTES.accueil,
-  badges,
+  badgeSlots,
   mobileNav = "bottom",
 }: Props) {
   const useDrawer = mobileNav === "drawer";
@@ -42,7 +43,7 @@ export function AdminShell({
             <AdminMobileDrawer
               navItems={navItems}
               backHref={backHref}
-              badges={badges}
+              badgeSlots={badgeSlots}
             />
           ) : undefined
         }
@@ -57,7 +58,7 @@ export function AdminShell({
           backHref={backHref}
           sectionLabel={sidebarSectionLabel}
           title={sidebarTitle}
-          badges={badges}
+          badges={badgeSlots}
         />
 
         <main
@@ -72,7 +73,7 @@ export function AdminShell({
       </div>
 
       {!useDrawer && (
-        <AdminMobileBottomNav navItems={navItems} badges={badges} />
+        <AdminMobileBottomNav navItems={navItems} badgeSlots={badgeSlots} />
       )}
     </div>
   );

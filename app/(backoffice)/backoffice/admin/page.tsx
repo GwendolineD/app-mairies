@@ -18,7 +18,7 @@ import { PILOT_ACCESS_STATUSES } from "@/lib/constants/access-status";
 import { ROUTES } from "@/lib/constants/routes";
 import { UtilisateursStatsChart } from "@/app/(backoffice)/backoffice/utilisateurs/_components/utilisateurs-stats-chart";
 import { ContenusStatsChart } from "@/app/(backoffice)/backoffice/contenus/_components/contenus-stats-chart";
-import { countOpenCommuneInterestLeads } from "@/lib/queries/commune-interest-leads";
+import { getCachedOpenLeadsCount } from "@/lib/queries/commune-interest-leads";
 import {
   countAllContentTypes,
   getContentPopulationStats,
@@ -27,8 +27,8 @@ import {
   countGlobalStats,
   getPopulationStats,
 } from "@/lib/queries/backoffice-users-list";
-import { countAllPendingReports } from "@/lib/queries/reports";
-import { countOpenSupportRequests } from "@/lib/queries/support-requests";
+import { getCachedAllPendingReportsCount } from "@/lib/queries/reports";
+import { getCachedOpenSupportRequestsCount } from "@/lib/queries/support-requests";
 import { cn } from "@/lib/utils/cn";
 
 export const dynamic = "force-dynamic";
@@ -93,7 +93,6 @@ function DashboardSection({
 export default async function BackofficeAdminHomePage() {
   const supabase = await createClient();
 
-  // Intentional re-fetch: layout badges use the same head-only counts independently.
   const [
     { count: communeCount },
     { count: communesActive },
@@ -115,9 +114,9 @@ export default async function BackofficeAdminHomePage() {
       .eq("access_status", "active"),
     countAllContentTypes(supabase),
     countGlobalStats(supabase),
-    countAllPendingReports(supabase),
-    countOpenSupportRequests(supabase),
-    countOpenCommuneInterestLeads(supabase),
+    getCachedAllPendingReportsCount(),
+    getCachedOpenSupportRequestsCount(),
+    getCachedOpenLeadsCount(),
     getPopulationStats(supabase),
     getContentPopulationStats(supabase),
   ]);

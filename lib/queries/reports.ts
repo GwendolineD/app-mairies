@@ -1,4 +1,6 @@
+import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/server";
 
 /** Count pending reports scoped to a commune (mairie). */
 export async function countPendingReports(
@@ -27,3 +29,9 @@ export async function countAllPendingReports(
   if (error || count === null) return 0;
   return count;
 }
+
+/** Deduped within a single RSC render (layout + page share one call). */
+export const getCachedAllPendingReportsCount = cache(async () => {
+  const supabase = await createClient();
+  return countAllPendingReports(supabase);
+});

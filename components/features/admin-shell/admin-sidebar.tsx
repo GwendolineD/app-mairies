@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { AdminSidebarNav } from "@/components/features/admin-shell/admin-nav";
-import type { AdminNavBadges, AdminNavItem } from "@/lib/constants/routes";
+import type { AdminNavItem } from "@/lib/constants/routes";
+import type { AdminNavBadgeSlots } from "@/components/features/badges/admin-nav-badge-slots";
 import { ROUTES } from "@/lib/constants/routes";
 import { cn } from "@/lib/utils/cn";
 
@@ -31,7 +32,7 @@ type Props = {
   backHref?: string;
   sectionLabel?: string;
   title?: string;
-  badges?: AdminNavBadges;
+  badges?: AdminNavBadgeSlots;
 };
 
 /** Desktop only — collapsible vertical sidebar (≥ md). */
@@ -92,7 +93,7 @@ export function AdminSidebar({
           backHref={backHref}
           sectionLabel={sectionLabel}
           title={title}
-          badges={badges}
+          badgeSlots={badges}
         />
       </div>
     </aside>

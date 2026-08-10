@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Toaster } from "sonner";
 import { BottomNav } from "@/components/features/resident-nav";
 import { ResidentSidebar } from "@/components/features/resident-sidebar";
@@ -5,13 +6,12 @@ import { ResidentHeader } from "@/components/features/resident-header";
 import { PwaInstallBanner } from "@/components/features/pwa/pwa-install-banner";
 import { NotificationPromptBanner } from "@/components/features/notification-prompt-banner";
 import { ResidentShellClient } from "@/components/features/resident-shell-client";
+import { UnreadMessagesBadgeAsync } from "@/components/features/badges/unread-messages-badge-async";
 import { getResidentBackofficeNav } from "@/lib/auth/permissions";
 import { requireActiveMembership } from "@/lib/auth/session";
 import { getPlatformSupportEmail } from "@/lib/actions/platform-settings";
 import { getPushPublicKey } from "@/lib/actions/notifications";
 import { membershipToAddress } from "@/lib/types";
-import { countUnreadMessages } from "@/lib/queries/messages";
-import { createClient } from "@/lib/supabase/server";
 import { getAnnouncementCategories } from "@/lib/queries/announcement-categories";
 import { initCategories } from "@/lib/constants/announcement-categories";
 import { getInitiativeEventCategories } from "@/lib/queries/initiative-event-categories";
@@ -24,18 +24,33 @@ export default async function ResidentRootLayout({
 }) {
   const ctx = await requireActiveMembership();
   const backofficeLinks = getResidentBackofficeNav(ctx);
-  const supabase = await createClient();
 
   const communeId = ctx.activeMembership!.commune_id;
 
+  const messagesBadgeSlots = {
+    sidebar: (
+      <Suspense fallback={null}>
+        <UnreadMessagesBadgeAsync communeId={communeId} variant="sidebar-pill" />
+      </Suspense>
+    ),
+    sidebarCollapsed: (
+      <Suspense fallback={null}>
+        <UnreadMessagesBadgeAsync communeId={communeId} variant="sidebar-dot" />
+      </Suspense>
+    ),
+    bottom: (
+      <Suspense fallback={null}>
+        <UnreadMessagesBadgeAsync communeId={communeId} variant="bottom-pill" />
+      </Suspense>
+    ),
+  };
+
   const [
-    unreadMessages,
     categoryRows,
     initiativeCategoryRows,
     supportEmail,
     pushPublicKey,
   ] = await Promise.all([
-    countUnreadMessages(supabase, communeId),
     getAnnouncementCategories(),
     getInitiativeEventCategories(),
     getPlatformSupportEmail(),
@@ -57,7 +72,7 @@ export default async function ResidentRootLayout({
 
       <div className="flex min-h-0 w-full flex-1">
         <ResidentSidebar
-          unreadMessages={unreadMessages}
+          messagesBadgeSlots={messagesBadgeSlots}
           supportEmail={supportEmail}
         />
 
@@ -85,7 +100,7 @@ export default async function ResidentRootLayout({
         </main>
       </div>
 
-      <BottomNav unreadMessages={unreadMessages} />
+      <BottomNav messagesBadgeSlots={messagesBadgeSlots} />
       <Toaster position="top-center" richColors closeButton />
     </div>
   );

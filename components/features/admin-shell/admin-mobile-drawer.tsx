@@ -6,7 +6,8 @@ import { useState } from "react";
 import { Drawer } from "@base-ui/react/drawer";
 import { ArrowLeft, Menu, type LucideIcon } from "lucide-react";
 
-import type { AdminNavBadges, AdminNavItem } from "@/lib/constants/routes";
+import type { AdminNavItem } from "@/lib/constants/routes";
+import type { AdminNavBadgeSlots } from "@/components/features/badges/admin-nav-badge-slots";
 import { ROUTES } from "@/lib/constants/routes";
 import { cn } from "@/lib/utils/cn";
 import { resolveActiveNavHref } from "@/lib/utils/routes";
@@ -51,13 +52,13 @@ const ADMIN_NAV_ICONS: Record<string, LucideIcon> = {
 type Props = {
   navItems: readonly AdminNavItem[];
   backHref?: string;
-  badges?: AdminNavBadges;
+  badgeSlots?: AdminNavBadgeSlots;
 };
 
 export function AdminMobileDrawer({
   navItems,
   backHref = ROUTES.accueil,
-  badges,
+  badgeSlots,
 }: Props) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -109,7 +110,6 @@ export function AdminMobileDrawer({
                 {visibleNavItems.map(({ href, label, icon }) => {
                   const Icon = ADMIN_NAV_ICONS[icon];
                   const active = href === activeHref;
-                  const badge = badges?.[href];
                   return (
                     <Link
                       key={href}
@@ -132,11 +132,7 @@ export function AdminMobileDrawer({
                         />
                       ) : null}
                       <span className="flex-1">{label}</span>
-                      {badge && badge > 0 ? (
-                        <span className="flex size-5 items-center justify-center rounded-full bg-coral text-[10px] font-bold text-white">
-                          {badge > 99 ? "99+" : badge}
-                        </span>
-                      ) : null}
+                      {badgeSlots?.drawer?.[href]}
                     </Link>
                   );
                 })}

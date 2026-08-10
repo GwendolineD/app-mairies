@@ -9,7 +9,7 @@ import {
 } from "@/lib/constants/routes";
 import { getAnnouncementCategories } from "@/lib/queries/announcement-categories";
 import { getInitiativeEventCategories } from "@/lib/queries/initiative-event-categories";
-import { countPendingReports } from "@/lib/queries/reports";
+import { pendingReportsBadgeSlots } from "@/components/features/badges/admin-nav-badge-slots";
 import { initCategories } from "@/lib/constants/announcement-categories";
 import { communeToDefaultAddress } from "@/lib/utils/commune-address";
 import { createClient } from "@/lib/supabase/server";
@@ -33,29 +33,29 @@ export default async function MunicipalityDashboardLayout({
   const communeId = ctx.communeId;
   const supabase = await createClient();
 
-  const [categoryRows, initiativeCategoryRows, pendingReportsCount] =
+  const badgeSlots = pendingReportsBadgeSlots(
+    ROUTES.mairie.signalements,
+    communeId,
+  );
+
+  const [categoryRows, initiativeCategoryRows, communeResult] =
     await Promise.all([
       getAnnouncementCategories(),
       getInitiativeEventCategories(),
-      countPendingReports(supabase, communeId),
+      supabase
+        .from("communes")
+        .select(
+          "name, postcode, insee_code, centroid_lat, centroid_lng, settings, mairie_address_street, mairie_address_city, mairie_address_postcode, mairie_address_lat, mairie_address_lng",
+        )
+        .eq("id", communeId)
+        .single(),
     ]);
 
   initCategories(categoryRows);
 
   let defaultEventAddress: MembershipAddress = EMPTY_ADDRESS;
-
-  // Always fetch full commune address fields — membership.commune join is partial
-  // (no centroid / mairie_address_*), which would leave lat/lng null on event create.
-  const { data: commune } = await supabase
-    .from("communes")
-    .select(
-      "name, postcode, insee_code, centroid_lat, centroid_lng, settings, mairie_address_street, mairie_address_city, mairie_address_postcode, mairie_address_lat, mairie_address_lng",
-    )
-    .eq("id", communeId)
-    .single();
-
-  if (commune) {
-    defaultEventAddress = communeToDefaultAddress(commune as Commune);
+  if (communeResult.data) {
+    defaultEventAddress = communeToDefaultAddress(communeResult.data as Commune);
   }
 
   return (
@@ -63,9 +63,7 @@ export default async function MunicipalityDashboardLayout({
       navItems={MUNICIPALITY_NAV}
       storageKey={MUNICIPALITY_SIDEBAR_STORAGE_KEY}
       sidebarTitle="Espace Mairie"
-      badges={{
-        [ROUTES.mairie.signalements]: pendingReportsCount,
-      }}
+      badgeSlots={badgeSlots}
     >
       <MunicipalityShellClient
         communeId={communeId}
