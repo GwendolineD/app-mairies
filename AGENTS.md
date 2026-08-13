@@ -35,7 +35,8 @@ Comptes seed locaux (mot de passe **`VieLocaleDev2026!`**) : voir tableau dans `
 |--------|----------|
 | Lint | `npm run lint` (peut signaler une règle React existante sur `ban-autocomplete.tsx`) |
 | Build | `npm run build` |
-| Tests automatisés | **Aucune suite** dans le dépôt pour l’instant |
+| Tests automatisés | `npm test` |
+| Import communes prospection (après migration) | `npm run import-prospect-communes` |
 | Migrations (lecture) | `npx supabase migration list --local` |
 | SQL lecture seule | `npx supabase db query "..." --local` |
 

@@ -430,6 +430,81 @@ export type Database = {
           },
         ]
       }
+      prospect_communes: {
+        Row: {
+          adresse_mairie: string
+          commune: string
+          conseillers: Json
+          created_at: string
+          departement: string
+          distance_km: number | null
+          emails: string[]
+          geocode_source: string
+          horaires_ouverture: string | null
+          id: string
+          import_batch_id: string | null
+          insee_code: string | null
+          latitude: number | null
+          longitude: number | null
+          maire: string | null
+          nombre_elus: number | null
+          opening_days: string[]
+          population: number
+          postcode: string | null
+          source_imported_at: string
+          telephones: string[]
+          updated_at: string
+        }
+        Insert: {
+          adresse_mairie: string
+          commune: string
+          conseillers?: Json
+          created_at?: string
+          departement: string
+          distance_km?: number | null
+          emails?: string[]
+          geocode_source?: string
+          horaires_ouverture?: string | null
+          id?: string
+          import_batch_id?: string | null
+          insee_code?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          maire?: string | null
+          nombre_elus?: number | null
+          opening_days?: string[]
+          population: number
+          postcode?: string | null
+          source_imported_at?: string
+          telephones?: string[]
+          updated_at?: string
+        }
+        Update: {
+          adresse_mairie?: string
+          commune?: string
+          conseillers?: Json
+          created_at?: string
+          departement?: string
+          distance_km?: number | null
+          emails?: string[]
+          geocode_source?: string
+          horaires_ouverture?: string | null
+          id?: string
+          import_batch_id?: string | null
+          insee_code?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          maire?: string | null
+          nombre_elus?: number | null
+          opening_days?: string[]
+          population?: number
+          postcode?: string | null
+          source_imported_at?: string
+          telephones?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       commune_payments: {
         Row: {
           amount_cents: number
