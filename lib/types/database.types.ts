@@ -830,6 +830,24 @@ export type Database = {
           },
         ]
       }
+      cron_locks: {
+        Row: {
+          locked_at: string | null
+          locked_by: string | null
+          name: string
+        }
+        Insert: {
+          locked_at?: string | null
+          locked_by?: string | null
+          name: string
+        }
+        Update: {
+          locked_at?: string | null
+          locked_by?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
       deleted_content_creation_archive: {
         Row: {
           announcement_type: string | null
@@ -895,6 +913,7 @@ export type Database = {
           id: string
           last_error: string | null
           max_attempts: number
+          recipient_user_id: string | null
           related_content_id: string | null
           related_content_type: string | null
           scheduled_at: string
@@ -910,6 +929,7 @@ export type Database = {
           id?: string
           last_error?: string | null
           max_attempts?: number
+          recipient_user_id?: string | null
           related_content_id?: string | null
           related_content_type?: string | null
           scheduled_at?: string
@@ -925,6 +945,7 @@ export type Database = {
           id?: string
           last_error?: string | null
           max_attempts?: number
+          recipient_user_id?: string | null
           related_content_id?: string | null
           related_content_type?: string | null
           scheduled_at?: string
@@ -1757,6 +1778,143 @@ export type Database = {
           },
         ]
       }
+      prospect_communes: {
+        Row: {
+          adresse_mairie: string
+          commune: string
+          conseillers: Json
+          created_at: string
+          departement: string
+          distance_km: number | null
+          emails: string[]
+          geocode_source: string
+          horaires_ouverture: string | null
+          id: string
+          import_batch_id: string | null
+          insee_code: string | null
+          latitude: number | null
+          longitude: number | null
+          maire: string | null
+          nombre_elus: number | null
+          opening_days: string[]
+          population: number
+          postcode: string | null
+          source_imported_at: string
+          telephones: string[]
+          updated_at: string
+        }
+        Insert: {
+          adresse_mairie: string
+          commune: string
+          conseillers?: Json
+          created_at?: string
+          departement: string
+          distance_km?: number | null
+          emails?: string[]
+          geocode_source?: string
+          horaires_ouverture?: string | null
+          id?: string
+          import_batch_id?: string | null
+          insee_code?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          maire?: string | null
+          nombre_elus?: number | null
+          opening_days?: string[]
+          population: number
+          postcode?: string | null
+          source_imported_at?: string
+          telephones?: string[]
+          updated_at?: string
+        }
+        Update: {
+          adresse_mairie?: string
+          commune?: string
+          conseillers?: Json
+          created_at?: string
+          departement?: string
+          distance_km?: number | null
+          emails?: string[]
+          geocode_source?: string
+          horaires_ouverture?: string | null
+          id?: string
+          import_batch_id?: string | null
+          insee_code?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          maire?: string | null
+          nombre_elus?: number | null
+          opening_days?: string[]
+          population?: number
+          postcode?: string | null
+          source_imported_at?: string
+          telephones?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      prospect_outreach: {
+        Row: {
+          association_count: number | null
+          commerce_count: number | null
+          council_demo_at: string | null
+          created_at: string
+          first_contact_at: string | null
+          first_contact_type:
+            | Database["public"]["Enums"]["prospect_first_contact_type"]
+            | null
+          notes_json: Json | null
+          outcome: Database["public"]["Enums"]["prospect_outcome"] | null
+          prospect_commune_id: string
+          status: Database["public"]["Enums"]["prospect_outreach_status"]
+          updated_at: string
+          visit_1_at: string | null
+          visit_2_at: string | null
+        }
+        Insert: {
+          association_count?: number | null
+          commerce_count?: number | null
+          council_demo_at?: string | null
+          created_at?: string
+          first_contact_at?: string | null
+          first_contact_type?:
+            | Database["public"]["Enums"]["prospect_first_contact_type"]
+            | null
+          notes_json?: Json | null
+          outcome?: Database["public"]["Enums"]["prospect_outcome"] | null
+          prospect_commune_id: string
+          status?: Database["public"]["Enums"]["prospect_outreach_status"]
+          updated_at?: string
+          visit_1_at?: string | null
+          visit_2_at?: string | null
+        }
+        Update: {
+          association_count?: number | null
+          commerce_count?: number | null
+          council_demo_at?: string | null
+          created_at?: string
+          first_contact_at?: string | null
+          first_contact_type?:
+            | Database["public"]["Enums"]["prospect_first_contact_type"]
+            | null
+          notes_json?: Json | null
+          outcome?: Database["public"]["Enums"]["prospect_outcome"] | null
+          prospect_commune_id?: string
+          status?: Database["public"]["Enums"]["prospect_outreach_status"]
+          updated_at?: string
+          visit_1_at?: string | null
+          visit_2_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_outreach_prospect_commune_id_fkey"
+            columns: ["prospect_commune_id"]
+            isOneToOne: true
+            referencedRelation: "prospect_communes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       push_subscriptions: {
         Row: {
           auth: string
@@ -2013,6 +2171,14 @@ export type Database = {
         }[]
       }
       admin_platform_stats: { Args: never; Returns: Json }
+      admin_user_emails: {
+        Args: { p_user_ids: string[] }
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
+      admin_user_id_by_email: { Args: { p_email: string }; Returns: string }
       can_access_commune_content: {
         Args: { p_commune_id: string }
         Returns: boolean
@@ -2043,37 +2209,59 @@ export type Database = {
           offers_week: number
         }[]
       }
-      count_total_unread: { Args: { p_commune_id: string }; Returns: number }
-      get_conversation_inbox: {
-        Args: { p_commune_id: string }
+      count_active_content_by_communes: {
+        Args: { p_commune_ids: string[] }
         Returns: {
-          context_id: string
-          context_type: Database["public"]["Enums"]["context_type"]
-          conversation_id: string
-          last_message_body: string
-          last_message_created_at: string
-          last_message_sender_id: string
-          other_avatar_url: string
-          other_display_name: string
-          other_first_name: string
-          other_last_name: string
-          other_user_id: string
-          title: string
-          unread_count: number
-          updated_at: string
+          announcements: number
+          commune_id: string
+          events: number
+          initiatives: number
+          members: number
         }[]
       }
-      get_or_create_context_conversation: {
-        Args: {
-          p_context_id: string
-          p_context_type: Database["public"]["Enums"]["context_type"]
-        }
-        Returns: string
+      count_content_by_commune: {
+        Args: never
+        Returns: {
+          announcements: number
+          commune_id: string
+          events: number
+          initiatives: number
+        }[]
       }
-      get_unread_message_count: {
-        Args: { p_commune_id: string }
-        Returns: number
+      count_event_participation: {
+        Args: { p_event_ids: string[] }
+        Returns: {
+          event_id: string
+          participants_count: number
+          volunteers_count: number
+        }[]
       }
+      count_initiative_support: {
+        Args: { p_initiative_ids: string[] }
+        Returns: {
+          initiative_id: string
+          support_count: number
+        }[]
+      }
+      count_population_by_commune: {
+        Args: never
+        Returns: {
+          active_members: number
+          commune_id: string
+          pending_invites: number
+          population: number
+          total_invites: number
+        }[]
+      }
+      count_reports_by_context: {
+        Args: { p_commune_id?: string }
+        Returns: {
+          context_id: string
+          context_type: string
+          report_count: number
+        }[]
+      }
+      count_total_unread: { Args: { p_commune_id: string }; Returns: number }
       has_active_membership: {
         Args: { p_commune_id: string }
         Returns: boolean
@@ -2091,8 +2279,37 @@ export type Database = {
         Returns: boolean
       }
       is_platform_admin: { Args: never; Returns: boolean }
+      list_filtered_users_page: {
+        Args: {
+          p_admin?: boolean
+          p_banned?: boolean
+          p_commune_id?: string
+          p_date_from?: string
+          p_date_to?: string
+          p_limit?: number
+          p_membership_status?: string
+          p_offset?: number
+          p_q?: string
+          p_role?: string
+        }
+        Returns: {
+          banned_at: string
+          created_at: string
+          display_name: string
+          first_name: string
+          is_platform_admin: boolean
+          last_name: string
+          total_count: number
+          user_id: string
+        }[]
+      }
       list_my_conversations: {
-        Args: { p_archived?: boolean; p_commune_id: string }
+        Args: {
+          p_archived?: boolean
+          p_commune_id: string
+          p_limit?: number
+          p_offset?: number
+        }
         Returns: {
           archived_at: string
           context_available: boolean
@@ -2111,6 +2328,7 @@ export type Database = {
           other_membership_status: string
           other_user_id: string
           title: string
+          total_count: number
           unread_count: number
           updated_at: string
         }[]
@@ -2119,9 +2337,54 @@ export type Database = {
         Args: { p_membership_id: string }
         Returns: boolean
       }
+      release_cron_lock: {
+        Args: { p_lock_id: string; p_name: string }
+        Returns: undefined
+      }
+      select_content_notification_recipients: {
+        Args: {
+          p_after_user_id: string
+          p_author_user_id: string
+          p_commune_id: string
+          p_context_type: string
+          p_exclude_user_ids: string[]
+          p_limit: number
+        }
+        Returns: {
+          user_id: string
+        }[]
+      }
+      select_engagement_candidates: {
+        Args: {
+          p_created_after: string
+          p_created_before: string
+          p_limit: number
+        }
+        Returns: {
+          active_commune_id: string
+          display_name: string
+          user_id: string
+        }[]
+      }
+      select_notification_activation_candidates: {
+        Args: {
+          p_created_after: string
+          p_created_before: string
+          p_limit: number
+        }
+        Returns: {
+          active_commune_id: string
+          display_name: string
+          user_id: string
+        }[]
+      }
       share_active_commune_with: {
         Args: { p_other_user_id: string }
         Returns: boolean
+      }
+      try_acquire_cron_lock: {
+        Args: { p_name: string; p_ttl_minutes?: number }
+        Returns: string
       }
       uuid_generate_v4: { Args: never; Returns: string }
       validate_trial_access_code: {
@@ -2151,6 +2414,9 @@ export type Database = {
         | "user"
       outcome_reason: "fulfilled" | "unfulfilled"
       payment_status: "paid" | "pending" | "failed" | "refunded"
+      prospect_first_contact_type: "email" | "sms" | "call" | "in_person"
+      prospect_outcome: "abandon" | "refusal" | "adhesion" | "reflection"
+      prospect_outreach_status: "not_contacted" | "in_progress" | "completed"
       report_resolution: "content_suspended" | "user_suspended" | "dismissed"
       report_status: "pending" | "reviewed" | "dismissed"
       support_request_status: "new" | "in_progress" | "resolved" | "dismissed"
@@ -2306,6 +2572,9 @@ export const Constants = {
       ],
       outcome_reason: ["fulfilled", "unfulfilled"],
       payment_status: ["paid", "pending", "failed", "refunded"],
+      prospect_first_contact_type: ["email", "sms", "call", "in_person"],
+      prospect_outcome: ["abandon", "refusal", "adhesion", "reflection"],
+      prospect_outreach_status: ["not_contacted", "in_progress", "completed"],
       report_resolution: ["content_suspended", "user_suspended", "dismissed"],
       report_status: ["pending", "reviewed", "dismissed"],
       support_request_status: ["new", "in_progress", "resolved", "dismissed"],

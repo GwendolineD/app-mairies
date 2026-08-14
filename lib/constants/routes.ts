@@ -59,6 +59,7 @@ export const ROUTES = {
     communeDetail: (id: string) => `/backoffice/communes/${id}`,
     userDetail: (id: string) => `/backoffice/users/${id}`,
     leads: "/backoffice/leads",
+    prospectionCommunes: "/backoffice/prospection-communes",
     emails: "/backoffice/emails",
     categories: "/backoffice/categories",
     categoriesInitiatives: "/backoffice/categories-initiatives",
@@ -118,7 +119,8 @@ export type AdminNavIcon =
   | "file-text"
   | "life-buoy"
   | "megaphone"
-  | "shield-check";
+  | "shield-check"
+  | "map";
 
 export type AdminNavItem = {
   href: string;
@@ -152,6 +154,7 @@ export const BACKOFFICE_NAV: readonly AdminNavItem[] = [
   { href: ROUTES.backoffice.signalements, label: "Signalements", icon: "flag" },
   { href: ROUTES.backoffice.assistance, label: "Assistance", icon: "life-buoy" },
   { href: ROUTES.backoffice.leads, label: "Leads pré-inscription", icon: "flame" },
+  { href: ROUTES.backoffice.prospectionCommunes, label: "Prospection communes", icon: "map" },
   { href: ROUTES.backoffice.communication, label: "Communication", icon: "megaphone" },
   { href: ROUTES.backoffice.emails, label: "Templates email", icon: "mail" },
   { href: ROUTES.backoffice.categoriesInitiatives, label: "Catégories initiatives", icon: "sparkles" },

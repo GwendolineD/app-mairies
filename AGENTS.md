@@ -35,7 +35,8 @@ Comptes seed locaux (mot de passe **`VieLocaleDev2026!`**) : voir tableau dans `
 |--------|----------|
 | Lint | `npm run lint` (peut signaler une règle React existante sur `ban-autocomplete.tsx`) |
 | Build | `npm run build` |
-| Tests automatisés | **Aucune suite** dans le dépôt pour l’instant |
+| Tests automatisés | `npm test` |
+| Import communes prospection (après migration) | `npm run import-prospect-communes` |
 | Migrations (lecture) | `npx supabase migration list --local` |
 | SQL lecture seule | `npx supabase db query "..." --local` |
 
@@ -46,6 +47,14 @@ Comptes seed locaux (mot de passe **`VieLocaleDev2026!`**) : voir tableau dans `
 - `npm run dev` (de préférence dans une session **tmux** pour les agents Cloud).
 
 L’API **BAN** (`api-adresse.data.gouv.fr`) et les tuiles carte sont des dépendances HTTPS externes ; pas de service local supplémentaire pour l’auth ou les annonces de base.
+
+### Prospection communes (backoffice)
+
+- Migrations : `20260814100000_prospect_outreach.sql`, `20260814100100_grant_prospect_outreach.sql`
+- Import référentiel : `npm run import-prospect-communes` (ne touche pas `prospect_outreach` — trigger DB)
+- Compteur commerces : saisie manuelle (aide UI → annuaire-entreprises.data.gouv.fr)
+- Associations : bouton « Rechercher associations » → API Recherche Entreprises (`GET /api/backoffice/prospect-communes/[id]/enrichment`)
+- PDF fiche : `GET /api/backoffice/prospect-communes/[id]/pdf`
 
 ### Notifications push (production)
 
