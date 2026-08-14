@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { FormField, Input, formFieldClassName } from "@/components/ui/form-field";
 import { Label } from "@/components/ui/label";
+import { TimePickerField } from "@/components/ui/time-picker-field";
 import {
   Select,
   SelectContent,
@@ -30,7 +31,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toUtcFromParisLocal } from "@/lib/datetime";
+import {
+  fromScheduleIso,
+  scheduleHasChanged,
+  toScheduleIso,
+  toUtcFromParisLocal,
+} from "@/lib/datetime";
 import { cn } from "@/lib/utils/cn";
 import { CommerceCountInfoPopover } from "./commerce-count-info-popover";
 import {
@@ -118,6 +124,50 @@ function CountFieldLabel({
   );
 }
 
+const PROSPECT_SCHEDULE_MIN_TIME = "06:00";
+const PROSPECT_SCHEDULE_MAX_TIME = "22:00";
+
+function ScheduleFieldRow({
+  label,
+  date,
+  time,
+  onDateChange,
+  onTimeChange,
+  dateAriaLabel,
+  timeAriaLabel,
+}: {
+  label: string;
+  date: string;
+  time: string;
+  onDateChange: (value: string) => void;
+  onTimeChange: (value: string) => void;
+  dateAriaLabel: string;
+  timeAriaLabel: string;
+}) {
+  return (
+    <FormField label={label}>
+      <div className="grid grid-cols-2 gap-3">
+        <DatePickerField
+          value={date}
+          onChange={onDateChange}
+          placeholder="Choisir une date"
+          className="w-full"
+          aria-label={dateAriaLabel}
+        />
+        <TimePickerField
+          value={time}
+          onChange={onTimeChange}
+          placeholder="Heure"
+          className="w-full"
+          aria-label={timeAriaLabel}
+          minTime={PROSPECT_SCHEDULE_MIN_TIME}
+          maxTime={PROSPECT_SCHEDULE_MAX_TIME}
+        />
+      </div>
+    </FormField>
+  );
+}
+
 export function ProspectionDetailSuiviTab({ detail }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -134,11 +184,16 @@ export function ProspectionDetailSuiviTab({ detail }: Props) {
   const [firstContactType, setFirstContactType] = useState<
     ProspectFirstContactType | ""
   >(detail.outreach.first_contact_type ?? "");
-  const [visit1At, setVisit1At] = useState(toDateInput(detail.outreach.visit_1_at));
-  const [visit2At, setVisit2At] = useState(toDateInput(detail.outreach.visit_2_at));
-  const [councilDemoAt, setCouncilDemoAt] = useState(
-    toDateInput(detail.outreach.council_demo_at),
-  );
+  const visit1Fields = fromScheduleIso(detail.outreach.visit_1_at);
+  const visit2Fields = fromScheduleIso(detail.outreach.visit_2_at);
+  const councilDemoFields = fromScheduleIso(detail.outreach.council_demo_at);
+
+  const [visit1Date, setVisit1Date] = useState(visit1Fields.date);
+  const [visit1Time, setVisit1Time] = useState(visit1Fields.time);
+  const [visit2Date, setVisit2Date] = useState(visit2Fields.date);
+  const [visit2Time, setVisit2Time] = useState(visit2Fields.time);
+  const [councilDemoDate, setCouncilDemoDate] = useState(councilDemoFields.date);
+  const [councilDemoTime, setCouncilDemoTime] = useState(councilDemoFields.time);
   const [commerceCount, setCommerceCount] = useState(
     detail.outreach.commerce_count?.toString() ?? "",
   );
@@ -154,9 +209,15 @@ export function ProspectionDetailSuiviTab({ detail }: Props) {
     setOutcome(detail.outreach.outcome ?? "");
     setFirstContactDate(toDateInput(detail.outreach.first_contact_at));
     setFirstContactType(detail.outreach.first_contact_type ?? "");
-    setVisit1At(toDateInput(detail.outreach.visit_1_at));
-    setVisit2At(toDateInput(detail.outreach.visit_2_at));
-    setCouncilDemoAt(toDateInput(detail.outreach.council_demo_at));
+    const nextVisit1 = fromScheduleIso(detail.outreach.visit_1_at);
+    setVisit1Date(nextVisit1.date);
+    setVisit1Time(nextVisit1.time);
+    const nextVisit2 = fromScheduleIso(detail.outreach.visit_2_at);
+    setVisit2Date(nextVisit2.date);
+    setVisit2Time(nextVisit2.time);
+    const nextCouncilDemo = fromScheduleIso(detail.outreach.council_demo_at);
+    setCouncilDemoDate(nextCouncilDemo.date);
+    setCouncilDemoTime(nextCouncilDemo.time);
     setCommerceCount(detail.outreach.commerce_count?.toString() ?? "");
     setAssociationCount(detail.outreach.association_count?.toString() ?? "");
     setNotesJson(detail.outreach.notes_json);
@@ -168,9 +229,17 @@ export function ProspectionDetailSuiviTab({ detail }: Props) {
     if (outcome !== (outreach.outcome ?? "")) return true;
     if (firstContactDate !== toDateInput(outreach.first_contact_at)) return true;
     if (firstContactType !== (outreach.first_contact_type ?? "")) return true;
-    if (visit1At !== toDateInput(outreach.visit_1_at)) return true;
-    if (visit2At !== toDateInput(outreach.visit_2_at)) return true;
-    if (councilDemoAt !== toDateInput(outreach.council_demo_at)) return true;
+    if (scheduleHasChanged(visit1Date, visit1Time, outreach.visit_1_at)) {
+      return true;
+    }
+    if (scheduleHasChanged(visit2Date, visit2Time, outreach.visit_2_at)) {
+      return true;
+    }
+    if (
+      scheduleHasChanged(councilDemoDate, councilDemoTime, outreach.council_demo_at)
+    ) {
+      return true;
+    }
     if (commerceCount !== (outreach.commerce_count?.toString() ?? "")) {
       return true;
     }
@@ -187,9 +256,12 @@ export function ProspectionDetailSuiviTab({ detail }: Props) {
     outcome,
     firstContactDate,
     firstContactType,
-    visit1At,
-    visit2At,
-    councilDemoAt,
+    visit1Date,
+    visit1Time,
+    visit2Date,
+    visit2Time,
+    councilDemoDate,
+    councilDemoTime,
     commerceCount,
     associationCount,
     notesJson,
@@ -208,9 +280,9 @@ export function ProspectionDetailSuiviTab({ detail }: Props) {
         outcome: status === "completed" ? (outcome as ProspectOutcome) : null,
         first_contact_at: firstContactAt,
         first_contact_type: firstContactType || null,
-        visit_1_at: visit1At || null,
-        visit_2_at: visit2At || null,
-        council_demo_at: councilDemoAt || null,
+        visit_1_at: toScheduleIso(visit1Date, visit1Time),
+        visit_2_at: toScheduleIso(visit2Date, visit2Time),
+        council_demo_at: toScheduleIso(councilDemoDate, councilDemoTime),
         commerce_count: commerceCount ? Number.parseInt(commerceCount, 10) : null,
         association_count: associationCount
           ? Number.parseInt(associationCount, 10)
@@ -289,34 +361,34 @@ export function ProspectionDetailSuiviTab({ detail }: Props) {
         </FormField>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <FormField label="Visite 1">
-          <DatePickerField
-            value={visit1At}
-            onChange={setVisit1At}
-            placeholder="Choisir une date"
-            className="w-full"
-            aria-label="Date de la visite 1"
-          />
-        </FormField>
-        <FormField label="Visite 2">
-          <DatePickerField
-            value={visit2At}
-            onChange={setVisit2At}
-            placeholder="Choisir une date"
-            className="w-full"
-            aria-label="Date de la visite 2"
-          />
-        </FormField>
-        <FormField label="Conseil municipal">
-          <DatePickerField
-            value={councilDemoAt}
-            onChange={setCouncilDemoAt}
-            placeholder="Choisir une date"
-            className="w-full"
-            aria-label="Date du conseil municipal"
-          />
-        </FormField>
+      <div className="space-y-3">
+        <ScheduleFieldRow
+          label="Visite 1"
+          date={visit1Date}
+          time={visit1Time}
+          onDateChange={setVisit1Date}
+          onTimeChange={setVisit1Time}
+          dateAriaLabel="Date de la visite 1"
+          timeAriaLabel="Heure de la visite 1"
+        />
+        <ScheduleFieldRow
+          label="Visite 2"
+          date={visit2Date}
+          time={visit2Time}
+          onDateChange={setVisit2Date}
+          onTimeChange={setVisit2Time}
+          dateAriaLabel="Date de la visite 2"
+          timeAriaLabel="Heure de la visite 2"
+        />
+        <ScheduleFieldRow
+          label="Conseil municipal"
+          date={councilDemoDate}
+          time={councilDemoTime}
+          onDateChange={setCouncilDemoDate}
+          onTimeChange={setCouncilDemoTime}
+          dateAriaLabel="Date du conseil municipal"
+          timeAriaLabel="Heure du conseil municipal"
+        />
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">

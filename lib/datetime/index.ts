@@ -24,6 +24,13 @@ export {
 } from "./parse";
 
 export {
+  fromScheduleIso,
+  formatProspectScheduledAt,
+  scheduleHasChanged,
+  toScheduleIso,
+} from "./schedule";
+
+export {
   type EventRangePart,
   formatChatDateKey,
   formatChatDayLabel,

@@ -16,18 +16,34 @@ type Props = {
   className?: string;
   id?: string;
   step?: number;
+  /** Inclusive lower bound, e.g. "06:00". */
+  minTime?: string;
+  /** Inclusive upper bound, e.g. "22:00". */
+  maxTime?: string;
 };
 
-function generateTimeOptions(step: number): string[] {
+function generateTimeOptions(
+  step: number,
+  minTime?: string,
+  maxTime?: string,
+): string[] {
   const options: string[] = [];
   for (let h = 0; h < 24; h++) {
     for (let m = 0; m < 60; m += step) {
       const hh = h.toString().padStart(2, "0");
       const mm = m.toString().padStart(2, "0");
-      options.push(`${hh}:${mm}`);
+      const time = `${hh}:${mm}`;
+      if (minTime && time < minTime) continue;
+      if (maxTime && time > maxTime) continue;
+      options.push(time);
     }
   }
   return options;
+}
+
+function withCurrentValueOption(options: string[], value: string): string[] {
+  if (!value || options.includes(value)) return options;
+  return [...options, value].sort();
 }
 
 export function TimePickerField({
@@ -37,9 +53,18 @@ export function TimePickerField({
   className,
   id,
   step = 15,
+  minTime,
+  maxTime,
 }: Props) {
   const [open, setOpen] = useState(false);
-  const timeOptions = useMemo(() => generateTimeOptions(step), [step]);
+  const timeOptions = useMemo(
+    () =>
+      withCurrentValueOption(
+        generateTimeOptions(step, minTime, maxTime),
+        value,
+      ),
+    [step, minTime, maxTime, value],
+  );
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

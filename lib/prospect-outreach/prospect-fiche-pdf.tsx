@@ -7,6 +7,7 @@ import {
 } from "@react-pdf/renderer";
 import type { ProspectCommuneDetail } from "@/lib/prospect-communes/types";
 import { formatHorairesPdfLines } from "@/lib/prospect-communes/format-horaires-display";
+import { formatProspectScheduledAt } from "@/lib/datetime";
 import {
   PROSPECT_FIRST_CONTACT_TYPE_LABELS,
   PROSPECT_OUTCOME_LABELS,
@@ -200,16 +201,16 @@ export function ProspectFichePdfDocument({
         <View style={styles.suiviSplitRow}>
           <Text style={styles.splitCol}>
             <Text style={styles.label}>Visite 1 : </Text>
-            {formatDate(outreach.visit_1_at)}
+            {formatProspectScheduledAt(outreach.visit_1_at)}
           </Text>
           <Text style={styles.splitCol}>
             <Text style={styles.label}>Visite 2 : </Text>
-            {formatDate(outreach.visit_2_at)}
+            {formatProspectScheduledAt(outreach.visit_2_at)}
           </Text>
         </View>
         <Text style={styles.suiviRow}>
           <Text style={styles.label}>Conseil municipal : </Text>
-          {formatDate(outreach.council_demo_at)}
+          {formatProspectScheduledAt(outreach.council_demo_at)}
         </Text>
         <View style={styles.suiviSplitRow}>
           <Text style={styles.splitCol}>
