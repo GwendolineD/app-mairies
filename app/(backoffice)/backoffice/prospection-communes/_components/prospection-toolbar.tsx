@@ -32,6 +32,10 @@ import {
   PROSPECT_COMMUNES_UNPAGINATED_MAX,
   PROSPECT_DEPARTEMENT_OPTIONS,
 } from "@/lib/prospect-communes/types";
+import {
+  PROSPECT_OUTREACH_STATUSES,
+  PROSPECT_OUTREACH_STATUS_LABELS,
+} from "@/lib/prospect-outreach/types";
 import { cn } from "@/lib/utils/cn";
 
 type Props = {
@@ -169,6 +173,38 @@ export function ProspectionToolbar({ params, totalCount, truncated }: Props) {
 
   const filterControls = (
     <div className="space-y-4">
+      <FilterSection title="Statut prospection">
+        <div className="flex flex-wrap gap-2">
+          {PROSPECT_OUTREACH_STATUSES.map((status) => {
+            const active = params.outreachStatuses.includes(status);
+            return (
+              <button
+                key={status}
+                type="button"
+                onClick={() =>
+                  pushParams(
+                    mergeProspectCommunesParams(params, {
+                      outreachStatuses: toggleValue(
+                        params.outreachStatuses,
+                        status,
+                      ),
+                    }),
+                  )
+                }
+                className={cn(
+                  "cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold",
+                  active
+                    ? "border-purple/40 bg-soft-pink text-purple"
+                    : "border-border text-muted",
+                )}
+              >
+                {PROSPECT_OUTREACH_STATUS_LABELS[status]}
+              </button>
+            );
+          })}
+        </div>
+      </FilterSection>
+
       <FilterSection title="Taille de commune">
         <div className="flex flex-wrap gap-2">
           {POPULATION_BUCKETS.map((bucket) => {

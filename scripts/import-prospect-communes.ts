@@ -8,6 +8,8 @@
  *   npx tsx --env-file=.env.local scripts/import-prospect-communes.ts docs/data/communes.json --skip-geocoded
  *
  * Requires NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local
+ *
+ * Does NOT upsert prospect_outreach — outreach rows are created by DB trigger.
  */
 import { readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";

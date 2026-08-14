@@ -7,6 +7,10 @@ import {
   PROSPECT_DEPARTEMENT_OPTIONS,
   type OpeningDay,
 } from "@/lib/prospect-communes/types";
+import {
+  isProspectOutreachStatus,
+  type ProspectOutreachStatus,
+} from "@/lib/prospect-outreach/types";
 
 export type ProspectCommuneView = "list" | "map";
 
@@ -35,6 +39,7 @@ export type ProspectCommunesListParams = {
   bbox?: ProspectBbox;
   view: ProspectCommuneView;
   detailId?: string;
+  outreachStatuses: ProspectOutreachStatus[];
 };
 
 const VALID_POP_IDS = new Set(POPULATION_BUCKETS.map((bucket) => bucket.id));
@@ -133,6 +138,14 @@ export function parseProspectCommunesParams(
 
   const detailRaw = raw(searchParams, "detail");
 
+  const outreachStatuses: ProspectOutreachStatus[] = [];
+  const seenStatuses = new Set<string>();
+  for (const value of rawAll(searchParams, "statut")) {
+    if (!isProspectOutreachStatus(value) || seenStatuses.has(value)) continue;
+    seenStatuses.add(value);
+    outreachStatuses.push(value);
+  }
+
   return {
     q: raw(searchParams, "q")?.trim() ?? "",
     maire: raw(searchParams, "maire")?.trim() ?? "",
@@ -149,6 +162,7 @@ export function parseProspectCommunesParams(
     bbox: parseBboxParam(raw(searchParams, "bbox")),
     view,
     detailId: detailRaw?.trim() || undefined,
+    outreachStatuses,
   };
 }
 
@@ -172,6 +186,7 @@ export function buildProspectCommunesQuery(
   if (params.bbox) query.set("bbox", formatBboxParam(params.bbox));
   if (params.view !== "list") query.set("view", params.view);
   if (params.detailId) query.set("detail", params.detailId);
+  for (const status of params.outreachStatuses) query.append("statut", status);
 
   const serialized = query.toString();
   return serialized ? `?${serialized}` : "";
@@ -192,6 +207,7 @@ export function activeProspectCommunesFilterCount(
   if (params.hasEmail) count += 1;
   if (params.hasHoraires) count += 1;
   if (params.bbox) count += 1;
+  if (params.outreachStatuses.length > 0) count += 1;
   return count;
 }
 
@@ -221,6 +237,7 @@ export function clearProspectCommunesFilters(
     bbox: undefined,
     view: current.view,
     detailId: undefined,
+    outreachStatuses: [],
   };
 }
 

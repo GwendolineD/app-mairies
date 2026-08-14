@@ -2,7 +2,7 @@
 
 import { X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import {
   buildProspectCommunesQuery,
@@ -10,17 +10,23 @@ import {
   type ProspectCommunesListParams,
 } from "@/lib/prospect-communes/filter-params";
 import type { ProspectCommuneDetail } from "@/lib/prospect-communes/types";
+import { ProspectOutreachStatusBadge } from "@/lib/prospect-outreach/status-display";
 import { cn } from "@/lib/utils/cn";
+import { ProspectionDetailFicheTab } from "./prospection-detail-fiche-tab";
+import { ProspectionDetailSuiviTab } from "./prospection-detail-suivi-tab";
 
 type Props = {
   detail: ProspectCommuneDetail;
   params: ProspectCommunesListParams;
 };
 
+type TabId = "fiche" | "suivi";
+
 export function ProspectionDetailSheet({ detail, params }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const [, startTransition] = useTransition();
+  const [tab, setTab] = useState<TabId>("suivi");
 
   function close() {
     startTransition(() => {
@@ -43,17 +49,21 @@ export function ProspectionDetailSheet({ detail, params }: Props) {
       <aside
         className={cn(
           "fixed z-50 flex max-h-[85dvh] w-full flex-col overflow-hidden bg-surface shadow-card",
-          "inset-x-0 bottom-0 rounded-t-xl md:inset-y-0 md:right-0 md:left-auto md:max-h-none md:w-[420px] md:rounded-none md:border-l md:border-border",
+          "inset-x-0 bottom-0 rounded-t-xl md:inset-y-0 md:right-0 md:left-auto md:max-h-none md:w-[480px] md:rounded-none md:border-l md:border-border",
         )}
       >
-        <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <div>
+        <div className="flex items-start justify-between border-b border-border px-4 py-3">
+          <div className="space-y-2">
             <h2 className="text-lg font-semibold text-text">{detail.commune}</h2>
             <p className="text-xs text-muted">
               Dept. {detail.departement}
               {detail.postcode ? ` · ${detail.postcode}` : null}
               {detail.insee_code ? ` · INSEE ${detail.insee_code}` : null}
             </p>
+            <ProspectOutreachStatusBadge
+              status={detail.outreach.status}
+              outcome={detail.outreach.outcome}
+            />
           </div>
           <Button
             type="button"
@@ -67,75 +77,35 @@ export function ProspectionDetailSheet({ detail, params }: Props) {
           </Button>
         </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto p-4 text-sm">
-          <section className="space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-subtle">
-              Maire
-            </p>
-            <p className="font-medium text-text">{detail.maire ?? "—"}</p>
-            <p className="text-muted">
-              {detail.population.toLocaleString("fr-FR")} habitants
-              {detail.distance_km != null
-                ? ` · ${detail.distance_km} km (réf.)`
-                : null}
-            </p>
-          </section>
+        <div className="flex border-b border-border px-4">
+          {(
+            [
+              { id: "suivi" as const, label: "Suivi" },
+              { id: "fiche" as const, label: "Fiche" },
+            ] as const
+          ).map((entry) => (
+            <button
+              key={entry.id}
+              type="button"
+              onClick={() => setTab(entry.id)}
+              className={cn(
+                "cursor-pointer border-b-2 px-3 py-2 text-sm font-semibold transition",
+                tab === entry.id
+                  ? "border-purple text-purple"
+                  : "border-transparent text-muted hover:text-text",
+              )}
+            >
+              {entry.label}
+            </button>
+          ))}
+        </div>
 
-          <section className="space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-subtle">
-              Adresse mairie
-            </p>
-            <p className="font-medium text-text">{detail.adresse_mairie}</p>
-            {detail.geocode_source === "failed" ? (
-              <p className="text-xs text-coral">Géocodage non disponible</p>
-            ) : detail.geocode_source === "centroid" ? (
-              <p className="text-xs text-muted">Position approximative (centroïde)</p>
-            ) : null}
-          </section>
-
-          <section className="space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-subtle">
-              Contact
-            </p>
-            {detail.telephones.length > 0 ? (
-              <p className="text-text">{detail.telephones.join(" · ")}</p>
-            ) : (
-              <p className="text-muted">Aucun téléphone</p>
-            )}
-            {detail.emails.length > 0 ? (
-              <p className="break-all text-text">{detail.emails.join(" · ")}</p>
-            ) : (
-              <p className="text-muted">Aucun email</p>
-            )}
-          </section>
-
-          <section className="space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-subtle">
-              Horaires
-            </p>
-            <p className="text-text">
-              {detail.horaires_ouverture?.trim() || "Non renseignés"}
-            </p>
-          </section>
-
-          <section className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-subtle">
-              Conseillers ({detail.conseillers.length})
-            </p>
-            <ul className="space-y-2">
-              {detail.conseillers.map((person) => (
-                <li
-                  key={`${person.nom}-${person.prenom}-${person.fonction}`}
-                  className="rounded-sm border border-border/60 bg-warm px-3 py-2"
-                >
-                  <p className="font-medium text-text">
-                    {person.prenom} {person.nom}
-                  </p>
-                  <p className="text-xs text-muted">{person.fonction}</p>
-                </li>
-              ))}
-            </ul>
-          </section>
+        <div className="flex-1 overflow-y-auto p-4">
+          {tab === "suivi" ? (
+            <ProspectionDetailSuiviTab detail={detail} />
+          ) : (
+            <ProspectionDetailFicheTab detail={detail} />
+          )}
         </div>
       </aside>
     </>

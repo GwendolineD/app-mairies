@@ -4,6 +4,11 @@ export type ProspectConseiller = {
   fonction: string;
 };
 
+import type {
+  ProspectOutreach,
+  ProspectOutreachListEmbed,
+} from "@/lib/prospect-outreach/types";
+
 export type GeocodeSource = "ban" | "centroid" | "failed";
 
 export type ProspectCommuneListItem = {
@@ -24,10 +29,12 @@ export type ProspectCommuneListItem = {
   horaires_ouverture: string | null;
   opening_days: string[];
   insee_code: string | null;
+  outreach: ProspectOutreachListEmbed;
 };
 
 export type ProspectCommuneDetail = ProspectCommuneListItem & {
   conseillers: ProspectConseiller[];
+  outreach: ProspectOutreach;
 };
 
 export type ProspectCommuneImportRow = {

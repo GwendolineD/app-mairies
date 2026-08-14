@@ -14,6 +14,7 @@ import {
   POPULATION_COLOR_HEX,
 } from "@/lib/prospect-communes/population-buckets";
 import { formatHorairesDisplay } from "@/lib/prospect-communes/format-horaires-display";
+import { ProspectOutreachStatusBadge } from "@/lib/prospect-outreach/status-display";
 import { cn } from "@/lib/utils/cn";
 
 type Props = {
@@ -101,6 +102,10 @@ export function ProspectionList({ params, items }: Props) {
             </p>
 
             <div className="mt-3 flex flex-wrap gap-2">
+              <ProspectOutreachStatusBadge
+                status={item.outreach.status}
+                outcome={item.outreach.outcome}
+              />
               {!hasCoords ? (
                 <span className="rounded-full bg-warm px-2 py-0.5 text-[10px] font-semibold text-muted">
                   Position inconnue

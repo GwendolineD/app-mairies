@@ -9,11 +9,35 @@ import {
   PROSPECT_COMMUNE_LIST_SELECT,
   PROSPECT_COMMUNES_UNPAGINATED_MAX,
 } from "@/lib/prospect-communes/types";
+import type {
+  ProspectOutreach,
+  ProspectOutreachListEmbed,
+} from "@/lib/prospect-outreach/types";
+import { PROSPECT_OUTREACH_LIST_EMBED_SELECT } from "@/lib/prospect-outreach/types";
 
-// PostgREST filter builder — typed loosely because prospect_communes is not yet
-// in all generated client paths during incremental rollout.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type FilterableQuery = any;
+
+function buildOutreachEmbed(params: ProspectCommunesListParams): string {
+  const fields = PROSPECT_OUTREACH_LIST_EMBED_SELECT;
+  if (params.outreachStatuses.length > 0) {
+    return `prospect_outreach!inner(${fields})`;
+  }
+  return `prospect_outreach(${fields})`;
+}
+
+function applyOutreachStatusFilters(
+  query: FilterableQuery,
+  params: ProspectCommunesListParams,
+): FilterableQuery {
+  if (params.outreachStatuses.length === 1) {
+    return query.eq("prospect_outreach.status", params.outreachStatuses[0]);
+  }
+  if (params.outreachStatuses.length > 1) {
+    return query.in("prospect_outreach.status", params.outreachStatuses);
+  }
+  return query;
+}
 
 export function applyProspectCommuneFilters(
   query: FilterableQuery,
@@ -87,6 +111,49 @@ export function applyProspectCommuneFilters(
   return next;
 }
 
+function mapOutreachEmbed(raw: unknown): ProspectOutreachListEmbed {
+  const row = (Array.isArray(raw) ? raw[0] : raw) as Record<string, unknown> | null;
+  if (!row) {
+    return {
+      status: "not_contacted",
+      outcome: null,
+      visit_1_at: null,
+      first_contact_at: null,
+    };
+  }
+  return {
+    status: row.status as ProspectOutreachListEmbed["status"],
+    outcome: (row.outcome as ProspectOutreachListEmbed["outcome"]) ?? null,
+    visit_1_at: row.visit_1_at == null ? null : String(row.visit_1_at),
+    first_contact_at:
+      row.first_contact_at == null ? null : String(row.first_contact_at),
+  };
+}
+
+function mapOutreachFull(raw: unknown): ProspectOutreach {
+  const row = (Array.isArray(raw) ? raw[0] : raw) as Record<string, unknown>;
+  return {
+    prospect_commune_id: String(row.prospect_commune_id),
+    status: row.status as ProspectOutreach["status"],
+    outcome: (row.outcome as ProspectOutreach["outcome"]) ?? null,
+    first_contact_at:
+      row.first_contact_at == null ? null : String(row.first_contact_at),
+    first_contact_type:
+      (row.first_contact_type as ProspectOutreach["first_contact_type"]) ?? null,
+    visit_1_at: row.visit_1_at == null ? null : String(row.visit_1_at),
+    visit_2_at: row.visit_2_at == null ? null : String(row.visit_2_at),
+    council_demo_at:
+      row.council_demo_at == null ? null : String(row.council_demo_at),
+    commerce_count:
+      row.commerce_count == null ? null : Number(row.commerce_count),
+    association_count:
+      row.association_count == null ? null : Number(row.association_count),
+    notes_json: (row.notes_json as Record<string, unknown>) ?? null,
+    created_at: String(row.created_at),
+    updated_at: String(row.updated_at),
+  };
+}
+
 function mapListRow(row: Record<string, unknown>): ProspectCommuneListItem {
   return {
     id: String(row.id),
@@ -107,6 +174,7 @@ function mapListRow(row: Record<string, unknown>): ProspectCommuneListItem {
       row.horaires_ouverture == null ? null : String(row.horaires_ouverture),
     opening_days: (row.opening_days as string[]) ?? [],
     insee_code: row.insee_code == null ? null : String(row.insee_code),
+    outreach: mapOutreachEmbed(row.prospect_outreach),
   };
 }
 
@@ -114,11 +182,13 @@ export async function countProspectCommunes(
   supabase: SupabaseClient,
   params: ProspectCommunesListParams,
 ): Promise<number> {
-  let query = supabase.from("prospect_communes").select("id", {
+  const embed = buildOutreachEmbed(params);
+  let query = supabase.from("prospect_communes").select(`id, ${embed}`, {
     count: "exact",
     head: true,
   });
   query = applyProspectCommuneFilters(query, params);
+  query = applyOutreachStatusFilters(query, params);
   const { count, error } = await query;
   if (error) throw error;
   return count ?? 0;
@@ -128,12 +198,14 @@ export async function listProspectCommunes(
   supabase: SupabaseClient,
   params: ProspectCommunesListParams,
 ): Promise<{ items: ProspectCommuneListItem[]; truncated: boolean }> {
+  const embed = buildOutreachEmbed(params);
   let query = supabase
     .from("prospect_communes")
-    .select(PROSPECT_COMMUNE_LIST_SELECT)
+    .select(`${PROSPECT_COMMUNE_LIST_SELECT}, ${embed}`)
     .order("commune", { ascending: true })
     .limit(PROSPECT_COMMUNES_UNPAGINATED_MAX + 1);
   query = applyProspectCommuneFilters(query, params);
+  query = applyOutreachStatusFilters(query, params);
 
   const { data, error } = await query;
   if (error) throw error;
@@ -141,7 +213,7 @@ export async function listProspectCommunes(
   const rows = data ?? [];
   const truncated = rows.length > PROSPECT_COMMUNES_UNPAGINATED_MAX;
   const items = (truncated ? rows.slice(0, PROSPECT_COMMUNES_UNPAGINATED_MAX) : rows).map(
-    (row) => mapListRow(row as Record<string, unknown>),
+    (row) => mapListRow(row as unknown as Record<string, unknown>),
   );
 
   return { items, truncated };
@@ -153,18 +225,48 @@ export async function getProspectCommuneById(
 ): Promise<ProspectCommuneDetail | null> {
   const { data, error } = await supabase
     .from("prospect_communes")
-    .select(`${PROSPECT_COMMUNE_LIST_SELECT}, conseillers`)
+    .select(`${PROSPECT_COMMUNE_LIST_SELECT}, conseillers, prospect_outreach(*)`)
     .eq("id", id)
     .maybeSingle();
 
   if (error) throw error;
   if (!data) return null;
 
-  const base = mapListRow(data as Record<string, unknown>);
+  const base = mapListRow(data as unknown as Record<string, unknown>);
+  const outreachRaw = (data as unknown as Record<string, unknown>).prospect_outreach;
   return {
     ...base,
     conseillers: (data.conseillers as ProspectCommuneDetail["conseillers"]) ?? [],
+    outreach: outreachRaw ? mapOutreachFull(outreachRaw) : mapOutreachFull({
+      prospect_commune_id: base.id,
+      status: "not_contacted",
+      outcome: null,
+      first_contact_at: null,
+      first_contact_type: null,
+      visit_1_at: null,
+      visit_2_at: null,
+      council_demo_at: null,
+      commerce_count: null,
+      association_count: null,
+      notes_json: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }),
   };
+}
+
+export async function ensureProspectOutreachRow(
+  supabase: SupabaseClient,
+  prospectCommuneId: string,
+): Promise<void> {
+  const { error } = await supabase.from("prospect_outreach").upsert(
+    {
+      prospect_commune_id: prospectCommuneId,
+      status: "not_contacted",
+    },
+    { onConflict: "prospect_commune_id", ignoreDuplicates: true },
+  );
+  if (error) throw error;
 }
 
 export function countWithoutCoordinates(items: ProspectCommuneListItem[]): number {
