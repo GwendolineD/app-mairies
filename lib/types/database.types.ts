@@ -1778,6 +1778,143 @@ export type Database = {
           },
         ]
       }
+      prospect_communes: {
+        Row: {
+          adresse_mairie: string
+          commune: string
+          conseillers: Json
+          created_at: string
+          departement: string
+          distance_km: number | null
+          emails: string[]
+          geocode_source: string
+          horaires_ouverture: string | null
+          id: string
+          import_batch_id: string | null
+          insee_code: string | null
+          latitude: number | null
+          longitude: number | null
+          maire: string | null
+          nombre_elus: number | null
+          opening_days: string[]
+          population: number
+          postcode: string | null
+          source_imported_at: string
+          telephones: string[]
+          updated_at: string
+        }
+        Insert: {
+          adresse_mairie: string
+          commune: string
+          conseillers?: Json
+          created_at?: string
+          departement: string
+          distance_km?: number | null
+          emails?: string[]
+          geocode_source?: string
+          horaires_ouverture?: string | null
+          id?: string
+          import_batch_id?: string | null
+          insee_code?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          maire?: string | null
+          nombre_elus?: number | null
+          opening_days?: string[]
+          population: number
+          postcode?: string | null
+          source_imported_at?: string
+          telephones?: string[]
+          updated_at?: string
+        }
+        Update: {
+          adresse_mairie?: string
+          commune?: string
+          conseillers?: Json
+          created_at?: string
+          departement?: string
+          distance_km?: number | null
+          emails?: string[]
+          geocode_source?: string
+          horaires_ouverture?: string | null
+          id?: string
+          import_batch_id?: string | null
+          insee_code?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          maire?: string | null
+          nombre_elus?: number | null
+          opening_days?: string[]
+          population?: number
+          postcode?: string | null
+          source_imported_at?: string
+          telephones?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      prospect_outreach: {
+        Row: {
+          association_count: number | null
+          commerce_count: number | null
+          council_demo_at: string | null
+          created_at: string
+          first_contact_at: string | null
+          first_contact_type:
+            | Database["public"]["Enums"]["prospect_first_contact_type"]
+            | null
+          notes_json: Json | null
+          outcome: Database["public"]["Enums"]["prospect_outcome"] | null
+          prospect_commune_id: string
+          status: Database["public"]["Enums"]["prospect_outreach_status"]
+          updated_at: string
+          visit_1_at: string | null
+          visit_2_at: string | null
+        }
+        Insert: {
+          association_count?: number | null
+          commerce_count?: number | null
+          council_demo_at?: string | null
+          created_at?: string
+          first_contact_at?: string | null
+          first_contact_type?:
+            | Database["public"]["Enums"]["prospect_first_contact_type"]
+            | null
+          notes_json?: Json | null
+          outcome?: Database["public"]["Enums"]["prospect_outcome"] | null
+          prospect_commune_id: string
+          status?: Database["public"]["Enums"]["prospect_outreach_status"]
+          updated_at?: string
+          visit_1_at?: string | null
+          visit_2_at?: string | null
+        }
+        Update: {
+          association_count?: number | null
+          commerce_count?: number | null
+          council_demo_at?: string | null
+          created_at?: string
+          first_contact_at?: string | null
+          first_contact_type?:
+            | Database["public"]["Enums"]["prospect_first_contact_type"]
+            | null
+          notes_json?: Json | null
+          outcome?: Database["public"]["Enums"]["prospect_outcome"] | null
+          prospect_commune_id?: string
+          status?: Database["public"]["Enums"]["prospect_outreach_status"]
+          updated_at?: string
+          visit_1_at?: string | null
+          visit_2_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_outreach_prospect_commune_id_fkey"
+            columns: ["prospect_commune_id"]
+            isOneToOne: true
+            referencedRelation: "prospect_communes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       push_subscriptions: {
         Row: {
           auth: string
@@ -2277,6 +2414,9 @@ export type Database = {
         | "user"
       outcome_reason: "fulfilled" | "unfulfilled"
       payment_status: "paid" | "pending" | "failed" | "refunded"
+      prospect_first_contact_type: "email" | "sms" | "call" | "in_person"
+      prospect_outcome: "abandon" | "refusal" | "adhesion" | "reflection"
+      prospect_outreach_status: "not_contacted" | "in_progress" | "completed"
       report_resolution: "content_suspended" | "user_suspended" | "dismissed"
       report_status: "pending" | "reviewed" | "dismissed"
       support_request_status: "new" | "in_progress" | "resolved" | "dismissed"
@@ -2432,6 +2572,9 @@ export const Constants = {
       ],
       outcome_reason: ["fulfilled", "unfulfilled"],
       payment_status: ["paid", "pending", "failed", "refunded"],
+      prospect_first_contact_type: ["email", "sms", "call", "in_person"],
+      prospect_outcome: ["abandon", "refusal", "adhesion", "reflection"],
+      prospect_outreach_status: ["not_contacted", "in_progress", "completed"],
       report_resolution: ["content_suspended", "user_suspended", "dismissed"],
       report_status: ["pending", "reviewed", "dismissed"],
       support_request_status: ["new", "in_progress", "resolved", "dismissed"],

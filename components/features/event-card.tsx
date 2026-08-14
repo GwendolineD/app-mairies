@@ -184,12 +184,6 @@ export function EventCard({
                 <EventDateRangeLabel start={e.starts_at} end={e.ends_at} />
               </time>
             </p>
-            {e.address_label ? (
-              <p className="flex items-center gap-1 truncate text-[10px] font-medium leading-4 text-subtle">
-                <MapPin className="size-3 shrink-0" aria-hidden />
-                <span className="truncate">{e.address_label}</span>
-              </p>
-            ) : null}
             <ParticipantsCounter count={participantsCount} />
             <VolunteersGauge registered={volunteersRegistered} needed={e.volunteers_needed} />
           </div>
