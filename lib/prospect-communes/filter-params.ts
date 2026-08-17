@@ -14,8 +14,6 @@ import {
 
 export type ProspectCommuneView = "list" | "map";
 
-export type ProspectYesNoFilter = "yes" | "no";
-
 export type ProspectBbox = {
   south: number;
   west: number;
@@ -34,8 +32,8 @@ export type ProspectCommunesListParams = {
   departments: string[];
   distMin?: number;
   distMax?: number;
-  hasEmail?: ProspectYesNoFilter;
-  hasHoraires?: ProspectYesNoFilter;
+  visitDate?: string;
+  councilDate?: string;
   bbox?: ProspectBbox;
   view: ProspectCommuneView;
   detailId?: string;
@@ -75,9 +73,12 @@ function parseOptionalFloat(value: string | undefined): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
-function parseYesNo(value: string | undefined): ProspectYesNoFilter | undefined {
-  if (value === "yes" || value === "no") return value;
-  return undefined;
+const YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function parseDateParam(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  if (!trimmed || !YMD_RE.test(trimmed)) return undefined;
+  return trimmed;
 }
 
 function roundCoord(value: number): number {
@@ -157,8 +158,8 @@ export function parseProspectCommunesParams(
     departments,
     distMin: parseOptionalFloat(raw(searchParams, "distMin")),
     distMax: parseOptionalFloat(raw(searchParams, "distMax")),
-    hasEmail: parseYesNo(raw(searchParams, "hasEmail")),
-    hasHoraires: parseYesNo(raw(searchParams, "hasHoraires")),
+    visitDate: parseDateParam(raw(searchParams, "visite")),
+    councilDate: parseDateParam(raw(searchParams, "conseil")),
     bbox: parseBboxParam(raw(searchParams, "bbox")),
     view,
     detailId: detailRaw?.trim() || undefined,
@@ -181,8 +182,8 @@ export function buildProspectCommunesQuery(
   for (const dept of params.departments) query.append("dept", dept);
   if (params.distMin !== undefined) query.set("distMin", String(params.distMin));
   if (params.distMax !== undefined) query.set("distMax", String(params.distMax));
-  if (params.hasEmail) query.set("hasEmail", params.hasEmail);
-  if (params.hasHoraires) query.set("hasHoraires", params.hasHoraires);
+  if (params.visitDate) query.set("visite", params.visitDate);
+  if (params.councilDate) query.set("conseil", params.councilDate);
   if (params.bbox) query.set("bbox", formatBboxParam(params.bbox));
   if (params.view !== "list") query.set("view", params.view);
   if (params.detailId) query.set("detail", params.detailId);
@@ -204,8 +205,8 @@ export function activeProspectCommunesFilterCount(
   if (params.openingDays.length > 0) count += 1;
   if (params.departments.length > 0) count += 1;
   if (params.distMin !== undefined || params.distMax !== undefined) count += 1;
-  if (params.hasEmail) count += 1;
-  if (params.hasHoraires) count += 1;
+  if (params.visitDate) count += 1;
+  if (params.councilDate) count += 1;
   if (params.bbox) count += 1;
   if (params.outreachStatuses.length > 0) count += 1;
   return count;
@@ -232,8 +233,8 @@ export function clearProspectCommunesFilters(
     departments: [],
     distMin: undefined,
     distMax: undefined,
-    hasEmail: undefined,
-    hasHoraires: undefined,
+    visitDate: undefined,
+    councilDate: undefined,
     bbox: undefined,
     view: current.view,
     detailId: undefined,

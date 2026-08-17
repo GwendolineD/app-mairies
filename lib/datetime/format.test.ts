@@ -199,6 +199,26 @@ describe("toUtcFromParisLocal", () => {
   });
 });
 
+describe("parisDayUtcBounds", () => {
+  it("returns Paris civil day bounds in UTC ISO", async () => {
+    const { parisDayUtcBounds } = await import("./business");
+    expect(parisDayUtcBounds("2026-01-15")).toEqual({
+      start: "2026-01-14T23:00:00.000Z",
+      end: "2026-01-15T23:00:00.000Z",
+    });
+    expect(parisDayUtcBounds("2026-07-15")).toEqual({
+      start: "2026-07-14T22:00:00.000Z",
+      end: "2026-07-15T22:00:00.000Z",
+    });
+  });
+
+  it("returns null for invalid input", async () => {
+    const { parisDayUtcBounds } = await import("./business");
+    expect(parisDayUtcBounds("17-01-2026")).toBeNull();
+    expect(parisDayUtcBounds("")).toBeNull();
+  });
+});
+
 describe("date range helpers", () => {
   it("resolveEndDateAfterStartChange keeps valid end or bumps to start", async () => {
     const { resolveEndDateAfterStartChange } = await import("./business");

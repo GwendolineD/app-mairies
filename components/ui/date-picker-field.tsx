@@ -5,7 +5,7 @@
  */
 
 import { useState, type ReactNode } from "react";
-import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar as CalendarIcon, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -147,20 +147,52 @@ export function DatePickerField({
   const [open, setOpen] = useState(false);
   const labelText = value ? formatPickerDateLabel(value) : placeholder;
 
-  const triggerClassName =
+  function handleClear(event: React.MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    onChange("");
+    setOpen(false);
+  }
+
+  const fieldShellClassName = cn(
+    "flex h-11 md:h-8 w-full min-w-0 items-center rounded-sm border border-border bg-surface text-sm font-medium transition hover:border-purple/30 focus-within:border-purple focus-within:ring-2 focus-within:ring-purple/20",
+    className,
+  );
+
+  const triggerButtonClassName =
     appearance === "inline"
       ? cn(
-          "flex flex-1 cursor-pointer items-center gap-2 text-left text-sm font-medium",
+          "flex min-w-0 flex-1 cursor-pointer items-center gap-2 bg-transparent text-left text-sm font-medium outline-none",
           !value && "text-subtle",
           value && "text-text",
-          className,
         )
       : cn(
-          "flex w-fit min-w-0 cursor-pointer items-center gap-2 rounded-sm border border-border bg-surface px-4 py-2.5 text-left text-sm font-medium whitespace-nowrap outline-none transition hover:border-purple/30 focus-visible:border-purple focus-visible:ring-2 focus-visible:ring-purple/20",
+          "flex min-h-0 min-w-0 flex-1 cursor-pointer items-center gap-2 bg-transparent px-2.5 text-left text-sm font-medium outline-none",
           !value && "text-subtle",
           value && "text-text",
-          className,
         );
+
+  const clearButton = value ? (
+    <button
+      type="button"
+      onClick={handleClear}
+      className="mr-1 inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-sm text-muted transition hover:bg-warm hover:text-text"
+      aria-label="Effacer la date"
+    >
+      <X className="size-3.5" aria-hidden />
+    </button>
+  ) : null;
+
+  const trigger = (
+    <PopoverTrigger
+      id={id}
+      aria-label={ariaLabel}
+      render={<button type="button" className={triggerButtonClassName} />}
+    >
+      <CalendarIcon className="size-4 shrink-0 text-muted" aria-hidden />
+      <span className="min-w-0 flex-1 truncate text-left">{labelText}</span>
+    </PopoverTrigger>
+  );
 
   return (
     <DatePickerPopover
@@ -171,18 +203,17 @@ export function DatePickerField({
       minDate={minDate}
       maxDate={maxDate}
     >
-      <PopoverTrigger
-        id={id}
-        aria-label={ariaLabel}
-        render={
-          <button type="button" className={triggerClassName} />
-        }
-      >
-        <CalendarIcon className="size-4 shrink-0 text-muted" aria-hidden />
-        <span className={appearance === "inline" ? "flex-1 truncate" : "truncate"}>
-          {labelText}
-        </span>
-      </PopoverTrigger>
+      {appearance === "inline" ? (
+        <div className={cn("flex min-w-0 flex-1 items-center gap-1", className)}>
+          {trigger}
+          {clearButton}
+        </div>
+      ) : (
+        <div className={fieldShellClassName}>
+          {trigger}
+          {clearButton}
+        </div>
+      )}
     </DatePickerPopover>
   );
 }

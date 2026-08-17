@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { parisDayUtcBounds } from "@/lib/datetime";
 import { buildPopulationOrFilter } from "@/lib/prospect-communes/population-buckets";
 import type { ProspectCommunesListParams } from "@/lib/prospect-communes/filter-params";
 import type {
@@ -18,9 +19,17 @@ import { PROSPECT_OUTREACH_LIST_EMBED_SELECT } from "@/lib/prospect-outreach/typ
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type FilterableQuery = any;
 
+function needsOutreachInnerJoin(params: ProspectCommunesListParams): boolean {
+  return (
+    params.outreachStatuses.length > 0 ||
+    !!params.visitDate ||
+    !!params.councilDate
+  );
+}
+
 function buildOutreachEmbed(params: ProspectCommunesListParams): string {
   const fields = PROSPECT_OUTREACH_LIST_EMBED_SELECT;
-  if (params.outreachStatuses.length > 0) {
+  if (needsOutreachInnerJoin(params)) {
     return `prospect_outreach!inner(${fields})`;
   }
   return `prospect_outreach(${fields})`;
@@ -37,6 +46,35 @@ function applyOutreachStatusFilters(
     return query.in("prospect_outreach.status", params.outreachStatuses);
   }
   return query;
+}
+
+function applyOutreachDateFilters(
+  query: FilterableQuery,
+  params: ProspectCommunesListParams,
+): FilterableQuery {
+  let next = query;
+
+  if (params.visitDate) {
+    const bounds = parisDayUtcBounds(params.visitDate);
+    if (bounds) {
+      const { start, end } = bounds;
+      next = next.or(
+        `and(visit_1_at.gte.${start},visit_1_at.lt.${end}),and(visit_2_at.gte.${start},visit_2_at.lt.${end})`,
+        { foreignTable: "prospect_outreach" },
+      );
+    }
+  }
+
+  if (params.councilDate) {
+    const bounds = parisDayUtcBounds(params.councilDate);
+    if (bounds) {
+      next = next
+        .gte("prospect_outreach.council_demo_at", bounds.start)
+        .lt("prospect_outreach.council_demo_at", bounds.end);
+    }
+  }
+
+  return next;
 }
 
 export function applyProspectCommuneFilters(
@@ -84,18 +122,6 @@ export function applyProspectCommuneFilters(
   }
   if (params.distMax !== undefined) {
     next = next.lte("distance_km", params.distMax);
-  }
-
-  if (params.hasEmail === "yes") {
-    next = next.not("emails", "eq", "{}");
-  } else if (params.hasEmail === "no") {
-    next = next.eq("emails", "{}");
-  }
-
-  if (params.hasHoraires === "yes") {
-    next = next.not("horaires_ouverture", "is", null).neq("horaires_ouverture", "");
-  } else if (params.hasHoraires === "no") {
-    next = next.or("horaires_ouverture.is.null,horaires_ouverture.eq.");
   }
 
   if (params.bbox) {
@@ -189,6 +215,7 @@ export async function countProspectCommunes(
   });
   query = applyProspectCommuneFilters(query, params);
   query = applyOutreachStatusFilters(query, params);
+  query = applyOutreachDateFilters(query, params);
   const { count, error } = await query;
   if (error) throw error;
   return count ?? 0;
@@ -206,6 +233,7 @@ export async function listProspectCommunes(
     .limit(PROSPECT_COMMUNES_UNPAGINATED_MAX + 1);
   query = applyProspectCommuneFilters(query, params);
   query = applyOutreachStatusFilters(query, params);
+  query = applyOutreachDateFilters(query, params);
 
   const { data, error } = await query;
   if (error) throw error;

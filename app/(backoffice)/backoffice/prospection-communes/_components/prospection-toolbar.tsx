@@ -4,8 +4,10 @@ import { List, Map, SlidersHorizontal, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import { FilterSection } from "@/components/ui/filter-sheet";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
@@ -205,6 +207,72 @@ export function ProspectionToolbar({ params, totalCount, truncated }: Props) {
         </div>
       </FilterSection>
 
+      <FilterSection title="Ouverture & contact">
+        <div className="flex flex-wrap gap-2">
+          {OPENING_DAY_OPTIONS.map((day) => {
+            const active = params.openingDays.includes(day);
+            return (
+              <button
+                key={day}
+                type="button"
+                onClick={() =>
+                  pushParams(
+                    mergeProspectCommunesParams(params, {
+                      openingDays: toggleValue(params.openingDays, day),
+                    }),
+                  )
+                }
+                className={cn(
+                  "cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold",
+                  active
+                    ? "border-purple/40 bg-soft-pink text-purple"
+                    : "border-border text-muted",
+                )}
+              >
+                {day}
+              </button>
+            );
+          })}
+        </div>
+      </FilterSection>
+
+      <FilterSection title="Suivi des visites">
+        <div className="flex flex-wrap gap-3 px-4 py-2.5">
+          <div className="min-w-32 flex-1 space-y-1">
+            <Label className="text-xs text-subtle">Date de visite</Label>
+            <DatePickerField
+              value={params.visitDate ?? ""}
+              onChange={(value) =>
+                pushParams(
+                  mergeProspectCommunesParams(params, {
+                    visitDate: value || undefined,
+                  }),
+                )
+              }
+              placeholder="Choisir une date"
+              className="w-full"
+              aria-label="Date de visite"
+            />
+          </div>
+          <div className="min-w-32 flex-1 space-y-1">
+            <Label className="text-xs text-subtle">Date de conseil municipal</Label>
+            <DatePickerField
+              value={params.councilDate ?? ""}
+              onChange={(value) =>
+                pushParams(
+                  mergeProspectCommunesParams(params, {
+                    councilDate: value || undefined,
+                  }),
+                )
+              }
+              placeholder="Choisir une date"
+              className="w-full"
+              aria-label="Date de conseil municipal"
+            />
+          </div>
+        </div>
+      </FilterSection>
+
       <FilterSection title="Taille de commune">
         <div className="flex flex-wrap gap-2">
           {POPULATION_BUCKETS.map((bucket) => {
@@ -243,42 +311,44 @@ export function ProspectionToolbar({ params, totalCount, truncated }: Props) {
             );
           })}
         </div>
-        <label className="block space-y-1 text-sm">
-          <span className="font-medium text-muted">Population min</span>
-          <Input
-            type="number"
-            min={0}
-            className={TOOLBAR_INPUT_CLASS}
-            value={params.popMin ?? ""}
-            onChange={(event) =>
-              pushParams(
-                mergeProspectCommunesParams(params, {
-                  popMin: event.target.value
-                    ? Number.parseInt(event.target.value, 10)
-                    : undefined,
-                }),
-              )
-            }
-          />
-        </label>
-        <label className="block space-y-1 text-sm">
-          <span className="font-medium text-muted">Population max</span>
-          <Input
-            type="number"
-            min={0}
-            className={TOOLBAR_INPUT_CLASS}
-            value={params.popMax ?? ""}
-            onChange={(event) =>
-              pushParams(
-                mergeProspectCommunesParams(params, {
-                  popMax: event.target.value
-                    ? Number.parseInt(event.target.value, 10)
-                    : undefined,
-                }),
-              )
-            }
-          />
-        </label>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <label className="block min-w-32 flex-1 space-y-1 text-sm">
+            <span className="font-medium text-muted">Population min</span>
+            <Input
+              type="number"
+              min={0}
+              className={TOOLBAR_INPUT_CLASS}
+              value={params.popMin ?? ""}
+              onChange={(event) =>
+                pushParams(
+                  mergeProspectCommunesParams(params, {
+                    popMin: event.target.value
+                      ? Number.parseInt(event.target.value, 10)
+                      : undefined,
+                  }),
+                )
+              }
+            />
+          </label>
+          <label className="block min-w-32 flex-1 space-y-1 text-sm">
+            <span className="font-medium text-muted">Population max</span>
+            <Input
+              type="number"
+              min={0}
+              className={TOOLBAR_INPUT_CLASS}
+              value={params.popMax ?? ""}
+              onChange={(event) =>
+                pushParams(
+                  mergeProspectCommunesParams(params, {
+                    popMax: event.target.value
+                      ? Number.parseInt(event.target.value, 10)
+                      : undefined,
+                  }),
+                )
+              }
+            />
+          </label>
+        </div>
       </FilterSection>
 
       <FilterSection title="Localisation">
@@ -292,10 +362,9 @@ export function ProspectionToolbar({ params, totalCount, truncated }: Props) {
                 mergeProspectCommunesParams(params, { cp: event.target.value }),
               )
             }
-            placeholder="27220"
           />
         </label>
-        <div className="flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-wrap gap-2">
           {PROSPECT_DEPARTEMENT_OPTIONS.map((dept) => {
             const active = params.departments.includes(dept);
             return (
@@ -321,124 +390,45 @@ export function ProspectionToolbar({ params, totalCount, truncated }: Props) {
             );
           })}
         </div>
-        <label className="block space-y-1 text-sm">
-          <span className="font-medium text-muted">Distance min (km)</span>
-          <Input
-            type="number"
-            min={0}
-            step="0.1"
-            className={TOOLBAR_INPUT_CLASS}
-            value={params.distMin ?? ""}
-            onChange={(event) =>
-              pushParams(
-                mergeProspectCommunesParams(params, {
-                  distMin: event.target.value
-                    ? Number.parseFloat(event.target.value)
-                    : undefined,
-                }),
-              )
-            }
-          />
-        </label>
-        <label className="block space-y-1 text-sm">
-          <span className="font-medium text-muted">Distance max (km)</span>
-          <Input
-            type="number"
-            min={0}
-            step="0.1"
-            className={TOOLBAR_INPUT_CLASS}
-            value={params.distMax ?? ""}
-            onChange={(event) =>
-              pushParams(
-                mergeProspectCommunesParams(params, {
-                  distMax: event.target.value
-                    ? Number.parseFloat(event.target.value)
-                    : undefined,
-                }),
-              )
-            }
-          />
-        </label>
-      </FilterSection>
-
-      <FilterSection title="Ouverture & contact">
-        <div className="flex flex-wrap gap-2">
-          {OPENING_DAY_OPTIONS.map((day) => {
-            const active = params.openingDays.includes(day);
-            return (
-              <button
-                key={day}
-                type="button"
-                onClick={() =>
-                  pushParams(
-                    mergeProspectCommunesParams(params, {
-                      openingDays: toggleValue(params.openingDays, day),
-                    }),
-                  )
-                }
-                className={cn(
-                  "cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold",
-                  active
-                    ? "border-purple/40 bg-soft-pink text-purple"
-                    : "border-border text-muted",
-                )}
-              >
-                {day}
-              </button>
-            );
-          })}
-        </div>
-        <div className="space-y-1 text-sm">
-          <span className="font-medium text-muted">Email renseigné</span>
-          <div className="flex gap-2">
-            {(["yes", "no"] as const).map((value) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() =>
-                  pushParams(
-                    mergeProspectCommunesParams(params, {
-                      hasEmail: params.hasEmail === value ? undefined : value,
-                    }),
-                  )
-                }
-                className={cn(
-                  "cursor-pointer rounded-sm border px-3 py-1.5 text-xs font-semibold",
-                  params.hasEmail === value
-                    ? "border-purple/40 bg-soft-pink text-purple"
-                    : "border-border text-muted",
-                )}
-              >
-                {value === "yes" ? "Oui" : "Non"}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="space-y-1 text-sm">
-          <span className="font-medium text-muted">Horaires renseignés</span>
-          <div className="flex gap-2">
-            {(["yes", "no"] as const).map((value) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() =>
-                  pushParams(
-                    mergeProspectCommunesParams(params, {
-                      hasHoraires: params.hasHoraires === value ? undefined : value,
-                    }),
-                  )
-                }
-                className={cn(
-                  "cursor-pointer rounded-sm border px-3 py-1.5 text-xs font-semibold",
-                  params.hasHoraires === value
-                    ? "border-purple/40 bg-soft-pink text-purple"
-                    : "border-border text-muted",
-                )}
-              >
-                {value === "yes" ? "Oui" : "Non"}
-              </button>
-            ))}
-          </div>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <label className="block min-w-32 flex-1 space-y-1 text-sm">
+            <span className="font-medium text-muted">Distance min (km)</span>
+            <Input
+              type="number"
+              min={0}
+              step="0.1"
+              className={TOOLBAR_INPUT_CLASS}
+              value={params.distMin ?? ""}
+              onChange={(event) =>
+                pushParams(
+                  mergeProspectCommunesParams(params, {
+                    distMin: event.target.value
+                      ? Number.parseFloat(event.target.value)
+                      : undefined,
+                  }),
+                )
+              }
+            />
+          </label>
+          <label className="block min-w-32 flex-1 space-y-1 text-sm">
+            <span className="font-medium text-muted">Distance max (km)</span>
+            <Input
+              type="number"
+              min={0}
+              step="0.1"
+              className={TOOLBAR_INPUT_CLASS}
+              value={params.distMax ?? ""}
+              onChange={(event) =>
+                pushParams(
+                  mergeProspectCommunesParams(params, {
+                    distMax: event.target.value
+                      ? Number.parseFloat(event.target.value)
+                      : undefined,
+                  }),
+                )
+              }
+            />
+          </label>
         </div>
       </FilterSection>
     </div>

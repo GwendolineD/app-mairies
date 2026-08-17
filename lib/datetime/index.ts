@@ -8,6 +8,7 @@ export {
   formatParisWeekLabel,
   isSameParisDay,
   nowUtc,
+  parisDayUtcBounds,
   resolveEndDateAfterStartChange,
   startOfParisWeek,
   startOfTodayParisIso,

@@ -1,6 +1,9 @@
 import { addDays, addWeeks, format, isBefore, startOfDay, startOfWeek } from "date-fns";
 
 import { parisTz } from "./constants";
+import { parseDateOnly, toUtcFromParisLocal } from "./parse";
+
+const YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /** Current instant as a Date (UTC). */
 export function nowUtc(): Date {
@@ -27,6 +30,22 @@ export function addDaysParisYmd(days: number, from: Date = new Date()): string {
   return format(addDays(from, days, { in: parisTz }), "yyyy-MM-dd", {
     in: parisTz,
   });
+}
+
+/** Paris civil day as UTC ISO bounds [startInclusive, endExclusive) for DB filters. */
+export function parisDayUtcBounds(
+  ymd: string,
+): { start: string; end: string } | null {
+  if (!YMD_RE.test(ymd)) return null;
+
+  const start = toUtcFromParisLocal(ymd, "00:00");
+  if (!start) return null;
+
+  const nextDay = addDaysParisYmd(1, parseDateOnly(ymd));
+  const end = toUtcFromParisLocal(nextDay, "00:00");
+  if (!end) return null;
+
+  return { start, end };
 }
 
 /** Whether two instants fall on the same Paris civil day. */
