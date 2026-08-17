@@ -1,11 +1,10 @@
 "use client";
 
 import L from "leaflet";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
 import {
   MapContainer,
   Marker,
-  Popup,
   Rectangle,
   TileLayer,
   useMap,
@@ -26,10 +25,10 @@ import {
   getPopulationBucket,
   POPULATION_COLOR_HEX,
 } from "@/lib/prospect-communes/population-buckets";
-import { formatHorairesDisplay } from "@/lib/prospect-communes/format-horaires-display";
 import type { ProspectCommuneListItem } from "@/lib/prospect-communes/types";
 import { itemsWithCoordinates } from "@/lib/queries/backoffice-prospect-communes";
 import { createAnnouncementPinIcon } from "@/lib/utils/announcement-map-pin";
+import { ProspectionMapHoverBridge, ProspectionMapHoverCard } from "./prospection-map-hover-card";
 
 type Props = {
   params: ProspectCommunesListParams;
@@ -37,8 +36,71 @@ type Props = {
   withoutCoordinatesCount: number;
 };
 
+type HoverCardPosition = {
+  x: number;
+  y: number;
+  pinX: number;
+  pinY: number;
+  placement: "above" | "below";
+};
+
 const PROSPECTION_MAP_ZOOM = 10;
 const PROSPECTION_MAP_CENTER: [number, number] = [48.95, 1.4];
+const HOVER_CARD_WIDTH = 220;
+const HOVER_CARD_HEIGHT = 230;
+const HOVER_CARD_GAP = 4;
+const HOVER_CARD_EDGE = 8;
+const HOVER_PIN_HEIGHT = 36;
+const HOVER_CLOSE_DELAY_MS = 350;
+
+function canHoverPreview(): boolean {
+  return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+}
+
+function computeHoverCardPosition(
+  map: L.Map,
+  item: ProspectCommuneListItem,
+): HoverCardPosition {
+  const point = map.latLngToContainerPoint([item.latitude!, item.longitude!]);
+  const { x: mapWidth, y: mapHeight } = map.getSize();
+  const pinTop = point.y - HOVER_PIN_HEIGHT;
+
+  const spaceAbove = pinTop;
+  const spaceBelow = mapHeight - point.y;
+  const needsFlipBelow =
+    spaceAbove < HOVER_CARD_HEIGHT + HOVER_CARD_GAP &&
+    spaceBelow > spaceAbove;
+
+  const placement: HoverCardPosition["placement"] = needsFlipBelow
+    ? "below"
+    : "above";
+
+  let x = point.x - HOVER_CARD_WIDTH / 2;
+  x = Math.max(
+    HOVER_CARD_EDGE,
+    Math.min(x, mapWidth - HOVER_CARD_WIDTH - HOVER_CARD_EDGE),
+  );
+
+  let y =
+    placement === "above"
+      ? pinTop - HOVER_CARD_HEIGHT - HOVER_CARD_GAP
+      : point.y + HOVER_CARD_GAP;
+
+  if (placement === "above" && y < HOVER_CARD_EDGE) {
+    y = point.y + HOVER_CARD_GAP;
+    return { x, y, pinX: point.x, pinY: point.y, placement: "below" };
+  }
+
+  if (
+    placement === "below" &&
+    y + HOVER_CARD_HEIGHT > mapHeight - HOVER_CARD_EDGE
+  ) {
+    y = pinTop - HOVER_CARD_HEIGHT - HOVER_CARD_GAP;
+    return { x, y, pinX: point.x, pinY: point.y, placement: "above" };
+  }
+
+  return { x, y, pinX: point.x, pinY: point.y, placement };
+}
 
 function InitializeMapView({
   items,
@@ -62,9 +124,57 @@ function InitializeMapView({
     const bounds = L.latLngBounds(
       items.map((item) => [item.latitude!, item.longitude!] as [number, number]),
     );
-    // Fixed zoom — fitBounds would zoom out to fit all markers across 3 departments.
     map.setView(bounds.getCenter(), zoom, { animate: false });
   }, [items, map, zoom]);
+
+  return null;
+}
+
+function FitMapToContainer() {
+  const map = useMap();
+
+  useEffect(() => {
+    const container = map.getContainer();
+    const observer = new ResizeObserver(() => {
+      map.invalidateSize({ animate: false });
+    });
+    observer.observe(container);
+    map.invalidateSize({ animate: false });
+    return () => observer.disconnect();
+  }, [map]);
+
+  return null;
+}
+
+function MapHoverSync({
+  mapRef,
+  hoveredItem,
+  onPositionChange,
+}: {
+  mapRef: MutableRefObject<L.Map | null>;
+  hoveredItem: ProspectCommuneListItem | null;
+  onPositionChange: (item: ProspectCommuneListItem) => void;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    mapRef.current = map;
+    return () => {
+      mapRef.current = null;
+    };
+  }, [map, mapRef]);
+
+  useMapEvents({
+    move() {
+      if (hoveredItem) onPositionChange(hoveredItem);
+    },
+    zoom() {
+      if (hoveredItem) onPositionChange(hoveredItem);
+    },
+    resize() {
+      if (hoveredItem) onPositionChange(hoveredItem);
+    },
+  });
 
   return null;
 }
@@ -157,6 +267,52 @@ function BboxDrawer({
   return null;
 }
 
+function ProspectionMapMarker({
+  item,
+  selected,
+  selectionMode,
+  isHovered,
+  onHoverStart,
+  onHoverEnd,
+  onTapPreview,
+}: {
+  item: ProspectCommuneListItem;
+  selected: boolean;
+  selectionMode: boolean;
+  isHovered: boolean;
+  onHoverStart: (item: ProspectCommuneListItem) => void;
+  onHoverEnd: () => void;
+  onTapPreview: (item: ProspectCommuneListItem) => void;
+}) {
+  const bucket = getPopulationBucket(item.population);
+  const colorHex = POPULATION_COLOR_HEX[bucket.colorToken];
+
+  return (
+    <Marker
+      position={[item.latitude!, item.longitude!]}
+      icon={createAnnouncementPinIcon(
+        { mapPinUrl: null, colorHex },
+        selected || isHovered,
+        "default",
+      )}
+      eventHandlers={{
+        mouseover: () => {
+          if (selectionMode || !canHoverPreview()) return;
+          onHoverStart(item);
+        },
+        mouseout: () => {
+          if (selectionMode || !canHoverPreview()) return;
+          onHoverEnd();
+        },
+        click: () => {
+          if (selectionMode || canHoverPreview()) return;
+          onTapPreview(item);
+        },
+      }}
+    />
+  );
+}
+
 export function ProspectionMap({
   params,
   items,
@@ -165,7 +321,15 @@ export function ProspectionMap({
   const pathname = usePathname();
   const router = useRouter();
   const [, startTransition] = useTransition();
+  const mapRef = useRef<L.Map | null>(null);
+  const closeTimerRef = useRef<number | null>(null);
+  const hoveredItemRef = useRef<ProspectCommuneListItem | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
+  const [hoveredItem, setHoveredItem] = useState<ProspectCommuneListItem | null>(
+    null,
+  );
+  const [hoverCardPosition, setHoverCardPosition] =
+    useState<HoverCardPosition | null>(null);
   const mapItems = useMemo(() => itemsWithCoordinates(items), [items]);
 
   const bboxBounds = useMemo(() => {
@@ -175,6 +339,62 @@ export function ProspectionMap({
       [params.bbox.north, params.bbox.east],
     );
   }, [params.bbox]);
+
+  const clearCloseTimer = useCallback(() => {
+    if (closeTimerRef.current == null) return;
+    window.clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = null;
+  }, []);
+
+  const clearHoverPreview = useCallback(() => {
+    clearCloseTimer();
+    hoveredItemRef.current = null;
+    setHoveredItem(null);
+    setHoverCardPosition(null);
+  }, [clearCloseTimer]);
+
+  const updateHoverCardPosition = useCallback((item: ProspectCommuneListItem) => {
+    const map = mapRef.current;
+    if (!map) return;
+    setHoverCardPosition(computeHoverCardPosition(map, item));
+  }, []);
+
+  const showHoverPreview = useCallback(
+    (item: ProspectCommuneListItem) => {
+      if (
+        hoveredItemRef.current &&
+        hoveredItemRef.current.id !== item.id
+      ) {
+        return;
+      }
+
+      clearCloseTimer();
+      hoveredItemRef.current = item;
+      setHoveredItem(item);
+      updateHoverCardPosition(item);
+    },
+    [clearCloseTimer, updateHoverCardPosition],
+  );
+
+  const scheduleHoverClose = useCallback(() => {
+    if (!canHoverPreview()) return;
+    clearCloseTimer();
+    closeTimerRef.current = window.setTimeout(() => {
+      hoveredItemRef.current = null;
+      setHoveredItem(null);
+      setHoverCardPosition(null);
+    }, HOVER_CLOSE_DELAY_MS);
+  }, [clearCloseTimer]);
+
+  useEffect(() => () => clearCloseTimer(), [clearCloseTimer]);
+
+  useEffect(() => {
+    if (selectionMode) clearHoverPreview();
+  }, [selectionMode, clearHoverPreview]);
+
+  useEffect(() => {
+    if (params.detailId) clearHoverPreview();
+  }, [params.detailId, clearHoverPreview]);
 
   const pushParams = useCallback(
     (next: ProspectCommunesListParams) => {
@@ -207,12 +427,13 @@ export function ProspectionMap({
   }
 
   function openDetail(id: string) {
+    clearHoverPreview();
     pushParams(mergeProspectCommunesParams(params, { detailId: id }));
   }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
-      <div className="flex flex-col gap-2">
+      <div className="flex shrink-0 flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
@@ -263,64 +484,80 @@ export function ProspectionMap({
         )}
       </div>
 
-      <MapContainer
-        className="min-h-[420px] flex-1 rounded-xl border border-border/70 shadow-card"
-        center={PROSPECTION_MAP_CENTER}
-        zoom={PROSPECTION_MAP_ZOOM}
-        scrollWheelZoom
-        style={{ minHeight: 420 }}
-      >
-        <TileLayer url={MAP_TILE_URL} />
-        <InitializeMapView items={mapItems} zoom={PROSPECTION_MAP_ZOOM} />
-        <MapInteractionLock selectionMode={selectionMode} />
-        <BboxDrawer
-          selectionMode={selectionMode}
-          onComplete={handleBboxComplete}
-          onCancel={() => setSelectionMode(false)}
-        />
-        {bboxBounds ? (
-          <Rectangle
-            bounds={bboxBounds}
-            pathOptions={{
-              color: "#9a52ff",
-              weight: 2,
-              fillColor: "#9a52ff",
-              fillOpacity: 0.12,
-            }}
-          />
+      <div className="relative min-h-[420px] flex-1 md:h-0 md:min-h-0">
+        <div className="absolute inset-0 z-0 overflow-hidden rounded-xl border border-border/70 shadow-card">
+          <MapContainer
+            className="prospection-leaflet-map h-full w-full"
+            center={PROSPECTION_MAP_CENTER}
+            zoom={PROSPECTION_MAP_ZOOM}
+            scrollWheelZoom
+          >
+            <TileLayer url={MAP_TILE_URL} />
+            <FitMapToContainer />
+            <InitializeMapView items={mapItems} zoom={PROSPECTION_MAP_ZOOM} />
+            <MapHoverSync
+              mapRef={mapRef}
+              hoveredItem={hoveredItem}
+              onPositionChange={updateHoverCardPosition}
+            />
+            <MapInteractionLock selectionMode={selectionMode} />
+            <BboxDrawer
+              selectionMode={selectionMode}
+              onComplete={handleBboxComplete}
+              onCancel={() => setSelectionMode(false)}
+            />
+            {bboxBounds ? (
+              <Rectangle
+                bounds={bboxBounds}
+                pathOptions={{
+                  color: "#9a52ff",
+                  weight: 2,
+                  fillColor: "#9a52ff",
+                  fillOpacity: 0.12,
+                }}
+              />
+            ) : null}
+            {mapItems.map((item) => (
+              <ProspectionMapMarker
+                key={item.id}
+                item={item}
+                selected={params.detailId === item.id}
+                selectionMode={selectionMode}
+                isHovered={hoveredItem?.id === item.id}
+                onHoverStart={showHoverPreview}
+                onHoverEnd={scheduleHoverClose}
+                onTapPreview={showHoverPreview}
+              />
+            ))}
+          </MapContainer>
+        </div>
+
+        {hoveredItem && hoverCardPosition ? (
+          <div className="pointer-events-none absolute inset-0 z-50 overflow-visible">
+            <ProspectionMapHoverBridge
+              pinX={hoverCardPosition.pinX}
+              pinY={hoverCardPosition.pinY}
+              cardX={hoverCardPosition.x}
+              cardY={hoverCardPosition.y}
+              cardWidth={HOVER_CARD_WIDTH}
+              cardHeight={HOVER_CARD_HEIGHT}
+              pinHeight={HOVER_PIN_HEIGHT}
+              placement={hoverCardPosition.placement}
+              onMouseEnter={clearCloseTimer}
+              onMouseLeave={scheduleHoverClose}
+            />
+            <ProspectionMapHoverCard
+              item={hoveredItem}
+              x={hoverCardPosition.x}
+              y={hoverCardPosition.y}
+              placement={hoverCardPosition.placement}
+              onOpenDetail={() => openDetail(hoveredItem.id)}
+              onMouseEnter={clearCloseTimer}
+              onMouseLeave={scheduleHoverClose}
+            />
+          </div>
         ) : null}
-        {mapItems.map((item) => {
-          const bucket = getPopulationBucket(item.population);
-          const colorHex = POPULATION_COLOR_HEX[bucket.colorToken];
-          return (
-            <Marker
-              key={item.id}
-              position={[item.latitude!, item.longitude!]}
-              icon={createAnnouncementPinIcon(
-                { mapPinUrl: null, colorHex },
-                params.detailId === item.id,
-                "default",
-              )}
-              eventHandlers={{
-                click: () => openDetail(item.id),
-              }}
-            >
-              <Popup>
-                <div className="space-y-1 text-sm">
-                  <p className="font-semibold">{item.commune}</p>
-                  <p className="text-muted">
-                    {item.population.toLocaleString("fr-FR")} hab.
-                  </p>
-                  <p className="text-muted">Maire : {item.maire ?? "—"}</p>
-                  <p className="text-xs leading-5 text-muted">
-                    {formatHorairesDisplay(item.horaires_ouverture)}
-                  </p>
-                </div>
-              </Popup>
-            </Marker>
-          );
-        })}
-      </MapContainer>
+      </div>
     </div>
   );
 }

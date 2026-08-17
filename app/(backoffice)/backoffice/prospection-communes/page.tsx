@@ -30,8 +30,11 @@ export default async function BackofficeProspectionCommunesPage(props: {
   const withoutCoordinatesCount = countWithoutCoordinates(listResult.items);
 
   return (
-    <PageStack className="min-h-0 flex-1">
+    <PageStack
+      className={params.view === "map" ? "min-h-0 flex-1 md:overflow-hidden" : undefined}
+    >
       <PageHeading
+        className="shrink-0"
         title="Prospection communes"
         subtitle="Cartographie et filtres des communes cibles — données importées depuis le fichier de prospection territorial."
       />

@@ -63,7 +63,7 @@ export function AdminShell({
 
         <main
           className={cn(
-            "min-w-0 flex-1 overflow-y-auto bg-surface px-5 md:px-6 lg:px-8",
+            "flex min-w-0 flex-1 flex-col overflow-y-auto bg-surface px-5 md:px-6 lg:px-8",
             useDrawer ? "pb-6" : "pb-28 md:pb-6",
           )}
         >

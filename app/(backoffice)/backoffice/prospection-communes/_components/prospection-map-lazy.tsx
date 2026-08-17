@@ -10,7 +10,7 @@ const ProspectionMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex min-h-[420px] flex-1 items-center justify-center rounded-xl border border-border bg-warm text-sm font-medium text-muted">
+      <div className="flex min-h-[420px] flex-1 items-center justify-center rounded-xl border border-border bg-warm text-sm font-medium text-muted md:h-0 md:min-h-0">
         Chargement de la carte…
       </div>
     ),

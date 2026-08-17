@@ -7,6 +7,7 @@ import {
 } from "@react-pdf/renderer";
 import type { ProspectCommuneDetail } from "@/lib/prospect-communes/types";
 import { formatHorairesPdfLines } from "@/lib/prospect-communes/format-horaires-display";
+import { formatPopulationFr } from "@/lib/prospect-communes/format-population";
 import { formatProspectScheduledAt } from "@/lib/datetime";
 import {
   PROSPECT_FIRST_CONTACT_TYPE_LABELS,
@@ -33,6 +34,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     lineHeight: 1,
+  },
+  titleMeta: {
+    fontSize: 12,
+    fontWeight: "normal",
+    color: "#7D7E8D",
   },
   maire: {
     fontSize: 11,
@@ -142,7 +148,12 @@ export function ProspectFichePdfDocument({
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.titleRow}>
-          <Text style={styles.title}>{detail.commune}</Text>
+          <Text style={styles.title}>
+            {detail.commune}{" "}
+            <Text style={styles.titleMeta}>
+              ({formatPopulationFr(detail.population)} hab.)
+            </Text>
+          </Text>
           {detail.maire ? (
             <Text style={styles.maire}>{detail.maire}</Text>
           ) : null}

@@ -43,12 +43,12 @@ export function ProspectionDetailSheet({ detail, params }: Props) {
       <button
         type="button"
         aria-label="Fermer la fiche"
-        className="fixed inset-0 z-40 cursor-pointer bg-text/20 md:bg-transparent"
+        className="fixed inset-0 z-1100 cursor-pointer bg-text/20 md:bg-transparent"
         onClick={close}
       />
       <aside
         className={cn(
-          "fixed z-50 flex max-h-[85dvh] w-full flex-col overflow-hidden bg-surface shadow-card",
+          "fixed z-1200 flex max-h-[85dvh] w-full flex-col overflow-hidden bg-surface shadow-card",
           "inset-x-0 bottom-0 rounded-t-xl md:inset-y-0 md:right-0 md:left-auto md:max-h-none md:w-[480px] md:rounded-none md:border-l md:border-border",
         )}
       >

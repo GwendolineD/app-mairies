@@ -44,6 +44,7 @@ type Props = {
   params: ProspectCommunesListParams;
   totalCount: number;
   truncated: boolean;
+  className?: string;
 };
 
 const TOOLBAR_INPUT_CLASS = "rounded-sm md:max-w-xs";
@@ -123,7 +124,12 @@ function ViewToggle({
   );
 }
 
-export function ProspectionToolbar({ params, totalCount, truncated }: Props) {
+export function ProspectionToolbar({
+  params,
+  totalCount,
+  truncated,
+  className,
+}: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -435,7 +441,7 @@ export function ProspectionToolbar({ params, totalCount, truncated }: Props) {
   );
 
   return (
-    <div className={cn("space-y-3", isPending && "opacity-70")}>
+    <div className={cn("space-y-3", isPending && "opacity-70", className)}>
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-2">
         <ViewToggle view={params.view} onChange={setView} />
 
