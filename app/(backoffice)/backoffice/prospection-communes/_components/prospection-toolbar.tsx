@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { DatePickerField } from "@/components/ui/date-picker-field";
-import { FilterSection } from "@/components/ui/filter-sheet";
+import { FilterRow, FilterSection } from "@/components/ui/filter-sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -23,6 +23,7 @@ import {
   buildProspectCommunesQuery,
   clearProspectCommunesFilters,
   mergeProspectCommunesParams,
+  parseVisitDateParam,
   type ProspectCommunesListParams,
 } from "@/lib/prospect-communes/filter-params";
 import {
@@ -243,15 +244,33 @@ export function ProspectionToolbar({
       </FilterSection>
 
       <FilterSection title="Suivi des visites">
+        <FilterRow
+          checked={params.visitDate === "none"}
+          onCheckboxToggle={() =>
+            pushParams(
+              mergeProspectCommunesParams(params, {
+                visitDate: params.visitDate === "none" ? undefined : "none",
+              }),
+            )
+          }
+          onRowSelect={() =>
+            pushParams(
+              mergeProspectCommunesParams(params, {
+                visitDate: "none",
+              }),
+            )
+          }
+          label="Sans date de visite"
+        />
         <div className="flex flex-wrap gap-3 px-4 py-2.5">
           <div className="min-w-32 flex-1 space-y-1">
             <Label className="text-xs text-subtle">Date de visite</Label>
             <DatePickerField
-              value={params.visitDate ?? ""}
+              value={params.visitDate === "none" ? "" : (params.visitDate ?? "")}
               onChange={(value) =>
                 pushParams(
                   mergeProspectCommunesParams(params, {
-                    visitDate: value || undefined,
+                    visitDate: parseVisitDateParam(value),
                   }),
                 )
               }

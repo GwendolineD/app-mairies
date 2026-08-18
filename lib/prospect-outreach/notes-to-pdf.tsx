@@ -9,8 +9,8 @@ import {
 const styles = StyleSheet.create({
   paragraph: {
     fontSize: 11,
-    lineHeight: 1,
-    marginBottom: 1,
+    lineHeight: 1.2,
+    marginBottom: 4,
   },
   paragraphSmall: {
     fontSize: 9,
@@ -64,11 +64,44 @@ function renderTextNode(node: JSONContent, key: string) {
   );
 }
 
+function flattenInlineContent(nodes: JSONContent[] | undefined): string {
+  if (!nodes?.length) return "";
+  return nodes
+    .map((node) => {
+      if (node.type === "text") return node.text ?? "";
+      if (node.type === "hardBreak") return "\n";
+      return "";
+    })
+    .join("");
+}
+
+function flattenParagraph(node: JSONContent): string {
+  const inline = flattenInlineContent(node.content);
+  return inline || "\u00A0";
+}
+
+/** Plain-text flattening of notes structure for tests (paragraph and hardBreak breaks). */
+export function prospectNotesToPlainText(
+  notesJson: Record<string, unknown> | null,
+): string {
+  if (!notesJson || notesJson.type !== "doc") return "—";
+  const content = notesJson.content as JSONContent[] | undefined;
+  if (!content?.length) return "—";
+
+  return content
+    .filter((node) => node.type === "paragraph")
+    .map((node) => flattenParagraph(node))
+    .join("\n");
+}
+
 function renderInlineContent(nodes: JSONContent[] | undefined, prefix: string) {
   if (!nodes?.length) return null;
   return nodes.map((node, index) => {
     if (node.type === "text") {
       return renderTextNode(node, `${prefix}-text-${index}`);
+    }
+    if (node.type === "hardBreak") {
+      return "\n";
     }
     return null;
   });
@@ -83,17 +116,20 @@ function renderParagraphBlock(node: JSONContent, key: string) {
       child.marks?.some((mark) => mark.type === "prospectFontSize"),
     );
 
+  const inline = renderInlineContent(node.content, key);
+  const content = inline ?? "\u00A0";
+
   if (hasLegacyParagraphSize) {
     return (
       <Text key={key} style={fontSizeStyle(legacySize)}>
-        {renderInlineContent(node.content, key)}
+        {content}
       </Text>
     );
   }
 
   return (
     <Text key={key} style={styles.paragraph}>
-      {renderInlineContent(node.content, key)}
+      {content}
     </Text>
   );
 }

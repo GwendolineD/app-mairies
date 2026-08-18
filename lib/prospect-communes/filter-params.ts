@@ -21,6 +21,9 @@ export type ProspectBbox = {
   east: number;
 };
 
+/** Exact YYYY-MM-DD date or sentinel for communes without a visit date. */
+export type VisitDateParam = `${number}-${number}-${number}` | "none";
+
 export type ProspectCommunesListParams = {
   q: string;
   maire: string;
@@ -32,7 +35,7 @@ export type ProspectCommunesListParams = {
   departments: string[];
   distMin?: number;
   distMax?: number;
-  visitDate?: string;
+  visitDate?: VisitDateParam;
   councilDate?: string;
   bbox?: ProspectBbox;
   view: ProspectCommuneView;
@@ -79,6 +82,13 @@ function parseDateParam(value: string | undefined): string | undefined {
   const trimmed = value?.trim();
   if (!trimmed || !YMD_RE.test(trimmed)) return undefined;
   return trimmed;
+}
+
+export function parseVisitDateParam(value: string | undefined): VisitDateParam | undefined {
+  const trimmed = value?.trim();
+  if (trimmed === "none") return "none";
+  const date = parseDateParam(trimmed);
+  return date as VisitDateParam | undefined;
 }
 
 function roundCoord(value: number): number {
@@ -158,7 +168,7 @@ export function parseProspectCommunesParams(
     departments,
     distMin: parseOptionalFloat(raw(searchParams, "distMin")),
     distMax: parseOptionalFloat(raw(searchParams, "distMax")),
-    visitDate: parseDateParam(raw(searchParams, "visite")),
+    visitDate: parseVisitDateParam(raw(searchParams, "visite")),
     councilDate: parseDateParam(raw(searchParams, "conseil")),
     bbox: parseBboxParam(raw(searchParams, "bbox")),
     view,

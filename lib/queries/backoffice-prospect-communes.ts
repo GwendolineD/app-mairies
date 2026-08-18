@@ -54,7 +54,11 @@ function applyOutreachDateFilters(
 ): FilterableQuery {
   let next = query;
 
-  if (params.visitDate) {
+  if (params.visitDate === "none") {
+    next = next
+      .is("prospect_outreach.visit_1_at", null)
+      .is("prospect_outreach.visit_2_at", null);
+  } else if (params.visitDate) {
     const bounds = parisDayUtcBounds(params.visitDate);
     if (bounds) {
       const { start, end } = bounds;

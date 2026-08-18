@@ -101,4 +101,41 @@ describe("prospect visit and council date filters in URL", () => {
 
     expect(count).toBe(2);
   });
+
+  it("parses visite=none as sans date de visite", () => {
+    const params = parseProspectCommunesParams({ visite: "none" });
+    expect(params.visitDate).toBe("none");
+  });
+
+  it("serializes visite=none in query string", () => {
+    const query = buildProspectCommunesQuery({
+      q: "",
+      maire: "",
+      populationBuckets: [],
+      cp: "",
+      openingDays: [],
+      departments: [],
+      view: "list",
+      outreachStatuses: [],
+      visitDate: "none",
+    });
+
+    expect(query).toContain("visite=none");
+  });
+
+  it("counts visite=none as active filter", () => {
+    const count = activeProspectCommunesFilterCount({
+      q: "",
+      maire: "",
+      populationBuckets: [],
+      cp: "",
+      openingDays: [],
+      departments: [],
+      view: "list",
+      outreachStatuses: [],
+      visitDate: "none",
+    });
+
+    expect(count).toBe(1);
+  });
 });

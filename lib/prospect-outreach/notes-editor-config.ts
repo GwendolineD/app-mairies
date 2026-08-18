@@ -138,6 +138,7 @@ const ALLOWED_NODE_TYPES = new Set([
   "doc",
   "paragraph",
   "text",
+  "hardBreak",
   "bulletList",
   "orderedList",
   "listItem",
