@@ -38,6 +38,7 @@ import {
   toUtcFromParisLocal,
 } from "@/lib/datetime";
 import { cn } from "@/lib/utils/cn";
+import { ProspectionDetailActionsBar } from "./prospection-detail-actions-bar";
 import { CommerceCountInfoPopover } from "./commerce-count-info-popover";
 import { ProspectionDetailDeleteButton } from "./prospection-detail-delete-button";
 import {
@@ -302,7 +303,9 @@ export function ProspectionDetailSuiviTab({ detail }: Props) {
   }
 
   return (
-    <div className="space-y-4">
+    <>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex-1 space-y-4 overflow-y-auto p-4">
       <div className="grid gap-3 sm:grid-cols-2">
         <FormField label="Statut">
           <Select
@@ -431,8 +434,9 @@ export function ProspectionDetailSuiviTab({ detail }: Props) {
       <FormField label="Notes (journal des échanges)">
         <ProspectNotesEditor value={notesJson} onChange={setNotesJson} />
       </FormField>
+      </div>
 
-      <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
+      <ProspectionDetailActionsBar>
         <Button
           type="button"
           variant="primary"
@@ -466,7 +470,8 @@ export function ProspectionDetailSuiviTab({ detail }: Props) {
           prospectCommuneId={detail.id}
           communeName={detail.commune}
         />
-      </div>
+      </ProspectionDetailActionsBar>
+    </div>
 
       <ProspectionAssociationEnrichmentModal
         open={associationEnrichment.open}
@@ -475,6 +480,6 @@ export function ProspectionDetailSuiviTab({ detail }: Props) {
         result={associationEnrichment.result}
         onApplyAssociation={(value) => setAssociationCount(String(value))}
       />
-    </div>
+    </>
   );
 }

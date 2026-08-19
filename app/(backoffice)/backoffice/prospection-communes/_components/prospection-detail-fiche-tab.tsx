@@ -12,7 +12,46 @@ import type {
 } from "@/lib/prospect-communes/types";
 import { Button } from "@/components/ui/button";
 import { FormField, Input, Textarea } from "@/components/ui/form-field";
+import { cn } from "@/lib/utils/cn";
+import { ProspectionDetailActionsBar } from "./prospection-detail-actions-bar";
 import { ProspectionDetailDeleteButton } from "./prospection-detail-delete-button";
+
+function CopyableText({
+  text,
+  className,
+}: {
+  text: string;
+  className?: string;
+}) {
+  const copyable = text.trim().length > 0 && text !== "—";
+
+  if (!copyable) {
+    return <p className={className}>{text}</p>;
+  }
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Copié dans le presse-papier.");
+    } catch {
+      toast.error("Impossible de copier.");
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => void handleCopy()}
+      className={cn(
+        "block w-full cursor-pointer border-0 bg-transparent p-0 text-left font-inherit transition hover:text-purple",
+        className,
+      )}
+      aria-label={`Copier : ${text}`}
+    >
+      {text}
+    </button>
+  );
+}
 
 type Props = {
   detail: ProspectCommuneDetail;
@@ -140,7 +179,8 @@ export function ProspectionDetailFicheTab({ detail }: Props) {
     const horairesLines = formatHorairesPdfLines(detail.horaires_ouverture);
 
     return (
-      <div className="space-y-4 text-sm">
+      <div className="flex-1 overflow-y-auto p-4">
+        <div className="space-y-4 text-sm">
         <div className="flex justify-end">
           <Button
             type="button"
@@ -158,24 +198,33 @@ export function ProspectionDetailFicheTab({ detail }: Props) {
           <p className="text-xs font-semibold uppercase tracking-wide text-subtle">
             Maire
           </p>
-          <p className="font-medium text-text">{detail.maire ?? "—"}</p>
+          <CopyableText
+            text={detail.maire?.trim() || "—"}
+            className="font-medium text-text"
+          />
         </section>
         <section className="space-y-1">
           <p className="text-xs font-semibold uppercase tracking-wide text-subtle">
             Adresse mairie
           </p>
-          <p className="text-text">{detail.adresse_mairie}</p>
+          <CopyableText text={detail.adresse_mairie} className="text-text" />
         </section>
         <section className="space-y-1">
           <p className="text-xs font-semibold uppercase tracking-wide text-subtle">
             Contact
           </p>
-          <p className="text-text">
-            {detail.telephones.length > 0 ? detail.telephones.join(" · ") : "—"}
-          </p>
-          <p className="break-all text-text">
-            {detail.emails.length > 0 ? detail.emails.join(" · ") : "—"}
-          </p>
+          <CopyableText
+            text={
+              detail.telephones.length > 0
+                ? detail.telephones.join(" · ")
+                : "—"
+            }
+            className="text-text"
+          />
+          <CopyableText
+            text={detail.emails.length > 0 ? detail.emails.join(" · ") : "—"}
+            className="break-all text-text"
+          />
         </section>
         <section className="space-y-1">
           <p className="text-xs font-semibold uppercase tracking-wide text-subtle">
@@ -186,9 +235,11 @@ export function ProspectionDetailFicheTab({ detail }: Props) {
           ) : (
             <div className="space-y-0.5">
               {horairesLines.map((line, index) => (
-                <p key={`${index}-${line}`} className="text-text">
-                  {line}
-                </p>
+                <CopyableText
+                  key={`${index}-${line}`}
+                  text={line}
+                  className="text-text"
+                />
               ))}
             </div>
           )}
@@ -211,12 +262,14 @@ export function ProspectionDetailFicheTab({ detail }: Props) {
             ))}
           </ul>
         </section>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex-1 space-y-4 overflow-y-auto p-4">
       <FormField label="Maire">
         <Input
           className="rounded-sm"
@@ -327,8 +380,9 @@ export function ProspectionDetailFicheTab({ detail }: Props) {
           </div>
         ))}
       </div>
+      </div>
 
-      <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
+      <ProspectionDetailActionsBar>
         <Button
           type="button"
           variant="primary"
@@ -356,7 +410,7 @@ export function ProspectionDetailFicheTab({ detail }: Props) {
           prospectCommuneId={detail.id}
           communeName={detail.commune}
         />
-      </div>
+      </ProspectionDetailActionsBar>
     </div>
   );
 }
