@@ -269,6 +269,27 @@ export const communeSettingsSchema = z.object({
   welcomeMessage: z.string().optional(),
 });
 
+export const prospectCommuneIdSchema = z.string().uuid("Identifiant commune invalide");
+
+export const createProspectCommuneSchema = z.object({
+  inseeCode: z.string().trim().min(1, "Code INSEE requis"),
+  adresse_mairie: z.string().trim().min(3, "Adresse mairie requise"),
+  postcode: z
+    .string()
+    .optional()
+    .transform((value) => (value?.trim() ? value.trim() : undefined)),
+  populationFallback: z
+    .union([
+      z.literal(""),
+      z.coerce.number().int().min(0, "La population doit être positive ou nulle"),
+    ])
+    .optional()
+    .transform((value) => {
+      if (value === "" || value === undefined) return undefined;
+      return value;
+    }),
+});
+
 export const createPilotCommuneSchema = z.object({
   inseeCode: z.string().min(1, "Code INSEE requis"),
   name: z.string().min(1, "Nom requis"),

@@ -28,6 +28,7 @@ export function ProspectionAssociationEnrichmentModal({
       onClose={onClose}
       title="Associations recensées"
       size="md"
+      elevated
       footer={
         <Button type="button" variant="ghost" size="sm" onClick={onClose}>
           Fermer

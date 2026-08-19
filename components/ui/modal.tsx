@@ -42,6 +42,8 @@ type Props = {
   contentClassName?: string;
   /** When false, body does not scroll — use for full-viewport media (lightbox). */
   scrollable?: boolean;
+  /** Render above side sheets / drawers (z-1300 vs default z-1100). */
+  elevated?: boolean;
 };
 
 export function Modal({
@@ -59,6 +61,7 @@ export function Modal({
   headerTrailing,
   contentClassName,
   scrollable = true,
+  elevated = false,
 }: Props) {
   const viewportStyle = useVisualViewportBottomSheet(open);
 
@@ -71,6 +74,7 @@ export function Modal({
     >
       <DialogContent
         showCloseButton={false}
+        elevated={elevated}
         style={viewportStyle}
         className={cn(
           "top-auto inset-x-0 bottom-0 flex max-h-[90dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none rounded-t-3xl border-0 border-t border-border/60 bg-surface p-0 shadow-elevated ring-0 sm:top-1/2 sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:max-h-[min(90dvh,calc(100%-2rem))] sm:w-full sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:ring-1 sm:ring-foreground/10",

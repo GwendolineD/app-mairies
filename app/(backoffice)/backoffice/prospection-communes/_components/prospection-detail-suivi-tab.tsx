@@ -39,6 +39,7 @@ import {
 } from "@/lib/datetime";
 import { cn } from "@/lib/utils/cn";
 import { CommerceCountInfoPopover } from "./commerce-count-info-popover";
+import { ProspectionDetailDeleteButton } from "./prospection-detail-delete-button";
 import {
   ProspectionAssociationEnrichmentModal,
   useProspectionAssociationEnrichmentModal,
@@ -431,7 +432,7 @@ export function ProspectionDetailSuiviTab({ detail }: Props) {
         <ProspectNotesEditor value={notesJson} onChange={setNotesJson} />
       </FormField>
 
-      <div className="flex flex-wrap gap-2 border-t border-border pt-4">
+      <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
         <Button
           type="button"
           variant="primary"
@@ -461,6 +462,10 @@ export function ProspectionDetailSuiviTab({ detail }: Props) {
           <Download className="size-4" aria-hidden />
           Télécharger PDF
         </Button>
+        <ProspectionDetailDeleteButton
+          prospectCommuneId={detail.id}
+          communeName={detail.commune}
+        />
       </div>
 
       <ProspectionAssociationEnrichmentModal

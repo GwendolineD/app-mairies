@@ -15,22 +15,16 @@ import { readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { extractPostcode } from "@/lib/prospect-communes/extract-postcode";
+import { fetchGeoCommuneByName } from "@/lib/prospect-communes/geo-commune";
 import { parseOpeningDays } from "@/lib/prospect-communes/parse-opening-days";
+import { resolveProspectCoordinates } from "@/lib/prospect-communes/resolve-coordinates";
 import type {
   GeocodeSource,
   ProspectCommuneImportRow,
 } from "@/lib/prospect-communes/types";
 
-const BAN_BASE = "https://api-adresse.data.gouv.fr";
-const GEO_BASE = "https://geo.api.gouv.fr";
 const BATCH_SIZE = 50;
 const BAN_DELAY_MS = 200;
-
-type GeoCommune = {
-  nom: string;
-  code: string;
-  centre?: { coordinates: [number, number] };
-};
 
 type ImportStats = {
   ban: number;
@@ -38,116 +32,12 @@ type ImportStats = {
   failed: number;
 };
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 function requireEnv(name: string): string {
   const value = process.env[name];
   if (!value) {
     throw new Error(`Missing env var: ${name}`);
   }
   return value;
-}
-
-async function fetchGeoCommune(
-  commune: string,
-  departement: string,
-): Promise<GeoCommune | null> {
-  const params = new URLSearchParams({
-    nom: commune,
-    codeDepartement: departement,
-    fields: "nom,code,centre",
-    format: "json",
-    geometry: "centre",
-    limit: "5",
-  });
-  const res = await fetch(`${GEO_BASE}/communes?${params}`);
-  if (!res.ok) return null;
-  const data = (await res.json()) as GeoCommune[];
-  const exact =
-    data.find((entry) => entry.nom.toLowerCase() === commune.toLowerCase()) ??
-    data[0];
-  return exact ?? null;
-}
-
-async function geocodeBan(
-  address: string,
-): Promise<{ lat: number; lng: number } | null> {
-  const url = new URL(`${BAN_BASE}/search/`);
-  url.searchParams.set("q", address);
-  url.searchParams.set("limit", "1");
-  const res = await fetch(url);
-  if (!res.ok) return null;
-  const body = (await res.json()) as {
-    features?: Array<{ geometry: { coordinates: [number, number] } }>;
-  };
-  const coords = body.features?.[0]?.geometry.coordinates;
-  if (!coords) return null;
-  const [lng, lat] = coords;
-  return { lat, lng };
-}
-
-async function resolveCoordinates(
-  row: ProspectCommuneImportRow,
-  skipGeocoded: boolean,
-  existing?: {
-    latitude: number | null;
-    longitude: number | null;
-    geocode_source: GeocodeSource | null;
-  },
-): Promise<{
-  latitude: number | null;
-  longitude: number | null;
-  geocode_source: GeocodeSource;
-  insee_code: string | null;
-}> {
-  const geo = await fetchGeoCommune(row.commune, row.departement);
-  const insee_code = geo?.code ?? null;
-
-  if (
-    skipGeocoded &&
-    existing?.latitude != null &&
-    existing.longitude != null &&
-    existing.geocode_source &&
-    existing.geocode_source !== "failed"
-  ) {
-    return {
-      latitude: existing.latitude,
-      longitude: existing.longitude,
-      geocode_source: existing.geocode_source,
-      insee_code,
-    };
-  }
-
-  await sleep(BAN_DELAY_MS);
-  const ban = await geocodeBan(row.adresse_mairie);
-  if (ban) {
-    return {
-      latitude: ban.lat,
-      longitude: ban.lng,
-      geocode_source: "ban",
-      insee_code,
-    };
-  }
-
-  const centroid = geo?.centre?.coordinates;
-  if (centroid) {
-    const [lng, lat] = centroid;
-    return {
-      latitude: lat,
-      longitude: lng,
-      geocode_source: "centroid",
-      insee_code,
-    };
-  }
-
-  return {
-    latitude: null,
-    longitude: null,
-    geocode_source: "failed",
-    insee_code,
-  };
 }
 
 async function main() {
@@ -178,17 +68,26 @@ async function main() {
       .eq("departement", row.departement)
       .maybeSingle();
 
-    const coords = await resolveCoordinates(
-      row,
+    const geo = await fetchGeoCommuneByName(row.commune, row.departement);
+    const centroidCoords = geo?.centre?.coordinates;
+    const centroid = centroidCoords
+      ? { lat: centroidCoords[1], lng: centroidCoords[0] }
+      : null;
+
+    const coords = await resolveProspectCoordinates({
+      adresse_mairie: row.adresse_mairie,
+      insee_code: geo?.code ?? null,
+      centroid,
       skipGeocoded,
-      existing
+      existing: existing
         ? {
             latitude: existing.latitude,
             longitude: existing.longitude,
             geocode_source: existing.geocode_source as GeocodeSource,
           }
         : undefined,
-    );
+      banDelayMs: BAN_DELAY_MS,
+    });
 
     stats[coords.geocode_source] += 1;
 

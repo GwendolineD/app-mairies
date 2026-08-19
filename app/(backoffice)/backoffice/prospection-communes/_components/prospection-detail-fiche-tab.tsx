@@ -12,6 +12,7 @@ import type {
 } from "@/lib/prospect-communes/types";
 import { Button } from "@/components/ui/button";
 import { FormField, Input, Textarea } from "@/components/ui/form-field";
+import { ProspectionDetailDeleteButton } from "./prospection-detail-delete-button";
 
 type Props = {
   detail: ProspectCommuneDetail;
@@ -327,7 +328,7 @@ export function ProspectionDetailFicheTab({ detail }: Props) {
         ))}
       </div>
 
-      <div className="flex flex-wrap gap-2 border-t border-border pt-4">
+      <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
         <Button
           type="button"
           variant="primary"
@@ -351,6 +352,10 @@ export function ProspectionDetailFicheTab({ detail }: Props) {
         >
           Annuler
         </Button>
+        <ProspectionDetailDeleteButton
+          prospectCommuneId={detail.id}
+          communeName={detail.commune}
+        />
       </div>
     </div>
   );

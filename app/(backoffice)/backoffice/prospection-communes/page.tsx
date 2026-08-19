@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { AddProspectCommuneButton } from "@/components/features/backoffice/add-prospect-commune-button";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
 import { parseProspectCommunesParams } from "@/lib/prospect-communes/filter-params";
@@ -37,6 +38,7 @@ export default async function BackofficeProspectionCommunesPage(props: {
         className="shrink-0"
         title="Prospection communes"
         subtitle="Cartographie et filtres des communes cibles — données importées depuis le fichier de prospection territorial."
+        actions={<AddProspectCommuneButton />}
       />
       <ProspectionView
         params={params}
