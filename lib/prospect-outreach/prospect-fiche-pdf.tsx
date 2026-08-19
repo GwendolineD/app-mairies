@@ -8,6 +8,12 @@ import {
 import type { ProspectCommuneDetail } from "@/lib/prospect-communes/types";
 import { formatHorairesPdfLines } from "@/lib/prospect-communes/format-horaires-display";
 import { formatPopulationFr } from "@/lib/prospect-communes/format-population";
+import {
+  formatProspectAnnualSubscriptionPrice,
+  formatProspectPricePerInhabitantPerYear,
+  getProspectSubscriptionPricing,
+  PROSPECT_SUBSCRIPTION_QUOTE_LABEL,
+} from "@/lib/prospect-communes/subscription-pricing";
 import { formatProspectScheduledAt } from "@/lib/datetime";
 import {
   PROSPECT_FIRST_CONTACT_TYPE_LABELS,
@@ -29,16 +35,39 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 6,
   },
-  title: {
+  titleCol: {
     flex: 1,
+  },
+  title: {
     fontSize: 18,
     fontWeight: "bold",
     lineHeight: 1,
+  },
+  pricingCol: {
+    flex: 1,
+    alignItems: "center",
+  },
+  pricingAnnual: {
+    fontSize: 11,
+    fontWeight: "bold",
+    textAlign: "center",
+    lineHeight: 1.2,
+  },
+  pricingPerCapita: {
+    fontSize: 9,
+    color: "#7D7E8D",
+    textAlign: "center",
+    lineHeight: 1.2,
+    marginTop: 2,
   },
   titleMeta: {
     fontSize: 12,
     fontWeight: "normal",
     color: "#7D7E8D",
+  },
+  maireCol: {
+    flex: 1,
+    alignItems: "flex-end",
   },
   maire: {
     fontSize: 11,
@@ -143,20 +172,47 @@ export function ProspectFichePdfDocument({
   const { outreach } = detail;
   const horairesLines = formatHorairesPdfLines(detail.horaires_ouverture);
   const [conseillersLeft, conseillersRight] = splitInHalf(detail.conseillers);
+  const subscriptionPricing = getProspectSubscriptionPricing(detail.population);
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.titleRow}>
-          <Text style={styles.title}>
-            {detail.commune}{" "}
-            <Text style={styles.titleMeta}>
-              ({formatPopulationFr(detail.population)} hab.)
+          <View style={styles.titleCol}>
+            <Text style={styles.title}>
+              {detail.commune}{" "}
+              <Text style={styles.titleMeta}>
+                ({formatPopulationFr(detail.population)} hab.)
+              </Text>
             </Text>
-          </Text>
-          {detail.maire ? (
-            <Text style={styles.maire}>{detail.maire}</Text>
-          ) : null}
+          </View>
+          {subscriptionPricing ? (
+            <View style={styles.pricingCol}>
+              {subscriptionPricing.kind === "quote" ? (
+                <Text style={styles.pricingAnnual}>
+                  {PROSPECT_SUBSCRIPTION_QUOTE_LABEL}
+                </Text>
+              ) : (
+                <>
+                  <Text style={styles.pricingAnnual}>
+                    {formatProspectAnnualSubscriptionPrice(
+                      subscriptionPricing.annualPriceEur,
+                    )}
+                  </Text>
+                  <Text style={styles.pricingPerCapita}>
+                    {formatProspectPricePerInhabitantPerYear(
+                      subscriptionPricing.pricePerInhabitantPerYearEur,
+                    )}
+                  </Text>
+                </>
+              )}
+            </View>
+          ) : (
+            <View style={styles.pricingCol} />
+          )}
+          <View style={styles.maireCol}>
+            {detail.maire ? <Text style={styles.maire}>{detail.maire}</Text> : null}
+          </View>
         </View>
 
         <Text style={styles.compactRow}>{detail.adresse_mairie}</Text>
