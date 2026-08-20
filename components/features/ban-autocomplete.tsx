@@ -156,6 +156,8 @@ export function BanAutocomplete({
     setQuery(suggestionLabel(feature, formatSuggestion));
     onSelect(feature);
     closeList();
+    // Keep combobox focus when selecting from the portaled list (e.g. inside a dialog).
+    anchorRef.current?.querySelector<HTMLInputElement>("input")?.focus();
   }
 
   function handleChange(text: string) {
@@ -285,6 +287,10 @@ export function BanAutocomplete({
           dropdownPosition.placement === "top" ? "translateY(-100%)" : undefined,
       }}
       className="overflow-auto rounded-sm border border-border bg-surface shadow-elevated"
+      onMouseDownCapture={(e) => {
+        // Prevent the combobox input from blurring (dialog focus-out dismiss).
+        e.preventDefault();
+      }}
     >
       {loading ? (
         <div className="flex items-center justify-center gap-2 px-4 py-6 text-sm text-muted">
