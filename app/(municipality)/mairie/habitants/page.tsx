@@ -1,3 +1,4 @@
+import { MapPin } from "lucide-react";
 import { MembershipModerationButton } from "./_components/membership-moderation-button";
 import { ChangeRoleButton } from "@/components/features/backoffice/change-role-button";
 import { MembershipRoleBadge } from "@/components/features/backoffice/membership-role-badge";
@@ -9,8 +10,12 @@ import { Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
 import { requireCommuneStaff } from "@/lib/auth/session";
-import { listCommuneMembersPage } from "@/lib/queries/backoffice-memberships";
+import {
+  listCommuneMembersPage,
+  type CommuneMemberRow,
+} from "@/lib/queries/backoffice-memberships";
 import { formatDay } from "@/lib/datetime";
+import { formatAddressLabel } from "@/lib/utils/format-address";
 import {
   hasActiveHabitantsFilters,
   parseHabitantsListParams,
@@ -19,6 +24,17 @@ import {
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
+
+function formatMemberAddressLabel(member: CommuneMemberRow) {
+  const streetLine =
+    [member.addressStreet, member.addressLieuDit].filter(Boolean).join(", ") ||
+    null;
+  return formatAddressLabel(
+    streetLine,
+    member.addressPostcode,
+    member.addressCity,
+  );
+}
 
 export default async function MairieHabitantsPage({
   searchParams,
@@ -63,7 +79,19 @@ export default async function MairieHabitantsPage({
               : "Aucune adhésion pour l'instant."}
           </p>
         ) : (
-          membersPage.items.map((member) => (
+          membersPage.items.map((member) => {
+            const addressLabel = formatMemberAddressLabel(member);
+            const addressLine = (
+              <p className="inline-flex min-w-0 items-center gap-1 text-xs font-medium leading-4 text-subtle">
+                <MapPin
+                  className="size-3.5 shrink-0 text-subtle"
+                  aria-hidden
+                />
+                <span className="min-w-0 wrap-break-word">{addressLabel}</span>
+              </p>
+            );
+
+            return (
             <Card
               key={member.membershipId}
               className="flex flex-col gap-3 rounded-lg p-4 md:grid md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:gap-4"
@@ -103,14 +131,18 @@ export default async function MairieHabitantsPage({
                   <span>{member.lastName}</span>{" "}
                   <span>{member.firstName}</span>
                 </p>
+                {addressLine}
                 <p className="text-xs font-medium leading-4 text-subtle">
                   Membre depuis le {formatDay(member.joinedAt)}
                 </p>
               </div>
 
-              <p className="text-xs font-medium leading-4 text-subtle md:hidden">
-                Membre depuis le {formatDay(member.joinedAt)}
-              </p>
+              <div className="min-w-0 space-y-1 md:hidden">
+                {addressLine}
+                <p className="text-xs font-medium leading-4 text-subtle">
+                  Membre depuis le {formatDay(member.joinedAt)}
+                </p>
+              </div>
 
               <div className="flex flex-wrap items-center justify-end gap-2 md:col-start-3 md:row-start-2">
                 <ChangeRoleButton
@@ -130,7 +162,8 @@ export default async function MairieHabitantsPage({
                 />
               </div>
             </Card>
-          ))
+            );
+          })
         )}
       </div>
 
