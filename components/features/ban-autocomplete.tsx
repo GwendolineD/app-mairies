@@ -23,6 +23,8 @@ type Props = {
   formatSuggestion?: (feature: BanFeature) => string;
   /** When true, suggestions render on a single line (e.g. municipality name + postcode). */
   singleLine?: boolean;
+  /** Hides the secondary postcode/city line when the primary label already includes it. */
+  hideLocationLine?: boolean;
   autoFocus?: boolean;
   emptyMessage?: string;
   minCharsHint?: string;
@@ -57,6 +59,7 @@ export function BanAutocomplete({
   showChevron,
   formatSuggestion,
   singleLine,
+  hideLocationLine,
   autoFocus,
   emptyMessage = "Aucun résultat trouvé",
   minCharsHint = "Saisissez au moins 3 caractères pour rechercher",
@@ -321,7 +324,11 @@ export function BanAutocomplete({
                     "w-full cursor-pointer px-4 py-2.5 text-left hover:bg-warm",
                     isActive && "bg-warm",
                   )}
-                  onPointerDown={() => selectSuggestion(feature)}
+                  onPointerDown={(e) => {
+                    // Prevent click from retargeting to the dialog backdrop after the dropdown is removed from DOM
+                    e.preventDefault();
+                    selectSuggestion(feature);
+                  }}
                   onMouseEnter={() => setActiveIndex(index)}
                 >
                   {singleLine ? (
@@ -331,7 +338,7 @@ export function BanAutocomplete({
                   ) : (
                     <>
                       <span className="block text-sm font-medium text-text">{streetLine}</span>
-                      {locationLine ? (
+                      {!hideLocationLine && locationLine ? (
                         <span className="mt-0.5 block text-xs font-medium text-muted">
                           {locationLine}
                         </span>

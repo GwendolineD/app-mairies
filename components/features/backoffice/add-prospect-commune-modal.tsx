@@ -223,6 +223,7 @@ export function AddProspectCommuneModal({ open, onClose }: Props) {
           onSelect={(feature) => setMairieAddress(feature.label)}
           value={mairieAddress}
           disabled={!citycode || Boolean(duplicateProspectId)}
+          singleLine
         />
 
         <FormField label="Population">

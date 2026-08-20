@@ -204,6 +204,7 @@ export function AddCommuneModal({ open, onClose }: Props) {
           onSelect={applyMairieAddressFeature}
           value={mairieAddress}
           disabled={!citycode || Boolean(duplicateCommuneId)}
+          singleLine
         />
 
         <input type="hidden" name="mairieAddress" value={mairieAddress} />

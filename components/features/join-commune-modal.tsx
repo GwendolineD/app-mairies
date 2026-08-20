@@ -169,6 +169,7 @@ export function JoinCommuneModal({
                   lng: feat.lng,
                 }))
               }
+              hideLocationLine
               value={addr.street}
               disabled={!citycode}
               autoFocus
