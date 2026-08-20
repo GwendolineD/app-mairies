@@ -33,13 +33,13 @@ export async function uploadImageToCloudinary(
 
   if (!res.ok) {
     throw new CloudinaryUploadError(
-      payload.error ?? "Échec de l'envoi de la photo.",
+      payload.error ?? "L'envoi de la photo a échoué. Vérifiez votre connexion et réessayez.",
       payload.errorType,
     );
   }
 
   if (!payload.url) {
-    throw new CloudinaryUploadError("Échec de l'envoi de la photo.");
+    throw new CloudinaryUploadError("L'envoi de la photo a échoué. Vérifiez votre connexion et réessayez.");
   }
 
   return payload.url;

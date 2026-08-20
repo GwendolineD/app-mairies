@@ -164,6 +164,7 @@ export function CreateInitiativeModal({
   const [addressStreetError, setAddressStreetError] = useState<string | null>(
     null,
   );
+  const [isCompressing, setIsCompressing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitPhase, setSubmitPhase] = useState<SubmitPhase>("idle");
   const [formError, setFormError] = useState<string | null>(null);
@@ -545,6 +546,7 @@ export function CreateInitiativeModal({
           <ImageDropzone
             file={pendingFile}
             onFileChange={setPendingFile}
+            onCompressingChange={setIsCompressing}
             existingImageUrl={
               !existingPhotoRemoved && initialData?.photoUrl
                 ? initialData.photoUrl
@@ -575,7 +577,7 @@ export function CreateInitiativeModal({
             type="submit"
             gradient="initiative"
             className="sm:min-w-[200px]"
-            disabled={submitting || !canSubmit}
+            disabled={submitting || isCompressing || !canSubmit}
           >
             {submitting ? (
               <>

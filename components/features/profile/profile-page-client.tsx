@@ -24,6 +24,7 @@ import {
   CloudinaryUploadError,
   uploadImageToCloudinary,
 } from "@/lib/services/cloudinary-client";
+import { compressImageForUpload } from "@/lib/services/image-compression";
 import {
   ProfileTabs,
   type ProfileTabKey,
@@ -197,11 +198,13 @@ function ProfileHero({
       const file = e.target.files?.[0];
       if (!file) return;
 
-      setPreview(URL.createObjectURL(file));
       setUploading(true);
       try {
+        const compressed = await compressImageForUpload(file);
+        setPreview(URL.createObjectURL(compressed));
+
         const url = await uploadImageToCloudinary(
-          file,
+          compressed,
           "avatar",
           AVATAR_PUBLIC_ID,
         );
@@ -220,7 +223,7 @@ function ProfileHero({
         const msg =
           err instanceof CloudinaryUploadError
             ? err.message
-            : "Erreur lors de l'upload de la photo.";
+            : "L'envoi de la photo a échoué. Vérifiez votre connexion et réessayez.";
         toast.error(msg);
         setPreview(profile.avatarUrl);
       } finally {
@@ -274,7 +277,7 @@ function ProfileHero({
           <input
             ref={fileRef}
             type="file"
-            accept="image/jpeg,image/png"
+            accept="image/jpeg,image/png,image/heic,image/heif,.jpg,.jpeg,.png,.heic,.heif"
             className="hidden"
             onChange={handleFileChange}
           />

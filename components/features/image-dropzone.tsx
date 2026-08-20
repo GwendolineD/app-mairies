@@ -6,25 +6,42 @@ import { CloudUpload, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { buildOptimizedCloudinaryUrl } from "@/lib/services/cloudinary";
 import { ImagePulseFrame } from "@/components/ui/image-pulse-frame";
+import { compressImageForUpload } from "@/lib/services/image-compression";
 
-const MAX_BYTES = 5 * 1024 * 1024;
-const ALLOWED_TYPES = ["image/jpeg", "image/png"];
+const MAX_BYTES = 20 * 1024 * 1024;
+const ALLOWED_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/heic",
+  "image/heif",
+]);
+const ALLOWED_EXTENSIONS = /\.(jpe?g|png|heic|heif)$/i;
 
 type Props = {
   file: File | null;
   onFileChange: (file: File | null) => void;
+  onCompressingChange?: (compressing: boolean) => void;
   existingImageUrl?: string | null;
   onExistingImageClear?: () => void;
   isUploading?: boolean;
   className?: string;
 };
 
+function isAllowedType(file: File): boolean {
+  if (ALLOWED_MIME_TYPES.has(file.type)) return true;
+  // iOS Safari may report empty MIME for HEIC — fall back to extension
+  if (!file.type || file.type === "application/octet-stream") {
+    return ALLOWED_EXTENSIONS.test(file.name);
+  }
+  return false;
+}
+
 function validateFile(file: File): string | null {
-  if (!ALLOWED_TYPES.includes(file.type)) {
-    return "Format non autorisé (JPG ou PNG uniquement).";
+  if (!isAllowedType(file)) {
+    return "Ce format de fichier n'est pas pris en charge. Utilisez une photo au format JPG, PNG ou HEIC.";
   }
   if (file.size > MAX_BYTES) {
-    return "Fichier trop volumineux (5 Mo max).";
+    return "Cette photo est trop volumineuse (20 Mo maximum). Essayez avec une photo plus légère.";
   }
   return null;
 }
@@ -32,6 +49,7 @@ function validateFile(file: File): string | null {
 export function ImageDropzone({
   file,
   onFileChange,
+  onCompressingChange,
   existingImageUrl,
   onExistingImageClear,
   isUploading = false,
@@ -39,9 +57,11 @@ export function ImageDropzone({
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const previewUrlRef = useRef<string | null>(null);
+  const compressionIdRef = useRef(0);
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [compressing, setCompressing] = useState(false);
 
   const revokePreviewUrl = useCallback(() => {
     if (previewUrlRef.current) {
@@ -75,8 +95,16 @@ export function ImageDropzone({
     return () => revokePreviewUrl();
   }, [revokePreviewUrl]);
 
+  const setCompressingState = useCallback(
+    (value: boolean) => {
+      setCompressing(value);
+      onCompressingChange?.(value);
+    },
+    [onCompressingChange],
+  );
+
   const selectFile = useCallback(
-    (nextFile: File) => {
+    async (nextFile: File) => {
       const validationError = validateFile(nextFile);
       if (validationError) {
         setError(validationError);
@@ -84,10 +112,28 @@ export function ImageDropzone({
       }
 
       setError(null);
-      setPreviewFromFile(nextFile);
-      onFileChange(nextFile);
+      setCompressingState(true);
+      const currentId = ++compressionIdRef.current;
+
+      try {
+        const compressed = await compressImageForUpload(nextFile);
+        // Another file was selected while compressing — discard this result
+        if (compressionIdRef.current !== currentId) return;
+
+        setPreviewFromFile(compressed);
+        onFileChange(compressed);
+      } catch {
+        if (compressionIdRef.current !== currentId) return;
+        setError(
+          "Impossible d'optimiser cette photo. Essayez avec un autre fichier ou un format différent (JPG ou PNG).",
+        );
+      } finally {
+        if (compressionIdRef.current === currentId) {
+          setCompressingState(false);
+        }
+      }
     },
-    [onFileChange, setPreviewFromFile],
+    [onFileChange, setPreviewFromFile, setCompressingState],
   );
 
   const handleFiles = useCallback(
@@ -117,19 +163,38 @@ export function ImageDropzone({
       ? buildOptimizedCloudinaryUrl(existingImageUrl, { width: 800 })
       : null);
 
+  if (compressing) {
+    return (
+      <div
+        className={cn(
+          "flex aspect-16/10 w-full items-center justify-center gap-3 rounded-lg border border-border bg-warm/40",
+          className,
+        )}
+      >
+        <Loader2 className="size-6 animate-spin text-purple" aria-hidden />
+        <p className="text-sm font-medium text-muted">
+          Optimisation de la photo…
+        </p>
+      </div>
+    );
+  }
+
   if (displayUrl) {
     return (
       <ImagePulseFrame
         className={cn(
-          "aspect-[16/10] w-full overflow-hidden rounded-lg border border-border",
+          "aspect-16/10 w-full overflow-hidden rounded-lg border border-border",
           className,
         )}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={displayUrl} alt="" className="h-full w-full object-cover" />
         {isUploading ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-text/40">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-text/40">
             <Loader2 className="size-8 animate-spin text-white" aria-hidden />
+            <p className="text-sm font-medium text-white">
+              Envoi de la photo…
+            </p>
           </div>
         ) : (
           <button
@@ -182,12 +247,14 @@ export function ImageDropzone({
           <p className="mt-1 text-xs font-medium text-muted">
             Glissez-déposez une image ici ou cliquez pour parcourir
           </p>
-          <p className="mt-0.5 text-xs text-subtle">JPG, PNG — Max. 5 Mo</p>
+          <p className="mt-0.5 text-xs text-subtle">
+            JPG, PNG ou HEIC — Max. 20 Mo
+          </p>
         </div>
         <input
           ref={inputRef}
           type="file"
-          accept="image/jpeg,image/png,.jpg,.jpeg,.png"
+          accept="image/jpeg,image/png,image/heic,image/heif,.jpg,.jpeg,.png,.heic,.heif"
           className="sr-only"
           onChange={(e) => handleFiles(e.target.files)}
         />

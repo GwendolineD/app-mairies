@@ -9,7 +9,7 @@ import {
   scanFile,
 } from "@/lib/services/antivirus-scanner";
 
-const MAX_BYTES = 5 * 1024 * 1024;
+const MAX_BYTES = 10 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png"];
 
 export async function POST(request: Request) {
@@ -48,14 +48,14 @@ export async function POST(request: Request) {
 
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json(
-        { error: "Format non autorisé (JPG ou PNG uniquement)", errorType: "invalid_type" },
+        { error: "Ce format de fichier n'est pas pris en charge. Utilisez une photo au format JPG ou PNG.", errorType: "invalid_type" },
         { status: 400 },
       );
     }
 
     if (file.size > MAX_BYTES) {
       return NextResponse.json(
-        { error: "Fichier trop volumineux (5 Mo max)", errorType: "file_too_large" },
+        { error: "La photo n'a pas pu être optimisée suffisamment. Essayez avec une photo moins lourde ou recadrée.", errorType: "file_too_large" },
         { status: 400 },
       );
     }
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
     if (!scan.isClean) {
       return NextResponse.json(
         {
-          error: `Virus détecté : ${scan.virus}. Fichier rejeté.`,
+          error: "Ce fichier a été bloqué pour des raisons de sécurité. Essayez avec une autre photo.",
           errorType: "virus_detected",
         },
         { status: 400 },
@@ -106,7 +106,7 @@ export async function POST(request: Request) {
     );
 
     if (!uploadRes.ok) {
-      return NextResponse.json({ error: "Échec upload Cloudinary" }, { status: 502 });
+      return NextResponse.json({ error: "L'envoi de la photo a échoué. Vérifiez votre connexion et réessayez." }, { status: 502 });
     }
 
     const payload = (await uploadRes.json()) as {
@@ -121,7 +121,7 @@ export async function POST(request: Request) {
     if (error instanceof AntivirusServiceError) {
       return NextResponse.json(
         {
-          error: error.message,
+          error: "L'envoi de photos est temporairement indisponible. Réessayez dans quelques instants.",
           errorType: "service_unavailable",
         },
         { status: 503 },
