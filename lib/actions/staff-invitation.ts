@@ -303,7 +303,7 @@ async function doBatchInvitations(params: {
       if ("error" in res) {
         const msg =
           res.error && typeof res.error === "object" && "form" in res.error
-            ? (res.error as { form?: string[] }).form?.[0]
+            ? ((res.error as { form?: string[] }).form?.[0] ?? "Erreur")
             : "Erreur";
         failedEmails.push(emails.length > 1 ? `${email} : ${msg}` : msg);
         throw new Error(msg);
