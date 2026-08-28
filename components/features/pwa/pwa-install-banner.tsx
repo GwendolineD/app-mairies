@@ -31,7 +31,7 @@ export function PwaInstallBanner({ hasSeenOnboarding }: Props) {
       <button
         type="button"
         onClick={() => setModalOpen(true)}
-        className="md:hidden -mx-5 -mt-4 mb-4 flex w-[calc(100%+2.5rem)] cursor-pointer items-center gap-3 border-b border-border/60 bg-soft-pink px-5 py-3 text-left transition-opacity hover:opacity-95"
+        className="md:hidden -mx-5 mb-4 flex w-[calc(100%+2.5rem)] cursor-pointer items-center gap-3 border-b border-border/60 bg-soft-pink px-5 py-3 text-left transition-opacity hover:opacity-95"
       >
         <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-purple/10">
           <Smartphone className="size-4 text-purple" aria-hidden />

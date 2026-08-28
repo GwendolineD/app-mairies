@@ -552,7 +552,6 @@ export type Database = {
           subscription_started_at: string | null
           suspended_at: string | null
           suspension_reason: string | null
-          trial_access_code: string | null
           trial_max_members: number
           updated_at: string
         }
@@ -583,7 +582,6 @@ export type Database = {
           subscription_started_at?: string | null
           suspended_at?: string | null
           suspension_reason?: string | null
-          trial_access_code?: string | null
           trial_max_members?: number
           updated_at?: string
         }
@@ -614,7 +612,6 @@ export type Database = {
           subscription_started_at?: string | null
           suspended_at?: string | null
           suspension_reason?: string | null
-          trial_access_code?: string | null
           trial_max_members?: number
           updated_at?: string
         }
@@ -1581,7 +1578,9 @@ export type Database = {
           email: string
           expires_at: string | null
           id: string
-          inviter_membership_id: string
+          intended_role: Database["public"]["Enums"]["membership_role"]
+          inviter_membership_id: string | null
+          inviter_user_id: string | null
           reminder_sent_at: string | null
           token: string
         }
@@ -1592,7 +1591,9 @@ export type Database = {
           email: string
           expires_at?: string | null
           id?: string
-          inviter_membership_id: string
+          intended_role?: Database["public"]["Enums"]["membership_role"]
+          inviter_membership_id?: string | null
+          inviter_user_id?: string | null
           reminder_sent_at?: string | null
           token: string
         }
@@ -1603,7 +1604,9 @@ export type Database = {
           email?: string
           expires_at?: string | null
           id?: string
-          inviter_membership_id?: string
+          intended_role?: Database["public"]["Enums"]["membership_role"]
+          inviter_membership_id?: string | null
+          inviter_user_id?: string | null
           reminder_sent_at?: string | null
           token?: string
         }
@@ -2170,6 +2173,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_find_user_by_email: { Args: { p_email: string }; Returns: string }
       admin_platform_stats: { Args: never; Returns: Json }
       admin_user_emails: {
         Args: { p_user_ids: string[] }
@@ -2201,12 +2205,9 @@ export type Database = {
       commune_outcome_banner_stats: {
         Args: { p_commune_id: string }
         Returns: {
-          demands_month: number
-          demands_week: number
-          events_month: number
-          events_week: number
-          offers_month: number
-          offers_week: number
+          demands: number
+          events: number
+          offers: number
         }[]
       }
       count_active_content_by_communes: {
@@ -2387,10 +2388,6 @@ export type Database = {
         Returns: string
       }
       uuid_generate_v4: { Args: never; Returns: string }
-      validate_trial_access_code: {
-        Args: { p_code: string; p_commune_id: string }
-        Returns: boolean
-      }
     }
     Enums: {
       access_status: "inactive" | "trial" | "active" | "suspended"

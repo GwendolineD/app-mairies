@@ -5,6 +5,8 @@ import { MembershipRoleBadge } from "@/components/features/backoffice/membership
 import { MembershipStatusBadge } from "@/components/features/backoffice/membership-status-badge";
 import { HabitantsListPagination } from "@/components/features/habitants/habitants-list-pagination";
 import { HabitantsListToolbar } from "@/components/features/habitants/habitants-list-toolbar";
+import { HabitantsTabs } from "@/components/features/mairie/habitants-tabs";
+import { MairieInvitationsList } from "@/components/features/mairie/mairie-invitations-list";
 import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
@@ -14,6 +16,7 @@ import {
   listCommuneMembersPage,
   type CommuneMemberRow,
 } from "@/lib/queries/backoffice-memberships";
+import { listInvitationsPage } from "@/lib/queries/backoffice-invitations";
 import { formatDay } from "@/lib/datetime";
 import { formatAddressLabel } from "@/lib/utils/format-address";
 import {
@@ -22,6 +25,7 @@ import {
   resolveHabitantsInscriptionRange,
 } from "@/lib/utils/habitants-list-params";
 import { createClient } from "@/lib/supabase/server";
+import type { AccessStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -43,11 +47,59 @@ export default async function MairieHabitantsPage({
 }) {
   const { communeId, userId, profile } = await requireCommuneStaff();
   const rawParams = await searchParams;
+  const activeTab = (rawParams.tab as string) || "habitants";
+
+  const supabase = await createClient();
+
+  if (activeTab === "invitations") {
+    const page = Math.max(1, Number.parseInt((rawParams.page as string) ?? "1", 10) || 1);
+    const limit = 25;
+
+    const [invitationsPage, communeRow, memberCountResult] = await Promise.all([
+      listInvitationsPage(supabase, {
+        q: "",
+        communes: [communeId],
+        statuses: [],
+        page,
+        limit,
+      }),
+      supabase
+        .from("communes")
+        .select("access_status, trial_max_members")
+        .eq("id", communeId)
+        .single(),
+      supabase
+        .from("memberships")
+        .select("id", { count: "exact", head: true })
+        .eq("commune_id", communeId)
+        .eq("status", "active"),
+    ]);
+
+    const accessStatus = (communeRow.data?.access_status as AccessStatus) ?? "inactive";
+    const isTrial = accessStatus === "trial";
+
+    return (
+      <PageStack>
+        <PageHeading title="Habitant·es" />
+        <HabitantsTabs />
+        <MairieInvitationsList
+          communeId={communeId}
+          invitations={invitationsPage.items}
+          totalCount={invitationsPage.totalCount}
+          page={page}
+          limit={limit}
+          isTrial={isTrial}
+          currentMembersCount={memberCountResult.count ?? 0}
+          trialMaxMembers={(communeRow.data?.trial_max_members as number) ?? 30}
+        />
+      </PageStack>
+    );
+  }
+
   const listParams = parseHabitantsListParams(rawParams);
   const { from: joinedFrom, to: joinedTo } =
     resolveHabitantsInscriptionRange(listParams);
 
-  const supabase = await createClient();
   const membersPage = await listCommuneMembersPage(supabase, communeId, {
     q: listParams.q,
     sort: listParams.tri,
@@ -64,7 +116,8 @@ export default async function MairieHabitantsPage({
 
   return (
     <PageStack>
-      <PageHeading title="Habitant·es inscrit·es" />
+      <PageHeading title="Habitant·es" />
+      <HabitantsTabs />
 
       <HabitantsListToolbar
         params={listParams}

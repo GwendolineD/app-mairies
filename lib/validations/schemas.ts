@@ -49,7 +49,7 @@ export const signupSchema = z.object({
   firstName: z.string().min(1, "Prénom requis"),
   lastName: z.string().min(1, "Nom requis"),
   inseeCode: z.string().min(1),
-  trialAccessCode: z
+  inviteToken: z
     .string()
     .optional()
     .transform((v) => (v?.trim() ? v.trim() : undefined)),
@@ -70,10 +70,6 @@ export const signupSchema = z.object({
 
 export const joinCommuneSchema = z.object({
   inseeCode: z.string().min(1),
-  trialAccessCode: z
-    .string()
-    .optional()
-    .transform((v) => (v?.trim() ? v.trim() : undefined)),
   addressStreet: z.string().trim().min(1, "Rue requise"),
   addressCity: z.string().min(1, "Ville requise"),
   addressCitycode: z.string().min(1),

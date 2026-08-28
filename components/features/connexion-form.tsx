@@ -23,10 +23,14 @@ export function ConnexionForm({
   callbackError,
   emailConfirmed,
   accountDeleted,
+  redirectTo,
+  prefillEmail,
 }: {
   callbackError?: "recovery" | "generic";
   emailConfirmed?: boolean;
   accountDeleted?: boolean;
+  redirectTo?: string;
+  prefillEmail?: string;
 }) {
   const { email, password, setCredentials } = useAuthCredentials();
   const [state, formAction, isPending] = useActionState(
@@ -52,6 +56,11 @@ export function ConnexionForm({
     if (!accountDeleted) return;
     toast.success("Votre compte a bien été supprimé. À bientôt !");
   }, [accountDeleted]);
+
+  useEffect(() => {
+    if (!prefillEmail?.trim()) return;
+    setCredentials({ email: prefillEmail.trim().toLowerCase() });
+  }, [prefillEmail, setCredentials]);
 
   return (
     <div className="mx-auto flex w-full max-w-[500px] flex-1 flex-col rounded-none bg-transparent px-0 py-0 shadow-none md:min-h-0 md:rounded-3xl md:bg-surface md:px-12 md:py-16 md:shadow-elevated">
@@ -87,6 +96,10 @@ export function ConnexionForm({
         }}
         className="flex flex-1 flex-col pt-8 md:pt-10"
       >
+        {redirectTo ? (
+          <input type="hidden" name="redirectTo" value={redirectTo} />
+        ) : null}
+
         <div className="flex flex-1 flex-col justify-center gap-4 md:gap-5">
           <IconField label="Adresse email" icon={Mail}>
             <IconInput

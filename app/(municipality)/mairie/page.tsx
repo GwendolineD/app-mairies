@@ -3,7 +3,6 @@ import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { StatCard } from "@/components/ui/stat-card";
-import { MairieTrialSection } from "@/components/features/mairie/mairie-trial-section";
 import nextDynamic from "next/dynamic";
 
 const DashboardContentChart = nextDynamic(
@@ -52,7 +51,7 @@ import {
   fetchOutcomeStats,
 } from "@/lib/queries/dashboard-charts";
 import { fetchMairieLiveStats } from "@/lib/queries/mairie-live-stats";
-import type { AccessStatus } from "@/lib/types";
+
 
 export const dynamic = "force-dynamic";
 
@@ -63,7 +62,7 @@ export default async function MairieAccueilPage() {
 
   const { data: commune } = await supabase
     .from("communes")
-    .select("access_status, trial_access_code, trial_max_members, created_at")
+    .select("access_status, created_at")
     .eq("id", communeId)
     .single();
 
@@ -81,14 +80,6 @@ export default async function MairieAccueilPage() {
   return (
     <PageStack>
       <PageHeading title="Tableau de bord" />
-
-      <MairieTrialSection
-        communeId={communeId}
-        accessStatus={(commune?.access_status as AccessStatus) ?? "inactive"}
-        trialAccessCode={(commune?.trial_access_code as string | null) ?? null}
-        trialMaxMembers={(commune?.trial_max_members as number) ?? 30}
-        currentMembersCount={liveStats.activeResidents}
-      />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard

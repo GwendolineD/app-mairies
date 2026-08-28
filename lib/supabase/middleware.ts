@@ -79,7 +79,9 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
-  if (user && isGuestOnlyAuthPath(request.nextUrl.pathname)) {
+  // Allow /inscription with invite token for logged-in users accepting an invitation
+  const hasInviteToken = request.nextUrl.searchParams.has("invite");
+  if (user && isGuestOnlyAuthPath(request.nextUrl.pathname) && !hasInviteToken) {
     const url = request.nextUrl.clone();
     url.pathname = ROUTES.accueil;
     return withSupabaseCookies(NextResponse.redirect(url), supabaseResponse);

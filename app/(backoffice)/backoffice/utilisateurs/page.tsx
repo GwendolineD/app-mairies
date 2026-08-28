@@ -9,8 +9,9 @@ import { CategoryTag } from "@/components/ui/category-tag";
 import { Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
-import { PLATFORM_ADMIN_LABEL } from "@/lib/constants/roles";
+import { PLATFORM_ADMIN_LABEL, ROLE_LABELS } from "@/lib/constants/roles";
 import { ROUTES } from "@/lib/constants/routes";
+import type { MembershipRole } from "@/lib/types";
 import { formatShortDate } from "@/lib/datetime";
 import { listPilotCommuneOptions } from "@/lib/queries/backoffice-communes";
 import { listInvitationsPage } from "@/lib/queries/backoffice-invitations";
@@ -26,6 +27,7 @@ import {
 import { UtilisateursStatsBar } from "./_components/utilisateurs-stats-bar";
 import { UtilisateursStatsChart } from "./_components/utilisateurs-stats-chart";
 import { UtilisateursToolbar } from "./_components/utilisateurs-toolbar";
+import { InvitationActions } from "./_components/invitation-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -89,6 +91,7 @@ export default async function BackofficeUtilisateursPage(props: {
                 titleAside={<InvitationStatusBadge status={invite.status} />}
                 fields={[
                   { label: "Commune", value: invite.communeName },
+                  { label: "Rôle", value: ROLE_LABELS[invite.intendedRole as MembershipRole] ?? invite.intendedRole },
                   { label: "Invité·e par", value: invite.inviterName },
                   {
                     label: "Relance",
@@ -102,6 +105,11 @@ export default async function BackofficeUtilisateursPage(props: {
                       {formatShortDate(invite.createdAt)}
                     </span>
                   </>
+                }
+                footer={
+                  invite.status === "pending" || invite.status === "expired" ? (
+                    <InvitationActions inviteId={invite.id} isPending={false} />
+                  ) : null
                 }
               />
             ))}

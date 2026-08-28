@@ -35,6 +35,15 @@ function raw(
   return Array.isArray(value) ? value[0] : value;
 }
 
+function rawAll(
+  searchParams: Record<string, string | string[] | undefined>,
+  key: string,
+): string[] {
+  const value = searchParams[key];
+  if (!value) return [];
+  return Array.isArray(value) ? value : [value];
+}
+
 function parsePage(value: string | undefined): number {
   return Math.max(1, Number.parseInt(value ?? "1", 10) || 1);
 }
@@ -82,13 +91,41 @@ function parseMembershipStatus(
     : undefined;
 }
 
-function parseInvitationStatus(
-  value: string | undefined,
-): InvitationDerivedStatus | undefined {
-  if (!value) return undefined;
-  return (Object.values(INVITATION_DERIVED_STATUS) as string[]).includes(value)
-    ? (value as InvitationDerivedStatus)
-    : undefined;
+function parseInvitationStatuses(
+  searchParams: Record<string, string | string[] | undefined>,
+): InvitationDerivedStatus[] {
+  const seen = new Set<InvitationDerivedStatus>();
+  const statuses: InvitationDerivedStatus[] = [];
+
+  for (const rawValue of rawAll(searchParams, "invitationStatus")) {
+    if (
+      !(Object.values(INVITATION_DERIVED_STATUS) as string[]).includes(rawValue)
+    ) {
+      continue;
+    }
+    const status = rawValue as InvitationDerivedStatus;
+    if (seen.has(status)) continue;
+    seen.add(status);
+    statuses.push(status);
+  }
+
+  return statuses;
+}
+
+function parseCommuneIds(
+  searchParams: Record<string, string | string[] | undefined>,
+): string[] {
+  const seen = new Set<string>();
+  const communes: string[] = [];
+
+  for (const rawValue of rawAll(searchParams, "commune")) {
+    const trimmed = rawValue.trim();
+    if (!trimmed || seen.has(trimmed)) continue;
+    seen.add(trimmed);
+    communes.push(trimmed);
+  }
+
+  return communes;
 }
 
 export type BackofficeUtilisateursListParams = {
@@ -99,7 +136,8 @@ export type BackofficeUtilisateursListParams = {
   membershipStatus?: MembershipStatus;
   banned?: boolean;
   admin?: boolean;
-  invitationStatus?: InvitationDerivedStatus;
+  invitationStatuses: InvitationDerivedStatus[];
+  communes: string[];
   reminded?: boolean;
   dateFrom?: string;
   dateTo?: string;
@@ -112,17 +150,20 @@ export function parseBackofficeUtilisateursParams(
 ): BackofficeUtilisateursListParams {
   const dateFrom = (raw(searchParams, "dateFrom") ?? "").trim() || undefined;
   const dateTo = (raw(searchParams, "dateTo") ?? "").trim() || undefined;
-  const commune = (raw(searchParams, "commune") ?? "").trim() || undefined;
+  const tab = parseTab(raw(searchParams, "tab"));
+  const communeIds = parseCommuneIds(searchParams);
 
   return {
-    tab: parseTab(raw(searchParams, "tab")),
+    tab,
     q: (raw(searchParams, "q") ?? "").trim(),
-    commune,
+    commune: tab === "users" ? communeIds[0] : undefined,
+    communes: tab === "invitations" ? communeIds : [],
     role: parseMembershipRole(raw(searchParams, "role")),
     membershipStatus: parseMembershipStatus(raw(searchParams, "membershipStatus")),
     banned: parseBooleanFlag(raw(searchParams, "banned")),
     admin: parseBooleanFlag(raw(searchParams, "admin")),
-    invitationStatus: parseInvitationStatus(raw(searchParams, "invitationStatus")),
+    invitationStatuses:
+      tab === "invitations" ? parseInvitationStatuses(searchParams) : [],
     reminded: parseBooleanFlag(raw(searchParams, "reminded")),
     dateFrom,
     dateTo,
@@ -157,8 +198,11 @@ export function buildBackofficeUtilisateursListQuery(
   }
 
   if (tab === "invitations") {
-    if (params.invitationStatus) {
-      sp.set("invitationStatus", params.invitationStatus);
+    for (const status of params.invitationStatuses ?? []) {
+      sp.append("invitationStatus", status);
+    }
+    for (const commune of params.communes ?? []) {
+      sp.append("commune", commune);
     }
     if (params.reminded === true) sp.set("reminded", "true");
     if (params.reminded === false) sp.set("reminded", "false");
@@ -184,9 +228,9 @@ export function activeBackofficeUtilisateursFilterCount(
   params: BackofficeUtilisateursListParams,
 ): number {
   let count = 0;
-  if (params.commune) count += 1;
 
   if (params.tab === "users") {
+    if (params.commune) count += 1;
     if (params.role) count += 1;
     if (params.membershipStatus) count += 1;
     if (params.banned != null) count += 1;
@@ -196,7 +240,8 @@ export function activeBackofficeUtilisateursFilterCount(
   }
 
   if (params.tab === "invitations") {
-    if (params.invitationStatus) count += 1;
+    if (params.communes.length > 0) count += 1;
+    if (params.invitationStatuses.length > 0) count += 1;
     if (params.reminded != null) count += 1;
     if (params.dateFrom) count += 1;
     if (params.dateTo) count += 1;
@@ -210,8 +255,8 @@ export function toInvitationsListParams(
 ) {
   return {
     q: params.q,
-    commune: params.commune,
-    status: params.invitationStatus,
+    communes: params.communes,
+    statuses: params.invitationStatuses,
     reminded: params.reminded,
     dateFrom: params.dateFrom,
     dateTo: params.dateTo,

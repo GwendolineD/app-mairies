@@ -1,8 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { DatePickerField } from "@/components/ui/date-picker-field";
@@ -29,16 +28,17 @@ import type { PilotCommuneOption } from "@/lib/queries/backoffice-communes";
 import {
   INVITATION_DERIVED_STATUS,
   INVITATION_DERIVED_STATUS_LABELS,
+  type InvitationDerivedStatus,
 } from "@/lib/utils/backoffice-invitations-params";
 import {
   BACKOFFICE_UTILISATEURS_TABS,
   BACKOFFICE_UTILISATEURS_TAB_LABELS,
   activeBackofficeUtilisateursFilterCount,
-  buildBackofficeUtilisateursListQuery,
   type BackofficeUtilisateursListParams,
   type BackofficeUtilisateursTab,
 } from "@/lib/utils/backoffice-utilisateurs-params";
 import { cn } from "@/lib/utils/cn";
+import { useUtilisateursTabFilters } from "./use-utilisateurs-tab-filters";
 
 type UtilisateursToolbarProps = {
   params: BackofficeUtilisateursListParams;
@@ -51,31 +51,22 @@ export function UtilisateursToolbar({
   communes,
   totalCount = 0,
 }: UtilisateursToolbarProps) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const { navigate, switchTab } = useUtilisateursTabFilters(params);
   const [search, setSearch] = useState(params.q);
   const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(false);
 
-  function navigate(next: Partial<BackofficeUtilisateursListParams>) {
-    startTransition(() => {
-      router.push(
-        `${pathname}${buildBackofficeUtilisateursListQuery({ ...params, page: 1, ...next })}`,
-      );
-    });
+  function toggleInvitationStatus(status: InvitationDerivedStatus) {
+    const next = params.invitationStatuses.includes(status)
+      ? params.invitationStatuses.filter((value) => value !== status)
+      : [...params.invitationStatuses, status];
+    navigate({ invitationStatuses: next });
   }
 
-  function switchTab(tab: BackofficeUtilisateursTab) {
-    if (tab === params.tab) return;
-    startTransition(() => {
-      router.push(
-        `${pathname}${buildBackofficeUtilisateursListQuery({
-          tab,
-          limit: params.limit,
-          page: 1,
-        })}`,
-      );
-    });
+  function toggleInvitationCommune(communeId: string) {
+    const next = params.communes.includes(communeId)
+      ? params.communes.filter((value) => value !== communeId)
+      : [...params.communes, communeId];
+    navigate({ communes: next });
   }
 
   useEffect(() => {
@@ -123,8 +114,8 @@ export function UtilisateursToolbar({
 
     if (params.tab === "invitations") {
       navigate({
-        commune: undefined,
-        invitationStatus: undefined,
+        communes: [],
+        invitationStatuses: [],
         reminded: undefined,
         dateFrom: undefined,
         dateTo: undefined,
@@ -340,13 +331,13 @@ export function UtilisateursToolbar({
     <>
       <FilterSection title="Commune">
         <FilterRow
-          checked={!params.commune}
+          checked={params.communes.length === 0}
           onCheckboxToggle={() => {
-            if (!params.commune) return;
-            navigate({ commune: undefined });
+            if (params.communes.length === 0) return;
+            navigate({ communes: [] });
           }}
           onRowSelect={() => {
-            navigate({ commune: undefined });
+            navigate({ communes: [] });
             closeFilters();
           }}
           label="Toutes les communes"
@@ -355,16 +346,14 @@ export function UtilisateursToolbar({
           const label = commune.postcode
             ? `${commune.name} (${commune.postcode})`
             : commune.name;
-          const checked = params.commune === commune.id;
+          const checked = params.communes.includes(commune.id);
           return (
             <FilterRow
               key={commune.id}
               checked={checked}
-              onCheckboxToggle={() =>
-                navigate({ commune: checked ? undefined : commune.id })
-              }
+              onCheckboxToggle={() => toggleInvitationCommune(commune.id)}
               onRowSelect={() => {
-                navigate({ commune: commune.id });
+                navigate({ communes: [commune.id] });
                 closeFilters();
               }}
               label={label}
@@ -375,30 +364,26 @@ export function UtilisateursToolbar({
 
       <FilterSection title="Statut invitation">
         <FilterRow
-          checked={!params.invitationStatus}
+          checked={params.invitationStatuses.length === 0}
           onCheckboxToggle={() => {
-            if (!params.invitationStatus) return;
-            navigate({ invitationStatus: undefined });
+            if (params.invitationStatuses.length === 0) return;
+            navigate({ invitationStatuses: [] });
           }}
           onRowSelect={() => {
-            navigate({ invitationStatus: undefined });
+            navigate({ invitationStatuses: [] });
             closeFilters();
           }}
           label="Tous les statuts"
         />
         {Object.values(INVITATION_DERIVED_STATUS).map((status) => {
-          const checked = params.invitationStatus === status;
+          const checked = params.invitationStatuses.includes(status);
           return (
             <FilterRow
               key={status}
               checked={checked}
-              onCheckboxToggle={() =>
-                navigate({
-                  invitationStatus: checked ? undefined : status,
-                })
-              }
+              onCheckboxToggle={() => toggleInvitationStatus(status)}
               onRowSelect={() => {
-                navigate({ invitationStatus: status });
+                navigate({ invitationStatuses: [status] });
                 closeFilters();
               }}
               label={INVITATION_DERIVED_STATUS_LABELS[status]}
@@ -600,11 +585,6 @@ export function UtilisateursToolbar({
               </PopoverContent>
             </Popover>
 
-            {isPending ? (
-              <span className="hidden text-xs font-medium text-muted md:inline">
-                Mise à jour…
-              </span>
-            ) : null}
           </div>
         </div>
       ) : null}

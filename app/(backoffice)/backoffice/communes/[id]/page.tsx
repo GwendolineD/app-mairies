@@ -112,7 +112,6 @@ export default async function BackofficeCommuneDetailPage(props: {
               <CommuneTrialSection
                 communeId={stats.commune.id}
                 accessStatus={stats.commune.access_status}
-                trialAccessCode={stats.commune.trial_access_code}
                 trialMaxMembers={stats.commune.trial_max_members}
                 currentMembersCount={stats.activeMembersCount}
               />

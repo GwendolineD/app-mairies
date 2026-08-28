@@ -49,16 +49,12 @@ export type OutcomeSummary = {
 export type BannerSlide = {
   key: "demandes" | "offres" | "events";
   count: number;
-  period: "week" | "month";
 };
 
 type OutcomeBannerStatsRow = {
-  demands_week: number;
-  demands_month: number;
-  offers_week: number;
-  offers_month: number;
-  events_week: number;
-  events_month: number;
+  demands: number;
+  offers: number;
+  events: number;
 };
 
 const DASHBOARD_CHART_ROW_LIMIT = 5000;
@@ -172,15 +168,7 @@ export async function fetchWeeklyMembershipGrowth(
   });
 }
 
-function resolveBannerSlideCount(
-  _weekCount: number,
-  monthCount: number,
-): { count: number; period: "month" } | null {
-  if (monthCount > 0) return { count: monthCount, period: "month" };
-  return null;
-}
-
-/** Resident accueil banner slides: fulfilled demands, offers, and events (week, else month). */
+/** Resident accueil banner slides: all-time fulfilled demands, offers, and events. */
 export async function fetchAccueilBannerSlides(
   supabase: SupabaseClient,
   communeId: string,
@@ -194,14 +182,9 @@ export async function fetchAccueilBannerSlides(
   const stats = data as OutcomeBannerStatsRow;
   const slides: BannerSlide[] = [];
 
-  const demands = resolveBannerSlideCount(stats.demands_week, stats.demands_month);
-  if (demands) slides.push({ key: "demandes", ...demands });
-
-  const offers = resolveBannerSlideCount(stats.offers_week, stats.offers_month);
-  if (offers) slides.push({ key: "offres", ...offers });
-
-  const events = resolveBannerSlideCount(stats.events_week, stats.events_month);
-  if (events) slides.push({ key: "events", ...events });
+  if (stats.demands > 0) slides.push({ key: "demandes", count: stats.demands });
+  if (stats.offers > 0) slides.push({ key: "offres", count: stats.offers });
+  if (stats.events > 0) slides.push({ key: "events", count: stats.events });
 
   return slides;
 }

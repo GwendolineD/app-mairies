@@ -138,7 +138,7 @@ export const MUNICIPALITY_SIDEBAR_STORAGE_KEY = "vl:municipality-sidebar-collaps
 export const BACKOFFICE_SIDEBAR_STORAGE_KEY = "vl:backoffice-sidebar-collapsed";
 
 export const MUNICIPALITY_NAV: readonly AdminNavItem[] = [
-  { href: ROUTES.mairie.dashboard, label: "Tableau mairie", icon: "layout-dashboard" },
+  { href: ROUTES.mairie.dashboard, label: "Tableau de bord", icon: "layout-dashboard" },
   { href: ROUTES.mairie.habitants, label: "Habitant·es", icon: "users" },
   { href: ROUTES.mairie.parametres, label: "Paramètres", icon: "settings", hidden: true },
   { href: ROUTES.mairie.signalements, label: "Signalements", icon: "flag" },

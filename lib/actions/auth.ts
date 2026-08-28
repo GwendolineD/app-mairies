@@ -39,8 +39,7 @@ export async function signUp(formData: FormData) {
     firstName: formData.get("firstName") as string,
     lastName: formData.get("lastName") as string,
     inseeCode: formData.get("inseeCode") as string,
-    trialAccessCode:
-      (formData.get("trialAccessCode") as string) || undefined,
+    inviteToken: (formData.get("inviteToken") as string) || undefined,
     addressStreet: formData.get("addressStreet") as string,
     addressLieuDit: (formData.get("addressLieuDit") as string) || undefined,
     addressCity: formData.get("addressCity") as string,
@@ -56,38 +55,72 @@ export async function signUp(formData: FormData) {
     return { error: parsed.error.flatten().fieldErrors };
   }
 
+  const serviceClient = await createServiceClient();
+
+  // --- Invite token path: validate and resolve commune + role from the invitation ---
+  let inviteRow: {
+    id: string;
+    commune_id: string;
+    intended_role: string;
+    email: string;
+  } | null = null;
+
+  if (parsed.data.inviteToken) {
+    const { data: invite } = await serviceClient
+      .from("neighbor_invites")
+      .select("id, commune_id, intended_role, email, accepted_at, expires_at")
+      .eq("token", parsed.data.inviteToken)
+      .maybeSingle();
+
+    if (!invite) {
+      return { error: { form: ["Ce lien d'invitation est invalide."] } };
+    }
+    if (invite.accepted_at) {
+      return { error: { form: ["Cette invitation a déjà été utilisée."] } };
+    }
+    if (invite.expires_at && new Date(invite.expires_at).getTime() < Date.now()) {
+      return { error: { form: ["Ce lien d'invitation a expiré."] } };
+    }
+    if (invite.email.toLowerCase() !== parsed.data.email.toLowerCase()) {
+      return { error: { form: ["Cette invitation a été envoyée à une autre adresse email."] } };
+    }
+
+    inviteRow = invite;
+  }
+
   const supabase = await createClient();
-  const { data: commune } = await supabase
-    .from("communes")
-    .select("id, access_status, trial_max_members")
-    .eq("insee_code", parsed.data.inseeCode)
-    .single();
+
+  // Resolve commune: from invite row if available, otherwise from INSEE code
+  const communeId = inviteRow?.commune_id;
+  let commune: { id: string; access_status: string; trial_max_members: number } | null = null;
+
+  if (communeId) {
+    const { data } = await supabase
+      .from("communes")
+      .select("id, access_status, trial_max_members")
+      .eq("id", communeId)
+      .single();
+    commune = data;
+  } else {
+    const { data } = await supabase
+      .from("communes")
+      .select("id, access_status, trial_max_members")
+      .eq("insee_code", parsed.data.inseeCode)
+      .single();
+    commune = data;
+  }
 
   if (!commune || (commune.access_status !== "active" && commune.access_status !== "trial")) {
     return { error: { form: ["Cette commune n'est pas encore active."] } };
   }
 
   if (commune.access_status === "trial") {
-    if (!parsed.data.trialAccessCode) {
+    if (!inviteRow) {
       return {
         error: {
-          trialAccessCode: ["Code d'accès invalide."],
-        },
-      };
-    }
-
-    const { data: isValidCode, error: trialCodeError } = await supabase.rpc(
-      "validate_trial_access_code",
-      {
-        p_commune_id: commune.id,
-        p_code: parsed.data.trialAccessCode,
-      },
-    );
-
-    if (trialCodeError || !isValidCode) {
-      return {
-        error: {
-          trialAccessCode: ["Code d'accès invalide."],
+          form: [
+            "Cette commune est en période d'essai. Vous devez disposer d'une invitation.",
+          ],
         },
       };
     }
@@ -109,10 +142,6 @@ export async function signUp(formData: FormData) {
     }
   }
 
-  // Block signup if email is banned (Option A: application-level check)
-  // Option B (Auth Hook before-user-created reading the same table) can be
-  // activated later if OAuth/magic link flows are opened.
-  const serviceClient = await createServiceClient();
   const { data: bannedRow } = await serviceClient
     .from("banned_emails")
     .select("email")
@@ -166,6 +195,8 @@ export async function signUp(formData: FormData) {
     })
     .eq("user_id", adminData.user.id);
 
+  const membershipRole = inviteRow?.intended_role ?? "member";
+
   await serviceClient.from("memberships").insert({
     user_id: adminData.user.id,
     commune_id: commune.id,
@@ -178,7 +209,16 @@ export async function signUp(formData: FormData) {
     address_lng: parsed.data.addressLng,
     is_primary: true,
     status: "active",
+    role: membershipRole as "member" | "staff" | "mayor",
   });
+
+  // Mark invitation as accepted
+  if (inviteRow) {
+    await serviceClient
+      .from("neighbor_invites")
+      .update({ accepted_at: new Date().toISOString() })
+      .eq("id", inviteRow.id);
+  }
 
   const emailResult = await sendVerificationEmail({
     email: parsed.data.email,
@@ -192,7 +232,7 @@ export async function signUp(formData: FormData) {
       category: "auth",
       userId: adminData.user.id,
       communeId: commune.id,
-      metadata: { email: parsed.data.email, email_send_warning: true },
+      metadata: { email: parsed.data.email, email_send_warning: true, invite_role: membershipRole },
     });
     return {
       emailConfirmationRequired: true,
@@ -205,13 +245,25 @@ export async function signUp(formData: FormData) {
     category: "auth",
     userId: adminData.user.id,
     communeId: commune.id,
-    metadata: { email: parsed.data.email },
+    metadata: { email: parsed.data.email, invite_role: membershipRole },
   });
 
   return { emailConfirmationRequired: true };
 }
 
+const ALLOWED_REDIRECT_PREFIXES = ["/inscription", "/accueil"];
+
+function sanitizeRedirect(raw: string | null): string | null {
+  if (!raw) return null;
+  const path = raw.trim();
+  if (!path.startsWith("/") || path.startsWith("//")) return null;
+  if (ALLOWED_REDIRECT_PREFIXES.some((p) => path.startsWith(p))) return path;
+  return null;
+}
+
 export async function signIn(formData: FormData) {
+  const redirectTo = sanitizeRedirect(formData.get("redirectTo") as string);
+
   const parsed = signInSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
@@ -311,7 +363,7 @@ export async function signIn(formData: FormData) {
     metadata: { email: parsed.data.email },
   });
 
-  redirect(ROUTES.accueil);
+  redirect(redirectTo ?? ROUTES.accueil);
 }
 
 export async function requestPasswordReset(formData: FormData) {
@@ -673,8 +725,6 @@ export async function switchCommune(communeId: string): Promise<void> {
 export async function joinCommune(formData: FormData) {
   const raw = {
     inseeCode: formData.get("inseeCode") as string,
-    trialAccessCode:
-      (formData.get("trialAccessCode") as string) || undefined,
     addressStreet: formData.get("addressStreet") as string,
     addressCity: formData.get("addressCity") as string,
     addressCitycode: formData.get("addressCitycode") as string,
@@ -705,45 +755,13 @@ export async function joinCommune(formData: FormData) {
   }
 
   if (commune.access_status === "trial") {
-    if (!parsed.data.trialAccessCode) {
-      return {
-        error: {
-          trialAccessCode: ["Code d'accès invalide."],
-        },
-      };
-    }
-
-    const { data: isValidCode, error: trialCodeError } = await supabase.rpc(
-      "validate_trial_access_code",
-      {
-        p_commune_id: commune.id,
-        p_code: parsed.data.trialAccessCode,
+    return {
+      error: {
+        form: [
+          "Cette commune est en période d'essai. Contactez la mairie pour recevoir une invitation.",
+        ],
       },
-    );
-
-    if (trialCodeError || !isValidCode) {
-      return {
-        error: {
-          trialAccessCode: ["Code d'accès invalide."],
-        },
-      };
-    }
-
-    const { count: currentMembers } = await supabase
-      .from("memberships")
-      .select("id", { count: "exact", head: true })
-      .eq("commune_id", commune.id)
-      .eq("status", "active");
-
-    if ((currentMembers ?? 0) >= commune.trial_max_members) {
-      return {
-        error: {
-          form: [
-            "Le nombre maximum de testeurs pour cette commune a été atteint. Contactez la mairie.",
-          ],
-        },
-      };
-    }
+    };
   }
 
   const { data: existing } = await supabase

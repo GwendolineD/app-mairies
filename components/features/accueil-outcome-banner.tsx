@@ -21,13 +21,8 @@ type SlideTheme = {
   iconWrapClass: string;
   heartClass: string;
   dotClass: string;
-  buildTitle: (count: number, period: BannerSlide["period"]) => string;
+  buildTitle: (count: number) => string;
   buildSubtitle: () => string;
-};
-
-const PERIOD_LABEL: Record<BannerSlide["period"], string> = {
-  week: "cette semaine",
-  month: "ce mois-ci",
 };
 
 const DEMANDES_SUBTITLE =
@@ -46,10 +41,10 @@ const SLIDE_THEMES: Record<BannerSlide["key"], SlideTheme> = {
     iconWrapClass: "bg-purple/15 text-purple",
     heartClass: "text-purple",
     dotClass: "bg-purple",
-    buildTitle: (count, period) =>
+    buildTitle: (count) =>
       count === 1
-        ? `1 voisin a trouvé l'aide qu'il cherchait ${PERIOD_LABEL[period]}`
-        : `${count} voisins ont trouvé l'aide qu'ils cherchaient ${PERIOD_LABEL[period]}`,
+        ? "1 voisin a déjà trouvé l'aide qu'il cherchait"
+        : `${count} voisins ont déjà trouvé l'aide qu'ils cherchaient`,
     buildSubtitle: () => DEMANDES_SUBTITLE,
   },
   offres: {
@@ -58,10 +53,10 @@ const SLIDE_THEMES: Record<BannerSlide["key"], SlideTheme> = {
     iconWrapClass: "bg-turquoise/15 text-turquoise",
     heartClass: "text-turquoise",
     dotClass: "bg-turquoise",
-    buildTitle: (count, period) =>
+    buildTitle: (count) =>
       count === 1
-        ? `1 offre a aidé un voisin ${PERIOD_LABEL[period]}`
-        : `${count} offres ont aidé des voisins ${PERIOD_LABEL[period]}`,
+        ? "1 offre a déjà aidé un voisin"
+        : `${count} offres ont déjà aidé des voisins`,
     buildSubtitle: () => OFFRES_SUBTITLE,
   },
   events: {
@@ -70,10 +65,10 @@ const SLIDE_THEMES: Record<BannerSlide["key"], SlideTheme> = {
     iconWrapClass: "bg-orange/15 text-orange",
     heartClass: "text-orange",
     dotClass: "bg-orange",
-    buildTitle: (count, period) =>
+    buildTitle: (count) =>
       count === 1
-        ? `1 événement a eu lieu ${PERIOD_LABEL[period]}`
-        : `${count} événements ont eu lieu ${PERIOD_LABEL[period]}`,
+        ? "1 événement a déjà eu lieu"
+        : `${count} événements ont déjà eu lieu`,
     buildSubtitle: () => EVENTS_SUBTITLE,
   },
 };
@@ -96,7 +91,7 @@ function OutcomeSlideContent({ slide }: { slide: BannerSlide }) {
       </div>
       <div className="space-y-2">
         <p className="text-sm font-semibold text-text">
-          {theme.buildTitle(slide.count, slide.period)}
+          {theme.buildTitle(slide.count)}
         </p>
         <p className="flex items-center gap-1 text-sm font-medium text-muted">
           <span>{theme.buildSubtitle()}</span>

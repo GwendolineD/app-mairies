@@ -9,6 +9,7 @@ export type InvitationListRow = {
   communeName: string;
   inviterName: string;
   inviterUserId: string | null;
+  intendedRole: string;
   status: InvitationDerivedStatus;
   reminderSent: boolean;
   createdAt: string;
@@ -36,6 +37,8 @@ type InviteRow = {
   id: string;
   email: string;
   commune_id: string;
+  intended_role: string;
+  inviter_user_id: string | null;
   created_at: string;
   accepted_at: string | null;
   expires_at: string | null;
@@ -106,21 +109,61 @@ function applyInvitationStatusFilter<T extends { not: Function; is: Function; or
     .or(`expires_at.is.null,expires_at.gte.${now}`) as T;
 }
 
-function applyInvitationFilters<T extends { ilike: Function; eq: Function; not: Function; is: Function; or: Function; lt: Function; gte: Function; lte: Function }>(
-  query: T,
-  params: BackofficeInvitationsListParams,
-): T {
+function applyInvitationStatusesFilter<
+  T extends { not: Function; is: Function; or: Function; lt: Function },
+>(query: T, statuses: InvitationDerivedStatus[]): T {
+  if (statuses.length === 0) return query;
+  if (statuses.length === 1) {
+    return applyInvitationStatusFilter(query, statuses[0]);
+  }
+
+  const now = new Date().toISOString();
+  const parts: string[] = [];
+
+  if (statuses.includes("accepted")) {
+    parts.push("accepted_at.not.is.null");
+  }
+  if (statuses.includes("expired")) {
+    parts.push(
+      `and(accepted_at.is.null,expires_at.not.is.null,expires_at.lt.${now})`,
+    );
+  }
+  if (statuses.includes("pending")) {
+    parts.push(
+      `and(accepted_at.is.null,or(expires_at.is.null,expires_at.gte.${now}))`,
+    );
+  }
+
+  if (parts.length === 0) return query;
+  return query.or(parts.join(",")) as T;
+}
+
+function applyInvitationFilters<
+  T extends {
+    ilike: Function;
+    eq: Function;
+    in: Function;
+    not: Function;
+    is: Function;
+    or: Function;
+    lt: Function;
+    gte: Function;
+    lte: Function;
+  },
+>(query: T, params: BackofficeInvitationsListParams): T {
   let next = query;
 
   if (params.q) {
     next = next.ilike("email", `%${params.q}%`) as T;
   }
 
-  if (params.commune) {
-    next = next.eq("commune_id", params.commune) as T;
+  if (params.communes.length === 1) {
+    next = next.eq("commune_id", params.communes[0]) as T;
+  } else if (params.communes.length > 1) {
+    next = next.in("commune_id", params.communes) as T;
   }
 
-  next = applyInvitationStatusFilter(next, params.status);
+  next = applyInvitationStatusesFilter(next, params.statuses);
 
   if (params.reminded === true) {
     next = next.not("reminder_sent_at", "is", null) as T;
@@ -143,7 +186,8 @@ function mapInvitationRow(row: InviteRow): InvitationListRow {
     communeId: row.commune_id,
     communeName: commune?.name ?? "Commune inconnue",
     inviterName: formatInviterName(profile),
-    inviterUserId: inviter?.user_id ?? null,
+    inviterUserId: inviter?.user_id ?? row.inviter_user_id ?? null,
+    intendedRole: row.intended_role ?? "member",
     status: deriveInvitationStatus(row),
     reminderSent: row.reminder_sent_at !== null,
     createdAt: row.created_at,
@@ -169,6 +213,8 @@ export async function listInvitationsPage(
         id,
         email,
         commune_id,
+        intended_role,
+        inviter_user_id,
         created_at,
         accepted_at,
         expires_at,

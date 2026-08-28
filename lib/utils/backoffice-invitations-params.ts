@@ -27,6 +27,15 @@ function raw(
   return Array.isArray(value) ? value[0] : value;
 }
 
+function rawAll(
+  searchParams: Record<string, string | string[] | undefined>,
+  key: string,
+): string[] {
+  const value = searchParams[key];
+  if (!value) return [];
+  return Array.isArray(value) ? value : [value];
+}
+
 function parsePage(value: string | undefined): number {
   return Math.max(1, Number.parseInt(value ?? "1", 10) || 1);
 }
@@ -40,13 +49,41 @@ function parseLimit(
   return allowed.includes(parsed) ? parsed : fallback;
 }
 
-function parseInvitationStatus(
-  value: string | undefined,
-): InvitationDerivedStatus | undefined {
-  if (!value) return undefined;
-  return (Object.values(INVITATION_DERIVED_STATUS) as string[]).includes(value)
-    ? (value as InvitationDerivedStatus)
-    : undefined;
+function parseInvitationStatuses(
+  searchParams: Record<string, string | string[] | undefined>,
+): InvitationDerivedStatus[] {
+  const seen = new Set<InvitationDerivedStatus>();
+  const statuses: InvitationDerivedStatus[] = [];
+
+  for (const rawValue of rawAll(searchParams, "invitationStatus")) {
+    if (
+      !(Object.values(INVITATION_DERIVED_STATUS) as string[]).includes(rawValue)
+    ) {
+      continue;
+    }
+    const status = rawValue as InvitationDerivedStatus;
+    if (seen.has(status)) continue;
+    seen.add(status);
+    statuses.push(status);
+  }
+
+  return statuses;
+}
+
+function parseCommuneIds(
+  searchParams: Record<string, string | string[] | undefined>,
+): string[] {
+  const seen = new Set<string>();
+  const communes: string[] = [];
+
+  for (const rawValue of rawAll(searchParams, "commune")) {
+    const trimmed = rawValue.trim();
+    if (!trimmed || seen.has(trimmed)) continue;
+    seen.add(trimmed);
+    communes.push(trimmed);
+  }
+
+  return communes;
 }
 
 function parseBooleanFlag(value: string | undefined): boolean | undefined {
@@ -57,8 +94,8 @@ function parseBooleanFlag(value: string | undefined): boolean | undefined {
 
 export type BackofficeInvitationsListParams = {
   q: string;
-  commune?: string;
-  status?: InvitationDerivedStatus;
+  communes: string[];
+  statuses: InvitationDerivedStatus[];
   reminded?: boolean;
   dateFrom?: string;
   dateTo?: string;
@@ -71,13 +108,12 @@ export function parseBackofficeInvitationsListParams(
 ): BackofficeInvitationsListParams {
   const dateFrom = (raw(searchParams, "dateFrom") ?? "").trim() || undefined;
   const dateTo = (raw(searchParams, "dateTo") ?? "").trim() || undefined;
-  const commune = (raw(searchParams, "commune") ?? "").trim() || undefined;
   const reminded = parseBooleanFlag(raw(searchParams, "reminded"));
 
   return {
     q: (raw(searchParams, "q") ?? "").trim(),
-    commune,
-    status: parseInvitationStatus(raw(searchParams, "status")),
+    communes: parseCommuneIds(searchParams),
+    statuses: parseInvitationStatuses(searchParams),
     reminded,
     dateFrom,
     dateTo,
@@ -95,8 +131,12 @@ export function buildBackofficeInvitationsListQuery(
 ): string {
   const sp = new URLSearchParams();
   if (params.q) sp.set("q", params.q);
-  if (params.commune) sp.set("commune", params.commune);
-  if (params.status) sp.set("status", params.status);
+  for (const commune of params.communes ?? []) {
+    sp.append("commune", commune);
+  }
+  for (const status of params.statuses ?? []) {
+    sp.append("invitationStatus", status);
+  }
   if (params.reminded === true) sp.set("reminded", "true");
   if (params.reminded === false) sp.set("reminded", "false");
   if (params.dateFrom) sp.set("dateFrom", params.dateFrom);
@@ -116,8 +156,8 @@ export function activeBackofficeInvitationsFilterCount(
   params: BackofficeInvitationsListParams,
 ): number {
   let count = 0;
-  if (params.commune) count += 1;
-  if (params.status) count += 1;
+  if (params.communes.length > 0) count += 1;
+  if (params.statuses.length > 0) count += 1;
   if (params.reminded != null) count += 1;
   if (params.dateFrom) count += 1;
   if (params.dateTo) count += 1;

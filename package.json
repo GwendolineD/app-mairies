@@ -15,7 +15,8 @@
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "import-communes": "tsx scripts/import-communes.ts",
     "import-prospect-communes": "npx tsx --env-file=.env.local scripts/import-prospect-communes.ts docs/data/communes.json",
-    "bootstrap-super-admin": "npx tsx --env-file=.env.local scripts/bootstrap-super-admin.ts"
+    "bootstrap-super-admin": "npx tsx --env-file=.env.local scripts/bootstrap-super-admin.ts",
+    "seed-invite-listusers-test": "npx tsx --env-file=.env.local scripts/seed-bulk-users-for-invite-test.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

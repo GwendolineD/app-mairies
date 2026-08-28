@@ -9,6 +9,7 @@ import {
   mergeProspectCommunesParams,
   type ProspectCommunesListParams,
 } from "@/lib/prospect-communes/filter-params";
+import { formatPopulationFr } from "@/lib/prospect-communes/format-population";
 import type { ProspectCommuneDetail } from "@/lib/prospect-communes/types";
 import { ProspectOutreachStatusBadge } from "@/lib/prospect-outreach/status-display";
 import { cn } from "@/lib/utils/cn";
@@ -56,7 +57,7 @@ export function ProspectionDetailSheet({ detail, params }: Props) {
           <div className="space-y-2">
             <h2 className="text-lg font-semibold text-text">{detail.commune}</h2>
             <p className="text-xs text-muted">
-              Dept. {detail.departement}
+              {formatPopulationFr(detail.population)} hab.
               {detail.postcode ? ` · ${detail.postcode}` : null}
               {detail.insee_code ? ` · INSEE ${detail.insee_code}` : null}
             </p>

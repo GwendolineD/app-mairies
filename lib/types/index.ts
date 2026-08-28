@@ -22,7 +22,6 @@ export type Commune = {
   mairie_address_lat: number | null;
   mairie_address_lng: number | null;
   access_status: AccessStatus;
-  trial_access_code: string | null;
   trial_max_members: number;
   settings: CommuneSettings;
 };

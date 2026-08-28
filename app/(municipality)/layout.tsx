@@ -38,17 +38,22 @@ export default async function MunicipalityDashboardLayout({
     communeId,
   );
 
-  const [categoryRows, initiativeCategoryRows, communeResult] =
+  const [categoryRows, initiativeCategoryRows, communeResult, memberCountResult] =
     await Promise.all([
       getAnnouncementCategories(),
       getInitiativeEventCategories(),
       supabase
         .from("communes")
         .select(
-          "name, postcode, insee_code, centroid_lat, centroid_lng, settings, mairie_address_street, mairie_address_city, mairie_address_postcode, mairie_address_lat, mairie_address_lng",
+          "name, postcode, insee_code, centroid_lat, centroid_lng, settings, mairie_address_street, mairie_address_city, mairie_address_postcode, mairie_address_lat, mairie_address_lng, access_status, trial_max_members",
         )
         .eq("id", communeId)
         .single(),
+      supabase
+        .from("memberships")
+        .select("id", { count: "exact", head: true })
+        .eq("commune_id", communeId)
+        .eq("status", "active"),
     ]);
 
   initCategories(categoryRows);
@@ -57,6 +62,11 @@ export default async function MunicipalityDashboardLayout({
   if (communeResult.data) {
     defaultEventAddress = communeToDefaultAddress(communeResult.data as Commune);
   }
+
+  const accessStatus = communeResult.data?.access_status as string | undefined;
+  const isTrial = accessStatus === "trial";
+  const trialMaxMembers = (communeResult.data?.trial_max_members as number) ?? 30;
+  const currentMembersCount = memberCountResult.count ?? 0;
 
   return (
     <AdminShell
@@ -70,6 +80,19 @@ export default async function MunicipalityDashboardLayout({
         membershipAddress={defaultEventAddress}
         initiativeCategoryRows={initiativeCategoryRows}
       >
+        {isTrial ? (
+          <div className="flex items-center justify-between gap-2 bg-sun/10 px-5 py-2 md:px-6 lg:px-8">
+            <span className="text-sm font-semibold text-orange">
+              Mode essai — {currentMembersCount} / {trialMaxMembers} testeurs
+            </span>
+            <a
+              href="/mairie/habitants?tab=invitations"
+              className="text-xs font-medium text-orange underline underline-offset-2 hover:text-text"
+            >
+              Gérer les invitations
+            </a>
+          </div>
+        ) : null}
         {children}
       </MunicipalityShellClient>
       <Toaster position="top-center" richColors closeButton />

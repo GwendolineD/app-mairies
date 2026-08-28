@@ -184,7 +184,7 @@ async function collectInviteReminders(service: ServiceClient): Promise<number> {
 
   const { data: invites, error } = await service
     .from("neighbor_invites")
-    .select("id, email, token, commune_id, inviter_membership_id")
+    .select("id, email, token, commune_id, inviter_membership_id, inviter_user_id")
     .is("accepted_at", null)
     .is("reminder_sent_at", null)
     .lt("created_at", threeDaysAgo)
@@ -193,16 +193,24 @@ async function collectInviteReminders(service: ServiceClient): Promise<number> {
   if (error) throw new Error(`collectInviteReminders: ${error.message}`);
   if (!invites || invites.length === 0) return 0;
 
-  const membershipIds = [...new Set(invites.map((i) => i.inviter_membership_id))];
-  const { data: memberships } = await service
-    .from("memberships")
-    .select("id, user_id, commune_id")
-    .in("id", membershipIds);
+  // Gather membership IDs (filter out nulls for admin invitations)
+  const membershipIds = [...new Set(
+    invites.map((i) => i.inviter_membership_id).filter((id): id is string => id !== null),
+  )];
+  const { data: memberships } = membershipIds.length > 0
+    ? await service.from("memberships").select("id, user_id, commune_id").in("id", membershipIds)
+    : { data: [] as { id: string; user_id: string; commune_id: string }[] };
 
-  const { data: profiles } = await service
-    .from("profiles")
-    .select("user_id, display_name")
-    .in("user_id", (memberships ?? []).map((m) => m.user_id));
+  // Gather all inviter user IDs: from memberships + direct inviter_user_id (admin fallback)
+  const membershipUserIds = (memberships ?? []).map((m) => m.user_id);
+  const directUserIds = invites
+    .filter((i) => !i.inviter_membership_id && i.inviter_user_id)
+    .map((i) => i.inviter_user_id!);
+  const allUserIds = [...new Set([...membershipUserIds, ...directUserIds])];
+
+  const { data: profiles } = allUserIds.length > 0
+    ? await service.from("profiles").select("user_id, display_name").in("user_id", allUserIds)
+    : { data: [] as { user_id: string; display_name: string | null }[] };
 
   const { data: communes } = await service
     .from("communes")
@@ -214,8 +222,15 @@ async function collectInviteReminders(service: ServiceClient): Promise<number> {
   const profileMap = new Map((profiles ?? []).map((p) => [p.user_id, p.display_name]));
 
   const queueRows = invites.map((invite) => {
-    const membership = membershipMap.get(invite.inviter_membership_id);
-    const senderName = membership ? (profileMap.get(membership.user_id) ?? "Un voisin") : "Un voisin";
+    // Resolve sender name: membership path first, then direct inviter_user_id fallback
+    let senderName = "Un voisin";
+    if (invite.inviter_membership_id) {
+      const membership = membershipMap.get(invite.inviter_membership_id);
+      if (membership) senderName = profileMap.get(membership.user_id) ?? "Un voisin";
+    } else if (invite.inviter_user_id) {
+      senderName = profileMap.get(invite.inviter_user_id) ?? "L'équipe";
+    }
+
     const commune = communeMap.get(invite.commune_id);
     const communeName = commune?.name ?? "";
     const inseeCode = commune?.insee_code;

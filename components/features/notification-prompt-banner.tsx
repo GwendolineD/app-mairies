@@ -48,7 +48,7 @@ export function NotificationPromptBanner({
 
   return (
     <div
-      className="-mx-5 -mt-4 mb-4 flex w-[calc(100%+2.5rem)] flex-col gap-3 border-b border-border/60 bg-soft-pink px-5 py-3 sm:flex-row sm:items-center sm:justify-between md:-mx-6 md:w-[calc(100%+3rem)] lg:-mx-8 lg:w-[calc(100%+4rem)]"
+      className="-mx-5 mb-4 flex w-[calc(100%+2.5rem)] flex-col gap-3 border-b border-border/60 bg-soft-pink px-5 py-3 sm:flex-row sm:items-center sm:justify-between md:-mx-6 md:w-[calc(100%+3rem)] lg:-mx-8 lg:w-[calc(100%+4rem)]"
       role="region"
       aria-label="Activer les notifications"
     >

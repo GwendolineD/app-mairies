@@ -21,13 +21,6 @@ export const EMAIL_TEMPLATE_VARIABLES: Record<string, string[]> = {
     "logo_url",
     "app_name",
   ],
-  "trial-invitation": [
-    "commune_name",
-    "access_code",
-    "signup_url",
-    "logo_url",
-    "app_name",
-  ],
   "report-notification-staff": [
     "commune_name",
     "content_type",
@@ -205,8 +198,7 @@ export function getEmailTemplateMockValue(variable: string): string {
     request_date: "12 juin 2026",
     subscription_end_date: "31 déc. 2026",
     comment: "Première ligne du commentaire.\nDeuxième ligne pour tester les retours à la ligne.",
-    access_code: "VL-KAMET",
-    signup_url: "http://localhost:3000/inscription?commune=27027&code=VL-KAMET",
+    signup_url: "http://localhost:3000/inscription?commune=27027",
     content_type: "Annonce",
     content_title: "Recherche aide pour déménagement",
     reporter_name: "Marie Martin",

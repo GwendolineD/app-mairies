@@ -5,12 +5,14 @@ import { AuthHeroContent } from "@/components/features/auth/auth-hero-content";
 import { APP_NAME } from "@/lib/constants/app";
 import { ILLUSTRATIONS } from "@/lib/constants/illustrations";
 import { ROUTES } from "@/lib/constants/routes";
+import { cn } from "@/lib/utils/cn";
 
 type Props = {
   children: React.ReactNode;
+  centerContent?: boolean;
 };
 
-export function AuthPageShell({ children }: Props) {
+export function AuthPageShell({ children, centerContent = false }: Props) {
   const logo = ILLUSTRATIONS.auth.logoHorizontal;
   const background = ILLUSTRATIONS.auth.background;
 
@@ -60,8 +62,20 @@ export function AuthPageShell({ children }: Props) {
             ) : null}
           </header>
 
-          <div className="flex-1 overflow-y-auto px-6 pt-10 pb-12 md:flex md:w-full md:min-h-0 md:flex-col md:justify-start md:overflow-hidden md:px-10 md:pt-16 md:pb-16 lg:px-14">
-            <div className="mx-auto flex min-h-0 w-full max-w-[400px] flex-1 flex-col md:max-w-none">
+          <div
+            className={cn(
+              "flex-1 overflow-y-auto px-6 pb-12 md:flex md:w-full md:min-h-0 md:flex-col md:overflow-hidden md:px-10 md:pb-16 lg:px-14",
+              centerContent
+                ? "flex flex-col justify-center pt-6 md:justify-center md:pt-16"
+                : "pt-10 md:justify-start md:pt-16",
+            )}
+          >
+            <div
+              className={cn(
+                "mx-auto flex min-h-0 w-full max-w-[400px] flex-col md:max-w-none",
+                centerContent ? "flex-none" : "flex-1",
+              )}
+            >
               {children}
             </div>
           </div>

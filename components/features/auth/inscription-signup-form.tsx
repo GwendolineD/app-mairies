@@ -49,14 +49,18 @@ type AddressDraft = {
 
 type Props = {
   prefillInseeCode?: string;
-  prefillTrialCode?: string;
   prefillEmail?: string;
+  inviteToken?: string;
+  inviteCommuneName?: string;
+  inviteRoleLabel?: string;
 };
 
 export function InscriptionSignupForm({
   prefillInseeCode,
-  prefillTrialCode,
   prefillEmail,
+  inviteToken,
+  inviteCommuneName,
+  inviteRoleLabel,
 }: Props = {}) {
   const { email, password, setCredentials } = useAuthCredentials();
   const [communeFeature, setCommuneFeature] = useState<BanFeature | null>(null);
@@ -65,7 +69,6 @@ export function InscriptionSignupForm({
   const [communeLoading, setCommuneLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [lookupName, setLookupName] = useState<string | undefined>();
-  const [trialAccessCode, setTrialAccessCode] = useState(prefillTrialCode ?? "");
   const [lieuDit, setLieuDit] = useState("");
   const [addr, setAddr] = useState<AddressDraft>({
     city: "",
@@ -192,9 +195,12 @@ export function InscriptionSignupForm({
     [communeFeature?.citycode],
   );
 
+  const blockedByTrial = communeIsTrial && !inviteToken;
+
   const canSubmit =
     communeActive &&
     communeFeature &&
+    !blockedByTrial &&
     addr.street.trim().length > 0 &&
     addr.postcode.trim().length >= 4 &&
     acceptedTerms &&
@@ -317,11 +323,9 @@ export function InscriptionSignupForm({
                 value={communeFeature.citycode}
               />
             ) : null}
-            <input
-              type="hidden"
-              name="trialAccessCode"
-              value={trialAccessCode}
-            />
+            {inviteToken ? (
+              <input type="hidden" name="inviteToken" value={inviteToken} />
+            ) : null}
             <input type="hidden" name="addressCity" value={addr.city} />
             <input
               type="hidden"
@@ -337,53 +341,49 @@ export function InscriptionSignupForm({
               value={acceptedTerms ? "true" : ""}
             />
 
-            <CommuneSelectPopover
-              label="Ma commune"
-              placeholder="Choisir une commune"
-              onSelect={(f) => void onPickCommune(f)}
-              value={
-                communeFeature
-                  ? formatMunicipalityDisplay(communeFeature)
-                  : undefined
-              }
-              disabled={communeLoading}
-            />
-
-            {communeLoading ? (
-              <p className="-mt-2 text-xs font-medium text-muted">
-                Vérification de votre commune...
-              </p>
+            {inviteToken && inviteCommuneName ? (
+              <div className="rounded-md border border-purple/20 bg-purple/5 px-4 py-3 text-center text-sm font-medium text-text">
+                Vous rejoindrez <span className="font-bold">{inviteCommuneName}</span>
+                {inviteRoleLabel ? (
+                  <> en tant que <span className="font-semibold text-purple">{inviteRoleLabel}</span></>
+                ) : null}
+              </div>
             ) : null}
 
-            {!communeActive && communeFeature && !communeLoading ? (
-              <p className="text-xs font-medium text-coral">
-                Cette commune n&apos;est pas encore disponible pour
-                l&apos;inscription.
-              </p>
-            ) : null}
-
-            {communeIsTrial && communeActive ? (
-              <FormField label="Code d'accès essai">
-                <Input
-                  name="trialAccessCodeDisplay"
-                  required
-                  autoComplete="off"
-                  placeholder="VL-XXXXX"
-                  value={trialAccessCode}
-                  onChange={(e) =>
-                    setTrialAccessCode(e.target.value.toUpperCase())
+            {!inviteToken ? (
+              <>
+                <CommuneSelectPopover
+                  label="Ma commune"
+                  placeholder="Choisir une commune"
+                  onSelect={(f) => void onPickCommune(f)}
+                  value={
+                    communeFeature
+                      ? formatMunicipalityDisplay(communeFeature)
+                      : undefined
                   }
+                  disabled={communeLoading}
                 />
-                {signupState?.error?.trialAccessCode?.length ? (
-                  <p className="mt-1 text-xs font-medium text-coral" role="alert">
-                    {signupState.error.trialAccessCode[0]}
+
+                {communeLoading ? (
+                  <p className="-mt-2 text-xs font-medium text-muted">
+                    Vérification de votre commune...
                   </p>
                 ) : null}
-                <p className="mt-1 text-[11px] text-muted">
-                  Cette commune est en période d&apos;essai. Un code d&apos;accès
-                  vous a été communiqué par la mairie.
-                </p>
-              </FormField>
+
+                {!communeActive && communeFeature && !communeLoading ? (
+                  <p className="text-xs font-medium text-coral">
+                    Cette commune n&apos;est pas encore disponible pour
+                    l&apos;inscription.
+                  </p>
+                ) : null}
+
+                {communeIsTrial && communeActive ? (
+                  <div className="rounded-md border border-orange/30 bg-sun/10 px-4 py-3 text-sm font-medium text-text">
+                    Cette commune est en période d&apos;essai.
+                    Demandez une invitation à la mairie pour vous inscrire.
+                  </div>
+                ) : null}
+              </>
             ) : null}
 
             <BanAutocomplete
@@ -457,6 +457,8 @@ export function InscriptionSignupForm({
                 placeholder="votre.email@exemple.com"
                 value={email}
                 onChange={(e) => setCredentials({ email: e.target.value })}
+                readOnly={!!inviteToken}
+                className={inviteToken ? "bg-warm text-muted" : ""}
               />
             </FormField>
 
