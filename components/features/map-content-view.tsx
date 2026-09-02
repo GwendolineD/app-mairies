@@ -8,10 +8,10 @@ import {
   useRef,
   useState,
 } from "react";
-import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
+import { MapContainer, Marker, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { ChevronLeft, ChevronRight, Locate } from "lucide-react";
-import { MAP_TILE_URL } from "@/lib/constants/assets";
+import { MapBasemapTileLayer } from "@/components/features/map-basemap-tile-layer";
 import {
   createAnnouncementPinIcon,
   createClusterPinIcon,
@@ -547,7 +547,7 @@ export function MapContentView({
           scrollWheelZoom
           style={{ minHeight: 320 }}
         >
-          <TileLayer url={MAP_TILE_URL} />
+          <MapBasemapTileLayer />
           <InitialView
             center={center}
             hasUser={showUserPin}

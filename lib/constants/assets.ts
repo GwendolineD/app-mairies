@@ -1,5 +1,6 @@
 /**
- * Local asset paths and fixed third-party URLs (logos, map tiles, etc.).
+ * Local asset paths and fixed third-party URLs (logos, Leaflet marker icons, etc.).
+ * Map basemap tiles → lib/constants/map-tiles.ts
  * UI illustrations → lib/constants/illustrations.ts
  *
  * Bump LOCAL_ASSET_VERSION when replacing a file in public/ without renaming
@@ -20,7 +21,3 @@ export const LEAFLET_MARKER_ICONS = {
   shadowUrl:
     "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 } as const;
-
-/** Carto basemap tiles for commune preview maps. */
-export const MAP_TILE_URL =
-  "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";

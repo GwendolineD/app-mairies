@@ -25,6 +25,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
      - `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (clé publique)
      - `VAPID_PRIVATE_KEY` (clé privée, serveur uniquement)
      - `VAPID_SUBJECT` (ex. `mailto:contact@tous-voisins.fr`)
+   - **Carto basemaps** — clé gratuite sur https://carto.com/basemaps/apikey :
+     - `NEXT_PUBLIC_CARTO_API_KEY` (tuiles raster Leaflet ; visible côté client)
 4. **App** : `npm run dev`.
 
 Comptes seed locaux (mot de passe **`VieLocaleDev2026!`**) : voir tableau dans `README.md` / `supabase/seed.sql` (ex. `dubois.gwendoline@hotmail.fr` → backoffice plateforme, commune pilote **Les Authieux**).

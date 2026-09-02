@@ -6,7 +6,6 @@ import {
   MapContainer,
   Marker,
   Rectangle,
-  TileLayer,
   useMap,
   useMapEvents,
 } from "react-leaflet";
@@ -15,7 +14,7 @@ import { Crosshair, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { MAP_TILE_URL } from "@/lib/constants/assets";
+import { MapBasemapTileLayer } from "@/components/features/map-basemap-tile-layer";
 import {
   buildProspectCommunesQuery,
   mergeProspectCommunesParams,
@@ -492,7 +491,7 @@ export function ProspectionMap({
             zoom={PROSPECTION_MAP_ZOOM}
             scrollWheelZoom
           >
-            <TileLayer url={MAP_TILE_URL} />
+            <MapBasemapTileLayer />
             <FitMapToContainer />
             <InitializeMapView items={mapItems} zoom={PROSPECTION_MAP_ZOOM} />
             <MapHoverSync

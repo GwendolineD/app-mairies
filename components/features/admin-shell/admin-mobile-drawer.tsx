@@ -22,6 +22,7 @@ import {
   LayoutDashboard,
   LifeBuoy,
   Mail,
+  Map,
   Megaphone,
   Settings,
   ShieldCheck,
@@ -47,6 +48,7 @@ const ADMIN_NAV_ICONS: Record<string, LucideIcon> = {
   "life-buoy": LifeBuoy,
   megaphone: Megaphone,
   "shield-check": ShieldCheck,
+  map: Map,
 };
 
 type Props = {

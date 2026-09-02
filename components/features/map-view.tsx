@@ -2,17 +2,10 @@
 
 import L from "leaflet";
 import { useEffect, useMemo } from "react";
-import {
-  MapContainer,
-  Marker,
-  Popup,
-  TileLayer,
-} from "react-leaflet";
+import { MapContainer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import {
-  LEAFLET_MARKER_ICONS,
-  MAP_TILE_URL,
-} from "@/lib/constants/assets";
+import { MapBasemapTileLayer } from "@/components/features/map-basemap-tile-layer";
+import { LEAFLET_MARKER_ICONS } from "@/lib/constants/assets";
 import {
   createAnnouncementPinIcon,
   type AnnouncementPinSize,
@@ -78,7 +71,7 @@ export function MapViewCommune({
       scrollWheelZoom
       style={{ minHeight: 280 }}
     >
-      <TileLayer url={MAP_TILE_URL} />
+      <MapBasemapTileLayer />
       <Marker position={position} icon={markerIcon}>
         <Popup>{communeName}</Popup>
       </Marker>
