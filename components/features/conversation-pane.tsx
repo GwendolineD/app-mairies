@@ -216,7 +216,7 @@ export async function ConversationPane({
       <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border/60 px-4 py-3">
         <div className="flex min-w-0 items-center gap-3">
           <Link
-            href={ROUTES.messages.list}
+            href={ROUTES.messages.inbox(isArchived ? "corbeille" : "boite")}
             className="cursor-pointer rounded-sm p-1.5 text-muted transition hover:bg-warm hover:text-text md:hidden"
             aria-label="Retour à la liste"
           >

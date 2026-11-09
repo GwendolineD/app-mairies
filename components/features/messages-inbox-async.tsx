@@ -1,40 +1,28 @@
-import { createClient } from "@/lib/supabase/server";
-import { listMyConversations } from "@/lib/queries/messages";
+import { requireActiveMembership } from "@/lib/auth/session";
+import { getInboxConversations } from "@/lib/queries/inbox";
+import { isArchivedView, type InboxView } from "@/lib/constants/inbox-views";
 import { MessagesInboxList } from "@/components/features/messages-inbox-list";
 
 /**
- * Server component fetching the inbox conversations and rendering the list.
- * Designed to be wrapped in <Suspense> so the surrounding shell renders first
- * with a skeleton fallback while the RPC executes.
+ * Server component loading the inbox for one view.
+ * Rendered inside <Suspense> by the inbox layout so the layout itself never
+ * blocks navigation (session + RPC happen below the boundary).
  */
-export async function MessagesInboxAsync({
-  communeId,
-  userId,
-  view,
-  selectedId,
-}: {
-  communeId: string;
-  userId: string;
-  view: "active" | "archived";
-  selectedId?: string;
-}) {
-  const supabase = await createClient();
-  const { items: conversations, totalCount } = await listMyConversations(
-    supabase,
+export async function MessagesInboxAsync({ view }: { view: InboxView }) {
+  const ctx = await requireActiveMembership();
+  const communeId = ctx.activeMembership!.commune_id;
+  const { items, totalCount } = await getInboxConversations(
     communeId,
-    {
-      archived: view === "archived",
-    },
+    isArchivedView(view),
   );
 
   return (
     <MessagesInboxList
-      conversations={conversations}
+      conversations={items}
       totalCount={totalCount}
       communeId={communeId}
       view={view}
-      selectedId={selectedId}
-      currentUserId={userId}
+      currentUserId={ctx.userId}
     />
   );
 }
