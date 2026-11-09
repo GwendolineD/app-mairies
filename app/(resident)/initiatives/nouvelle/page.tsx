@@ -21,8 +21,8 @@ export default function NouvelleInitiativePage() {
     <PageStack gap="4">
       <BackLink href={ROUTES.initiatives.list}>← Liste</BackLink>
       <PageHeading
-        title="Nouvelle initiative"
-        subtitle="Lancez un projet collectif et invitez vos voisin·es à y participer."
+        title="Nouvelle idée"
+        subtitle="Proposez une idée pour votre commune et invitez vos voisin·es à la soutenir."
       />
       <Card className="space-y-3 p-5 lg:max-w-2xl">
         <form action={submitInitiative} className="flex flex-col gap-3">
@@ -65,7 +65,7 @@ export default function NouvelleInitiativePage() {
             <Input type="url" name="photoUrl" placeholder="https://" />
           </FormField>
           <GradientButton type="submit" gradient="initiative" className="w-full">
-            Publier l&apos;initiative
+            Publier mon idée
           </GradientButton>
         </form>
       </Card>

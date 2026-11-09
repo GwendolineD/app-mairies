@@ -34,7 +34,7 @@ const GROUPS: {
     icon: Bell,
     items: [
       { key: "notify_message_announcement", label: "Sur mes annonces" },
-      { key: "notify_message_initiative", label: "Sur mes initiatives" },
+      { key: "notify_message_initiative", label: "Sur mes idées" },
       { key: "notify_message_event", label: "Sur mes événements" },
     ],
   },
@@ -44,7 +44,7 @@ const GROUPS: {
       "Soyez notifié·e quand un·e voisin·e soutient ou participe à un contenu que vous avez publié.",
     icon: Heart,
     items: [
-      { key: "notify_initiative_support", label: "Soutien sur mes initiatives" },
+      { key: "notify_initiative_support", label: "Soutien sur mes idées" },
       { key: "notify_event_participation", label: "Participation sur mes événements" },
       { key: "notify_event_volunteer", label: "Bénévolat sur mes événements" },
     ],
@@ -56,7 +56,7 @@ const GROUPS: {
     icon: Sparkles,
     items: [
       { key: "notify_new_announcement", label: "Nouvelle annonce" },
-      { key: "notify_new_initiative", label: "Nouvelle initiative" },
+      { key: "notify_new_initiative", label: "Nouvelle idée" },
       { key: "notify_new_event", label: "Nouvel événement" },
     ],
   },

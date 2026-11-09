@@ -12,8 +12,8 @@ import { resolveEventAuthorLabel } from "@/lib/data/authors";
 import {
   listEventVolunteers,
   listEventParticipants,
-  countEventParticipants,
-  countEventVolunteers,
+  getEventParticipationCounts,
+  getUserEventEngagement,
 } from "@/lib/queries/events";
 import { formatMemberSince } from "@/lib/datetime";
 import { EventDetailDateLabel } from "@/components/features/event-detail-date-label";
@@ -144,11 +144,9 @@ export default async function EvenementDetailPage(props: {
     { data: authorMembership },
     sourceInitiative,
     volunteers,
-    volunteersCount,
-    { data: userVolunteer },
     participants,
-    participantsCount,
-    { data: userParticipant },
+    counts,
+    engagement,
   ] = await Promise.all([
     supabase
       .from("memberships")
@@ -166,21 +164,9 @@ export default async function EvenementDetailPage(props: {
           .then((r) => r.data)
       : Promise.resolve(null),
     listEventVolunteers(supabase, event.id),
-    countEventVolunteers(supabase, event.id),
-    supabase
-      .from("event_volunteers")
-      .select("id")
-      .eq("event_id", event.id)
-      .eq("membership_id", ctx.activeMembership!.id)
-      .maybeSingle(),
     listEventParticipants(supabase, event.id),
-    countEventParticipants(supabase, event.id),
-    supabase
-      .from("event_participants")
-      .select("id")
-      .eq("event_id", event.id)
-      .eq("membership_id", ctx.activeMembership!.id)
-      .maybeSingle(),
+    getEventParticipationCounts(supabase, event.id),
+    getUserEventEngagement(supabase, event.id, ctx.activeMembership!.id),
   ]);
 
   type AuthorMembership = {
@@ -230,10 +216,6 @@ export default async function EvenementDetailPage(props: {
     resolvedPostcode,
     parsedAddress.city,
   );
-
-  const volunteersRegistered = volunteersCount;
-  const initialVolunteering = !!userVolunteer;
-  const initialParticipating = !!userParticipant;
 
   return (
     <PageStack gap="5">
@@ -315,12 +297,14 @@ export default async function EvenementDetailPage(props: {
             authorAvatarUrl={authorAvatarUrl}
             memberSince={memberSince}
             volunteersNeeded={event.volunteers_needed}
-            volunteersRegistered={volunteersRegistered}
+            volunteersRegistrations={counts.volunteersRegistrations}
+            volunteersHeadcount={counts.volunteersHeadcount}
             volunteers={volunteers}
-            initialVolunteering={initialVolunteering}
-            participantsCount={participantsCount}
+            initialVolunteerGuests={engagement.volunteering?.guestsCount ?? null}
+            participantsRegistrations={counts.participantsRegistrations}
+            participantsHeadcount={counts.participantsHeadcount}
             participants={participants}
-            initialParticipating={initialParticipating}
+            initialParticipantGuests={engagement.participating?.guestsCount ?? null}
             editData={editData}
             sourceInitiative={sourceInitiative}
             className={DETAIL_CARD_CLASS}

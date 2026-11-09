@@ -71,7 +71,7 @@ export function ConversationEmptyState() {
         Sélectionnez une conversation
       </p>
       <p className="max-w-sm text-sm text-muted">
-        Vos échanges avec les voisin·es autour des annonces, initiatives et
+        Vos échanges avec les voisin·es autour des annonces, idées et
         événements apparaissent ici.
       </p>
     </div>

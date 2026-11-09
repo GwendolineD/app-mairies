@@ -41,7 +41,7 @@ export default async function MairieInitiativeDetailPage(props: {
   return (
     <PageStack gap="5">
       <BackLink href={ROUTES.mairie.initiatives}>
-        ← Toutes les initiatives
+        ← Toutes les idées
       </BackLink>
       <Card className="space-y-4 p-6 lg:max-w-3xl">
         <div className="flex flex-wrap items-center gap-2">

@@ -167,7 +167,7 @@ function AuthorActionsCard({
       <div className="space-y-1">
         <h2 className="flex items-center gap-2 text-lg font-semibold text-text">
           <CONTENT_ICONS.initiativeManage className="size-5 shrink-0 text-orange" aria-hidden />
-          Gérez votre initiative
+          Gérez votre idée
         </h2>
         <p className="text-sm font-medium text-muted">
           Suivez l&apos;engagement des voisin·es et faites évoluer votre idée.
@@ -182,7 +182,7 @@ function AuthorActionsCard({
           }
         >
           <Pencil className="size-4" aria-hidden />
-          Modifier l&apos;initiative
+          Modifier l&apos;idée
         </Button>
         {!linkedEvent ? (
           <Button

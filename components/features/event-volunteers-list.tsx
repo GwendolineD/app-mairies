@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { ChevronRight, MessageCircle } from "lucide-react";
 import { ContactAnnouncementButton } from "@/components/features/contact-announcement-button";
+import { EventGuestsChip } from "@/components/features/event-guests-chip";
 import { LoadMoreLink } from "@/components/ui/load-more-link";
 import { Modal } from "@/components/ui/modal";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -14,7 +15,10 @@ import type { EventVolunteer } from "@/lib/queries/events";
 
 type Props = {
   volunteers: EventVolunteer[];
-  totalCount: number;
+  /** Number of member rows (drives pagination + avatar overflow), never displayed. */
+  registrationsCount: number;
+  /** Registrations + companions — the public figure. */
+  headcount: number;
   eventId: string;
   isAuthor: boolean;
   maxVisible?: number;
@@ -36,7 +40,8 @@ function getVolunteerFullName(volunteer: EventVolunteer): string {
 
 export function VolunteersAvatarRow({
   volunteers,
-  totalCount,
+  registrationsCount,
+  headcount,
   eventId,
   isAuthor,
   maxVisible = 5,
@@ -49,7 +54,7 @@ export function VolunteersAvatarRow({
   }
 
   const visibleVolunteers = volunteers.slice(0, maxVisible);
-  const overflowCount = Math.max(0, totalCount - maxVisible);
+  const overflowCount = Math.max(0, registrationsCount - maxVisible);
 
   return (
     <>
@@ -93,7 +98,8 @@ export function VolunteersAvatarRow({
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         volunteers={volunteers}
-        totalCount={totalCount}
+        registrationsCount={registrationsCount}
+        headcount={headcount}
         eventId={eventId}
         isAuthor={isAuthor}
       />
@@ -105,14 +111,16 @@ function VolunteersModal({
   open,
   onClose,
   volunteers: initialVolunteers,
-  totalCount,
+  registrationsCount,
+  headcount,
   eventId,
   isAuthor,
 }: {
   open: boolean;
   onClose: () => void;
   volunteers: EventVolunteer[];
-  totalCount: number;
+  registrationsCount: number;
+  headcount: number;
   eventId: string;
   isAuthor: boolean;
 }) {
@@ -125,7 +133,7 @@ function VolunteersModal({
     }
   }, [open, initialVolunteers]);
 
-  const remaining = Math.max(0, totalCount - items.length);
+  const remaining = Math.max(0, registrationsCount - items.length);
 
   function handleLoadMore() {
     startLoadingMore(async () => {
@@ -145,7 +153,7 @@ function VolunteersModal({
       title={
         <span className="flex items-center gap-1.5">
           <CONTENT_ICONS.eventVolunteers className="size-4 shrink-0 text-orange" aria-hidden />
-          {totalCount} bénévole{totalCount !== 1 ? "s" : ""}
+          {headcount} bénévole{headcount !== 1 ? "s" : ""}
         </span>
       }
       showCloseButton
@@ -163,7 +171,7 @@ function VolunteersModal({
         {remaining > 0 ? (
           <div className="pt-2 text-center">
             <LoadMoreLink
-              label={`${remaining} autre${remaining !== 1 ? "s" : ""} bénévole${remaining !== 1 ? "s" : ""} · Voir plus`}
+              label={`${remaining} autre${remaining !== 1 ? "s" : ""} inscrit·e${remaining !== 1 ? "s" : ""} · Voir plus`}
               onClick={handleLoadMore}
               pending={loadingMore}
             />
@@ -191,6 +199,7 @@ function VolunteerRow({
       <div className="flex min-w-0 items-center gap-3">
         <UserAvatar name={displayName} url={volunteer.avatarUrl} size="sm" />
         <span className="truncate text-sm font-semibold text-text">{fullName}</span>
+        <EventGuestsChip guestsCount={volunteer.guestsCount} />
       </div>
       {showContactButton ? (
         <ContactAnnouncementButton

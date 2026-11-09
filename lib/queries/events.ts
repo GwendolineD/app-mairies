@@ -100,10 +100,46 @@ export async function listEventMarkers(
   return (data ?? []) as EventMarker[];
 }
 
-export async function listVolunteerCountsByEventId(
+/**
+ * Attendance figures for one event. `*Registrations` = number of member rows
+ * (internal: list pagination, avatar overflow badge); `*Headcount` =
+ * registrations + declared companions (the only figure shown to users).
+ */
+export type EventParticipationCounts = {
+  volunteersRegistrations: number;
+  volunteersHeadcount: number;
+  participantsRegistrations: number;
+  participantsHeadcount: number;
+};
+
+const EMPTY_COUNTS: EventParticipationCounts = {
+  volunteersRegistrations: 0,
+  volunteersHeadcount: 0,
+  participantsRegistrations: 0,
+  participantsHeadcount: 0,
+};
+
+type CountRow = {
+  event_id: string;
+  volunteers_count: number | null;
+  volunteers_headcount: number | null;
+  participants_count: number | null;
+  participants_headcount: number | null;
+};
+
+function toCounts(row: CountRow): EventParticipationCounts {
+  return {
+    volunteersRegistrations: Number(row.volunteers_count ?? 0),
+    volunteersHeadcount: Number(row.volunteers_headcount ?? 0),
+    participantsRegistrations: Number(row.participants_count ?? 0),
+    participantsHeadcount: Number(row.participants_headcount ?? 0),
+  };
+}
+
+async function fetchParticipationCounts(
   supabase: SupabaseClient,
   eventIds: string[],
-): Promise<Record<string, number>> {
+): Promise<Record<string, EventParticipationCounts>> {
   if (eventIds.length === 0) return {};
 
   const { data, error } = await supabase.rpc("count_event_participation", {
@@ -112,71 +148,46 @@ export async function listVolunteerCountsByEventId(
 
   if (error || !data) return {};
 
-  const counts: Record<string, number> = {};
-  for (const row of data) {
-    counts[row.event_id] = Number(row.volunteers_count ?? 0);
+  const byId: Record<string, EventParticipationCounts> = {};
+  for (const row of data as CountRow[]) {
+    byId[row.event_id] = toCounts(row);
   }
-  return counts;
+  return byId;
 }
 
-export async function listParticipantCountsByEventId(
+/** Single source of truth for the detail pages (one RPC round-trip). */
+export async function getEventParticipationCounts(
   supabase: SupabaseClient,
-  eventIds: string[],
-): Promise<Record<string, number>> {
-  if (eventIds.length === 0) return {};
-
-  const { data, error } = await supabase.rpc("count_event_participation", {
-    p_event_ids: eventIds,
-  });
-
-  if (error || !data) return {};
-
-  const counts: Record<string, number> = {};
-  for (const row of data) {
-    counts[row.event_id] = Number(row.participants_count ?? 0);
-  }
-  return counts;
+  eventId: string,
+): Promise<EventParticipationCounts> {
+  const byId = await fetchParticipationCounts(supabase, [eventId]);
+  return byId[eventId] ?? EMPTY_COUNTS;
 }
 
-export async function enrichEventsWithCounts<
-  T extends { id: string },
->(
+export type EventAttendanceFields = {
+  volunteers_headcount: number;
+  participants_headcount: number;
+};
+
+/** Enrich a page of events with the public headcounts shown on cards. */
+export async function enrichEventsWithCounts<T extends { id: string }>(
   supabase: SupabaseClient,
   events: T[],
-): Promise<
-  (T & { volunteers_registered: number; participants_count: number })[]
-> {
-  const eventIds = events.map((e) => e.id);
-  if (eventIds.length === 0) {
-    return events.map((event) => ({
+): Promise<(T & EventAttendanceFields)[]> {
+  const byId = await fetchParticipationCounts(
+    supabase,
+    events.map((e) => e.id),
+  );
+
+  return events.map((event) => {
+    const counts = byId[event.id] ?? EMPTY_COUNTS;
+    return {
       ...event,
-      volunteers_registered: 0,
-      participants_count: 0,
-    }));
-  }
-
-  const { data, error } = await supabase.rpc("count_event_participation", {
-    p_event_ids: eventIds,
+      volunteers_headcount: counts.volunteersHeadcount,
+      participants_headcount: counts.participantsHeadcount,
+    };
   });
-
-  const volCounts: Record<string, number> = {};
-  const partCounts: Record<string, number> = {};
-  if (!error && data) {
-    for (const row of data) {
-      volCounts[row.event_id] = Number(row.volunteers_count ?? 0);
-      partCounts[row.event_id] = Number(row.participants_count ?? 0);
-    }
-  }
-
-  return events.map((event) => ({
-    ...event,
-    volunteers_registered: volCounts[event.id] ?? 0,
-    participants_count: partCounts[event.id] ?? 0,
-  }));
 }
-
-/** @deprecated Use enrichEventsWithCounts */
-export const enrichEventsWithVolunteerCounts = enrichEventsWithCounts;
 
 export type EventVolunteer = {
   membershipId: string;
@@ -184,23 +195,28 @@ export type EventVolunteer = {
   lastName: string | null;
   displayName: string | null;
   avatarUrl: string | null;
+  /** Anonymous companions declared by this member (0..MAX_EVENT_GUESTS). */
+  guestsCount: number;
 };
 
 export const EVENT_MEMBER_LIST_PAGE_SIZE = 20;
 
+type EventMemberTable = "event_volunteers" | "event_participants";
+
 async function listEventMemberRows(
   supabase: SupabaseClient,
-  table: "event_volunteers" | "event_participants",
+  table: EventMemberTable,
   eventId: string,
   options: { limit?: number; offset?: number } = {},
 ): Promise<EventVolunteer[]> {
   const limit = options.limit ?? EVENT_MEMBER_LIST_PAGE_SIZE;
   const offset = options.offset ?? 0;
 
+  // Both tables share the same shape; the cast keeps a single typed query path.
   const { data, error } = await supabase
     .from(table as "event_volunteers")
     .select(
-      "membership_id, memberships(id, profiles(first_name, last_name, display_name, avatar_url))",
+      "membership_id, guests_count, memberships(id, profiles(first_name, last_name, display_name, avatar_url))",
     )
     .eq("event_id", eventId)
     .order("created_at", { ascending: false })
@@ -225,6 +241,7 @@ async function listEventMemberRows(
       lastName: profile?.last_name ?? null,
       displayName: profile?.display_name ?? null,
       avatarUrl: profile?.avatar_url ?? null,
+      guestsCount: row.guests_count ?? 0,
     };
   });
 }
@@ -245,24 +262,34 @@ export async function listEventParticipants(
   return listEventMemberRows(supabase, "event_participants", eventId, options);
 }
 
-export async function countEventVolunteers(
-  supabase: SupabaseClient,
-  eventId: string,
-): Promise<number> {
-  const { count } = await supabase
-    .from("event_volunteers")
-    .select("id", { count: "exact", head: true })
-    .eq("event_id", eventId);
-  return count ?? 0;
-}
+/** The current member's own registrations on an event (null = not registered). */
+export type UserEventEngagement = {
+  participating: { guestsCount: number } | null;
+  volunteering: { guestsCount: number } | null;
+};
 
-export async function countEventParticipants(
+export async function getUserEventEngagement(
   supabase: SupabaseClient,
   eventId: string,
-): Promise<number> {
-  const { count } = await supabase
-    .from("event_participants")
-    .select("id", { count: "exact", head: true })
-    .eq("event_id", eventId);
-  return count ?? 0;
+  membershipId: string,
+): Promise<UserEventEngagement> {
+  const [{ data: participant }, { data: volunteer }] = await Promise.all([
+    supabase
+      .from("event_participants")
+      .select("guests_count")
+      .eq("event_id", eventId)
+      .eq("membership_id", membershipId)
+      .maybeSingle(),
+    supabase
+      .from("event_volunteers")
+      .select("guests_count")
+      .eq("event_id", eventId)
+      .eq("membership_id", membershipId)
+      .maybeSingle(),
+  ]);
+
+  return {
+    participating: participant ? { guestsCount: participant.guests_count } : null,
+    volunteering: volunteer ? { guestsCount: volunteer.guests_count } : null,
+  };
 }

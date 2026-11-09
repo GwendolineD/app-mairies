@@ -9,7 +9,7 @@
 - **Schedule** : tous les jours à 06:00 (Europe/Paris)
 - **Timeout** : 30s
 
-**Rôle** : détecte les contenus éligibles aux relances, insère les emails dans la queue, envoie les notifications in-app, et purge les annonces/conversations archivées depuis plus de 30 jours.
+**Rôle** : détecte les contenus éligibles aux relances, insère les emails dans la queue, envoie les notifications push et in-app, et applique la rétention : purge des annonces/conversations archivées depuis plus de 30 jours, et des notifications in-app lues depuis plus de 60 jours ou non lues depuis plus de 180 jours (durées centralisées dans `lib/constants/retention.ts`).
 
 ### 2. Email Sender (toutes les 2 minutes)
 - **URL** : `https://<domain>/api/cron/email-sender`
@@ -39,6 +39,8 @@
 - En cas de maintenance : désactiver l'email-sender **en premier**, le collector **en second**.
 - Les emails non envoyés restent en status `pending` dans `email_queue` — ils seront traités au prochain cycle.
 - Le sender re-vérifie la préférence `email_lifecycle_enabled` avant chaque envoi (protection contre les désinscriptions entre collecte et envoi).
+- La purge des notifications est bornée à 500 lignes par catégorie (lues / non lues) et par exécution ; un retard se résorbe sur quelques jours sans intervention.
+- Les notifications liées à un contenu supprimé sont effacées par trigger SQL au moment de la suppression — la purge ne gère que l'ancienneté.
 
 ---
 
@@ -48,16 +50,17 @@
 Cron Collector (1x/jour)          Cron Sender (*/2 min)
      │                                   │
      ├─ Purge archivées 30j              ├─ SELECT pending LIMIT batch
-     ├─ Relances invitations             ├─ sendTemplatedEmail()
-     ├─ Engagement nouveaux inscrits     ├─ UPDATE sent/failed
-     ├─ Annonces expirées               └─ sleep(delay_ms) entre chaque
+     ├─ Purge notifications 60j/180j     ├─ sendTemplatedEmail()
+     ├─ Relances invitations             ├─ UPDATE sent/failed
+     ├─ Engagement nouveaux inscrits     └─ sleep(delay_ms) entre chaque
+     ├─ Annonces expirées
      ├─ Annonces stale 60j
      ├─ Initiatives stale 60j
      ├─ Events terminés +2j
      └─ Rappel notifications
 
        ↓ INSERT email_queue
-       ↓ INSERT notification (in-app)
+       ↓ INSERT notifications (in-app, scopées commune) + Web Push
 ```
 
 ---
@@ -72,6 +75,7 @@ Chaque endpoint retourne un JSON de résultat :
   "ok": true,
   "purgedAnnouncements": 0,
   "purgedConversations": 0,
+  "purgedNotifications": 12,
   "queued": {
     "invites": 2,
     "engagement": 1,

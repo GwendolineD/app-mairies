@@ -15,13 +15,13 @@ import type { NotificationPreferenceKey, NotificationPreferences } from "@/lib/t
 
 const NOTIFICATION_PREF_LABELS: Record<NotificationPreferenceKey, string> = {
   notify_message_announcement: "Messages sur mes annonces",
-  notify_message_initiative: "Messages sur mes initiatives",
+  notify_message_initiative: "Messages sur mes idées",
   notify_message_event: "Messages sur mes événements",
-  notify_initiative_support: "Soutien sur mes initiatives",
+  notify_initiative_support: "Soutien sur mes idées",
   notify_event_participation: "Participation sur mes événements",
   notify_event_volunteer: "Bénévolat sur mes événements",
   notify_new_announcement: "Nouvelle annonce",
-  notify_new_initiative: "Nouvelle initiative",
+  notify_new_initiative: "Nouvelle idée",
   notify_new_event: "Nouvel événement",
 };
 

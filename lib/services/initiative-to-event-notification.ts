@@ -11,7 +11,11 @@
 
 import { ROUTES } from "@/lib/constants/routes";
 import { generateUnsubscribeToken } from "@/lib/email/unsubscribe-token";
-import { notifyUser, type PushPayload } from "@/lib/services/push-notifications";
+import {
+  notifyUser,
+  type NotificationTarget,
+  type PushPayload,
+} from "@/lib/services/push-notifications";
 import { getEmailsByUserIds } from "@/lib/services/user-emails";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getAppUrl } from "@/lib/utils/app-url";
@@ -26,6 +30,7 @@ const PUSH_CONCURRENCY = 20;
 
 type PushTask = {
   userId: string;
+  target: NotificationTarget;
   payload: PushPayload & { payloadJson?: Record<string, unknown> };
 };
 
@@ -125,8 +130,13 @@ export async function notifyInitiativeSupporters(
       if (userPrefs.push) {
         pushTasks.push({
           userId,
+          target: {
+            communeId: input.communeId,
+            kind: "initiative_to_event",
+            context: { type: "event", id: input.eventId },
+          },
           payload: {
-            title: "L'initiative que vous soutenez se concrétise !",
+            title: "L'idée que vous soutenez se concrétise !",
             body: `« ${truncate(input.initiativeTitle, 60)} » → événement le ${eventDate}`,
             url: ROUTES.evenements.detail(input.eventId),
             tag: `initiative-to-event:${input.eventId}`,
@@ -257,7 +267,7 @@ async function sendPushWithConcurrency(
   for (let i = 0; i < tasks.length; i += PUSH_CONCURRENCY) {
     const batch = tasks.slice(i, i + PUSH_CONCURRENCY);
     const results = await Promise.allSettled(
-      batch.map((task) => notifyUser(task.userId, task.payload)),
+      batch.map((task) => notifyUser(task.userId, task.target, task.payload)),
     );
 
     for (const result of results) {

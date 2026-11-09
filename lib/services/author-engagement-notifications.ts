@@ -1,5 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { notifyUser } from "@/lib/services/push-notifications";
+import type { ConversationContextType } from "@/lib/types";
 
 export type EngagementPrefKey =
   | "notify_initiative_support"
@@ -11,6 +12,8 @@ type NotifyAuthorEngagementParams = {
   actorUserId: string;
   actorName: string;
   prefKey: EngagementPrefKey;
+  /** The content the neighbor engaged with (owned by the author). */
+  context: { type: ConversationContextType; id: string };
   title: string;
   body: string;
   url: string;
@@ -55,7 +58,7 @@ export async function notifyAuthorEngagement(
 
   const { data: authorMembership } = await supabase
     .from("memberships")
-    .select("user_id")
+    .select("user_id, commune_id")
     .eq("id", params.authorMembershipId)
     .maybeSingle();
 
@@ -65,11 +68,19 @@ export async function notifyAuthorEngagement(
   const allowed = await shouldNotifyEngagement(authorUserId, params.prefKey);
   if (!allowed) return;
 
-  await notifyUser(authorUserId, {
-    title: params.title,
-    body: params.body,
-    url: params.url,
-    tag: params.tag,
-    payloadJson: params.payloadJson,
-  });
+  await notifyUser(
+    authorUserId,
+    {
+      communeId: authorMembership.commune_id,
+      kind: "engagement",
+      context: params.context,
+    },
+    {
+      title: params.title,
+      body: params.body,
+      url: params.url,
+      tag: params.tag,
+      payloadJson: params.payloadJson,
+    },
+  );
 }

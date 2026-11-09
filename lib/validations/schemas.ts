@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ANNOUNCEMENT_CATEGORY_SLUGS } from "@/lib/constants/announcement-categories";
 import { ANNOUNCEMENT_TYPE_SLUGS } from "@/lib/constants/announcement-types";
+import { EVENT_ENGAGEMENT_KINDS, MAX_EVENT_GUESTS } from "@/lib/constants/event-guests";
 import {
   MESSAGE_MAX,
   MESSAGE_MIN,
@@ -169,6 +170,23 @@ export const eventModalSchema = z.object({
   isOfficial: z.boolean().optional(),
 });
 
+/**
+ * Event engagement (participant / volunteer) with anonymous companions.
+ * `kind` comes from the client and selects the target table: it must be
+ * validated here before any mapping to `.from()`.
+ */
+export const eventEngagementCancelSchema = z.object({
+  kind: z.enum(EVENT_ENGAGEMENT_KINDS),
+  eventId: z.string().uuid(),
+});
+
+export const eventEngagementInputSchema = eventEngagementCancelSchema.extend({
+  guestsCount: z.number().int().min(0).max(MAX_EVENT_GUESTS),
+});
+
+export type EventEngagementInput = z.infer<typeof eventEngagementInputSchema>;
+export type EventEngagementCancelInput = z.infer<typeof eventEngagementCancelSchema>;
+
 export const userReportSchema = z.object({
   reportedUserId: z.string().uuid(),
   reason: z.string().min(10).max(1000),
@@ -224,6 +242,11 @@ export const notificationPreferencesSchema = z.object({
   notify_new_announcement: z.boolean(),
   notify_new_initiative: z.boolean(),
   notify_new_event: z.boolean(),
+});
+
+/** Body of POST /api/notifications/read (sent by the service worker on push click). */
+export const notificationReadByTagSchema = z.object({
+  tag: z.string().min(1).max(200),
 });
 
 export const pushSubscriptionSchema = z.object({

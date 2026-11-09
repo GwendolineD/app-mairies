@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PageStack } from "@/components/ui/page-stack";
+import { INITIATIVE_VOCAB } from "@/lib/constants/content-vocabulary";
 import { ROUTES } from "@/lib/constants/routes";
 import { cn } from "@/lib/utils/cn";
 import { formatMemberSince } from "@/lib/datetime";
@@ -349,9 +350,9 @@ function ProfileHero({
                 sublabel="publiées"
               />
               <ProfileStat
-                label="Initiatives"
+                label={INITIATIVE_VOCAB.labelShort}
                 value={membership.totalInitiatives}
-                sublabel="organisées"
+                sublabel="proposées"
               />
               <ProfileStat
                 label="Événements"
@@ -498,8 +499,8 @@ function InitiativesPanel({
   if (list.totalCount === 0) {
     return (
       <ProfileEmptyState
-        title="Aucune initiative en cours"
-        description="Lancez une initiative pour fédérer vos voisins autour d'un projet commun."
+        title="Aucune idée en cours"
+        description="Proposez une idée pour fédérer vos voisin·es autour d'un projet commun."
         action={
           <Button
             type="button"
@@ -508,7 +509,7 @@ function InitiativesPanel({
             }
           >
             <Plus className="size-4" aria-hidden />
-            Lancer une initiative
+            {INITIATIVE_VOCAB.ctaCreate}
           </Button>
         }
       />
@@ -518,7 +519,7 @@ function InitiativesPanel({
   return (
     <div className="space-y-4">
       <ProfileSectionHeading
-        title="Mes initiatives en cours"
+        title="Mes idées en cours"
         count={list.totalCount}
       />
       <div className="space-y-3">
@@ -613,7 +614,7 @@ function ParticipationsPlaceholder() {
       <p className="text-xl font-semibold text-text">Participations</p>
       <p className="text-sm font-medium text-muted">
         Cette section arrive bientôt ! Vous pourrez y retrouver toutes les
-        initiatives et événements auxquels vous participez.
+        idées et événements auxquels vous participez.
       </p>
     </Card>
   );

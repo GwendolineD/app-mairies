@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { AnnouncementType } from "@/lib/constants/announcement-types";
+import { INITIATIVE_VOCAB } from "@/lib/constants/content-vocabulary";
 
 export const ROUTES = {
   home: "/",
@@ -16,6 +17,7 @@ export const ROUTES = {
   suspendu: "/suspendu",
   banni: "/banni",
   profil: "/profil",
+  notifications: "/notifications",
   messages: {
     list: "/messages",
     trash: "/messages?vue=corbeille",
@@ -86,7 +88,7 @@ export const ROUTES = {
 export const RESIDENT_BOTTOM_NAV = [
   { href: ROUTES.accueil, label: "Accueil" },
   { href: ROUTES.annonces.list, label: "Annonces" },
-  { href: ROUTES.initiatives.list, label: "Initiatives" },
+  { href: ROUTES.initiatives.list, label: INITIATIVE_VOCAB.labelShort },
   { href: ROUTES.evenements.list, label: "Événements" },
   { href: ROUTES.messages.list, label: "Messages" },
 ] as const;
@@ -158,7 +160,7 @@ export const BACKOFFICE_NAV: readonly AdminNavItem[] = [
   { href: ROUTES.backoffice.prospectionCommunes, label: "Prospection communes", icon: "map" },
   { href: ROUTES.backoffice.communication, label: "Communication", icon: "megaphone" },
   { href: ROUTES.backoffice.emails, label: "Templates email", icon: "mail" },
-  { href: ROUTES.backoffice.categoriesInitiatives, label: "Catégories initiatives", icon: "sparkles" },
+  { href: ROUTES.backoffice.categoriesInitiatives, label: "Catégories idées", icon: "sparkles" },
   { href: ROUTES.backoffice.categories, label: "Catégories annonces", icon: "tags" },
   { href: ROUTES.backoffice.settings, label: "Réglages", icon: "settings" },
   { href: ROUTES.backoffice.legal, label: "Documents juridiques", icon: "file-text" },

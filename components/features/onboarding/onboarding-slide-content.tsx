@@ -64,7 +64,7 @@ function AccueilSlide() {
       <p className="mt-3 w-full text-sm font-medium leading-relaxed text-muted">
         Pour tout parcourir, utilisez les onglets{" "}
         <strong className="text-text">Annonces</strong>,{" "}
-        <strong className="text-text">Initiatives</strong> et{" "}
+        <strong className="text-text">Idées</strong> et{" "}
         <strong className="text-text">Événements</strong>{" "}
         en bas de l&apos;écran.
       </p>
@@ -127,13 +127,13 @@ function InitiativesSlide() {
           icon={<Lightbulb className="size-5 text-sun" />}
           title={
             <>
-              Vos voisins peuvent la <strong>soutenir</strong>, en <strong>discuter</strong> avec vous, et vous aider à la <strong>concrétiser</strong>.
+              C&apos;est vous qui la portez : vos voisin·es la <strong>soutiennent</strong>, en <strong>discutent</strong> avec vous et vous aident à la <strong>concrétiser</strong>.
             </>
           }
         />
         <ActionBlock
           icon={<Rocket className="size-5 text-purple" />}
-          title="Les meilleures initiatives deviennent de vrais événements !"
+          title="Quand elle est prête, transformez-la en véritable événement !"
         />
       </div>
     </div>

@@ -115,7 +115,7 @@ export function DeleteAccountModal({
           <div className="space-y-2">
             <p className="text-sm font-semibold text-text">Ce qui sera supprimé</p>
             <ul className="list-disc space-y-1 pl-5 text-sm font-medium text-muted">
-              <li>Vos annonces, initiatives et événements</li>
+              <li>Vos annonces, idées et événements</li>
               <li>Vos participations et soutiens</li>
               <li>Vos données personnelles (nom, photo, adresse, e-mail)</li>
             </ul>

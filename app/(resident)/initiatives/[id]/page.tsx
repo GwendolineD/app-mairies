@@ -109,11 +109,11 @@ export default async function InitiativeDetailPage(props: {
             <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-coral/10">
               <span className="text-2xl">⚠️</span>
             </div>
-            <h1 className="text-xl font-bold text-text">Initiative suspendue</h1>
+            <h1 className="text-xl font-bold text-text">Idée suspendue</h1>
             {isAuthorOfSuspended ? (
               <div className="space-y-3 text-sm text-muted">
                 <p>
-                  Votre initiative a été suspendue par la modération. Si vous pensez
+                  Votre idée a été suspendue par la modération. Si vous pensez
                   qu&apos;il s&apos;agit d&apos;une erreur, veuillez contacter
                   l&apos;assistance.
                 </p>

@@ -235,9 +235,10 @@ describe("collectEngagementReminders", () => {
     const { collectEngagementReminders } = await import("@/lib/cron/lifecycle-collector");
     const result = await collectEngagementReminders(service as never);
 
-    // Push notification should be sent
+    // Push notification should be sent, scoped to the candidate's active commune
     expect(notifyUser).toHaveBeenCalledWith(
       USER_ID_1,
+      { communeId: COMMUNE_ID, kind: "system" },
       expect.objectContaining({
         title: "Publiez votre première annonce !",
         tag: "engagement-first-week",
@@ -248,6 +249,24 @@ describe("collectEngagementReminders", () => {
     expect(insertCalls).toHaveLength(0);
 
     // User should still be marked (push was sent)
+    expect(getCapturedUserIds()).toContain(USER_ID_1);
+    expect(result.count).toBe(1);
+  });
+
+  it("skips the push (no in-app row possible) when the candidate has no active commune", async () => {
+    await mockEmailsByUserIds(new Map([[USER_ID_1, "user1@example.test"]]));
+    const notifyUser = await mockNotifyUser();
+
+    const { service, insertCalls, getCapturedUserIds } = createEngagementService({
+      candidates: [{ user_id: USER_ID_1, display_name: "Alice", active_commune_id: null }],
+    });
+
+    const { collectEngagementReminders } = await import("@/lib/cron/lifecycle-collector");
+    const result = await collectEngagementReminders(service as never);
+
+    expect(notifyUser).not.toHaveBeenCalled();
+    // Email still queued and the user still marked as reminded
+    expect(insertCalls).toHaveLength(1);
     expect(getCapturedUserIds()).toContain(USER_ID_1);
     expect(result.count).toBe(1);
   });

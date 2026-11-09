@@ -3,7 +3,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { ROUTES } from "@/lib/constants/routes";
 import { addDaysParisYmd, DAY_MS } from "@/lib/datetime";
 import { generateUnsubscribeToken } from "@/lib/email/unsubscribe-token";
-import { notifyUser, type PushPayload } from "@/lib/services/push-notifications";
+import {
+  notifyUser,
+  type NotificationTarget,
+  type PushPayload,
+} from "@/lib/services/push-notifications";
+import { RETENTION_DAYS } from "@/lib/constants/retention";
 import { getEmailsByUserIds } from "@/lib/services/user-emails";
 import { getAppUrl } from "@/lib/utils/app-url";
 import type { Database } from "@/lib/types/database.types";
@@ -18,6 +23,7 @@ type PhaseError = {
 
 type PushTask = {
   userId: string;
+  target: NotificationTarget;
   payload: PushPayload;
 };
 
@@ -32,7 +38,7 @@ async function sendPushNotificationsWithConcurrency(
   for (let i = 0; i < tasks.length; i += PUSH_CONCURRENCY) {
     const batch = tasks.slice(i, i + PUSH_CONCURRENCY);
     const results = await Promise.allSettled(
-      batch.map((task) => notifyUser(task.userId, task.payload)),
+      batch.map((task) => notifyUser(task.userId, task.target, task.payload)),
     );
 
     for (const result of results) {
@@ -51,6 +57,7 @@ async function sendPushNotificationsWithConcurrency(
 type CollectorResult = {
   purgedAnnouncements: number;
   purgedConversations: number;
+  purgedNotifications: number;
   queued: {
     invites: number;
     engagement: number;
@@ -142,6 +149,38 @@ export async function purgeArchivedConversations(service: ServiceClient): Promis
   }
 
   return purgedCount;
+}
+
+/**
+ * Purge in-app notifications past their retention window:
+ * read notifications after RETENTION_DAYS.notificationsRead days,
+ * unread ones after RETENTION_DAYS.notificationsUnread days.
+ * Bounded per run; the daily cadence catches up on backlog.
+ */
+export async function purgeOldNotifications(service: ServiceClient): Promise<number> {
+  const now = Date.now();
+  const readCutoff = new Date(now - RETENTION_DAYS.notificationsRead * DAY_MS).toISOString();
+  const unreadCutoff = new Date(now - RETENTION_DAYS.notificationsUnread * DAY_MS).toISOString();
+
+  const { data: readRows, error: readErr } = await service
+    .from("notifications")
+    .delete()
+    .not("read_at", "is", null)
+    .lt("read_at", readCutoff)
+    .limit(500)
+    .select("id");
+  if (readErr) throw new Error(`purgeOldNotifications(read): ${readErr.message}`);
+
+  const { data: unreadRows, error: unreadErr } = await service
+    .from("notifications")
+    .delete()
+    .is("read_at", null)
+    .lt("created_at", unreadCutoff)
+    .limit(500)
+    .select("id");
+  if (unreadErr) throw new Error(`purgeOldNotifications(unread): ${unreadErr.message}`);
+
+  return (readRows?.length ?? 0) + (unreadRows?.length ?? 0);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -322,8 +361,12 @@ export async function collectEngagementReminders(service: ServiceClient): Promis
     }
 
     notifiedUserIds.push(candidate.user_id);
+    // A notification row needs a commune; users without an active commune
+    // still get the email (push is skipped since it would have no home).
+    if (!candidate.active_commune_id) continue;
     pushTasks.push({
       userId: candidate.user_id,
+      target: { communeId: candidate.active_commune_id, kind: "system" },
       payload: {
         title: "Publiez votre première annonce !",
         body: `Partagez un coup de main ou une offre avec vos voisins de ${communeName}`,
@@ -434,6 +477,11 @@ async function collectAnnouncementExpiredNudges(service: ServiceClient): Promise
     processedIds.push(ann.id);
     pushTasks.push({
       userId,
+      target: {
+        communeId: ann.commune_id,
+        kind: "nudge",
+        context: { type: "announcement", id: ann.id },
+      },
       payload: {
         title: "Échéance dépassée",
         body: `Votre annonce « ${ann.title} » a dépassé son échéance`,
@@ -474,7 +522,7 @@ async function collectAnnouncementStaleNudges(service: ServiceClient): Promise<P
 
   const { data: announcements, error } = await service
     .from("announcements")
-    .select("id, title, author_membership_id, nudge_snoozed_until")
+    .select("id, title, author_membership_id, commune_id, nudge_snoozed_until")
     .eq("status", "ouverte")
     .is("target_date", null)
     .lt("created_at", sixtyDaysAgo)
@@ -541,6 +589,11 @@ async function collectAnnouncementStaleNudges(service: ServiceClient): Promise<P
     processedIds.push(ann.id);
     pushTasks.push({
       userId,
+      target: {
+        communeId: ann.commune_id,
+        kind: "nudge",
+        context: { type: "announcement", id: ann.id },
+      },
       payload: {
         title: "Annonce active depuis 2 mois",
         body: `Votre annonce « ${ann.title} » est-elle toujours d'actualité ?`,
@@ -581,7 +634,7 @@ async function collectInitiativeStaleNudges(service: ServiceClient): Promise<Pha
 
   const { data: initiatives, error } = await service
     .from("initiatives")
-    .select("id, title, author_membership_id, nudge_snoozed_until")
+    .select("id, title, author_membership_id, commune_id, nudge_snoozed_until")
     .eq("status", "active")
     .lt("created_at", sixtyDaysAgo)
     .is("stale_60d_email_sent_at", null)
@@ -647,9 +700,14 @@ async function collectInitiativeStaleNudges(service: ServiceClient): Promise<Pha
     processedIds.push(ini.id);
     pushTasks.push({
       userId,
+      target: {
+        communeId: ini.commune_id,
+        kind: "nudge",
+        context: { type: "initiative", id: ini.id },
+      },
       payload: {
-        title: "Initiative active depuis 2 mois",
-        body: `Votre initiative « ${ini.title} » est-elle toujours d'actualité ?`,
+        title: "Idée active depuis 2 mois",
+        body: `Votre idée « ${ini.title} » est-elle toujours d'actualité ?`,
         url: ROUTES.initiatives.detail(ini.id),
         tag: `nudge:initiative:${ini.id}`,
       },
@@ -687,7 +745,7 @@ async function collectEventPastNudges(service: ServiceClient): Promise<PhaseResu
 
   const { data: events, error } = await service
     .from("events")
-    .select("id, title, author_membership_id, nudge_snoozed_until")
+    .select("id, title, author_membership_id, commune_id, nudge_snoozed_until")
     .eq("status", "active")
     .lt("ends_at", twoDaysAgo)
     .is("post_event_email_sent_at", null)
@@ -753,6 +811,11 @@ async function collectEventPastNudges(service: ServiceClient): Promise<PhaseResu
     processedIds.push(evt.id);
     pushTasks.push({
       userId,
+      target: {
+        communeId: evt.commune_id,
+        kind: "nudge",
+        context: { type: "event", id: evt.id },
+      },
       payload: {
         title: "Événement terminé",
         body: `Votre événement « ${evt.title} » est terminé. Souhaitez-vous le supprimer ?`,
@@ -844,8 +907,10 @@ export async function collectNotificationReminders(service: ServiceClient): Prom
     }
 
     notifiedUserIds.push(candidate.user_id);
+    if (!candidate.active_commune_id) continue;
     pushTasks.push({
       userId: candidate.user_id,
+      target: { communeId: candidate.active_commune_id, kind: "system" },
       payload: {
         title: "Activez les notifications",
         body: "Ne manquez pas les annonces et événements de votre commune !",
@@ -918,6 +983,7 @@ export async function runLifecycleCollector(service: ServiceClient): Promise<Col
 
   const purgedAnnouncements = await runPhase("purgeArchivedAnnouncements", () => purgeArchivedAnnouncements(service), 0);
   const purgedConversations = await runPhase("purgeArchivedConversations", () => purgeArchivedConversations(service), 0);
+  const purgedNotifications = await runPhase("purgeOldNotifications", () => purgeOldNotifications(service), 0);
 
   const invites = await runPhase("collectInviteReminders", () => collectInviteReminders(service), 0);
   const engagement = await runPhaseWithPush("collectEngagementReminders", () => collectEngagementReminders(service));
@@ -930,6 +996,7 @@ export async function runLifecycleCollector(service: ServiceClient): Promise<Col
   return {
     purgedAnnouncements,
     purgedConversations,
+    purgedNotifications,
     queued: {
       invites,
       engagement,

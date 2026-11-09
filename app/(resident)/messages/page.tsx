@@ -45,7 +45,7 @@ export default async function MessagesListePage(props: {
     <PageStack gap="2">
       <PageHeading
         title="Messages"
-        subtitle="Vos échanges autour des annonces, initiatives et événements."
+        subtitle="Vos échanges autour des annonces, idées et événements."
       />
       <MessagesShell
         mode="list"

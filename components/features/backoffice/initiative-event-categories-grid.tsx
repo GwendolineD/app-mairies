@@ -284,7 +284,7 @@ function DeleteCategoryModal({
           <span className="font-semibold">{category.label}</span> ?
         </p>
         <p className="text-sm text-muted">
-          Cette action est irréversible. Si des initiatives ou événements utilisent cette catégorie,
+          Cette action est irréversible. Si des idées ou événements utilisent cette catégorie,
           la suppression sera impossible.
         </p>
         {error ? (

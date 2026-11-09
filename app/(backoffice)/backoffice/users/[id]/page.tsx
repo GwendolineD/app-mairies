@@ -80,7 +80,7 @@ export default async function BackofficeUserDetailPage(props: {
           <p className="text-3xl font-bold text-coral">{user.totalAnnouncementsCount}</p>
         </Card>
         <Card className="space-y-1 rounded-xl p-4">
-          <p className="text-[10px] font-semibold uppercase text-muted">Initiatives créées</p>
+          <p className="text-[10px] font-semibold uppercase text-muted">Idées proposées</p>
           <p className="text-3xl font-bold text-mint">{user.totalInitiativesCount}</p>
         </Card>
         <Card className="space-y-1 rounded-xl p-4">

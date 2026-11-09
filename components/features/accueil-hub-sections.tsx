@@ -1,4 +1,8 @@
 import type { ReactNode } from "react";
+import {
+  INITIATIVE_VOCAB,
+  formatInitiativeCount,
+} from "@/lib/constants/content-vocabulary";
 import { ROUTES } from "@/lib/constants/routes";
 import type { AnnouncementWithAuthor } from "@/lib/queries/announcements";
 import type { InitiativeWithAuthor } from "@/lib/queries/initiatives";
@@ -150,17 +154,12 @@ export function AccueilInitiativesHub({
   featured,
   className,
 }: AccueilInitiativesHubProps) {
-  const title =
-    totalCount === 0
-      ? "Aucune initiative"
-      : totalCount === 1
-        ? "1 initiative"
-        : `${totalCount} initiatives`;
+  const title = formatInitiativeCount(totalCount);
 
   const ctaLabel =
     totalCount > 0
-      ? `Voir les ${totalCount} initiatives`
-      : "Voir toutes les initiatives";
+      ? `Voir les ${formatInitiativeCount(totalCount)}`
+      : `Voir toutes les ${INITIATIVE_VOCAB.plural}`;
 
   return (
     <AccueilHubSection
@@ -178,7 +177,7 @@ export function AccueilInitiativesHub({
       emptyState={
         !featured ? (
           <p className="text-sm font-medium text-muted">
-            Soyez le premier à lancer une initiative !
+            Soyez le premier à proposer une idée !
           </p>
         ) : undefined
       }

@@ -13,7 +13,15 @@ import { createClient } from "@/lib/supabase/server";
 import { parseFormId } from "@/lib/utils/form-data";
 import { resolveAddressCoordinates } from "@/lib/ban/client";
 import { buildAddressLabel, parseAddressLabelParts } from "@/lib/utils/format-address";
-import { eventSchema, eventModalSchema } from "@/lib/validations/schemas";
+import {
+  eventSchema,
+  eventModalSchema,
+  eventEngagementCancelSchema,
+  eventEngagementInputSchema,
+  type EventEngagementCancelInput,
+  type EventEngagementInput,
+} from "@/lib/validations/schemas";
+import { EVENT_ENGAGEMENT_CONFIG } from "@/lib/constants/event-guests";
 import { fanoutNewContentNotification } from "@/lib/services/notification-fanout";
 import { notifyAuthorEngagement } from "@/lib/services/author-engagement-notifications";
 import { incrementMembershipPublishCounter } from "@/lib/services/membership-publish-counters";
@@ -519,72 +527,32 @@ export async function duplicateEvent(
   return { success: true, id: created.id };
 }
 
-/** Toggle volunteer registration for an event. */
-export async function toggleEventVolunteer(eventId: string) {
-  const ctx = await requireActiveMembership();
-  const supabase = await createClient();
-  const membership = ctx.activeMembership!;
+type EngagementResult =
+  | { success: true; guestsCount: number | null }
+  | { error: string };
 
-  const { data: event, error: fetchError } = await supabase
-    .from("events")
-    .select("id, title, author_membership_id")
-    .eq("id", eventId)
-    .eq("commune_id", membership.commune_id)
-    .single();
-
-  if (fetchError || !event) {
-    return { error: "Événement introuvable.", volunteering: false };
-  }
-
-  const { data: existing } = await supabase
-    .from("event_volunteers")
-    .select("id")
-    .eq("event_id", eventId)
-    .eq("membership_id", membership.id)
-    .maybeSingle();
-
-  if (existing) {
-    const { error } = await supabase
-      .from("event_volunteers")
-      .delete()
-      .eq("id", existing.id);
-    if (error) return { error: error.message, volunteering: true };
-    revalidatePath(ROUTES.evenements.detail(eventId));
-    return { success: true as const, volunteering: false };
-  }
-
-  const { error } = await supabase.from("event_volunteers").insert({
-    event_id: eventId,
-    membership_id: membership.id,
-  });
-
-  if (error) return { error: error.message, volunteering: false };
-
-  const actorName = ctx.profile.display_name ?? "Un·e voisin·e";
-  void notifyAuthorEngagement({
-    authorMembershipId: event.author_membership_id,
-    actorUserId: ctx.userId,
-    actorName,
-    prefKey: "notify_event_volunteer",
-    title: `Nouveau·elle bénévole — ${actorName}`,
-    body: event.title,
-    url: ROUTES.evenements.detail(eventId),
-    tag: `event-volunteer:${eventId}:${membership.id}`,
-    payloadJson: {
-      kind: "engagement",
-      engagement_type: "event_volunteer",
-      context_type: "event",
-      context_id: eventId,
-      actor_user_id: ctx.userId,
-    },
-  });
-
+function revalidateEventAttendance(eventId: string) {
+  // Headcounts are displayed on cards, home, both detail pages.
   revalidatePath(ROUTES.evenements.detail(eventId));
-  return { success: true as const, volunteering: true };
+  revalidatePath(ROUTES.evenements.list);
+  revalidatePath(ROUTES.accueil);
+  revalidatePath(ROUTES.mairie.evenementDetail(eventId));
 }
 
-/** Toggle participation for an event. */
-export async function toggleEventParticipation(eventId: string) {
+/**
+ * Register (or update) the current member on an event as participant or
+ * volunteer, with `guestsCount` anonymous companions. Idempotent upsert on
+ * (event_id, membership_id): re-submitting the same payload is a no-op.
+ */
+export async function setEventEngagement(
+  input: EventEngagementInput,
+): Promise<EngagementResult> {
+  // `kind` selects the target table: validate before any mapping.
+  const parsed = eventEngagementInputSchema.safeParse(input);
+  if (!parsed.success) return { error: "Inscription invalide." };
+  const { kind, eventId, guestsCount } = parsed.data;
+  const config = EVENT_ENGAGEMENT_CONFIG[kind];
+
   const ctx = await requireActiveMembership();
   const supabase = await createClient();
   const membership = ctx.activeMembership!;
@@ -596,55 +564,77 @@ export async function toggleEventParticipation(eventId: string) {
     .eq("commune_id", membership.commune_id)
     .single();
 
-  if (fetchError || !event) {
-    return { error: "Événement introuvable.", participating: false };
-  }
+  if (fetchError || !event) return { error: "Événement introuvable." };
 
+  // Read-then-upsert race: two concurrent first registrations may both see
+  // "no row" and notify twice. Accepted — the push `tag` dedupes on device.
   const { data: existing } = await supabase
-    .from("event_participants")
+    .from(config.table)
     .select("id")
     .eq("event_id", eventId)
     .eq("membership_id", membership.id)
     .maybeSingle();
 
-  if (existing) {
-    const { error } = await supabase
-      .from("event_participants")
-      .delete()
-      .eq("id", existing.id);
-    if (error) return { error: error.message, participating: true };
-    revalidatePath(ROUTES.evenements.detail(eventId));
-    return { success: true as const, participating: false };
+  const { error } = await supabase
+    .from(config.table)
+    .upsert(
+      { event_id: eventId, membership_id: membership.id, guests_count: guestsCount },
+      { onConflict: "event_id,membership_id" },
+    );
+
+  if (error) return { error: error.message };
+
+  if (!existing) {
+    const actorName = ctx.profile.display_name ?? "Un·e voisin·e";
+    const partySuffix = guestsCount > 0 ? ` (+${guestsCount})` : "";
+    void notifyAuthorEngagement({
+      authorMembershipId: event.author_membership_id,
+      actorUserId: ctx.userId,
+      actorName,
+      prefKey: config.prefKey,
+      context: { type: "event", id: eventId },
+      title: `${config.notificationTitle} — ${actorName}${partySuffix}`,
+      body: event.title,
+      url: ROUTES.evenements.detail(eventId),
+      tag: `${config.tagPrefix}:${eventId}:${membership.id}`,
+      payloadJson: {
+        kind: "engagement",
+        engagement_type: config.engagementType,
+        context_type: "event",
+        context_id: eventId,
+        actor_user_id: ctx.userId,
+        guests_count: guestsCount,
+      },
+    });
   }
 
-  const { error } = await supabase.from("event_participants").insert({
-    event_id: eventId,
-    membership_id: membership.id,
-  });
+  revalidateEventAttendance(eventId);
+  return { success: true, guestsCount };
+}
 
-  if (error) return { error: error.message, participating: false };
+/** Remove the current member's registration (participant or volunteer). */
+export async function cancelEventEngagement(
+  input: EventEngagementCancelInput,
+): Promise<EngagementResult> {
+  const parsed = eventEngagementCancelSchema.safeParse(input);
+  if (!parsed.success) return { error: "Inscription invalide." };
+  const { kind, eventId } = parsed.data;
+  const config = EVENT_ENGAGEMENT_CONFIG[kind];
 
-  const actorName = ctx.profile.display_name ?? "Un·e voisin·e";
-  void notifyAuthorEngagement({
-    authorMembershipId: event.author_membership_id,
-    actorUserId: ctx.userId,
-    actorName,
-    prefKey: "notify_event_participation",
-    title: `Nouvelle participation — ${actorName}`,
-    body: event.title,
-    url: ROUTES.evenements.detail(eventId),
-    tag: `event-participation:${eventId}:${membership.id}`,
-    payloadJson: {
-      kind: "engagement",
-      engagement_type: "event_participation",
-      context_type: "event",
-      context_id: eventId,
-      actor_user_id: ctx.userId,
-    },
-  });
+  const ctx = await requireActiveMembership();
+  const supabase = await createClient();
+  const membership = ctx.activeMembership!;
 
-  revalidatePath(ROUTES.evenements.detail(eventId));
-  return { success: true as const, participating: true };
+  const { error } = await supabase
+    .from(config.table)
+    .delete()
+    .eq("event_id", eventId)
+    .eq("membership_id", membership.id);
+
+  if (error) return { error: error.message };
+
+  revalidateEventAttendance(eventId);
+  return { success: true, guestsCount: null };
 }
 
 /** Load more event volunteers in the detail modal. */

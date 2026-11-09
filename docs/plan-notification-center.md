@@ -1,123 +1,93 @@
-# Plan — Centre de notifications in-app
+# Centre de notifications in-app
 
-> Décision prise le 10 août 2026 : **Option A retenue** — construire le centre de notifications.
-> Statut : **à planifier** (pas de date cible).
+> Décision prise le 10 août 2026 : **Option A retenue** — cloche dans le header résident.
+> Statut : **livré le 8 octobre 2026** (migration `20261008210000_notifications_center.sql`).
 
 ---
 
 ## Contexte
 
-La table `notifications` est alimentée par le fan-out (sujet 4, fait) et par `notifyUser` (messages directs). Chaque ligne contient `title`, `body`, `payload` (avec URL cible, context_type, context_id), `read_at`, et est indexée sur `(user_id, created_at DESC)`. Les policies RLS autorisent déjà le select/update/delete par l'utilisateur propriétaire.
-
-Aujourd'hui : **aucun code ne lit cette table**. Les lignes s'accumulent sans consommateur.
+La table `notifications` était alimentée par le fan-out et par `notifyUser`, mais aucun code ne la lisait : les push Web étaient le seul canal visible, non fiable (Safari, Firefox, politiques entreprise). Le centre de notifications rend ce flux consultable dans l'app, scopé par commune.
 
 ---
 
-## Pourquoi le faire
+## Modèle de données
 
-1. L'infra d'écriture est déjà en place (bulk insert structuré depuis le fan-out).
-2. Le push n'est pas un canal fiable (bloqué par Safari, Firefox, politiques entreprise).
-3. Cohérent avec la mission produit : ne rien rater de sa commune sans dépendre d'un opt-in technique du navigateur.
+| Colonne | Rôle |
+|---------|------|
+| `commune_id` **NOT NULL** | Tenant : toute lecture/écriture est filtrée par commune active. Aucune notification « globale ». |
+| `kind` | `new_content` · `engagement` · `nudge` · `initiative_to_event` · `system` (CHECK en base, miroir dans `lib/constants/notification-kinds.ts`). |
+| `tag` | Identifiant stable partagé avec le push (`announcement:<id>`, `nudge:event:<id>`…). Sert au marquage « lu » depuis le service worker. |
+| `context_type` / `context_id` | Contenu lié (enum `context_type`). `null` pour `system`. La route cible est **reconstruite** depuis ces colonnes via `CONTENT_ROUTE_BUILDER`, jamais lue depuis un `payload.url` figé. |
 
----
+- **Messages** : plus aucune ligne écrite (push seul via `sendPushToUser`). Les lignes héritées ont été supprimées au backfill ; la messagerie a sa propre boîte de réception.
+- **Cascade** : trigger SQL `delete_notifications_for_content()` sur `announcements`, `initiatives`, `events` (AFTER DELETE) — aucune logique applicative.
+- **Index** : `(user_id, commune_id, created_at DESC, id DESC)` pour la liste keyset ; partiel `WHERE read_at IS NULL` pour le badge ; `(user_id, tag)` partiel pour le marquage par tag ; `(context_type, context_id)` pour la cascade.
 
-## Périmètre
+### RPC (SECURITY DEFINER, `auth.uid()`)
 
-### Lecture (UI)
-
-- **Cloche dans le header résident** avec badge compteur (non-lues).
-- **Panneau ou page** listant les notifications récentes, triées par date.
-- Chaque item affiche titre + body + date relative, et redirige vers `payload.url` au clic.
-- Action "marquer comme lue" (unitaire au clic + bulk "tout marquer comme lu").
-- Pagination par curseur (created_at DESC), page de 20.
-
-### Écriture (déjà fait)
-
-- `notification-fanout.ts` : bulk insert pour les nouvelles annonces/initiatives/événements.
-- `push-notifications.ts:notifyUser` : insert unitaire pour les messages directs et notifications ad-hoc.
-
-### Rétention (à implémenter)
-
-- Purge des notifications lues depuis plus de **60 jours**.
-- Purge des notifications non-lues depuis plus de **180 jours**.
-- Exécution dans le cron lifecycle existant (nouvelle phase `purgeOldNotifications`).
-
-### Index
-
-- L'index `idx_notifications_user_created_at` existe déjà.
-- Ajouter un index partiel `WHERE read_at IS NULL` pour le compteur de badge (COUNT des non-lues).
+- `count_unread_notifications(p_commune_id)` → badge.
+- `list_my_notifications(p_commune_id, p_limit, p_before_created_at, p_before_id)` → lignes + `context_status` (`available` · `finished` · `archived` · `suspended` · `deleted`) + `is_author`, calculés par jointure sur le contenu.
 
 ---
 
-## Implémentation technique
+## Producteurs
 
-### 1. Badge compteur (header)
+`notifyUser(userId, { communeId, kind, context }, payload)` est la seule porte d'entrée unitaire ; `notification-fanout.ts` insère en bulk avec les mêmes colonnes.
 
-- Composant serveur async `NotificationBadgeAsync` (même pattern que les badges messages non-lus du sujet 6).
-- Query : `SELECT count(*) FROM notifications WHERE user_id = $1 AND read_at IS NULL`.
-- Wrappé dans `<Suspense fallback={null}>` côté layout résident.
-- Invalider via `revalidatePath` après les mutations qui insèrent des notifications.
+| Source | `kind` | `commune_id` | Contexte |
+|--------|--------|--------------|----------|
+| Fan-out nouveau contenu | `new_content` | commune du contenu | contenu publié |
+| Soutien / participation / bénévolat | `engagement` | commune de l'adhésion auteur | contenu concerné |
+| Relances cron (annonce expirée/stale, initiative stale, événement passé) | `nudge` | `commune_id` du contenu | contenu relancé |
+| Initiative → événement | `initiative_to_event` | commune de l'initiative | événement créé |
+| Rappels d'engagement et d'activation push | `system` | `active_commune_id` du profil (sans commune active → push seul, pas de ligne) | `null` |
 
-### 2. Liste des notifications
+---
 
-- Route : `/notifications` (ou panneau Popover dans le header — à trancher UX).
-- Query paginée : `.from("notifications").select("*").eq("user_id", userId).is("read_at", null).order("created_at", { ascending: false }).range(offset, offset + limit - 1)` (puis onglet "toutes" sans filtre `read_at`).
-- Utiliser le client serveur (Server Component).
+## Lecture (UI)
 
-### 3. Mark as read
+- **Header résident** (`components/features/resident-header.tsx`) : `NotificationBell` entre le `CommuneSwitcher` et le menu utilisateur sur desktop ; à gauche du menu mobile sur `< md`. Badge serveur `UnreadNotificationsBadgeAsync` (React `cache` + `Suspense`).
+- **Mobile** : la cloche est un lien vers `/notifications`.
+- **Desktop** : Popover (~380 px) chargé à l'ouverture via `fetchNotificationsPage(undefined, 10)`, « Tout marquer comme lu », lien « Voir toutes les notifications ». `router.refresh()` à la fermeture, après mutation et au retour d'onglet (`visibilitychange`).
+- **Page `/notifications`** : groupes « Aujourd'hui / Cette semaine / Plus ancien » (calcul Paris via `@/lib/datetime`, `now` injecté depuis le serveur), `LoadMoreLink` keyset (page de 20), état vide `Card` + `ILLUSTRATIONS.resident.notifications.emptyState`.
+- **Ligne** (`NotificationItem`) : icône/couleur depuis `CONTENT_TYPE_TAGS` (source unique partagée avec la messagerie), non lue = `text-text` + point coral, lue = `text-muted`, `RelativeTime`. Marquage lu optimiste au clic.
 
-- Server action `markNotificationRead(id)` : `.update({ read_at: now() }).eq("id", id).eq("user_id", userId)`.
-- Server action `markAllNotificationsRead()` : `.update({ read_at: now() }).eq("user_id", userId).is("read_at", null)`.
-- Revalidate le layout pour rafraîchir le badge.
+### Navigation et contenus indisponibles
 
-### 4. Purge cron
+`isNotificationNavigable` / `buildNotificationHref` (`lib/constants/notification-kinds.ts`) :
 
-```sql
-DELETE FROM public.notifications
-WHERE (read_at IS NOT NULL AND read_at < now() - interval '60 days')
-   OR (read_at IS NULL AND created_at < now() - interval '180 days');
-```
+- `available` → tout le monde navigue.
+- `finished` / `archived` / `suspended` → **seul l'auteur** navigue ; les autres voient une ligne statique avec le badge `CONTENT_STATUS_LABELS` (« Contenu terminé », « Contenu supprimé », « Contenu suspendu »), comme dans la messagerie.
+- `deleted` → personne (normalement absent grâce au trigger ; filet de sécurité).
+- `system` → toujours navigable ; cible = `payload.url` **relative uniquement**.
 
-Ajouté comme phase dans `lib/cron/lifecycle-collector.ts`.
+---
 
-### 5. Migration
+## Mutations
 
-- Index partiel : `CREATE INDEX idx_notifications_unread ON public.notifications (user_id, created_at DESC) WHERE read_at IS NULL;`
+- `markNotificationRead(id)` : `UPDATE … WHERE id AND user_id = ctx.userId AND read_at IS NULL` (idempotent).
+- `markAllNotificationsRead()` : même chose sur la commune active ; `revalidatePath('/notifications')`.
+- `POST /api/notifications/read` `{ tag }` (Zod) : appelé par `public/sw.js` au clic sur un push natif, authentifié par cookie de session. Le feed converge avec ce que l'utilisateur a déjà vu.
+
+---
+
+## Rétention
+
+Phase `purgeOldNotifications` du cron lifecycle existant (`docs/cron-config.md`) : lues > 60 j, non lues > 180 j (`lib/constants/retention.ts`), bornée à 500 lignes par catégorie et par exécution.
+
+---
+
+## Tests
+
+- Unitaires : `lib/constants/notification-kinds.test.ts` (navigabilité par statut/auteur, routes, anti open-redirect), `lib/utils/notification-grouping.test.ts` (jours Paris), `lib/services/notification-fanout.test.ts`, `lib/cron/lifecycle-collector.test.ts`.
+- Intégration : `tests/integration/notification-center.itest.ts` (statuts RPC, `is_author`, scope commune, keyset, trigger de cascade, marquage par tag sous RLS).
 
 ---
 
 ## Hors périmètre (à évaluer plus tard)
 
-- Realtime (Supabase Realtime pour mettre à jour le badge sans refresh) — pas nécessaire au lancement.
-- Groupement par type ("3 nouvelles annonces") — complexité UX à évaluer.
-- Notification center côté mairie/backoffice — se concentrer sur l'espace résident d'abord.
-- Préférences granulaires in-app (déjà gérées par `user_notification_preferences` pour le push, réutilisable).
-
----
-
-## Risques et garde-fous
-
-| Risque | Mitigation |
-|--------|-----------|
-| Table qui grossit sans limite | Purge cron avec TTL 60/180 jours |
-| COUNT lent sur grosse table | Index partiel `WHERE read_at IS NULL` |
-| Badge qui bloque le rendu | Suspense async (pattern sujet 6) |
-| Notification spam (10 publications/jour) | Groupement futur ; pour l'instant acceptable car le push est déjà envoyé au même rythme |
-
----
-
-## Dépendances
-
-- Aucune dépendance bloquante. Le fan-out (sujet 4) est fait, les données sont déjà écrites.
-- Le sujet 7 (agrégats JS) est indépendant.
-- La purge peut être livrée avant ou après l'UI (elle protège dans tous les cas).
-
----
-
-## Ordre de livraison suggéré
-
-1. Migration (index partiel) — 10 min
-2. Purge cron — 30 min
-3. Badge compteur dans le header — 1h
-4. Page/panneau de notifications — 2-3h
-5. Mark as read — 30 min
+- Realtime (Supabase Realtime) pour le badge sans refresh.
+- Groupement par type (« 3 nouvelles annonces »).
+- Centre de notifications côté mairie/backoffice.
+- Distinction « archivé » dans la messagerie (`ConversationContextStatus` ne connaît que `available` / `suspended` / `deleted`).

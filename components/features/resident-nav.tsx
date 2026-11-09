@@ -30,7 +30,7 @@ export const RESIDENT_NAV_ICONS: Record<
 > = {
   Accueil: Home,
   Annonces: Megaphone,
-  Initiatives: Sparkles,
+  Idées: Sparkles,
   "Événements": CalendarDays,
   Messages: Mail,
 };

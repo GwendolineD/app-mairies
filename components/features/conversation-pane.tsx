@@ -39,7 +39,7 @@ const CONTEXT_ROUTES: Record<ConversationContextType, (id: string) => string> = 
 
 const CONTEXT_LABELS: Record<ConversationContextType, string> = {
   announcement: "Voir l'annonce",
-  initiative: "Voir l'initiative",
+  initiative: "Voir l'idée",
   event: "Voir l'événement",
 };
 

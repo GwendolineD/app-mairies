@@ -35,13 +35,13 @@ export function DeleteInitiativeModal({ initiativeId, open, onClose }: Props) {
     <Modal
       open={open}
       onClose={onClose}
-      title="Supprimer l'initiative"
+      title="Supprimer l'idée"
       size="md"
       closeDisabled={pending}
     >
       <div className="space-y-4">
         <p className="text-sm font-medium leading-5 text-muted">
-          Votre initiative sera définitivement supprimée, ainsi que les soutiens
+          Votre idée sera définitivement supprimée, ainsi que les soutiens
           associés. Cette action est irréversible.
         </p>
 
@@ -66,7 +66,7 @@ export function DeleteInitiativeModal({ initiativeId, open, onClose }: Props) {
             disabled={pending}
             onClick={handleConfirm}
           >
-            {pending ? "Suppression…" : "Supprimer l'initiative"}
+            {pending ? "Suppression…" : "Supprimer l'idée"}
           </Button>
         </div>
       </div>

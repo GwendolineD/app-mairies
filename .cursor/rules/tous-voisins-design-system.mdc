@@ -42,7 +42,7 @@ Utiliser **uniquement** les tokens Tailwind/CSS définis dans `globals.css`. Int
 | `purple`       | `#9A52FF`  | Navigation active, hero, CTA principal       |
 | `turquoise`    | `#35D1D1`  | Offres, fraîcheur, liens secondaires         |
 | `aqua`         | `#1BB9D9`  | Complément offre / eau                       |
-| `mint`         | `#74E3B2`  | Initiatives, succès, positif                 |
+| `mint`         | `#74E3B2`  | Idées (code : initiative), succès, positif   |
 | `sun`          | `#FFC93D`  | Highlights, événements, joie                 |
 
 > Le code mappe parfois des hex légèrement arrondis (ex. `#FF8A4C` pour orange) — **ne pas les modifier ad hoc dans les composants** ; utiliser le token (`bg-orange`, `text-coral`…).
@@ -71,7 +71,7 @@ Classes utilitaires existantes : `gradient-hero`, `gradient-demande`, `gradient-
 | **Hero / Principal** | Rose → Violet        | CTA principal, headers, branding  |
 | **Demande**          | Rose → Orange        | Annonces « je cherche de l'aide » |
 | **Offre**            | Bleu → Turquoise     | Annonces « je propose »           |
-| **Initiative**       | Vert → Menthe        | Projets collectifs, initiatives   |
+| **Initiative**       | Vert → Menthe        | Idées des habitant·es (copy « idée », code `initiative`) |
 | **Événements**       | Orange → Rouge/Coral | Agenda, événements communaux      |
 
 **Règles :**

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, CalendarDays, MapPin } from "lucide-react";
 import { CloudImage } from "@/components/ui/cloud-image";
 import { CONTENT_ICONS } from "@/lib/constants/content-icons";
+import { INITIATIVE_VOCAB } from "@/lib/constants/content-vocabulary";
 import { ROUTES } from "@/lib/constants/routes";
 import {
   getInitiativeCategoryColorHex,
@@ -166,7 +167,7 @@ export function InitiativeCard({
               <CloudImage src={imageUrl} alt="" priority={priority} />
             ) : (
               <div className="flex size-full items-center justify-center bg-warm text-[10px] font-semibold text-muted">
-                Initiative
+                {INITIATIVE_VOCAB.tag}
               </div>
             )}
           </div>
@@ -247,7 +248,7 @@ export function InitiativeCard({
             <CloudImage src={imageUrl} alt="" priority={priority} />
           ) : (
             <div className="flex size-full items-center justify-center bg-warm text-[11px] font-semibold text-muted">
-              Initiative
+              {INITIATIVE_VOCAB.tag}
             </div>
           )}
           {i.suspended_at ? <ContentSuspendedBadge /> : null}
@@ -329,7 +330,7 @@ export function InitiativeMapCard({
           <CloudImage src={imageUrl} alt="" />
         ) : (
           <div className="flex size-full items-center justify-center bg-warm text-xs font-semibold text-muted">
-            Initiative
+            {INITIATIVE_VOCAB.tag}
           </div>
         )}
       </div>
@@ -348,9 +349,9 @@ export function InitiativeMapCard({
       <Link
         href={ROUTES.initiatives.detail(i.id)}
         className="mt-1 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-sm gradient-initiative px-3 py-2 text-xs font-bold text-white shadow-card transition hover:opacity-95"
-        aria-label="Voir l'initiative"
+        aria-label="Voir l'idée"
       >
-        <span>Voir l&apos;initiative</span>
+        <span>Voir l&apos;idée</span>
         <ArrowRight className="size-3.5" aria-hidden />
       </Link>
     </div>

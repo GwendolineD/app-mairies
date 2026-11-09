@@ -27,7 +27,7 @@ export const BACKOFFICE_CONTENT_TYPE_LABELS: Record<
   string
 > = {
   announcement: "Annonce",
-  initiative: "Initiative",
+  initiative: "Idée",
   event: "Événement",
 };
 

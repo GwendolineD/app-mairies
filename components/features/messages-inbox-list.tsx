@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState, useTransition } from "react";
-import { ArchiveRestore, Megaphone, Sparkles, CalendarDays, MessageCircle, Inbox, Trash2, X } from "lucide-react";
+import { ArchiveRestore, MessageCircle, Inbox, Trash2, X } from "lucide-react";
 import {
   archiveConversation,
   fetchMoreConversations,
@@ -12,10 +12,8 @@ import {
 } from "@/lib/actions/messages";
 import { ROUTES } from "@/lib/constants/routes";
 import { CONTEXT_TYPE_LABELS } from "@/lib/constants/context-types";
-import type {
-  ConversationContextType,
-  ConversationInboxItem,
-} from "@/lib/types";
+import { CONTENT_TYPE_TAGS } from "@/lib/constants/content-types";
+import type { ConversationInboxItem } from "@/lib/types";
 import { cn } from "@/lib/utils/cn";
 import { RelativeTime } from "@/components/ui/relative-time";
 import { LoadMoreLink } from "@/components/ui/load-more-link";
@@ -23,12 +21,6 @@ import { ArchiveConversationModal } from "@/components/features/archive-conversa
 import { DeleteConversationModal } from "@/components/features/delete-conversation-modal";
 import { getConversationStatusBadgeLabel } from "@/lib/utils/conversation-status-badge";
 import { buildOptimizedCloudinaryUrl } from "@/lib/services/cloudinary";
-
-const CONTEXT_ICON: Record<ConversationContextType, typeof MessageCircle> = {
-  announcement: Megaphone,
-  initiative: Sparkles,
-  event: CalendarDays,
-};
 
 type Props = {
   conversations: ConversationInboxItem[];
@@ -134,7 +126,7 @@ export function MessagesInboxList({
             const isMine = conv.last_message_sender_id === currentUserId;
             const unread = !isMine && conv.unread_count > 0;
             const Icon = conv.context_type
-              ? CONTEXT_ICON[conv.context_type]
+              ? CONTENT_TYPE_TAGS[conv.context_type].icon
               : MessageCircle;
             const contextLabel = conv.context_type
               ? CONTEXT_TYPE_LABELS[conv.context_type]

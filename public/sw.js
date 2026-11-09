@@ -29,21 +29,43 @@ self.addEventListener("push", (event) => {
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
+// Mark the matching in-app notification as read so the bell badge converges
+// with what the user already saw natively. Best effort: never blocks navigation.
+function markReadByTag(tag) {
+  if (!tag) return Promise.resolve();
+  return fetch("/api/notifications/read", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tag }),
+  }).catch(() => undefined);
+}
+
+function focusOrOpen(url) {
+  return self.clients
+    .matchAll({ type: "window", includeUncontrolled: true })
+    .then((clients) => {
+      for (const client of clients) {
+        // Compare pathnames: `includes` would match "/" against every tab.
+        let samePath = false;
+        try {
+          samePath = new URL(client.url).pathname === url;
+        } catch {
+          samePath = false;
+        }
+        if (samePath && "focus" in client) {
+          return client.focus();
+        }
+      }
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(url);
+      }
+    });
+}
+
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const url = (event.notification.data && event.notification.data.url) || "/";
-  event.waitUntil(
-    self.clients
-      .matchAll({ type: "window", includeUncontrolled: true })
-      .then((clients) => {
-        for (const client of clients) {
-          if (client.url.includes(url) && "focus" in client) {
-            return client.focus();
-          }
-        }
-        if (self.clients.openWindow) {
-          return self.clients.openWindow(url);
-        }
-      }),
-  );
+  const tag = event.notification.tag;
+  event.waitUntil(Promise.all([markReadByTag(tag), focusOrOpen(url)]));
 });

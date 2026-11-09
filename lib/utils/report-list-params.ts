@@ -32,7 +32,7 @@ export const REPORT_STATUS_FILTERS = [
 export const REPORT_CONTENT_FILTERS = [
   { key: "demande" as const, label: "Demande" },
   { key: "offre" as const, label: "Offre" },
-  { key: "initiative" as const, label: "Initiative" },
+  { key: "initiative" as const, label: "Idée" },
   { key: "event" as const, label: "Événement" },
 ];
 
@@ -164,7 +164,7 @@ export function buildReportListQuery(
 
 export function getReportContextLabel(contextType: string): string | null {
   if (contextType === "announcement") return "cette annonce";
-  if (contextType === "initiative") return "cette initiative";
+  if (contextType === "initiative") return "cette idée";
   if (contextType === "event") return "cet événement";
   return null;
 }

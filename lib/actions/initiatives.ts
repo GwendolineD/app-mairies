@@ -112,7 +112,7 @@ export async function createInitiative(formData: FormData): Promise<{ id: string
     .select("id")
     .single();
 
-  if (error || !created) throw new Error("Impossible de créer l'initiative");
+  if (error || !created) throw new Error("Impossible de publier l'idée");
 
   // Create linked event if event fields are provided
   const eventStartsAt = formData.get("eventStartsAt") as string | null;
@@ -410,7 +410,7 @@ export async function toggleInitiativeSupport(initiativeId: string) {
     .maybeSingle();
 
   if (initiativeError || !initiative) {
-    return { error: "Initiative introuvable.", supported: false };
+    return { error: "Idée introuvable.", supported: false };
   }
 
   const { data: existing } = await supabase
@@ -445,6 +445,7 @@ export async function toggleInitiativeSupport(initiativeId: string) {
     actorUserId: ctx.userId,
     actorName,
     prefKey: "notify_initiative_support",
+    context: { type: "initiative", id: initiativeId },
     title: `Nouveau soutien — ${actorName}`,
     body: initiative.title,
     url: ROUTES.initiatives.detail(initiativeId),

@@ -15,7 +15,7 @@ import {
 import { getAppUrl } from "@/lib/utils/app-url";
 import { messageSchema } from "@/lib/validations/schemas";
 import {
-  notifyUser,
+  sendPushToUser,
   shouldNotifyMessage,
 } from "@/lib/services/push-notifications";
 import type { ConversationContextType } from "@/lib/types";
@@ -196,7 +196,8 @@ async function insertConversationMessage(
     .eq("conversation_id", conversationId)
     .eq("user_id", ctx.userId);
 
-  // Notify recipient if their preferences allow.
+  // Notify recipient if their preferences allow. Push only: unread messages
+  // are already surfaced by the inbox, so no in-app notification row is written.
   const allowed = await shouldNotifyMessage(
     supabase,
     recipientUserId,
@@ -205,15 +206,11 @@ async function insertConversationMessage(
   if (allowed) {
     const senderName = ctx.profile.display_name ?? "Un·e voisin·e";
     const preview = body.slice(0, 140);
-    await notifyUser(recipientUserId, {
+    await sendPushToUser(recipientUserId, {
       title: `Nouveau message — ${senderName}`,
       body: conversation.title ? `${conversation.title} · ${preview}` : preview,
       url: ROUTES.messages.detail(conversationId),
       tag: `conv:${conversationId}`,
-      payloadJson: {
-        conversation_id: conversationId,
-        context_type: conversation.context_type,
-      },
     });
   }
 

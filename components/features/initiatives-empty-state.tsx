@@ -21,10 +21,10 @@ export function InitiativesEmptyState({
   return (
     <Card className="rounded-xl p-5 text-center">
       <p className="text-sm font-semibold text-text">
-        Aucune initiative ne correspond à vos filtres
+        Aucune idée ne correspond à vos filtres
       </p>
       <p className="mt-1.5 text-sm font-medium text-muted">
-        Modifiez ou effacez vos filtres pour découvrir d&apos;autres initiatives
+        Modifiez ou effacez vos filtres pour découvrir d&apos;autres idées
         près de chez vous.
       </p>
       {clearFiltersHref ? (

@@ -13,7 +13,7 @@ import type { WeeklyContentRow } from "@/lib/queries/dashboard-charts";
 
 const chartConfig = {
   annonces: { label: "Annonces", color: "var(--purple)" },
-  initiatives: { label: "Initiatives", color: "var(--mint)" },
+  initiatives: { label: "Idées", color: "var(--mint)" },
   evenements: { label: "Événements", color: "var(--orange)" },
 } satisfies ChartConfig;
 

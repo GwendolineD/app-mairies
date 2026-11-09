@@ -7,12 +7,13 @@ import {
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
+import { INITIATIVE_VOCAB } from "@/lib/constants/content-vocabulary";
 import { ROUTES } from "@/lib/constants/routes";
 import { cn } from "@/lib/utils/cn";
 
 export const PROFILE_TABS = [
   { key: "annonces", label: "Annonces", icon: Megaphone },
-  { key: "initiatives", label: "Initiatives", icon: Sparkles },
+  { key: "initiatives", label: INITIATIVE_VOCAB.labelShort, icon: Sparkles },
   { key: "evenements", label: "Événements", icon: CalendarDays },
   {
     key: "participations",

@@ -5,6 +5,7 @@ import { Check, ChevronDown, Send, User, X, type LucideIcon } from "lucide-react
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { RESIDENT_NAV_ICONS } from "@/components/features/resident-nav";
+import { INITIATIVE_VOCAB } from "@/lib/constants/content-vocabulary";
 import { Button } from "@/components/ui/button";
 import {
   FilterRow,
@@ -888,7 +889,7 @@ type ListField = {
 const LIST_FIELD_ICONS: Record<string, LucideIcon> = {
   "Adhérent·es": User,
   Annonces: RESIDENT_NAV_ICONS.Annonces,
-  Initiatives: RESIDENT_NAV_ICONS.Initiatives,
+  [INITIATIVE_VOCAB.labelShort]: RESIDENT_NAV_ICONS.Idées,
   "Événements": RESIDENT_NAV_ICONS["Événements"],
   Invitations: Send,
 };

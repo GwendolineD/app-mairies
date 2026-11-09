@@ -25,7 +25,7 @@ const chartConfig = {
     color: "var(--coral)",
   },
   avgInitiatives: {
-    label: "Initiatives (moy.)",
+    label: "Idées (moy.)",
     color: "var(--mint)",
   },
   avgEvents: {

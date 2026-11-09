@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireCommuneStaff } from "@/lib/auth/session";
+import { INITIATIVE_VOCAB } from "@/lib/constants/content-vocabulary";
 import { ROUTES } from "@/lib/constants/routes";
 import { INITIATIVE_STATUS } from "@/lib/constants/statuses";
 import { createClient } from "@/lib/supabase/server";
@@ -70,8 +71,8 @@ export default async function MairieInitiativesPage(props: {
     <div className="space-y-4">
       <Card className="space-y-2 p-6">
         <PageHeading
-          title="Initiatives"
-          subtitle="Projets collectifs portés par les habitant·es de votre commune."
+          title={INITIATIVE_VOCAB.labelShort}
+          subtitle="Idées proposées et portées par les habitant·es de votre commune."
         />
         <div className="flex flex-wrap gap-2">
           {STATUS_FILTERS.map((f) => (
@@ -86,7 +87,7 @@ export default async function MairieInitiativesPage(props: {
           ))}
         </div>
         <p className="text-xs font-medium text-muted">
-          {total} initiative{total > 1 ? "s" : ""}
+          {total} {total > 1 ? INITIATIVE_VOCAB.plural : INITIATIVE_VOCAB.singular}
           {statusFilter === "actives"
             ? ` active${total > 1 ? "s" : ""}`
             : ""}{" "}
@@ -97,7 +98,7 @@ export default async function MairieInitiativesPage(props: {
       <div className="space-y-2">
         {items.length === 0 ? (
           <p className="text-sm font-medium text-muted">
-            Aucune initiative pour l&apos;instant.
+            Aucune idée pour l&apos;instant.
           </p>
         ) : (
           items.map((i) => (

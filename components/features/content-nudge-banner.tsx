@@ -20,7 +20,7 @@ const MESSAGES: Record<NudgeReason, string> = {
   announcement_stale:
     "Votre annonce est active depuis plus de 2 mois. Est-elle toujours d'actualité ?",
   initiative_stale:
-    "Votre initiative est active depuis plus de 2 mois. Est-elle toujours d'actualité ?",
+    "Votre idée est active depuis plus de 2 mois. Est-elle toujours d'actualité ?",
   event_past:
     "Votre événement est terminé. Souhaitez-vous le supprimer ?",
 };

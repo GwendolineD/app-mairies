@@ -89,7 +89,7 @@ export default async function MairieAccueilPage() {
           href={`${ROUTES.mairie.annonces}?statut=actives`}
         />
         <StatCard
-          label="Initiatives actives"
+          label="Idées actives"
           value={liveStats.activeInitiatives}
           accent="mint"
           href={`${ROUTES.mairie.initiatives}?statut=actives`}

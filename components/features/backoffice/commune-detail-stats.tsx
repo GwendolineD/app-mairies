@@ -6,6 +6,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { INITIATIVE_VOCAB } from "@/lib/constants/content-vocabulary";
 import { cn } from "@/lib/utils/cn";
 
 type Props = {
@@ -101,7 +102,7 @@ export function CommuneDetailStats({
         activeColorClass="text-coral"
       />
       <ContentStatCard
-        label="Initiatives"
+        label={INITIATIVE_VOCAB.labelShort}
         icon={Sparkles}
         activeCount={activeInitiativesCount}
         totalCount={totalInitiativesCount}

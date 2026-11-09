@@ -10,7 +10,7 @@ export default async function BackofficeCategoriesInitiativesPage() {
 
   return (
     <PageStack>
-      <PageHeading title="Catégories initiatives & événements" />
+      <PageHeading title="Catégories idées & événements" />
       <InitiativeEventCategoriesGrid categories={categories} />
     </PageStack>
   );

@@ -18,6 +18,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/server";
+import type { NotificationKind } from "@/lib/constants/notification-kinds";
 import type { ConversationContextType } from "@/lib/types";
 import type { Database } from "@/lib/types/database.types";
 
@@ -26,6 +27,17 @@ export type PushPayload = {
   body: string;
   url?: string;
   tag?: string;
+};
+
+/**
+ * Where an in-app notification lives: the commune it belongs to, its kind and
+ * (when bound to a content) the content it points at. `context` is required
+ * for every kind except `system`.
+ */
+export type NotificationTarget = {
+  communeId: string;
+  kind: NotificationKind;
+  context?: { type: ConversationContextType; id: string } | null;
 };
 
 type StoredSubscription = {
@@ -225,17 +237,23 @@ export async function sendPushToSubscriptions(
  */
 export async function notifyUser(
   recipientUserId: string,
+  target: NotificationTarget,
   payload: PushPayload & { payloadJson?: Record<string, unknown> },
 ): Promise<void> {
-  let supabase: SupabaseClient;
+  let supabase: SupabaseClient<Database>;
   try {
     supabase = await createServiceClient();
   } catch {
     return;
   }
 
-  await supabase.from("notifications").insert({
+  const { error } = await supabase.from("notifications").insert({
     user_id: recipientUserId,
+    commune_id: target.communeId,
+    kind: target.kind,
+    tag: payload.tag ?? null,
+    context_type: target.context?.type ?? null,
+    context_id: target.context?.id ?? null,
     title: payload.title,
     body: payload.body,
     payload: {
@@ -244,6 +262,9 @@ export async function notifyUser(
       ...(payload.payloadJson ?? {}),
     },
   });
+  if (error) {
+    console.warn("[notifications] insert failed", error.message);
+  }
 
   await sendPushToUser(recipientUserId, payload);
 }

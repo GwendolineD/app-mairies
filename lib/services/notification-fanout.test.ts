@@ -131,6 +131,23 @@ describe("fanoutNewContentNotification — recipient selection via RPC", () => {
     ]);
   });
 
+  it("writes commune-scoped rows with kind, tag and content context for the in-app feed", async () => {
+    const { client, insertCalls } = stubClient({
+      rpcResults: [{ data: [{ user_id: NEIGHBOUR_A }], error: null }],
+    });
+    await runFanout(client, { contextType: "event" });
+
+    const row = (insertCalls[0] as Array<Record<string, unknown>>)[0];
+    expect(row).toMatchObject({
+      user_id: NEIGHBOUR_A,
+      commune_id: COMMUNE_ID,
+      kind: "new_content",
+      tag: `event:${CONTENT_ID}`,
+      context_type: "event",
+      context_id: CONTENT_ID,
+    });
+  });
+
   it("passes excludeUserIds to the RPC", async () => {
     const { client, rpcCalls } = stubClient({
       rpcResults: [{ data: [{ user_id: NEIGHBOUR_B }], error: null }],

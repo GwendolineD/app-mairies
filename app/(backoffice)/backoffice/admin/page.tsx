@@ -163,7 +163,7 @@ export default async function BackofficeAdminHomePage() {
           />
           <DashboardStatCard
             href={`${ROUTES.backoffice.contenus}?tab=initiative`}
-            label="Initiatives"
+            label="Idées"
             value={contentCounts.initiative}
             icon={<Sparkles className="size-3.5 shrink-0 text-mint" aria-hidden />}
             accentClass="text-mint"

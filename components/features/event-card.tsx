@@ -19,7 +19,9 @@ import {
   getContentNudgeReason,
 } from "@/lib/utils/content-nudge";
 import { getEventRangeParts } from "@/lib/datetime";
+import type { EventAttendanceFields } from "@/lib/queries/events";
 import type { AgendaEventRecord } from "@/lib/types";
+import { formatHeadcountShort } from "@/lib/utils/event-headcount";
 
 export type EventCardData = Pick<
   AgendaEventRecord,
@@ -33,10 +35,8 @@ export type EventCardData = Pick<
   | "ends_at"
   | "volunteers_needed"
   | "suspended_at"
-> & {
-  volunteers_registered?: number;
-  participants_count?: number;
-};
+> &
+  Partial<EventAttendanceFields>;
 
 type Props = {
   event: EventCardData;
@@ -62,9 +62,7 @@ function ParticipantsCounter({ count }: { count: number }) {
   return (
     <div className="flex items-center gap-1.5">
       <Icon className="size-3 shrink-0 text-purple" aria-hidden />
-      <span className="text-[10px] font-semibold text-muted">
-        {count} participant{count !== 1 ? "s" : ""}
-      </span>
+      <span className="text-[10px] font-semibold text-muted">{formatHeadcountShort(count)}</span>
     </div>
   );
 }
@@ -132,8 +130,8 @@ export function EventCard({
     ? "border-orange ring-2 ring-orange/35 shadow-[0_12px_32px_rgba(255,179,71,0.15)]"
     : "";
   const imageUrl = resolveImageUrl(e);
-  const volunteersRegistered = e.volunteers_registered ?? 0;
-  const participantsCount = e.participants_count ?? 0;
+  const volunteersRegistered = e.volunteers_headcount ?? 0;
+  const participantsCount = e.participants_headcount ?? 0;
   const showActionRequired =
     Boolean(nudgeContent) &&
     !e.suspended_at &&
@@ -249,8 +247,8 @@ export function EventCard({
 
 export function EventMapCard({ event: e }: { event: EventCardData }) {
   const imageUrl = resolveImageUrl(e);
-  const volunteersRegistered = e.volunteers_registered ?? 0;
-  const participantsCount = e.participants_count ?? 0;
+  const volunteersRegistered = e.volunteers_headcount ?? 0;
+  const participantsCount = e.participants_headcount ?? 0;
 
   return (
     <div className="flex w-[260px] flex-col gap-2">

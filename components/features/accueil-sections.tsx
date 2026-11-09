@@ -8,6 +8,7 @@ import { ILLUSTRATIONS } from "@/lib/constants/illustrations";
 import { buildOptimizedCloudinaryUrl } from "@/lib/services/cloudinary";
 import { ImagePulseFrame } from "@/components/ui/image-pulse-frame";
 import { getAnnouncementTypeConfig } from "@/lib/constants/announcement-types";
+import { INITIATIVE_VOCAB } from "@/lib/constants/content-vocabulary";
 import { ROUTES } from "@/lib/constants/routes";
 import { buildAnnouncementListQuery } from "@/lib/utils/search-params";
 import { cn } from "@/lib/utils/cn";
@@ -163,7 +164,7 @@ export function AccueilQuickActions() {
           onClick={() => openAnnouncementModal({ presetType: "offre" })}
         />
         <QuickActionCard
-          label="Initiative"
+          label={INITIATIVE_VOCAB.tag}
           gradient="gradient-initiative"
           icon={<Sparkles className="size-4 text-white md:size-5" strokeWidth={2.25} aria-hidden />}
           onClick={openInitiativeModal}

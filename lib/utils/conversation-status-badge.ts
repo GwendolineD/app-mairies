@@ -1,3 +1,4 @@
+import { CONTENT_STATUS_LABELS } from "@/lib/constants/content-status";
 import { MEMBERSHIP_STATUS } from "@/lib/constants/statuses";
 import type {
   ConversationContextStatus,
@@ -25,10 +26,10 @@ export function getConversationStatusBadgeLabel(
     return "Membre suspendu";
   }
   if (item.context_status === "suspended") {
-    return "Contenu suspendu";
+    return CONTENT_STATUS_LABELS.suspended;
   }
   if (item.context_status === "deleted") {
-    return "Contenu supprimé";
+    return CONTENT_STATUS_LABELS.deleted;
   }
   return null;
 }

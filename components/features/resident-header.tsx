@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { CommuneSwitcher } from "@/components/features/commune-switcher";
+import { NotificationBell } from "@/components/features/notifications/notification-bell";
 import { ResidentMobileHeaderMenu } from "@/components/features/resident-mobile-header-menu";
 import { ResidentUserMenu } from "@/components/features/resident-user-menu";
 import type { BackofficeNavLink } from "@/lib/auth/permissions";
@@ -15,6 +16,8 @@ type Props = {
   activeCommuneId: string | null | undefined;
   backofficeLinks?: BackofficeNavLink[];
   supportEmail: string;
+  /** Unread notifications badge (server-rendered, Suspense-wrapped). */
+  notificationsBadge?: React.ReactNode;
 };
 
 export function ResidentHeader({
@@ -23,6 +26,7 @@ export function ResidentHeader({
   activeCommuneId,
   backofficeLinks = [],
   supportEmail,
+  notificationsBadge = null,
 }: Props) {
   const logo = ILLUSTRATIONS.resident.header.logoHorizontal;
 
@@ -46,6 +50,13 @@ export function ResidentHeader({
         </Link>
 
         <div className="flex min-w-0 items-center gap-2 md:gap-3">
+          <div className="hidden items-center md:flex">
+            <CommuneSwitcher
+              memberships={memberships}
+              activeCommuneId={activeCommuneId}
+            />
+          </div>
+          <NotificationBell badge={notificationsBadge} />
           <div className="md:hidden">
             <ResidentMobileHeaderMenu
               profile={profile}
@@ -55,11 +66,7 @@ export function ResidentHeader({
               supportEmail={supportEmail}
             />
           </div>
-          <div className="hidden items-center gap-2 md:flex md:gap-3">
-            <CommuneSwitcher
-              memberships={memberships}
-              activeCommuneId={activeCommuneId}
-            />
+          <div className="hidden items-center md:flex">
             <ResidentUserMenu
               profile={profile}
               backofficeLinks={backofficeLinks}

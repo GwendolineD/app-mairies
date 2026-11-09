@@ -22,6 +22,10 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils/cn";
+import {
+  INITIATIVE_VOCAB,
+  formatInitiativeCount,
+} from "@/lib/constants/content-vocabulary";
 import { InfoPopover } from "@/components/features/onboarding/info-popover";
 import { FilterHelpPopover } from "@/components/ui/filter-help-popover";
 
@@ -45,7 +49,7 @@ export function InitiativeListToolbar({
   }
 
   const filterCount = params.categorie ? 1 : 0;
-  const countLabel = `${totalCount} initiative${totalCount !== 1 ? "s" : ""} près de chez vous`;
+  const countLabel = `${formatInitiativeCount(totalCount)} près de chez vous`;
 
   const createButtonMobile = onCreateClick ? (
     <Button
@@ -53,7 +57,7 @@ export function InitiativeListToolbar({
       variant="primary"
       size="icon-sm"
       onClick={onCreateClick}
-      aria-label="Lancer une initiative"
+      aria-label={INITIATIVE_VOCAB.ctaCreate}
       className="size-[38px] shrink-0 p-0 md:hidden"
     >
       <Plus aria-hidden />
@@ -62,7 +66,7 @@ export function InitiativeListToolbar({
     <Button
       href={`${pathname}${buildInitiativeListQuery({ ...params, create: "initiative" })}`}
       size="icon-sm"
-      aria-label="Lancer une initiative"
+      aria-label={INITIATIVE_VOCAB.ctaCreate}
       className="size-[38px] shrink-0 p-0 md:hidden"
     >
       <Plus aria-hidden />
@@ -78,7 +82,7 @@ export function InitiativeListToolbar({
       onClick={onCreateClick}
     >
       <span className="text-sm leading-none">+</span>
-      <span>Lancer une initiative</span>
+      <span>{INITIATIVE_VOCAB.ctaCreate}</span>
     </Button>
   ) : (
     <Button
@@ -87,7 +91,7 @@ export function InitiativeListToolbar({
       className="font-bold"
     >
       <span className="text-sm leading-none">+</span>
-      <span>Lancer une initiative</span>
+      <span>{INITIATIVE_VOCAB.ctaCreate}</span>
     </Button>
   );
 
@@ -112,7 +116,7 @@ export function InitiativeListToolbar({
     <div className="space-y-2 md:space-y-4">
       <div className="flex items-center gap-2 md:hidden">
         <h1 className="text-xl font-bold leading-7 text-text">
-          Toutes les initiatives
+          {INITIATIVE_VOCAB.listTitle}
         </h1>
         <InfoPopover slide="initiatives" />
       </div>
@@ -121,14 +125,14 @@ export function InitiativeListToolbar({
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <h1 className="text-[28px] font-bold leading-9 text-text">
-              Toutes les initiatives
+              {INITIATIVE_VOCAB.listTitle}
             </h1>
             <InfoPopover slide="initiatives" />
           </div>
           {createButtonDesktop}
         </div>
         <p className="mt-1 text-sm font-medium leading-5 text-muted">
-          Découvrez les idées proposées par les habitants pour faire évoluer la commune.
+          Proposez une idée pour votre commune : vos voisin·es la soutiennent et vous aident à la concrétiser.
         </p>
       </div>
 

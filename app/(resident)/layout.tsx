@@ -7,6 +7,7 @@ import { PwaInstallBanner } from "@/components/features/pwa/pwa-install-banner";
 import { NotificationPromptBanner } from "@/components/features/notification-prompt-banner";
 import { ResidentShellClient } from "@/components/features/resident-shell-client";
 import { UnreadMessagesBadgeAsync } from "@/components/features/badges/unread-messages-badge-async";
+import { UnreadNotificationsBadgeAsync } from "@/components/features/badges/unread-notifications-badge-async";
 import { getResidentBackofficeNav } from "@/lib/auth/permissions";
 import { requireActiveMembership } from "@/lib/auth/session";
 import { getPlatformSupportEmail } from "@/lib/actions/platform-settings";
@@ -45,6 +46,12 @@ export default async function ResidentRootLayout({
     ),
   };
 
+  const notificationsBadge = (
+    <Suspense fallback={null}>
+      <UnreadNotificationsBadgeAsync communeId={communeId} />
+    </Suspense>
+  );
+
   const [
     categoryRows,
     initiativeCategoryRows,
@@ -68,6 +75,7 @@ export default async function ResidentRootLayout({
         activeCommuneId={ctx.activeCommuneId}
         backofficeLinks={backofficeLinks}
         supportEmail={supportEmail}
+        notificationsBadge={notificationsBadge}
       />
 
       <div className="flex min-h-0 w-full flex-1">

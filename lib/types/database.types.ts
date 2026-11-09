@@ -982,18 +982,21 @@ export type Database = {
         Row: {
           created_at: string
           event_id: string
+          guests_count: number
           id: string
           membership_id: string
         }
         Insert: {
           created_at?: string
           event_id: string
+          guests_count?: number
           id?: string
           membership_id: string
         }
         Update: {
           created_at?: string
           event_id?: string
+          guests_count?: number
           id?: string
           membership_id?: string
         }
@@ -1018,18 +1021,21 @@ export type Database = {
         Row: {
           created_at: string
           event_id: string
+          guests_count: number
           id: string
           membership_id: string
         }
         Insert: {
           created_at?: string
           event_id: string
+          guests_count?: number
           id?: string
           membership_id: string
         }
         Update: {
           created_at?: string
           event_id?: string
+          guests_count?: number
           id?: string
           membership_id?: string
         }
@@ -1630,32 +1636,55 @@ export type Database = {
       notifications: {
         Row: {
           body: string | null
+          commune_id: string
+          context_id: string | null
+          context_type: Database["public"]["Enums"]["context_type"] | null
           created_at: string
           id: string
+          kind: string
           payload: Json
           read_at: string | null
+          tag: string | null
           title: string | null
           user_id: string
         }
         Insert: {
           body?: string | null
+          commune_id: string
+          context_id?: string | null
+          context_type?: Database["public"]["Enums"]["context_type"] | null
           created_at?: string
           id?: string
+          kind?: string
           payload?: Json
           read_at?: string | null
+          tag?: string | null
           title?: string | null
           user_id: string
         }
         Update: {
           body?: string | null
+          commune_id?: string
+          context_id?: string | null
+          context_type?: Database["public"]["Enums"]["context_type"] | null
           created_at?: string
           id?: string
+          kind?: string
           payload?: Json
           read_at?: string | null
+          tag?: string | null
           title?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notifications_commune_id_fkey"
+            columns: ["commune_id"]
+            isOneToOne: false
+            referencedRelation: "communes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       platform_settings: {
         Row: {
@@ -1864,8 +1893,7 @@ export type Database = {
           created_at: string
           first_contact_at: string | null
           first_contact_type:
-            | Database["public"]["Enums"]["prospect_first_contact_type"]
-            | null
+            Database["public"]["Enums"]["prospect_first_contact_type"] | null
           notes_json: Json | null
           outcome: Database["public"]["Enums"]["prospect_outcome"] | null
           prospect_commune_id: string
@@ -1881,8 +1909,7 @@ export type Database = {
           created_at?: string
           first_contact_at?: string | null
           first_contact_type?:
-            | Database["public"]["Enums"]["prospect_first_contact_type"]
-            | null
+            Database["public"]["Enums"]["prospect_first_contact_type"] | null
           notes_json?: Json | null
           outcome?: Database["public"]["Enums"]["prospect_outcome"] | null
           prospect_commune_id: string
@@ -1898,8 +1925,7 @@ export type Database = {
           created_at?: string
           first_contact_at?: string | null
           first_contact_type?:
-            | Database["public"]["Enums"]["prospect_first_contact_type"]
-            | null
+            Database["public"]["Enums"]["prospect_first_contact_type"] | null
           notes_json?: Json | null
           outcome?: Database["public"]["Enums"]["prospect_outcome"] | null
           prospect_commune_id?: string
@@ -2134,7 +2160,7 @@ export type Database = {
     }
     Functions: {
       admin_commune_overview: {
-        Args: never
+        Args: Record<PropertyKey, never>
         Returns: {
           announcement_count: number
           billing_email: string
@@ -2174,7 +2200,7 @@ export type Database = {
         }[]
       }
       admin_find_user_by_email: { Args: { p_email: string }; Returns: string }
-      admin_platform_stats: { Args: never; Returns: Json }
+      admin_platform_stats: { Args: Record<PropertyKey, never>; Returns: Json }
       admin_user_emails: {
         Args: { p_user_ids: string[] }
         Returns: {
@@ -2221,7 +2247,7 @@ export type Database = {
         }[]
       }
       count_content_by_commune: {
-        Args: never
+        Args: Record<PropertyKey, never>
         Returns: {
           announcements: number
           commune_id: string
@@ -2234,7 +2260,9 @@ export type Database = {
         Returns: {
           event_id: string
           participants_count: number
+          participants_headcount: number
           volunteers_count: number
+          volunteers_headcount: number
         }[]
       }
       count_initiative_support: {
@@ -2245,7 +2273,7 @@ export type Database = {
         }[]
       }
       count_population_by_commune: {
-        Args: never
+        Args: Record<PropertyKey, never>
         Returns: {
           active_members: number
           commune_id: string
@@ -2263,6 +2291,10 @@ export type Database = {
         }[]
       }
       count_total_unread: { Args: { p_commune_id: string }; Returns: number }
+      count_unread_notifications: {
+        Args: { p_commune_id: string }
+        Returns: number
+      }
       has_active_membership: {
         Args: { p_commune_id: string }
         Returns: boolean
@@ -2279,7 +2311,7 @@ export type Database = {
         Args: { p_commune_id: string }
         Returns: boolean
       }
-      is_platform_admin: { Args: never; Returns: boolean }
+      is_platform_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
       list_filtered_users_page: {
         Args: {
           p_admin?: boolean
@@ -2332,6 +2364,28 @@ export type Database = {
           total_count: number
           unread_count: number
           updated_at: string
+        }[]
+      }
+      list_my_notifications: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_commune_id: string
+          p_limit?: number
+        }
+        Returns: {
+          body: string
+          context_id: string
+          context_status: string
+          context_type: Database["public"]["Enums"]["context_type"]
+          created_at: string
+          id: string
+          is_author: boolean
+          kind: string
+          payload: Json
+          read_at: string
+          tag: string
+          title: string
         }[]
       }
       owns_active_membership: {
@@ -2387,7 +2441,8 @@ export type Database = {
         Args: { p_name: string; p_ttl_minutes?: number }
         Returns: string
       }
-      uuid_generate_v4: { Args: never; Returns: string }
+      try_uuid: { Args: { p_value: string }; Returns: string }
+      uuid_generate_v4: { Args: Record<PropertyKey, never>; Returns: string }
     }
     Enums: {
       access_status: "inactive" | "trial" | "active" | "suspended"
@@ -2404,11 +2459,7 @@ export type Database = {
       membership_status: "active" | "suspended" | "left"
       moderation_action_type: "suspend" | "reactivate" | "ban" | "unban"
       moderation_target_type:
-        | "announcement"
-        | "initiative"
-        | "event"
-        | "membership"
-        | "user"
+        "announcement" | "initiative" | "event" | "membership" | "user"
       outcome_reason: "fulfilled" | "unfulfilled"
       payment_status: "paid" | "pending" | "failed" | "refunded"
       prospect_first_contact_type: "email" | "sms" | "call" | "in_person"
@@ -2432,12 +2483,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2459,13 +2510,12 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2484,13 +2534,12 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2509,13 +2558,12 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    keyof DefaultSchema["Enums"] | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2528,11 +2576,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2578,4 +2626,3 @@ export const Constants = {
     },
   },
 } as const
-

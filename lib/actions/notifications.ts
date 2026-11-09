@@ -5,10 +5,82 @@ import { requireActiveMembership } from "@/lib/auth/session";
 import { ROUTES } from "@/lib/constants/routes";
 import { createClient } from "@/lib/supabase/server";
 import {
+  listMyNotifications,
+  NOTIFICATIONS_PAGE_SIZE,
+  type NotificationsCursor,
+  type NotificationsPage,
+} from "@/lib/queries/notifications";
+import {
   notificationPreferencesSchema,
   pushSubscriptionSchema,
 } from "@/lib/validations/schemas";
 import type { NotificationPreferences } from "@/lib/types";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Notification center (in-app feed)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Next page of the current user's notifications for their active commune.
+ * The commune is always resolved server-side from the membership, never
+ * taken from the client.
+ */
+export async function fetchNotificationsPage(
+  cursor?: NotificationsCursor,
+  limit: number = NOTIFICATIONS_PAGE_SIZE,
+): Promise<NotificationsPage> {
+  const ctx = await requireActiveMembership();
+  const supabase = await createClient();
+  return listMyNotifications(supabase, ctx.activeMembership!.commune_id, {
+    limit: Math.min(Math.max(limit, 1), NOTIFICATIONS_PAGE_SIZE),
+    before: cursor,
+  });
+}
+
+/** Mark one notification as read. Idempotent: already-read rows are untouched. */
+export async function markNotificationRead(
+  notificationId: string,
+): Promise<{ success: boolean }> {
+  const ctx = await requireActiveMembership();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("id", notificationId)
+    .eq("user_id", ctx.userId)
+    .is("read_at", null);
+
+  if (error) {
+    console.error("[notifications] markNotificationRead failed", error.message);
+    return { success: false };
+  }
+  return { success: true };
+}
+
+/** Mark every unread notification of the active commune as read. */
+export async function markAllNotificationsRead(): Promise<{ success: boolean }> {
+  const ctx = await requireActiveMembership();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("user_id", ctx.userId)
+    .eq("commune_id", ctx.activeMembership!.commune_id)
+    .is("read_at", null);
+
+  if (error) {
+    console.error("[notifications] markAllNotificationsRead failed", error.message);
+    return { success: false };
+  }
+  revalidatePath(ROUTES.notifications);
+  return { success: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Preferences & push subscriptions
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Upsert the 9 notification preference booleans for the current user.

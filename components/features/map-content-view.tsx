@@ -267,7 +267,7 @@ function InitiativeClusterPopup({
               ? "bg-warm text-text hover:bg-border"
               : "cursor-not-allowed text-subtle opacity-40",
           )}
-          aria-label="Initiative précédente"
+          aria-label="Idée précédente"
         >
           <ChevronLeft className="size-4 md:size-3.5" aria-hidden />
         </button>
@@ -284,7 +284,7 @@ function InitiativeClusterPopup({
               ? "bg-warm text-text hover:bg-border"
               : "cursor-not-allowed text-subtle opacity-40",
           )}
-          aria-label="Initiative suivante"
+          aria-label="Idée suivante"
         >
           <ChevronRight className="size-4 md:size-3.5" aria-hidden />
         </button>

@@ -24,9 +24,9 @@ export const ROLE_DESCRIPTIONS: Record<
   string
 > = {
   member:
-    "Peut consulter et publier des annonces, participer aux événements et initiatives de la commune.",
+    "Peut consulter et publier des annonces, participer aux événements et idées de la commune.",
   staff:
-    "Accès à l'espace mairie : gestion des annonces, événements, initiatives et modération des habitants.",
+    "Accès à l'espace mairie : gestion des annonces, événements, idées et modération des habitants.",
   mayor:
     "Tous les droits employé mairie, avec responsabilités étendues sur la gestion de la commune.",
   platform_admin:

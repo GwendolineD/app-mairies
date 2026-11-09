@@ -12,7 +12,7 @@
  * - Returns a summary for observability
  */
 
-import { ROUTES } from "@/lib/constants/routes";
+import { CONTENT_ROUTE_BUILDER } from "@/lib/constants/notification-kinds";
 import { createServiceClient } from "@/lib/supabase/server";
 import { sendPushToSubscriptions, type PushPayload } from "@/lib/services/push-notifications";
 import type { ConversationContextType } from "@/lib/types";
@@ -43,14 +43,8 @@ const PAGE_SIZE = 150;
 
 const KIND_LABEL: Record<ConversationContextType, string> = {
   announcement: "Nouvelle annonce",
-  initiative: "Nouvelle initiative",
+  initiative: "Nouvelle idée",
   event: "Nouvel événement",
-};
-
-const ROUTE_BUILDER: Record<ConversationContextType, (id: string) => string> = {
-  announcement: (id) => ROUTES.annonces.detail(id),
-  initiative: (id) => ROUTES.initiatives.detail(id),
-  event: (id) => ROUTES.evenements.detail(id),
 };
 
 /**
@@ -79,7 +73,7 @@ export async function fanoutNewContentNotification(
     const title = `${KIND_LABEL[input.contextType]} dans votre commune`;
     const authorLabel = input.authorDisplayName ?? "un·e voisin·e";
     const body = `${authorLabel} vient de publier « ${truncate(input.title, 80)} »`;
-    const url = ROUTE_BUILDER[input.contextType](input.contextId);
+    const url = CONTENT_ROUTE_BUILDER[input.contextType](input.contextId);
     const tag = `${input.contextType}:${input.contextId}`;
     const payloadJson = {
       kind: "new_content",
@@ -120,6 +114,11 @@ export async function fanoutNewContentNotification(
       // Bulk insert notifications
       const notificationRows = userIds.map((userId) => ({
         user_id: userId,
+        commune_id: input.communeId,
+        kind: "new_content" as const,
+        tag,
+        context_type: input.contextType,
+        context_id: input.contextId,
         title,
         body,
         payload: { url, tag, ...payloadJson },

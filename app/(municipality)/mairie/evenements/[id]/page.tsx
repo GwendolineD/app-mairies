@@ -12,8 +12,9 @@ import { getAuthorName, resolveEventAuthorLabel } from "@/lib/data/authors";
 import {
   listEventVolunteers,
   listEventParticipants,
-  countEventParticipants,
-  countEventVolunteers,
+  getEventParticipationCounts,
+  getUserEventEngagement,
+  type UserEventEngagement,
 } from "@/lib/queries/events";
 import { createClient } from "@/lib/supabase/server";
 import { formatDay } from "@/lib/datetime";
@@ -131,33 +132,15 @@ export default async function MairieEvenementDetailPage(props: {
     parsedAddress.city,
   );
 
-  const volunteers = await listEventVolunteers(supabase, event.id);
-  const volunteersRegistered = await countEventVolunteers(supabase, event.id);
-
-  let initialVolunteering = false;
-  if (ctx.activeMembership?.id) {
-    const { data: userVolunteer } = await supabase
-      .from("event_volunteers")
-      .select("id")
-      .eq("event_id", event.id)
-      .eq("membership_id", ctx.activeMembership.id)
-      .maybeSingle();
-    initialVolunteering = !!userVolunteer;
-  }
-
-  const participants = await listEventParticipants(supabase, event.id);
-  const participantsCount = await countEventParticipants(supabase, event.id);
-
-  let initialParticipating = false;
-  if (ctx.activeMembership?.id) {
-    const { data: userParticipant } = await supabase
-      .from("event_participants")
-      .select("id")
-      .eq("event_id", event.id)
-      .eq("membership_id", ctx.activeMembership.id)
-      .maybeSingle();
-    initialParticipating = !!userParticipant;
-  }
+  const noEngagement: UserEventEngagement = { participating: null, volunteering: null };
+  const [volunteers, participants, counts, engagement] = await Promise.all([
+    listEventVolunteers(supabase, event.id),
+    listEventParticipants(supabase, event.id),
+    getEventParticipationCounts(supabase, event.id),
+    ctx.activeMembership?.id
+      ? getUserEventEngagement(supabase, event.id, ctx.activeMembership.id)
+      : Promise.resolve(noEngagement),
+  ]);
 
   return (
     <PageStack gap="5">
@@ -230,12 +213,14 @@ export default async function MairieEvenementDetailPage(props: {
             authorAvatarUrl={null}
             memberSince=""
             volunteersNeeded={event.volunteers_needed}
-            volunteersRegistered={volunteersRegistered}
+            volunteersRegistrations={counts.volunteersRegistrations}
+            volunteersHeadcount={counts.volunteersHeadcount}
             volunteers={volunteers}
-            initialVolunteering={initialVolunteering}
-            participantsCount={participantsCount}
+            initialVolunteerGuests={engagement.volunteering?.guestsCount ?? null}
+            participantsRegistrations={counts.participantsRegistrations}
+            participantsHeadcount={counts.participantsHeadcount}
             participants={participants}
-            initialParticipating={initialParticipating}
+            initialParticipantGuests={engagement.participating?.guestsCount ?? null}
             editData={editData}
             sourceInitiative={sourceInitiative}
             className={DETAIL_CARD_CLASS}

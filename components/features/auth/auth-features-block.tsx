@@ -8,7 +8,7 @@ const FEATURES = [
     bgClass: "bg-purple/15",
     title: "Découvrir",
     description:
-      "Explorez les besoins, initiatives et événements près de chez vous",
+      "Explorez les besoins, idées et événements près de chez vous",
   },
   {
     icon: Star,

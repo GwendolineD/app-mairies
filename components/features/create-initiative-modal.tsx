@@ -11,6 +11,7 @@ import {
   getInitiativeCategoryBySlug,
   type InitiativeEventCategory,
 } from "@/lib/constants/initiative-categories";
+import { INITIATIVE_VOCAB } from "@/lib/constants/content-vocabulary";
 import { ROUTES } from "@/lib/constants/routes";
 import {
   CloudinaryUploadError,
@@ -42,7 +43,7 @@ const DESCRIPTION_MAX = 1000;
 
 const INITIATIVE_TIPS = [
   "Expliquez votre idée en quelques phrases.",
-  "Dites pourquoi elle serait utile à la commune.",
+  "Dites ce que ça apporterait aux voisin·es et comment vous voyez la suite.",
   "Soyez ouvert aux suggestions.",
   "Plus votre idée est claire, plus elle pourra rassembler.",
   "Quand elle sera prête, vous pourrez la transformer en événement 🤩.",
@@ -378,7 +379,7 @@ export function CreateInitiativeModal({
       open={open}
       onClose={handleAbandon}
       closeDisabled={submitting}
-      title={isEditMode ? "Modifier votre initiative" : "Lancer une initiative"}
+      title={isEditMode ? "Modifier votre idée" : INITIATIVE_VOCAB.ctaCreate}
       size="xl"
       showCloseButton
       className="sm:max-w-3xl"
@@ -389,7 +390,7 @@ export function CreateInitiativeModal({
       >
         <div className="rounded-xl border border-mint/30 bg-mint/5 px-4 py-3">
           <p className="text-sm font-bold text-text">
-            Conseils pour une initiative réussie{" "}
+            Conseils pour une idée réussie{" "}
             <Sparkles className="inline size-4 text-mint" aria-hidden />
           </p>
           <ul className="mt-2 space-y-1.5">
@@ -450,8 +451,8 @@ export function CreateInitiativeModal({
         </section>
 
         <section className="space-y-4">
-          <SectionHeading number={2} title="Décrivez votre initiative" />
-          <FormField label="Titre de votre initiative *">
+          <SectionHeading number={2} title="Décrivez votre idée" />
+          <FormField label="Titre de votre idée *">
             <div className="relative">
               <Input
                 name="title"
@@ -492,7 +493,7 @@ export function CreateInitiativeModal({
         </section>
 
         <section className="space-y-4">
-          <SectionHeading number={3} title="Où se situe l'initiative ?" />
+          <SectionHeading number={3} title="Où ça se passerait ?" />
           <FormField label="Rue *">
             <BanAutocomplete
               label="Rue"
@@ -512,8 +513,8 @@ export function CreateInitiativeModal({
               </p>
             ) : (
               <p className="mt-1.5 text-xs font-medium text-subtle">
-                Lieu de l&apos;initiative / lieu du départ, si l&apos;initiative amène
-                à se déplacer / votre adresse si lieu est encore inconnu
+                Lieu de l&apos;idée / lieu du départ, si l&apos;idée amène
+                à se déplacer / votre adresse si le lieu est encore inconnu
               </p>
             )}
           </FormField>
@@ -593,7 +594,7 @@ export function CreateInitiativeModal({
             ) : isEditMode ? (
               "Enregistrer les modifications"
             ) : (
-              "Publier mon initiative"
+              INITIATIVE_VOCAB.ctaPublish
             )}
           </GradientButton>
         </div>

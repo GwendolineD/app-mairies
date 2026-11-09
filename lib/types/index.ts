@@ -1,4 +1,6 @@
 import type { AnnouncementType } from "@/lib/constants/announcement-types";
+import type { ContentContextStatus } from "@/lib/constants/content-status";
+import type { NotificationKind } from "@/lib/constants/notification-kinds";
 export type {
   ContentKind,
   OutcomeReason,
@@ -244,7 +246,11 @@ export type ConversationRow = {
   last_message_sender_id: string | null;
 };
 
-export type ConversationContextStatus = "available" | "suspended" | "deleted";
+/** Subset of `ContentContextStatus` computed by `list_my_conversations`. */
+export type ConversationContextStatus = Extract<
+  ContentContextStatus,
+  "available" | "suspended" | "deleted"
+>;
 
 /** Returned by the `list_my_conversations` RPC — one row per conversation for the current user. */
 export type ConversationInboxItem = {
@@ -267,6 +273,22 @@ export type ConversationInboxItem = {
   other_display_name: string | null;
   other_avatar_url: string | null;
   unread_count: number;
+};
+
+/** Returned by the `list_my_notifications` RPC — one row per notification for the current user. */
+export type NotificationItem = {
+  id: string;
+  kind: NotificationKind;
+  tag: string | null;
+  title: string | null;
+  body: string | null;
+  payload: Record<string, unknown>;
+  context_type: ConversationContextType | null;
+  context_id: string | null;
+  read_at: string | null;
+  created_at: string;
+  context_status: ContentContextStatus;
+  is_author: boolean;
 };
 
 export type NotificationPreferenceKey =

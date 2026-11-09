@@ -22,6 +22,7 @@ import { HistoryBackLink } from "@/components/ui/history-back-link";
 import { CommuneDetailStats } from "@/components/features/backoffice/commune-detail-stats";
 import { Card } from "@/components/ui/card";
 import { PageStack } from "@/components/ui/page-stack";
+import { INITIATIVE_VOCAB } from "@/lib/constants/content-vocabulary";
 import { ROUTES } from "@/lib/constants/routes";
 import { ROLE_LABELS } from "@/lib/constants/roles";
 import { getCommuneDetailStats } from "@/lib/queries/backoffice-communes";
@@ -191,7 +192,7 @@ export default async function BackofficeCommuneDetailPage(props: {
                           value: member.totalAnnouncements,
                         },
                         {
-                          label: "Initiatives",
+                          label: INITIATIVE_VOCAB.labelShort,
                           value: member.totalInitiatives,
                         },
                         {

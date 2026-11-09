@@ -86,7 +86,7 @@ export function InitiativesPageClient({
           initiativeItems={mapItems}
           center={mapCenter}
           showUserPin={hasUserAddress}
-          carouselTitle="Initiatives autour de vous"
+          carouselTitle="Idées autour de vous"
         />
       ) : items.length === 0 ? (
         <InitiativesEmptyState

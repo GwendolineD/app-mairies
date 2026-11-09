@@ -118,7 +118,7 @@ export function MembershipModerationButton({
           <p className="text-sm font-medium text-muted">
             {isSuspend
               ? "Cette action bloque l'accès de l'habitant·e à la commune. Il ou elle sera redirigé·e vers la page de suspension lors de sa prochaine connexion."
-              : "L'habitant·e retrouvera l'accès à la commune et pourra de nouveau publier des annonces, initiatives et événements."}
+              : "L'habitant·e retrouvera l'accès à la commune et pourra de nouveau publier des annonces, idées et événements."}
           </p>
 
           {isSuspend ? (

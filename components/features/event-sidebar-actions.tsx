@@ -12,10 +12,9 @@ import {
 } from "lucide-react";
 import { ContactAnnouncementButton } from "@/components/features/contact-announcement-button";
 import { useCreationModals } from "@/components/features/creation-modal-context";
-import { EventParticipantButton } from "@/components/features/event-participant-button";
+import { EventEngagementButton } from "@/components/features/event-engagement-button";
 import { ParticipantsAvatarRow } from "@/components/features/event-participants-list";
 import { VolunteersAvatarRow } from "@/components/features/event-volunteers-list";
-import { EventVolunteerButton } from "@/components/features/event-volunteer-button";
 import { DeleteEventModal } from "@/components/features/delete-event-modal";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -25,6 +24,7 @@ import { ROUTES } from "@/lib/constants/routes";
 import type { EventVolunteer } from "@/lib/queries/events";
 import type { EventEditData } from "@/lib/types";
 import { cn } from "@/lib/utils/cn";
+import { formatHeadcountLabel } from "@/lib/utils/event-headcount";
 
 type SourceInitiative = {
   id: string;
@@ -38,12 +38,18 @@ type Props = {
   authorAvatarUrl: string | null;
   memberSince: string;
   volunteersNeeded: number | null;
-  volunteersRegistered?: number;
+  /** Member rows — internal (pagination, avatar overflow). */
+  volunteersRegistrations?: number;
+  /** Rows + companions — the figure shown on the gauge. */
+  volunteersHeadcount?: number;
   volunteers?: EventVolunteer[];
-  initialVolunteering?: boolean;
-  participantsCount?: number;
+  /** null = not volunteering; number = companions declared. */
+  initialVolunteerGuests?: number | null;
+  participantsRegistrations?: number;
+  participantsHeadcount?: number;
   participants?: EventVolunteer[];
-  initialParticipating?: boolean;
+  /** null = not participating; number = companions declared. */
+  initialParticipantGuests?: number | null;
   editData?: EventEditData;
   sourceInitiative?: SourceInitiative | null;
   className?: string;
@@ -57,12 +63,14 @@ export function EventSidebarActions({
   authorAvatarUrl,
   memberSince,
   volunteersNeeded,
-  volunteersRegistered = 0,
+  volunteersRegistrations = 0,
+  volunteersHeadcount = 0,
   volunteers = [],
-  initialVolunteering = false,
-  participantsCount = 0,
+  initialVolunteerGuests = null,
+  participantsRegistrations = 0,
+  participantsHeadcount = 0,
   participants = [],
-  initialParticipating = false,
+  initialParticipantGuests = null,
   editData,
   sourceInitiative,
   className,
@@ -121,9 +129,10 @@ export function EventSidebarActions({
         <VolunteersCard
           eventId={eventId}
           isAuthor={isAuthor}
-          initialVolunteering={initialVolunteering}
+          initialGuestsCount={initialVolunteerGuests}
           volunteersNeeded={volunteersNeeded}
-          volunteersRegistered={volunteersRegistered}
+          registrationsCount={volunteersRegistrations}
+          headcount={volunteersHeadcount}
           volunteers={volunteers}
           className={className}
         />
@@ -132,8 +141,9 @@ export function EventSidebarActions({
       <EventParticipantsCard
         eventId={eventId}
         isAuthor={isAuthor}
-        initialParticipating={initialParticipating}
-        participantsCount={participantsCount}
+        initialGuestsCount={initialParticipantGuests}
+        registrationsCount={participantsRegistrations}
+        headcount={participantsHeadcount}
         participants={participants}
         className={className}
       />
@@ -262,17 +272,19 @@ function VolunteersGauge({
 function VolunteersCard({
   eventId,
   isAuthor,
-  initialVolunteering,
+  initialGuestsCount,
   volunteersNeeded,
-  volunteersRegistered,
+  registrationsCount,
+  headcount,
   volunteers,
   className,
 }: {
   eventId: string;
   isAuthor: boolean;
-  initialVolunteering: boolean;
+  initialGuestsCount: number | null;
   volunteersNeeded: number;
-  volunteersRegistered: number;
+  registrationsCount: number;
+  headcount: number;
   volunteers: EventVolunteer[];
   className?: string;
 }) {
@@ -290,18 +302,20 @@ function VolunteersCard({
         </p>
       </div>
       <div className="space-y-3">
-        <VolunteersGauge registered={volunteersRegistered} needed={volunteersNeeded} />
+        <VolunteersGauge registered={headcount} needed={volunteersNeeded} />
         {volunteers.length > 0 ? (
           <VolunteersAvatarRow
             volunteers={volunteers}
-            totalCount={volunteersRegistered}
+            registrationsCount={registrationsCount}
+            headcount={headcount}
             eventId={eventId}
             isAuthor={isAuthor}
           />
         ) : null}
-        <EventVolunteerButton
+        <EventEngagementButton
+          kind="volunteer"
           eventId={eventId}
-          initialVolunteering={initialVolunteering}
+          initialGuestsCount={initialGuestsCount}
         />
       </div>
     </Card>
@@ -311,15 +325,17 @@ function VolunteersCard({
 function EventParticipantsCard({
   eventId,
   isAuthor,
-  initialParticipating,
-  participantsCount,
+  initialGuestsCount,
+  registrationsCount,
+  headcount,
   participants,
   className,
 }: {
   eventId: string;
   isAuthor: boolean;
-  initialParticipating: boolean;
-  participantsCount: number;
+  initialGuestsCount: number | null;
+  registrationsCount: number;
+  headcount: number;
   participants: EventVolunteer[];
   className?: string;
 }) {
@@ -332,29 +348,29 @@ function EventParticipantsCard({
         </h2>
         <p className="text-sm font-medium text-muted">
           {isAuthor
-            ? participantsCount === 0
+            ? headcount === 0
               ? "Les premières inscriptions arriveront bientôt !"
-              : `${participantsCount} voisin${participantsCount !== 1 ? "·es" : "·e"} se ${participantsCount !== 1 ? "sont inscrits" : "s'est inscrit·e"} !`
-            : "Vous souhaitez participer à cet événement ?"}
+              : "Ça se remplit ! Voici qui vient."
+            : "Vous souhaitez participer à cet événement ? Venez accompagné·e si vous voulez."}
         </p>
       </div>
       <div className="space-y-3">
-        {participantsCount > 0 ? (
-          <p className="text-sm font-semibold text-text">
-            {participantsCount} participant{participantsCount !== 1 ? "s" : ""}
-          </p>
+        {headcount > 0 ? (
+          <p className="text-sm font-semibold text-text">{formatHeadcountLabel(headcount)}</p>
         ) : null}
         {participants.length > 0 ? (
           <ParticipantsAvatarRow
             participants={participants}
-            totalCount={participantsCount}
+            registrationsCount={registrationsCount}
+            headcount={headcount}
             eventId={eventId}
             isAuthor={isAuthor}
           />
         ) : null}
-        <EventParticipantButton
+        <EventEngagementButton
+          kind="participant"
           eventId={eventId}
-          initialParticipating={initialParticipating}
+          initialGuestsCount={initialGuestsCount}
         />
       </div>
     </Card>
@@ -373,12 +389,12 @@ function SourceInitiativeCard({
       <div className="flex items-start justify-between gap-2">
         <p className="flex items-center gap-1 text-xs font-semibold uppercase text-mint">
           <Sparkles className="size-3.5" aria-hidden />
-          Issu de l&apos;initiative
+          Née d&apos;une idée de voisin·e
         </p>
         <Link
           href={ROUTES.initiatives.detail(initiative.id)}
           className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-sm text-muted transition hover:bg-warm hover:text-text"
-          aria-label={`Voir l'initiative : ${initiative.title}`}
+          aria-label={`Voir l'idée : ${initiative.title}`}
         >
           <ArrowUpRight className="size-4" aria-hidden />
         </Link>

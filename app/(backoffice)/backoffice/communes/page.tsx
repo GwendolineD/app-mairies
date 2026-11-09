@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PageStack } from "@/components/ui/page-stack";
 import { ALL_ACCESS_STATUSES, ACCESS_STATUS_LABELS } from "@/lib/constants/access-status";
+import { INITIATIVE_VOCAB } from "@/lib/constants/content-vocabulary";
 import { ROUTES } from "@/lib/constants/routes";
 import { listPilotCommunesPage } from "@/lib/queries/backoffice-communes";
 import { formatShortDate } from "@/lib/datetime";
@@ -82,7 +83,7 @@ export default async function BackofficeCommunesPage(props: {
               fields={[
                 { label: "Adhérent·es", value: commune.activeMembersCount },
                 { label: "Annonces", value: commune.activeAnnouncementsCount },
-                { label: "Initiatives", value: commune.activeInitiativesCount },
+                { label: INITIATIVE_VOCAB.labelShort, value: commune.activeInitiativesCount },
                 { label: "Événements", value: commune.activeEventsCount },
               ]}
               mobileFieldSplitAfter={1}

@@ -42,6 +42,10 @@ export const ILLUSTRATIONS = {
     messages: {
       emptyState: "",
     },
+    notifications: {
+      emptyState:
+        "https://res.cloudinary.com/du3ko16j1/image/upload/v1781848731/app-mairies/illustrations/autres/coeur_n9sseg.png",
+    },
     annonces: {
       detail: {
         photoFallback: "",

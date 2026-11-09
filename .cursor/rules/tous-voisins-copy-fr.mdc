@@ -12,6 +12,12 @@ alwaysApply: false
 - **Warm, approachable, respectful** tone: sound like a collaborative neighbor, not a cold admin tool.
 - Use **sentence case** for titles when the design system agrees; otherwise match existing headings.
 
+## Vocabulaire produit — « idée » vs `initiative`
+
+- Le **code** garde `initiative` partout (tables, enums `context_type`, routes `/initiatives`, clés de préférences, slugs de templates, tags push, gradients CSS). **Ne jamais renommer** ces identifiants.
+- La **copy visible** dit **« idée »** : « Idées » (nav, onglets, stats), « Idée » (tag, badge), « Toutes les idées » (titre liste), « Proposer une idée » (CTA création), « Publier mon idée » (soumission). Source unique : `INITIATIVE_VOCAB` et `formatInitiativeCount` dans `lib/constants/content-vocabulary.ts` — ne pas réécrire ces chaînes en dur.
+- Cadrage : c'est l'habitant·e qui **porte** l'idée ; les voisin·es la soutiennent et aident à la concrétiser. Éviter toute formulation qui laisse croire à une boîte à idées adressée à la mairie.
+
 ## People & names (display)
 
 - Default public attribution: **`Prénom L.`** (first name + last initial + trailing dot). Example: _Camille R._
@@ -24,7 +30,7 @@ Prefer **verbs + outcome** instead of vague defaults when space allows:
 | ❌ Vague  | ✅ Action-oriented   |
 | --------- | -------------------- |
 | Continuer | Voir les détails     |
-| Envoyer   | Publier l’initiative |
+| Envoyer   | Publier mon idée     |
 | OK        | Confirmer l’archive  |
 
 Reuse established microcopy tokens for repeated actions (“Publier”, “Archiver”, “Signaler”). Keep labels short (< ~40 chars) for narrow layouts.
