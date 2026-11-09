@@ -144,7 +144,7 @@ async function ensureConversation(
     { conversation_id: conv.id, user_id: participantB },
   ]);
 
-  revalidatePath(ROUTES.messages.list);
+  revalidatePath(ROUTES.messages.list, "layout");
   return { conversationId: conv.id, error: null };
 }
 
@@ -214,8 +214,7 @@ async function insertConversationMessage(
     });
   }
 
-  revalidatePath(ROUTES.messages.list);
-  revalidatePath(ROUTES.messages.detail(conversationId));
+  revalidatePath(ROUTES.messages.list, "layout");
   return { success: true };
 }
 
@@ -323,8 +322,7 @@ export async function archiveConversation(conversationId: string) {
     .eq("conversation_id", conversationId)
     .eq("user_id", ctx.userId);
   if (error) return { error: error.message };
-  revalidatePath(ROUTES.messages.list);
-  revalidatePath(ROUTES.messages.detail(conversationId));
+  revalidatePath(ROUTES.messages.list, "layout");
   return { success: true };
 }
 
@@ -338,8 +336,7 @@ export async function restoreConversation(conversationId: string) {
     .eq("conversation_id", conversationId)
     .eq("user_id", ctx.userId);
   if (error) return { error: error.message };
-  revalidatePath(ROUTES.messages.list);
-  revalidatePath(ROUTES.messages.detail(conversationId));
+  revalidatePath(ROUTES.messages.list, "layout");
   return { success: true };
 }
 
@@ -376,7 +373,7 @@ export async function permanentlyDeleteConversation(conversationId: string) {
     await supabase.from("conversations").delete().eq("id", conversationId);
   }
 
-  revalidatePath(ROUTES.messages.list);
+  revalidatePath(ROUTES.messages.list, "layout");
   return { success: true };
 }
 

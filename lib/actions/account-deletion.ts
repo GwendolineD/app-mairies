@@ -212,7 +212,7 @@ async function performAccountDeletion(
   revalidatePath(ROUTES.annonces.map);
   revalidatePath(ROUTES.initiatives.list);
   revalidatePath(ROUTES.evenements.list);
-  revalidatePath(ROUTES.messages.list);
+  revalidatePath(ROUTES.messages.list, "layout");
   revalidatePath(ROUTES.mairie.dashboard);
   revalidatePath(ROUTES.mairie.habitants);
   revalidatePath(ROUTES.backoffice.communes);

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { ArchiveRestore, MessageCircle, Inbox, Trash2, X } from "lucide-react";
 import {
@@ -11,6 +12,7 @@ import {
   restoreConversation,
 } from "@/lib/actions/messages";
 import { ROUTES } from "@/lib/constants/routes";
+import { isArchivedView, type InboxView } from "@/lib/constants/inbox-views";
 import { CONTEXT_TYPE_LABELS } from "@/lib/constants/context-types";
 import { CONTENT_TYPE_TAGS } from "@/lib/constants/content-types";
 import type { ConversationInboxItem } from "@/lib/types";
@@ -26,8 +28,7 @@ type Props = {
   conversations: ConversationInboxItem[];
   totalCount: number;
   communeId: string;
-  view: "active" | "archived";
-  selectedId?: string;
+  view: InboxView;
   currentUserId: string;
 };
 
@@ -36,9 +37,13 @@ export function MessagesInboxList({
   totalCount,
   communeId,
   view,
-  selectedId,
   currentUserId,
 }: Props) {
+  // The list is rendered by the inbox layout, which does not know the active
+  // conversation: read it from the URL so the highlight follows navigation.
+  const params = useParams<{ id?: string }>();
+  const selectedId = params?.id;
+  const archived = isArchivedView(view);
   const [items, setItems] = useState(conversations);
   const [total, setTotal] = useState(totalCount);
   const [pending, startTransition] = useTransition();
@@ -57,7 +62,7 @@ export function MessagesInboxList({
     startLoadingMore(async () => {
       const result = await fetchMoreConversations(communeId, {
         offset: items.length,
-        archived: view === "archived",
+        archived,
       });
       setItems((prev) => {
         const existingIds = new Set(prev.map((c) => c.conversation_id));
@@ -70,11 +75,8 @@ export function MessagesInboxList({
     });
   }
 
-  // Tab links always return to the inbox root.
-  const activeTabHref = ROUTES.messages.list;
-  const trashTabHref = `${ROUTES.messages.list}?vue=corbeille`;
-
-  const conversationLinkSuffix = view === "archived" ? "?vue=corbeille" : "";
+  const activeTabHref = ROUTES.messages.inbox("boite");
+  const trashTabHref = ROUTES.messages.inbox("corbeille");
 
   const handleArchive = (conversationId: string) => {
     startTransition(async () => {
@@ -95,19 +97,19 @@ export function MessagesInboxList({
       <div className="flex shrink-0 items-center border-b border-border/60 bg-surface">
         <TabLink
           href={activeTabHref}
-          active={view === "active"}
+          active={view === "boite"}
           icon={<Inbox className="size-4" aria-hidden />}
           label="Boîte"
         />
         <TabLink
           href={trashTabHref}
-          active={view === "archived"}
+          active={view === "corbeille"}
           icon={<Trash2 className="size-4" aria-hidden />}
           label="Corbeille"
         />
       </div>
 
-      {view === "archived" && (
+      {archived && (
         <div className="shrink-0 border-b border-border/60 bg-warm/50 px-3 py-2 text-center text-xs text-muted">
           Les conversations supprimées sont conservées 30 jours.
         </div>
@@ -116,15 +118,17 @@ export function MessagesInboxList({
       <ul className="flex-1 overflow-y-auto" aria-label="Conversations">
         {items.length === 0 ? (
           <li className="px-4 py-8 text-center text-sm text-muted">
-            {view === "active"
-              ? "Aucune conversation pour l'instant."
-              : "La corbeille est vide."}
+            {archived
+              ? "La corbeille est vide."
+              : "Aucune conversation pour l'instant."}
           </li>
         ) : (
           items.map((conv) => {
             const isSelected = conv.conversation_id === selectedId;
             const isMine = conv.last_message_sender_id === currentUserId;
-            const unread = !isMine && conv.unread_count > 0;
+            // The pane marks the open conversation as read; since the list is
+            // not refetched on conversation change, hide its badge locally.
+            const unread = !isMine && !isSelected && conv.unread_count > 0;
             const Icon = conv.context_type
               ? CONTENT_TYPE_TAGS[conv.context_type].icon
               : MessageCircle;
@@ -147,7 +151,7 @@ export function MessagesInboxList({
               >
                 <div className="group/item relative flex items-stretch">
                   <Link
-                    href={`${ROUTES.messages.detail(conv.conversation_id)}${conversationLinkSuffix}`}
+                    href={ROUTES.messages.detail(conv.conversation_id, view)}
                     className={cn(
                       "min-w-0 flex-1 px-3 py-3 outline-none transition focus-visible:bg-warm",
                       !isSelected && "hover:bg-warm/60",
@@ -224,7 +228,7 @@ export function MessagesInboxList({
                   </Link>
 
                   <div className="absolute right-2 bottom-2 flex items-center gap-1">
-                    {view === "archived" ? (
+                    {archived ? (
                       <>
                         <button
                           type="button"

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { AnnouncementType } from "@/lib/constants/announcement-types";
 import { INITIATIVE_VOCAB } from "@/lib/constants/content-vocabulary";
+import type { InboxView } from "@/lib/constants/inbox-views";
 
 export const ROUTES = {
   home: "/",
@@ -20,8 +21,11 @@ export const ROUTES = {
   notifications: "/notifications",
   messages: {
     list: "/messages",
-    trash: "/messages?vue=corbeille",
-    detail: (id: string) => `/messages/${id}`,
+    trash: "/messages/corbeille",
+    inbox: (view: InboxView) =>
+      view === "corbeille" ? "/messages/corbeille" : "/messages",
+    detail: (id: string, view: InboxView = "boite") =>
+      view === "corbeille" ? `/messages/corbeille/${id}` : `/messages/${id}`,
   },
   annonces: {
     list: "/annonces",
