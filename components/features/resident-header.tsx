@@ -16,8 +16,6 @@ type Props = {
   activeCommuneId: string | null | undefined;
   backofficeLinks?: BackofficeNavLink[];
   supportEmail: string;
-  /** Unread notifications badge (server-rendered, Suspense-wrapped). */
-  notificationsBadge?: React.ReactNode;
 };
 
 export function ResidentHeader({
@@ -26,7 +24,6 @@ export function ResidentHeader({
   activeCommuneId,
   backofficeLinks = [],
   supportEmail,
-  notificationsBadge = null,
 }: Props) {
   const logo = ILLUSTRATIONS.resident.header.logoHorizontal;
 
@@ -56,7 +53,7 @@ export function ResidentHeader({
               activeCommuneId={activeCommuneId}
             />
           </div>
-          <NotificationBell badge={notificationsBadge} />
+          <NotificationBell />
           <div className="md:hidden">
             <ResidentMobileHeaderMenu
               profile={profile}

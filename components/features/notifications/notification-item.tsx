@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { RelativeTime } from "@/components/ui/relative-time";
 import { markNotificationRead } from "@/lib/actions/notifications";
+import { useUnreadNotifications } from "@/components/features/notifications/unread-notifications-count";
 import { CONTENT_STATUS_LABELS } from "@/lib/constants/content-status";
 import {
   buildNotificationHref,
@@ -30,7 +31,7 @@ export function NotificationItem({ item, compact = false, onNavigate }: Props) {
   // Derived from props so a parent-level "mark all read" is reflected too.
   const [readLocally, setReadLocally] = useState(false);
   const isRead = item.read_at !== null || readLocally;
-  const [, startTransition] = useTransition();
+  const { markOneRead, confirm, undo } = useUnreadNotifications();
 
   const href = buildNotificationHref(item);
   const visual = getNotificationVisual(item);
@@ -40,12 +41,27 @@ export function NotificationItem({ item, compact = false, onNavigate }: Props) {
       ? CONTENT_STATUS_LABELS[item.context_status]
       : null;
 
+  async function persistRead(id: string) {
+    try {
+      const result = await markNotificationRead(id);
+      if (result.success) confirm(id);
+      else {
+        setReadLocally(false);
+        undo(id);
+      }
+    } catch {
+      setReadLocally(false);
+      undo(id);
+    }
+  }
+
   function handleClick() {
     if (!isRead) {
       setReadLocally(true);
-      startTransition(() => {
-        void markNotificationRead(item.id);
-      });
+      markOneRead(item.id);
+      // Not a transition: a pending transition holds the link navigation
+      // until the write finishes, so the destination skeleton never shows.
+      void persistRead(item.id);
     }
     onNavigate?.();
   }
@@ -81,7 +97,7 @@ export function NotificationItem({ item, compact = false, onNavigate }: Props) {
             />
             {!isRead ? (
               <span
-                className="size-2 rounded-full bg-coral"
+                className="size-2 rounded-full bg-purple"
                 aria-label="Non lue"
               />
             ) : null}
@@ -115,7 +131,7 @@ export function NotificationItem({ item, compact = false, onNavigate }: Props) {
         onClick={handleClick}
         className={cn(
           "block min-h-11 cursor-pointer outline-none transition hover:bg-warm/60 focus-visible:bg-warm",
-          !isRead && "bg-soft-pink/40",
+          !isRead && "bg-purple/10",
         )}
       >
         {content}
@@ -125,7 +141,7 @@ export function NotificationItem({ item, compact = false, onNavigate }: Props) {
 
   return (
     <div
-      className={cn("min-h-11", !isRead && "bg-soft-pink/40")}
+      className={cn("min-h-11", !isRead && "bg-purple/10")}
       aria-disabled="true"
     >
       {content}

@@ -2,9 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition, type ReactNode } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Bell, CheckCheck } from "lucide-react";
 import { NotificationItem } from "@/components/features/notifications/notification-item";
+import {
+  UnreadNotificationsPill,
+  useUnreadNotifications,
+} from "@/components/features/notifications/unread-notifications-count";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Popover,
@@ -20,11 +24,6 @@ import { ROUTES } from "@/lib/constants/routes";
 import type { NotificationItem as NotificationItemData } from "@/lib/types";
 import { cn } from "@/lib/utils/cn";
 
-type Props = {
-  /** Server-rendered unread badge (Suspense-wrapped by the layout). */
-  badge: ReactNode;
-};
-
 const TRIGGER_CLASS =
   "relative flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl text-muted transition hover:bg-warm hover:text-text focus-visible:ring-2 focus-visible:ring-purple/30 outline-none";
 
@@ -32,8 +31,9 @@ const TRIGGER_CLASS =
  * Header bell. Mobile: plain link to the notifications page.
  * Desktop: popover that lazily loads the latest notifications on open.
  */
-export function NotificationBell({ badge }: Props) {
+export function NotificationBell() {
   const router = useRouter();
+  const { markAllRead } = useUnreadNotifications();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotificationItemData[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -61,11 +61,14 @@ export function NotificationBell({ badge }: Props) {
 
   function handleOpenChange(next: boolean) {
     setOpen(next);
+    // Closing does not refresh. A refresh started here would read the unread
+    // total before the click's write commits and could raise the badge again.
+    // The visibility handler and "mark all" still reconcile with the server.
     if (next) void load();
-    else router.refresh();
   }
 
   function handleMarkAll() {
+    markAllRead();
     startMarking(async () => {
       await markAllNotificationsRead();
       const now = new Date().toISOString();
@@ -85,7 +88,7 @@ export function NotificationBell({ badge }: Props) {
         className={cn(TRIGGER_CLASS, "md:hidden")}
       >
         <Bell className="size-5" aria-hidden />
-        {badge}
+        <UnreadNotificationsPill />
       </Link>
 
       {/* Desktop: popover preview */}
@@ -96,7 +99,7 @@ export function NotificationBell({ badge }: Props) {
             className={TRIGGER_CLASS}
           >
             <Bell className="size-5" aria-hidden />
-            {badge}
+            <UnreadNotificationsPill />
           </PopoverTrigger>
 
           <PopoverContent

@@ -1,6 +1,7 @@
 import { cache } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { SyncUnreadCount } from "@/components/features/notifications/unread-notifications-count";
 import { countUnreadNotifications } from "@/lib/queries/notifications";
+import { createClient } from "@/lib/supabase/server";
 
 export const getCachedUnreadNotificationsCount = cache(
   async (communeId: string) => {
@@ -9,21 +10,22 @@ export const getCachedUnreadNotificationsCount = cache(
   },
 );
 
-/** Server component — coral pill anchored to the top-right of the bell icon. */
+/**
+ * Server component. Publishes the unread total into the client badge.
+ * Renders nothing: the pill lives on the bell so it can drop on click.
+ */
 export async function UnreadNotificationsBadgeAsync({
   communeId,
 }: {
   communeId: string;
 }) {
   const count = await getCachedUnreadNotificationsCount(communeId);
-  if (count <= 0) return null;
 
   return (
-    <span
-      aria-label={`${count} notifications non lues`}
-      className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-coral px-1 text-[9px] font-bold leading-none text-white"
-    >
-      {count > 9 ? "9+" : count}
-    </span>
+    <SyncUnreadCount
+      count={count}
+      communeId={communeId}
+      revision={crypto.randomUUID()}
+    />
   );
 }
